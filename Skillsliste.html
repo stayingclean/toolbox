@@ -48,30 +48,26 @@ body{font-family:var(--f-b);background:var(--bg);color:var(--text);min-height:10
 /* ══ AMPEL ══════════════════════════════════════════════════ */
 .regler{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);padding:clamp(.55rem,1.6vw,1rem) clamp(.9rem,3.5vw,2.2rem);box-shadow:0 2px 14px rgba(0,0,0,.07);transition:background var(--tr)}
 .regler-q{font-size:clamp(.78rem,2vw,.92rem);font-weight:600;margin-bottom:.55rem;color:var(--muted)}
---al-size: clamp(40px,7vw,54px);
---al-gap:  clamp(6px,1.2vw,10px);
---al-pad:  clamp(8px,1.5vw,13px);
-.ampel-wrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:clamp(.7rem,2vw,1.4rem);max-width:480px;margin:0 auto}
-.ampel-gehaeuse{display:flex;flex-direction:column;align-items:center;gap:var(--al-gap);background:#1a1a1a;border-radius:40px;padding:var(--al-pad) clamp(6px,1.2vw,11px);box-shadow:0 4px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08)}
-.ampel-licht{width:var(--al-size);height:var(--al-size);border-radius:50%;border:none;cursor:pointer;transition:transform .15s,box-shadow .3s;-webkit-tap-highlight-color:transparent;outline:none}
+.ampel-wrap{display:flex;align-items:center;gap:clamp(.8rem,2.5vw,1.6rem)}
+.ampel-gehaeuse{display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.2vw,10px);background:#1a1a1a;border-radius:40px;padding:clamp(8px,1.5vw,14px) clamp(6px,1.2vw,11px);box-shadow:0 4px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);flex-shrink:0}
+.ampel-licht{width:clamp(40px,7vw,56px);height:clamp(40px,7vw,56px);border-radius:50%;border:none;cursor:pointer;position:relative;transition:transform .15s,box-shadow .3s;-webkit-tap-highlight-color:transparent;outline:none}
 .ampel-licht:active{transform:scale(.88)}
 .ampel-licht.rot  {background:radial-gradient(circle at 38% 32%,#ff6b6b,#c62828)}
 .ampel-licht.gelb {background:radial-gradient(circle at 38% 32%,#ffd93d,#e65100)}
 .ampel-licht.gruen{background:radial-gradient(circle at 38% 32%,#6bcb77,#2e7d32)}
 .ampel-licht:not(.aktiv){filter:brightness(.25) saturate(.4)}
-.ampel-licht.aktiv.rot  {box-shadow:0 0 0 3px #c62828,0 0 22px 6px rgba(198,40,40,.7)}
-.ampel-licht.aktiv.gelb {box-shadow:0 0 0 3px #e65100,0 0 22px 6px rgba(230,81,0,.65)}
-.ampel-licht.aktiv.gruen{box-shadow:0 0 0 3px #2e7d32,0 0 22px 6px rgba(46,125,50,.65)}
+.ampel-licht.aktiv.rot  {box-shadow:0 0 0 3px #c62828, 0 0 22px 6px rgba(198,40,40,.7)}
+.ampel-licht.aktiv.gelb {box-shadow:0 0 0 3px #e65100, 0 0 22px 6px rgba(230,81,0,.65)}
+.ampel-licht.aktiv.gruen{box-shadow:0 0 0 3px #2e7d32, 0 0 22px 6px rgba(46,125,50,.65)}
 .ampel-licht.aktiv{animation:licht-puls 2.6s ease-in-out infinite}
 @keyframes licht-puls{0%,100%{opacity:1}50%{opacity:.82}}
-.ampel-links,.ampel-rechts{display:flex;flex-direction:column;gap:var(--al-gap);padding:var(--al-pad) 0}
-.ampel-links{align-items:flex-end}
-.ampel-rechts{align-items:flex-start}
-.ampel-row{height:var(--al-size);display:flex;align-items:center;cursor:pointer;padding:.2rem .5rem;border-radius:var(--r-xs);border:1.5px solid transparent;transition:background var(--tr),border-color var(--tr);-webkit-tap-highlight-color:transparent}
-.ampel-row:hover{background:rgba(0,0,0,.05)}
-.ampel-row.aktiv{background:var(--active-h);border-color:var(--active)}
-.al-title{font-weight:700;font-size:clamp(.78rem,2vw,.9rem);color:var(--text);line-height:1.2;text-align:right}
-.al-bereich{font-size:clamp(.72rem,1.8vw,.82rem);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ampel-labels{display:flex;flex-direction:column;gap:clamp(4px,1vw,8px);flex:1}
+.ampel-label{display:flex;align-items:center;gap:.55rem;padding:.38rem .7rem;border-radius:var(--r-xs);cursor:pointer;transition:background var(--tr),transform .12s;-webkit-tap-highlight-color:transparent;border:1.5px solid transparent}
+.ampel-label:hover{background:rgba(0,0,0,.04);transform:translateX(2px)}
+.ampel-label.aktiv{background:var(--active-h);border-color:var(--active)}
+.al-icon{font-size:1.3rem;line-height:1;flex-shrink:0;width:1.6rem;text-align:center}
+.al-title{font-weight:700;font-size:clamp(.8rem,2vw,.92rem);color:var(--text);line-height:1.2}
+.al-bereich{font-size:.72rem;color:var(--muted);margin-left:auto;white-space:nowrap}
 
 /* ══ WRAP ══════════════════════════════════════════════════ */
 .wrap{max-width:900px;margin:0 auto;padding:clamp(.7rem,2.5vw,1.5rem) clamp(.7rem,2.5vw,1.4rem)}
@@ -210,30 +206,25 @@ footer{text-align:center;padding:2rem 1rem;font-size:.74rem;color:var(--muted);b
 <div class="regler" role="navigation" aria-label="Anspannungsniveau wählen">
   <div class="regler-q">Wie hoch ist deine Anspannung gerade?</div>
   <div class="ampel-wrap">
-    <div class="ampel-links">
-      <div class="ampel-row" id="ll-hoch"   data-level="hoch"   role="button" tabindex="0">
-        <span class="al-title">Sehr hohe Anspannung</span>
-      </div>
-      <div class="ampel-row aktiv" id="ll-mittel" data-level="mittel" role="button" tabindex="0">
-        <span class="al-title">Mittlere Anspannung</span>
-      </div>
-      <div class="ampel-row" id="ll-tief"   data-level="tief"   role="button" tabindex="0">
-        <span class="al-title">Tiefe Anspannung</span>
-      </div>
-    </div>
     <div class="ampel-gehaeuse" role="group" aria-label="Ampel">
       <button class="ampel-licht rot"   id="al-hoch"   aria-label="Sehr hohe Anspannung" aria-pressed="false"></button>
       <button class="ampel-licht gelb"  id="al-mittel" aria-label="Mittlere Anspannung"  aria-pressed="true"></button>
       <button class="ampel-licht gruen" id="al-tief"   aria-label="Tiefe Anspannung"     aria-pressed="false"></button>
     </div>
-    <div class="ampel-rechts">
-      <div class="ampel-row" data-level="hoch"   role="button" tabindex="-1" aria-hidden="true">
+    <div class="ampel-labels">
+      <div class="ampel-label" id="ll-hoch"   data-level="hoch"   role="button" tabindex="0">
+        <span class="al-icon" id="bi-hoch">🔥</span>
+        <span class="al-title">Sehr hohe Anspannung</span>
         <span class="al-bereich">ab 70 %</span>
       </div>
-      <div class="ampel-row aktiv" data-level="mittel" role="button" tabindex="-1" aria-hidden="true">
+      <div class="ampel-label aktiv" id="ll-mittel" data-level="mittel" role="button" tabindex="0">
+        <span class="al-icon" id="bi-mittel">🌊</span>
+        <span class="al-title">Mittlere Anspannung</span>
         <span class="al-bereich">30 – 70 %</span>
       </div>
-      <div class="ampel-row" data-level="tief"   role="button" tabindex="-1" aria-hidden="true">
+      <div class="ampel-label" id="ll-tief"   data-level="tief"   role="button" tabindex="0">
+        <span class="al-icon" id="bi-tief">🌟</span>
+        <span class="al-title">Tiefe Anspannung</span>
         <span class="al-bereich">bis 30 %</span>
       </div>
     </div>
@@ -342,17 +333,15 @@ function ripple(card,e){
 }
 
 /* ── AMPEL ───────────────────────────────────────────────── */
+var AMPEL_MAP={hoch:'al-hoch',mittel:'al-mittel',tief:'al-gruen'};
 function updateAmpel(){
   ['hoch','mittel','tief'].forEach(function(lv){
+    var licht=el('al-'+lv), label=el('ll-'+lv);
     var aktiv=lv===S.level;
-    var licht=el('al-'+lv);
     licht.classList.toggle('aktiv', aktiv);
     licht.setAttribute('aria-pressed', aktiv?'true':'false');
-    el('ll-'+lv).classList.toggle('aktiv', aktiv);
-  });
-  /* rechte Spalte: alle .ampel-row in .ampel-rechts */
-  document.querySelectorAll('.ampel-rechts .ampel-row').forEach(function(row){
-    row.classList.toggle('aktiv', row.dataset.level===S.level);
+    label.classList.toggle('aktiv', aktiv);
+    el('bi-'+lv).textContent=DATA[lv].icon;
   });
 }
 function updateRegler(){ updateAmpel(); }
@@ -495,9 +484,6 @@ function selectLevel(lv){
   el('ll-'+lv).addEventListener('keydown', function(e){
     if(e.key===' '||e.key==='Enter'){ e.preventDefault(); selectLevel(lv); }
   });
-});
-document.querySelectorAll('.ampel-rechts .ampel-row').forEach(function(row){
-  row.addEventListener('click', function(){ selectLevel(row.dataset.level); });
 });
 
 /* ── RESET ──────────────────────────────────────────────── */
