@@ -1,0 +1,3237 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgetvorlage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================
+           Design Tokens
+           ============================================================ */
+        :root {
+            --color-primary: #008080;
+            --color-primary-dark: #006666;
+            --color-primary-light: #4da6a6;
+            --color-primary-tint: #e6f2f2;
+            --color-primary-faint: #f5fafa;
+
+            --color-text: #1a1a1a;
+            --color-text-muted: #6b7280;
+            --color-text-light: #9ca3af;
+
+            --color-bg: #ffffff;
+            --color-bg-alt: #fafafa;
+            --color-border: #e5e7eb;
+            --color-border-strong: #d1d5db;
+
+            --color-success: #059669;
+            --color-success-bg: #ecfdf5;
+            --color-warning: #d97706;
+            --color-warning-bg: #fffbeb;
+            --color-danger: #dc2626;
+            --color-danger-bg: #fef2f2;
+
+            --font-display: 'Playfair Display', Georgia, serif;
+            --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 128, 128, 0.08);
+            --shadow-lg: 0 10px 30px rgba(0, 128, 128, 0.12);
+
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ============================================================
+           Reset & Base
+           ============================================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-body);
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--color-text);
+            background: var(--color-bg-alt);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ============================================================
+           Layout
+           ============================================================ */
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 6rem;
+        }
+
+        /* ============================================================
+           Header
+           ============================================================ */
+        .header {
+            background: var(--color-bg);
+            border-bottom: 3px solid var(--color-primary);
+            padding: 2rem 0 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .brand h1 {
+            font-family: var(--font-display);
+            font-size: 2.25rem;
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            margin: 0 0 0.25rem 0;
+            letter-spacing: -0.02em;
+        }
+
+        .brand .subtitle {
+            font-size: 0.95rem;
+            color: var(--color-text-muted);
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .brand .meta {
+            font-size: 0.8rem;
+            color: var(--color-text-light);
+            margin-top: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* ============================================================
+           Toolbar — sticky save controls
+           ============================================================ */
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--color-border);
+            padding: 0.75rem 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .toolbar-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            font-size: 0.875rem;
+            color: var(--color-text-muted);
+            min-height: 32px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--color-text-light);
+            flex-shrink: 0;
+            transition: background var(--transition-base);
+        }
+
+        .status[data-state="saved"] .status-dot {
+            background: var(--color-success);
+            box-shadow: 0 0 0 3px var(--color-success-bg);
+        }
+
+        .status[data-state="dirty"] .status-dot {
+            background: var(--color-warning);
+            box-shadow: 0 0 0 3px var(--color-warning-bg);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status[data-state="saving"] .status-dot {
+            background: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .status-text {
+            font-weight: 500;
+        }
+
+        .status-filename {
+            color: var(--color-primary-dark);
+            font-weight: 600;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* ============================================================
+           Buttons
+           ============================================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-family: var(--font-body);
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1.5px solid transparent;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-decoration: none;
+            line-height: 1;
+            min-height: 36px;
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+        .btn-primary:hover {
+            background: var(--color-primary-dark);
+            border-color: var(--color-primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--color-primary-dark);
+            border-color: var(--color-primary);
+        }
+        .btn-secondary:hover {
+            background: var(--color-primary-tint);
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--color-text-muted);
+            border-color: var(--color-border-strong);
+        }
+        .btn-ghost:hover {
+            background: var(--color-bg-alt);
+            color: var(--color-text);
+            border-color: var(--color-text-muted);
+        }
+
+        .btn[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        /* ============================================================
+           Sections
+           ============================================================ */
+        .section {
+            background: var(--color-bg);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--color-primary-tint);
+            letter-spacing: -0.01em;
+        }
+
+        .subsection {
+            margin-bottom: 2rem;
+        }
+        .subsection:last-child {
+            margin-bottom: 0;
+        }
+
+        .subsection-title {
+            font-family: var(--font-body);
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin: 0 0 0.75rem 0;
+            font-style: italic;
+            letter-spacing: 0.01em;
+        }
+
+        /* ============================================================
+           Budget Table
+           ============================================================ */
+        .budget-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        .budget-table thead th {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--color-primary-dark);
+            text-align: right;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 2px solid var(--color-primary);
+            background: var(--color-primary-faint);
+        }
+
+        .budget-table thead th:first-child {
+            text-align: left;
+            width: 50%;
+        }
+
+        .budget-table tbody td {
+            padding: 0.375rem 0.5rem;
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: middle;
+        }
+
+        .budget-table tbody tr:hover {
+            background: var(--color-primary-faint);
+        }
+
+        .budget-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .label-cell {
+            color: var(--color-text);
+            font-weight: 400;
+        }
+
+        /* Flex wrapper inside each body-row label cell. Guarantees the
+           expander button (when present) and the label text share the same
+           vertical centerline regardless of font metrics. */
+        .label-cell .label-content {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            min-width: 0;
+        }
+        .label-cell .label-text {
+            min-width: 0;        /* allow shrink/wrap on narrow viewports */
+            line-height: 1.4;
+        }
+
+        .label-cell .hint {
+            color: var(--color-text-muted);
+            font-size: 0.85em;
+            font-style: italic;
+            margin-left: 0.25rem;
+        }
+
+        .label-cell .row-prefix {
+            display: inline-block;
+            min-width: 4.5rem;
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ============================================================
+           Per-row comment expander
+           ============================================================ */
+        /* Small chevron-only button next to expense-row labels. Click to
+           toggle the collapsible row underneath. */
+        .row-expander {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.55rem;
+            height: 1.55rem;
+            padding: 0;
+            border: 1px solid var(--color-border);
+            border-radius: 50%;
+            background: var(--color-bg);
+            color: var(--color-text-muted);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all var(--transition-fast);
+        }
+        .row-expander svg {
+            transition: transform var(--transition-fast);
+        }
+        .row-expander:hover {
+            color: var(--color-primary-dark);
+            border-color: var(--color-primary);
+            background: var(--color-primary-faint);
+        }
+        .row-expander:focus-visible {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.18);
+        }
+        /* Chevron rotates 90° when the row is expanded. */
+        .row-expander[aria-expanded="true"] {
+            color: var(--color-primary-dark);
+            border-color: var(--color-primary);
+            background: var(--color-primary-faint);
+        }
+        .row-expander[aria-expanded="true"] svg {
+            transform: rotate(90deg);
+        }
+        /* This version has a comment for that row → fill teal. */
+        .row-expander.is-filled {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: white;
+        }
+        .row-expander.is-filled:hover {
+            background: var(--color-primary-dark);
+            border-color: var(--color-primary-dark);
+        }
+        /* basedOn has a comment available as tooltip → subtle outer ring. */
+        .row-expander[data-has-baseline-comment="1"]:not(.is-filled) {
+            box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.12);
+        }
+
+        /* Collapsible row that hosts the comment textarea. */
+        .expander-row > td {
+            padding: 0;
+            background: rgba(0, 128, 128, 0.025);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .expander-row[hidden] {
+            display: none;
+        }
+        .comment-panel {
+            padding: 0.6rem 1rem 0.75rem 2.6rem;
+            border-left: 3px solid var(--color-primary);
+            margin-left: 0.25rem;
+        }
+        .comment-panel-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--color-primary-dark);
+            margin-bottom: 0.35rem;
+        }
+        .comment-textarea {
+            width: 100%;
+            min-height: 3rem;
+            padding: 0.55rem 0.75rem;
+            font-family: var(--font-body);
+            font-size: 0.92rem;
+            line-height: 1.45;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            resize: vertical;
+            transition: all var(--transition-fast);
+        }
+        .comment-textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.15);
+        }
+        .comment-textarea::placeholder {
+            color: var(--color-text-light);
+            font-style: italic;
+        }
+
+        /* ============================================================
+           Inputs
+           ============================================================ */
+        .input-cell {
+            width: 18%;
+            text-align: right;
+        }
+
+        .total-cell {
+            width: 14%;
+            text-align: right;
+        }
+
+        .amount-input {
+            width: 100%;
+            padding: 0.4rem 0.625rem;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 500;
+            color: var(--color-text);
+            text-align: right;
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-fast);
+        }
+
+        .amount-input:hover:not(:disabled) {
+            border-color: var(--color-primary-light);
+        }
+
+        .amount-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+
+        .amount-input:placeholder-shown {
+            background: var(--color-bg-alt);
+        }
+
+        .amount-input::placeholder {
+            color: var(--color-text-light);
+            font-weight: 400;
+        }
+
+        .total-display {
+            display: inline-block;
+            width: 100%;
+            padding: 0.4rem 0.625rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            text-align: right;
+            background: var(--color-primary-tint);
+            border-radius: var(--radius-sm);
+            border: 1.5px solid transparent;
+        }
+
+        /* Subtotal row */
+        .subtotal-row td {
+            background: var(--color-primary-faint) !important;
+            font-weight: 600;
+            border-top: 2px solid var(--color-primary-light) !important;
+        }
+
+        .subtotal-row .label-cell {
+            color: var(--color-primary-dark);
+            font-weight: 600;
+        }
+
+        .subtotal-row .total-display {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .subtotal-row .computed {
+            display: inline-block;
+            width: 100%;
+            padding: 0.4rem 0.625rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            text-align: right;
+        }
+
+        /* ============================================================
+           Summary section
+           ============================================================ */
+        .summary-section {
+            background: linear-gradient(135deg, var(--color-primary-faint), var(--color-primary-tint));
+            border: 2px solid var(--color-primary);
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.05rem;
+        }
+
+        .summary-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--color-primary-light);
+        }
+
+        .summary-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .summary-table .label-cell {
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            width: 50%;
+        }
+
+        .summary-table .computed {
+            display: inline-block;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+            text-align: right;
+            background: white;
+            border-radius: var(--radius-md);
+            color: var(--color-primary-dark);
+            border: 1.5px solid var(--color-primary);
+        }
+
+        .summary-table .difference-row td {
+            border-top: 3px double var(--color-primary);
+            padding-top: 1rem;
+        }
+
+        .summary-table .difference-row .label-cell {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-primary-dark);
+        }
+
+        .summary-table .difference-row .computed {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .summary-table .difference-row.positive .computed {
+            background: var(--color-success-bg);
+            color: var(--color-success);
+            border-color: var(--color-success);
+        }
+
+        .summary-table .difference-row.negative .computed {
+            background: var(--color-danger-bg);
+            color: var(--color-danger);
+            border-color: var(--color-danger);
+        }
+
+        /* ============================================================
+           Info Box / Wegleitung
+           ============================================================ */
+        .info-box {
+            background: var(--color-primary-faint);
+            border-left: 4px solid var(--color-primary);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+            color: var(--color-text);
+        }
+
+        .info-box h2 {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            color: var(--color-primary-dark);
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+        }
+
+        .info-box p {
+            margin: 0.5rem 0;
+        }
+
+        .info-box .hint-list {
+            margin: 0.5rem 0 0 1.25rem;
+            padding: 0;
+        }
+        .info-box .hint-list li {
+            margin-bottom: 0.25rem;
+        }
+
+        /* ============================================================
+           Footnote
+           ============================================================ */
+        .footnote {
+            font-size: 0.825rem;
+            color: var(--color-text-muted);
+            font-style: italic;
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        /* ============================================================
+           Footer
+           ============================================================ */
+        .footer {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            font-size: 0.825rem;
+            color: var(--color-text-muted);
+        }
+
+        .footer p {
+            margin: 0.25rem 0;
+        }
+        .footer-credit {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            color: var(--color-text-muted);
+            text-decoration: none;
+            transition: color var(--transition-fast);
+        }
+        .footer-credit:hover { color: var(--color-primary-dark); }
+        .footer-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--color-border);
+            object-fit: cover;
+            display: block;
+        }
+
+        /* ============================================================
+           Modal Dialog
+           ============================================================ */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-base);
+        }
+
+        .modal-backdrop.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: white;
+            border-radius: var(--radius-lg);
+            max-width: 480px;
+            width: 100%;
+            padding: 1.75rem;
+            box-shadow: var(--shadow-lg);
+            transform: scale(0.95);
+            transition: transform var(--transition-base);
+        }
+
+        .modal-backdrop.is-open .modal {
+            transform: scale(1);
+        }
+
+        .modal h2 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--color-primary-dark);
+            margin: 0 0 0.75rem 0;
+            font-weight: 600;
+        }
+
+        .modal p {
+            margin: 0 0 1.25rem 0;
+            color: var(--color-text);
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        /* ============================================================
+           Toast
+           ============================================================ */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--color-primary-dark);
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 200;
+            transform: translateY(120%);
+            opacity: 0;
+            transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 360px;
+        }
+
+        .toast.is-visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.is-error {
+            background: var(--color-danger);
+        }
+
+        .toast.is-success {
+            background: var(--color-success);
+        }
+
+        /* ============================================================
+           Responsive
+           ============================================================ */
+        @media (max-width: 768px) {
+            .page {
+                padding: 1rem 0.75rem 4rem;
+            }
+            .section {
+                padding: 1.25rem;
+            }
+            .brand h1 {
+                font-size: 1.75rem;
+            }
+            .budget-table {
+                font-size: 0.85rem;
+            }
+            .budget-table thead th:first-child,
+            .budget-table tbody td.label-cell {
+                width: 40%;
+            }
+            .input-cell, .total-cell {
+                width: 20%;
+            }
+            .amount-input {
+                font-size: 0.85rem;
+                padding: 0.35rem 0.4rem;
+            }
+            .label-cell .row-prefix {
+                display: block;
+                min-width: 0;
+                margin-bottom: 0.125rem;
+            }
+        }
+
+        /* ============================================================
+           Print styles
+           ============================================================ */
+        @media print {
+            body {
+                background: white;
+                font-size: 10pt;
+            }
+            .toolbar, .footer, .info-box, .version-bar {
+                display: none !important;
+            }
+            .page {
+                max-width: none;
+                padding: 0;
+            }
+            .header {
+                background: white !important;
+                box-shadow: none;
+                page-break-after: avoid;
+            }
+            .section {
+                box-shadow: none;
+                border: 1px solid #ccc;
+                page-break-inside: avoid;
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            .section-title {
+                font-size: 1.25rem;
+            }
+            .amount-input {
+                border: 1px solid #999 !important;
+                background: white !important;
+                box-shadow: none !important;
+            }
+            .total-display, .subtotal-row .total-display {
+                background: #f0f0f0 !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .versions-overview-section {
+                page-break-inside: avoid;
+            }
+            /* Hide the chevron button; print-format the open comment rows
+               so users see their notes on paper too. Empty rows stay hidden. */
+            .row-expander {
+                display: none !important;
+            }
+            .expander-row[hidden] {
+                display: none !important;
+            }
+            .comment-panel {
+                border-left-color: #999 !important;
+            }
+            .comment-textarea {
+                border: 1px solid #999 !important;
+                background: white !important;
+                box-shadow: none !important;
+            }
+        }
+
+        /* ============================================================
+           Version bar — tabs to switch between budget versions
+           ============================================================ */
+        .version-bar {
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 1.5rem;
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+            flex-wrap: wrap;
+        }
+        .version-bar-label {
+            font-family: var(--font-body);
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--color-text-muted);
+        }
+        .version-tabs {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            flex: 1;
+            min-width: 0;
+        }
+        .version-tab-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        .version-tab {
+            padding: 0.4rem 0.95rem;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            max-width: 18rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .version-tab:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary-dark);
+        }
+        .version-tab[aria-selected="true"] {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: white;
+            font-weight: 600;
+        }
+        .version-tab:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.25);
+        }
+        .version-tab-close {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            border-radius: 50%;
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            color: var(--color-text-muted);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            line-height: 1;
+            transition: all var(--transition-fast);
+        }
+        .version-tab-close:hover {
+            background: var(--color-danger);
+            border-color: var(--color-danger);
+            color: white;
+        }
+        .version-tab-wrapper:hover .version-tab-close,
+        .version-tab-close:focus-visible,
+        .version-tab:focus-visible + .version-tab-close {
+            display: flex;
+        }
+        /* Hide × on the last remaining tab (cannot delete the last version). */
+        .version-tabs[data-count="1"] .version-tab-close { display: none !important; }
+
+        .version-add-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--color-primary-dark);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .version-add-btn:hover {
+            background: var(--color-primary-faint);
+            border-color: var(--color-primary);
+            border-style: solid;
+        }
+        .version-add-btn:focus-visible {
+            outline: none;
+            border-color: var(--color-primary);
+            border-style: solid;
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.15);
+        }
+
+        /* ============================================================
+           Versions overview section
+           ============================================================ */
+        .versions-overview-section[hidden] { display: none; }
+        .versions-overview-intro {
+            color: var(--color-text-muted);
+            font-size: 0.9rem;
+            margin: 0 0 1rem 0;
+        }
+        .versions-overview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-body);
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        .versions-overview-table thead th {
+            padding: 0.7rem 0.85rem;
+            background: var(--color-primary-faint);
+            color: var(--color-primary-dark);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-align: left;
+            border-bottom: 2px solid var(--color-primary);
+        }
+        .versions-overview-table thead th.num-cell { text-align: right; }
+        .versions-overview-table tbody td {
+            padding: 0.7rem 0.85rem;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 0.92rem;
+        }
+        .versions-overview-table tbody tr:last-child td { border-bottom: none; }
+        .versions-overview-table tbody td.num-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum';
+        }
+        .versions-overview-table tbody tr.is-active td {
+            background: rgba(0, 128, 128, 0.05);
+            font-weight: 500;
+        }
+        .versions-overview-table tbody tr.is-active td:first-child {
+            border-left: 3px solid var(--color-primary);
+        }
+        .versions-overview-table .active-marker {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-left: 0.3rem;
+        }
+        .versions-overview-table .root-marker {
+            color: var(--color-text-light);
+            font-style: italic;
+        }
+        .versions-overview-table .is-positive { color: var(--color-success); font-weight: 600; }
+        .versions-overview-table .is-negative { color: var(--color-danger); font-weight: 600; }
+
+        /* ----- Per-row diff detail block ----------------------------- */
+        .versions-detail-block {
+            margin-top: 1.75rem;
+        }
+        .versions-detail-block[hidden] { display: none; }
+        .versions-detail-title {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            margin: 0 0 0.3rem 0;
+        }
+        .versions-detail-intro {
+            color: var(--color-text-muted);
+            font-size: 0.88rem;
+            margin: 0 0 0.85rem 0;
+        }
+        .versions-detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-body);
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        .versions-detail-table thead th {
+            padding: 0.55rem 0.85rem;
+            background: var(--color-primary-faint);
+            color: var(--color-primary-dark);
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-align: left;
+            border-bottom: 2px solid var(--color-primary);
+        }
+        .versions-detail-table thead th.num-cell { text-align: right; }
+        .versions-detail-table tbody td {
+            padding: 0.55rem 0.85rem;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 0.9rem;
+        }
+        .versions-detail-table tbody tr:last-child td { border-bottom: none; }
+        .versions-detail-table tbody td.num-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum';
+        }
+        .versions-detail-table .row-group-label {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--color-text-muted);
+            background: var(--color-surface);
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            margin-right: 0.5rem;
+        }
+        .versions-detail-table .is-positive { color: var(--color-success); font-weight: 600; }
+        .versions-detail-table .is-negative { color: var(--color-danger);  font-weight: 600; }
+        .versions-detail-empty {
+            margin: 0.85rem 0 0 0;
+            font-style: italic;
+            color: var(--color-text-muted);
+        }
+
+        /* ============================================================
+           Modal form fields (new-version / rename dialogs)
+           ============================================================ */
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 0.5rem 0 1.25rem 0;
+        }
+        .modal-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+        .modal-field-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+        .modal-field input[type="text"] {
+            padding: 0.5rem 0.7rem;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-fast);
+        }
+        .modal-field input[type="text"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.15);
+        }
+        .modal-field .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.55rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+        .modal-field .radio-option:hover { background: var(--color-primary-faint); }
+        .modal-field .radio-option input { margin: 0; }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <div class="brand">
+            <h1>Budgetvorlage</h1>
+            <p class="subtitle">Übersicht Einnahmen und Ausgaben</p>
+        </div>
+    </div>
+</header>
+
+<div class="toolbar" role="toolbar" aria-label="Datei-Werkzeuge">
+    <div class="toolbar-inner">
+        <div class="status" id="status" data-state="empty" role="status" aria-live="polite">
+            <span class="status-dot"></span>
+            <span class="status-text" id="statusText">Keine Datei verbunden</span>
+        </div>
+        <div class="toolbar-actions">
+            <button type="button" class="btn btn-secondary" id="btnOpen" title="Bestehende Budget-Datei öffnen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                Öffnen
+            </button>
+            <button type="button" class="btn btn-primary" id="btnSave" title="Budget speichern (Strg+S)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <span id="btnSaveLabel">Speichern</span>
+            </button>
+            <button type="button" class="btn btn-ghost" id="btnReset" title="Alle Felder leeren">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+                </svg>
+                Zurücksetzen
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     Version bar — tabs for switching between budget versions
+     ============================================================ -->
+<div class="version-bar" id="versionBar" role="tablist" aria-label="Budget-Versionen">
+    <div class="version-bar-label">Versionen:</div>
+    <div class="version-tabs" id="versionTabs"></div>
+    <button class="version-add-btn" id="addVersionBtn" type="button" title="Neue Budget-Version anlegen">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span>Neue Version</span>
+    </button>
+</div>
+
+<main class="page">
+
+    <div class="info-box">
+        <h2>So füllen Sie die Vorlage aus</h2>
+        <p>Tragen Sie Beträge entweder in die <strong>Jahres-</strong> oder die <strong>Monatsspalte</strong> ein – die jeweils andere Spalte wird automatisch berechnet (Jahresbetrag ÷ 12 bzw. Monatsbetrag × 12). Subtotale und Gesamtsummen aktualisieren sich automatisch.</p>
+        <p>Mögliche Einsparungen oder Anpassungen modellieren Sie über <strong>weitere Budget-Versionen</strong>: Klicken Sie oben auf „Neue Version", übernehmen Sie die Werte aus einer bestehenden Version und passen Sie sie an. In der Sektion „Versionsvergleich" sehen Sie die Differenzen auf einen Blick.</p>
+        <p>Beträge in <strong>CHF</strong>. Dezimalstellen mit Komma oder Punkt möglich.</p>
+    </div>
+
+    <!-- ============================================================
+         Einnahmen
+         ============================================================ -->
+    <section class="section" data-section-id="einnahmen">
+        <h2 class="section-title">Einnahmen</h2>
+        <table class="budget-table">
+            <thead>
+                <tr>
+                    <th scope="col">Position</th>
+                    <th scope="col">Jährlich</th>
+                    <th scope="col">Monatlich</th>
+                    <th scope="col">Total / Jahr</th>
+                </tr>
+            </thead>
+            <tbody data-subtotal-group="einnahmen">
+                <!-- rows injected -->
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ============================================================
+         Fixkosten
+         ============================================================ -->
+    <section class="section" data-section-id="fixkosten">
+        <h2 class="section-title">Fixkosten</h2>
+
+        <div class="subsection">
+            <h3 class="subsection-title">Wohnkosten (Mietwohnung)</h3>
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Jährlich</th>
+                        <th>Monatlich</th>
+                        <th>Total / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody data-subtotal-group="wohnen_miete"></tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title">Wohnkosten (Eigentum)</h3>
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Jährlich</th>
+                        <th>Monatlich</th>
+                        <th>Total / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody data-subtotal-group="wohnen_eigentum"></tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title">Energie, Kommunikation</h3>
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Jährlich</th>
+                        <th>Monatlich</th>
+                        <th>Total / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody data-subtotal-group="energie"></tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title">Steuern</h3>
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Jährlich</th>
+                        <th>Monatlich</th>
+                        <th>Total / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody data-subtotal-group="steuern"></tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title">Versicherung, Vorsorge</h3>
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Jährlich</th>
+                        <th>Monatlich</th>
+                        <th>Total / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody data-subtotal-group="versicherung"></tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title">Öffentlicher Verkehr, Velo, E-Bike, Mofa</h3>
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Jährlich</th>
+                        <th>Monatlich</th>
+                        <th>Total / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody data-subtotal-group="oev"></tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title">Auto, Motorrad</h3>
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Jährlich</th>
+                        <th>Monatlich</th>
+                        <th>Total / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody data-subtotal-group="auto"></tbody>
+            </table>
+        </div>
+
+        <div class="subsection">
+            <h3 class="subsection-title">Verschiedenes</h3>
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Jährlich</th>
+                        <th>Monatlich</th>
+                        <th>Total / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody data-subtotal-group="verschiedenes"></tbody>
+            </table>
+        </div>
+
+        <table class="budget-table" style="margin-top: 1.5rem;">
+            <tbody>
+                <tr class="subtotal-row">
+                    <td class="label-cell">Total Fixkosten</td>
+                    <td class="input-cell"><span class="computed" data-grand-total="fixkosten" data-period="jaehrlich">0.00</span></td>
+                    <td class="input-cell"><span class="computed" data-grand-total="fixkosten" data-period="monatlich">0.00</span></td>
+                    <td class="total-cell"><span class="total-display" data-grand-total="fixkosten" data-period="total">0.00</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ============================================================
+         Haushalt
+         ============================================================ -->
+    <section class="section" data-section-id="haushalt">
+        <h2 class="section-title">Haushalt</h2>
+        <table class="budget-table">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Jährlich</th>
+                    <th>Monatlich</th>
+                    <th>Total / Jahr</th>
+                </tr>
+            </thead>
+            <tbody data-subtotal-group="haushalt"></tbody>
+        </table>
+        <p class="footnote" id="haushalt-footnote">¹ Körperpflege, Medikamente, Wasch-, Reinigungsmittel, Entsorgungskosten, sonstige Kleinigkeiten, Coiffure Kinder</p>
+    </section>
+
+    <!-- ============================================================
+         Persönliche Ausgaben
+         ============================================================ -->
+    <section class="section" data-section-id="persoenlich">
+        <h2 class="section-title">Persönliche Ausgaben</h2>
+        <table class="budget-table">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Jährlich</th>
+                    <th>Monatlich</th>
+                    <th>Total / Jahr</th>
+                </tr>
+            </thead>
+            <tbody data-subtotal-group="persoenlich"></tbody>
+        </table>
+    </section>
+
+    <!-- ============================================================
+         Rückstellungen
+         ============================================================ -->
+    <section class="section" data-section-id="rueckstellungen">
+        <h2 class="section-title">Rückstellungen</h2>
+        <table class="budget-table">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Jährlich</th>
+                    <th>Monatlich</th>
+                    <th>Total / Jahr</th>
+                </tr>
+            </thead>
+            <tbody data-subtotal-group="rueckstellungen"></tbody>
+        </table>
+    </section>
+
+    <!-- ============================================================
+         Zusammenfassung
+         ============================================================ -->
+    <section class="section summary-section">
+        <h2 class="section-title">Zusammenfassung</h2>
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th style="text-align: right; font-weight: 600; color: var(--color-primary-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;">Jährlich</th>
+                    <th style="text-align: right; font-weight: 600; color: var(--color-primary-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;">Monatlich</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="label-cell">Total Einnahmen</td>
+                    <td><span class="computed" data-summary="einnahmen" data-period="jaehrlich">0.00</span></td>
+                    <td><span class="computed" data-summary="einnahmen" data-period="monatlich">0.00</span></td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Total Ausgaben</td>
+                    <td><span class="computed" data-summary="ausgaben" data-period="jaehrlich">0.00</span></td>
+                    <td><span class="computed" data-summary="ausgaben" data-period="monatlich">0.00</span></td>
+                </tr>
+                <tr class="difference-row" id="differenceRow">
+                    <td class="label-cell">Differenz: Einnahmen − Ausgaben</td>
+                    <td><span class="computed" data-summary="differenz" data-period="jaehrlich">0.00</span></td>
+                    <td><span class="computed" data-summary="differenz" data-period="monatlich">0.00</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ============================================================
+         Versionsvergleich — visible only in multi-version mode
+         ============================================================ -->
+    <section class="section versions-overview-section" id="versionsOverviewSection" hidden>
+        <h2 class="section-title">Versionsvergleich</h2>
+        <p class="versions-overview-intro">
+            Übersicht aller erfassten Budget-Versionen mit den Differenzen zur jeweiligen Basis-Version.
+            Die aktive Version ist hervorgehoben.
+        </p>
+        <table class="versions-overview-table">
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Basis</th>
+                    <th class="num-cell">Einnahmen / Jahr</th>
+                    <th class="num-cell">Ausgaben / Jahr</th>
+                    <th class="num-cell">Differenz / Jahr</th>
+                    <th class="num-cell">Δ vs. Basis</th>
+                </tr>
+            </thead>
+            <tbody id="versionsOverviewBody"></tbody>
+        </table>
+
+        <!-- Per-row detail diff: which positions changed vs. the active
+             version's basedOn. Hidden when the active version is a root
+             (no baseline) or when no rows have changed. -->
+        <div class="versions-detail-block" id="versionsDetailBlock" hidden>
+            <h3 class="versions-detail-title" id="versionsDetailTitle">Unterschiede pro Position</h3>
+            <p class="versions-detail-intro" id="versionsDetailIntro"></p>
+            <table class="versions-detail-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th class="num-cell" id="detailColBasis">Basis</th>
+                        <th class="num-cell" id="detailColActive">Aktive Version</th>
+                        <th class="num-cell">Δ / Jahr</th>
+                        <th class="num-cell">Δ / Monat</th>
+                    </tr>
+                </thead>
+                <tbody id="versionsDetailBody"></tbody>
+            </table>
+            <p class="versions-detail-empty" id="versionsDetailEmpty" hidden>
+                Keine Unterschiede zur Basis-Version – diese Version ist identisch zu „<span id="detailEmptyBaseName"></span>".
+            </p>
+        </div>
+    </section>
+
+</main>
+
+<footer class="footer">
+    <p style="font-size: 0.75rem; color: var(--color-text-light);">Basierend auf der Budgetvorlage des Dachverbands Budgetberatung Schweiz</p>
+    <a class="footer-credit" href="https://github.com/eraschle" target="_blank" rel="noopener">
+        <img class="footer-avatar" src="https://github.com/eraschle.png?size=80" alt="Erich Raschle" loading="lazy" width="28" height="28">
+        <span>Erstellt von Erich Raschle</span>
+    </a>
+</footer>
+
+<!-- ============================================================
+     Modal: Unsaved-changes warning
+     ============================================================ -->
+<div class="modal-backdrop" id="modalUnsaved" role="dialog" aria-modal="true" aria-labelledby="modalUnsavedTitle" hidden>
+    <div class="modal">
+        <h2 id="modalUnsavedTitle">Ungespeicherte Änderungen</h2>
+        <p id="modalUnsavedText">Sie haben Änderungen, die noch nicht gespeichert sind. Möchten Sie diese verwerfen?</p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-modal-action="cancel">Abbrechen</button>
+            <button type="button" class="btn btn-secondary" data-modal-action="discard">Verwerfen</button>
+            <button type="button" class="btn btn-primary" data-modal-action="save">Speichern</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     Modal: New version dialog
+     ============================================================ -->
+<div class="modal-backdrop" id="modalNewVersion" role="dialog" aria-modal="true" aria-labelledby="modalNewVersionTitle" hidden>
+    <div class="modal">
+        <h2 id="modalNewVersionTitle">Neue Budget-Version erstellen</h2>
+        <p>Erfassen Sie eine weitere Version dieses Budgets. Werte können aus einer bestehenden Version übernommen werden.</p>
+        <div class="modal-form">
+            <label class="modal-field">
+                <span class="modal-field-label">Name der Version</span>
+                <input type="text" id="newVersionName" maxlength="60" placeholder="z. B. Nach Anpassung" autocomplete="off">
+            </label>
+            <fieldset class="modal-field" id="newVersionBasedOn">
+                <legend class="modal-field-label">Basiert auf</legend>
+                <!-- Radios populated dynamically -->
+            </fieldset>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-modal-action="cancel">Abbrechen</button>
+            <button type="button" class="btn btn-primary" data-modal-action="confirm">Erstellen</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     Modal: Rename version (inline edit alternative)
+     ============================================================ -->
+<div class="modal-backdrop" id="modalRenameVersion" role="dialog" aria-modal="true" aria-labelledby="modalRenameVersionTitle" hidden>
+    <div class="modal">
+        <h2 id="modalRenameVersionTitle">Version umbenennen</h2>
+        <label class="modal-field">
+            <span class="modal-field-label">Neuer Name</span>
+            <input type="text" id="renameVersionInput" maxlength="60" autocomplete="off">
+        </label>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-modal-action="cancel">Abbrechen</button>
+            <button type="button" class="btn btn-primary" data-modal-action="confirm">Übernehmen</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     Modal: Delete version confirmation
+     ============================================================ -->
+<div class="modal-backdrop" id="modalDeleteVersion" role="dialog" aria-modal="true" aria-labelledby="modalDeleteVersionTitle" hidden>
+    <div class="modal">
+        <h2 id="modalDeleteVersionTitle">Version löschen?</h2>
+        <p id="modalDeleteVersionText">Diese Aktion entfernt die Version unwiderruflich.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-modal-action="cancel">Abbrechen</button>
+            <button type="button" class="btn btn-primary" data-modal-action="confirm">Löschen</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     Modal: Reset confirmation
+     ============================================================ -->
+<div class="modal-backdrop" id="modalReset" role="dialog" aria-modal="true" aria-labelledby="modalResetTitle" hidden>
+    <div class="modal">
+        <h2 id="modalResetTitle">Alle Felder zurücksetzen?</h2>
+        <p>Diese Aktion löscht alle eingegebenen Werte. Die verbundene Datei bleibt unverändert, bis Sie speichern.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-modal-action="cancel">Abbrechen</button>
+            <button type="button" class="btn btn-primary" data-modal-action="confirm">Zurücksetzen</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ================================================================
+   Budgetvorlage
+   Single-file form with File System Access API persistence.
+   No localStorage. Auto-save when handle present, otherwise
+   manual save with beforeunload guard.
+   ================================================================ */
+(function () {
+    'use strict';
+
+    // ----------------------------------------------------------------
+    // Schema — defines all rows and which subtotal group they belong to
+    // ----------------------------------------------------------------
+    const SCHEMA = {
+        einnahmen: [
+            { id: 'netto_einkommen_p1', label: 'Netto-Einkommen Person 1' },
+            { id: 'netto_einkommen_p2', label: 'Netto-Einkommen Person 2' },
+            { id: 'familienzulagen',    label: 'Familienzulagen' },
+            { id: 'monatslohn_13_p1',   label: '13. Monatslohn Person 1' },
+            { id: 'monatslohn_13_p2',   label: '13. Monatslohn Person 2' },
+            { id: 'unterhaltsbeitraege',label: 'Unterhaltsbeiträge' },
+            { id: 'weitere_einnahmen',  label: 'Weitere Einnahmen' },
+        ],
+        wohnen_miete: [
+            { id: 'miete',              label: 'Miete', hint: '(inkl. Nebenkosten)' },
+            { id: 'heiz_nebenkosten',   label: 'Heiz-, Nebenkosten', hint: '(inkl. Schlussabrechnung)' },
+        ],
+        wohnen_eigentum: [
+            { id: 'hypothek',           label: 'Hypothekarzins, Amortisation' },
+            { id: 'heizkosten',         label: 'Heizkosten', hint: '(Öl, Gas usw.)' },
+            { id: 'kamin_wartung',      label: 'Kamin-, Heizungswartung' },
+            { id: 'wasser_kehricht',    label: 'Wasser, Abwasser, Kehricht' },
+            { id: 'gebaeudeversicherung', label: 'Gebäudeversicherung' },
+            { id: 'unterhalt_eigentum', label: 'Unterhalt, Reparaturen, Garten, Erneuerungsfonds' },
+        ],
+        energie: [
+            { id: 'elektrizitaet',      label: 'Elektrizität' },
+            { id: 'telefonie',          label: 'Telefonie, Internet, TV' },
+            { id: 'streaming',          label: 'Streaming-Abonnemente' },
+            { id: 'serafe',             label: 'Serafe, Kabelanschluss' },
+        ],
+        steuern: [
+            { id: 'kantonssteuern',     label: 'Kantons-, Gemeinde-, Kirchensteuern' },
+            { id: 'bundessteuer',       label: 'Direkte Bundessteuer' },
+            { id: 'feuerwehrsteuer',    label: 'Feuerwehrsteuer, Wehrpflichtersatz' },
+        ],
+        versicherung: [
+            { id: 'kvg',                label: 'Krankenversicherung KVG', hint: '(Grundversicherung evtl. mit Unfall)' },
+            { id: 'vvg',                label: 'Krankenversicherung VVG', hint: '(Zusatzversicherung)' },
+            { id: 'hausrat',            label: 'Hausrat-, Privathaftpflichtversicherung' },
+            { id: 'saeule_3',           label: '3. Säule, Lebensversicherung' },
+            { id: 'weitere_versicherungen', label: 'Weitere Versicherungen' },
+        ],
+        oev: [
+            { id: 'oev_abo',            label: 'Abonnemente', hint: '(GA, Monatskarte, Halbtax, Juniorkarte usw.)' },
+            { id: 'oev_einzel',         label: 'Mehrfahrtenkarten, Einzelbillette' },
+            { id: 'velo_ebike',         label: 'Velo, E-Bike, Mofa', hint: '(Reparaturen, Nummer, Benzin)' },
+        ],
+        auto: [
+            { id: 'mfz_steuer',         label: 'Motorfahrzeugsteuer' },
+            { id: 'auto_versicherung',  label: 'Versicherung', hint: '(Haftpflicht, Kasko)' },
+            { id: 'treibstoff',         label: 'Treibstoff' },
+            { id: 'auto_unterhalt',     label: 'Unterhalt', hint: '(Service, Reparaturen, Reifen, Vignette usw.)' },
+            { id: 'garage_parkplatz',   label: 'Garage, Parkplatz, Parkgebühren, Bussen' },
+            { id: 'auto_neuanschaffung',label: 'Neuanschaffung, Leasing' },
+        ],
+        verschiedenes: [
+            { id: 'medien_abo',         label: 'Medien-Abonnemente' },
+            { id: 'mitgliedschaften',   label: 'Mitgliedschaften, Verbandsbeiträge' },
+            { id: 'schulgeld',          label: 'Schulgeld, Aus- und Weiterbildung' },
+            { id: 'elektronik',         label: 'Elektronische Geräte', hint: '(Unterhalt, Neuanschaffung)' },
+            { id: 'hobbys_erwachsene',  label: 'Hobbys Erwachsene' },
+            { id: 'hobbys_kinder',      label: 'Hobbys Kinder' },
+            { id: 'kinderbetreuung',    label: 'Kinderbetreuung, Haushaltshilfe' },
+            { id: 'diverses',           label: 'Diverses', hint: '(Glücksspiel, Verwandtenunterstützung usw.)' },
+            { id: 'schulden',           label: 'Schulden, Abzahlungsraten' },
+            { id: 'unterhaltszahlungen',label: 'Unterhaltszahlungen' },
+        ],
+        haushalt: [
+            { id: 'nahrungsmittel',     label: 'Nahrungsmittel, Getränke' },
+            { id: 'nebenkosten_haushalt', label: 'Nebenkosten¹' },
+            { id: 'gaeste',             label: 'Gäste, alkoholische Getränke' },
+            { id: 'haustiere',          label: 'Haustiere', hint: '(Futter)' },
+        ],
+        persoenlich: [
+            { id: 'p1_kleider',         label: 'Kleider, Schuhe', prefix: 'Person 1' },
+            { id: 'p1_coiffure',        label: 'Coiffure, Freizeit, Taschengeld', prefix: 'Person 1' },
+            { id: 'p1_genussmittel',    label: 'Genussmittel', prefix: 'Person 1' },
+            { id: 'p1_verpflegung',     label: 'Berufsbedingte auswärtige Verpflegung', prefix: 'Person 1' },
+            { id: 'p2_kleider',         label: 'Kleider, Schuhe', prefix: 'Person 2' },
+            { id: 'p2_coiffure',        label: 'Coiffure, Freizeit, Taschengeld', prefix: 'Person 2' },
+            { id: 'p2_genussmittel',    label: 'Genussmittel', prefix: 'Person 2' },
+            { id: 'p2_verpflegung',     label: 'Berufsbedingte auswärtige Verpflegung', prefix: 'Person 2' },
+            { id: 'k_kleider',          label: 'Kleider, Schuhe', prefix: 'Kinder' },
+            { id: 'k_taschengeld',      label: 'Taschengeld', hint: '(siehe Richtlinien Taschengeld)', prefix: 'Kinder' },
+        ],
+        rueckstellungen: [
+            { id: 'franchise',          label: 'Minimale Franchise, Anteil Selbstbehalt', hint: '(KVG, VVG)' },
+            { id: 'augen_zahn',         label: 'Augen-, Zahnkontrolle' },
+            { id: 'therapie',           label: 'Therapie', hint: '(nicht versicherte Gesundheitskosten)' },
+            { id: 'tiermedizin',        label: 'Tiermedizin, Tierpflege' },
+            { id: 'geschenke',          label: 'Geschenke, Spenden' },
+            { id: 'gemeinsame_freizeit',label: 'Gemeinsame Freizeit' },
+            { id: 'schule_lager',       label: 'Schule, Lager' },
+            { id: 'unvorhergesehenes',  label: 'Unvorhergesehenes', hint: '(Reserve)' },
+            { id: 'ferien',             label: 'Ferien' },
+            { id: 'sparen',             label: 'Sparen' },
+        ],
+    };
+
+    // Subtotal grouping for Total Ausgaben & Total Fixkosten
+    const FIXKOSTEN_GROUPS = [
+        'wohnen_miete', 'wohnen_eigentum', 'energie', 'steuern',
+        'versicherung', 'oev', 'auto', 'verschiedenes',
+    ];
+    const AUSGABEN_GROUPS = [
+        ...FIXKOSTEN_GROUPS, 'haushalt', 'persoenlich', 'rueckstellungen',
+    ];
+
+    // User-facing labels for group IDs. Shown as small pill badges in the
+    // per-row diff detail table so each changed position carries context.
+    const GROUP_LABELS = {
+        einnahmen:       'Einnahmen',
+        wohnen_miete:    'Wohnen (Miete)',
+        wohnen_eigentum: 'Wohnen (Eigentum)',
+        energie:         'Energie',
+        steuern:         'Steuern',
+        versicherung:    'Versicherung',
+        oev:             'Öff. Verkehr',
+        auto:            'Auto / Motorrad',
+        verschiedenes:   'Verschiedenes',
+        haushalt:        'Haushalt',
+        persoenlich:     'Persönlich',
+        rueckstellungen: 'Rückstellungen',
+    };
+
+    const FILE_FORMAT_VERSION = 4;
+    // v1: bare values  ·  v2: yearly reduktion key  ·  v3: y+m reduktion + comment
+    // v4: multi-version data model (no reduktion — versions replace it)
+    const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4]);
+    const APP_NAME = 'budgetvorlage';
+
+    // ============================================================
+    // Application state — single source of truth for the budget data
+    // ============================================================
+    //
+    // A budget file (v4) contains N "versions" for one person. Each version
+    // is a full snapshot of all input values + comments. One version is
+    // "active" at any time and is displayed/edited in the form. New versions
+    // can be created from scratch ("leer") or based on an existing version
+    // (basedOn) so the data carries over without re-typing.
+    //
+    // Mode is derived from versions.length:
+    //   • Single-version mode (length === 1) — Reduktion fields are shown
+    //     inside each expander as in v3.
+    //   • Multi-version mode (length ≥ 2) — Reduktion fields are hidden;
+    //     each expander shows a comparison with the row's basedOn value.
+    //     A "Versionsvergleich" section appears below the summary.
+    const state = {
+        // ----- Multi-version data model (v4) -----
+        versions: [],            // [{ id, name, basedOn, createdAt, values, comments }]
+        activeVersionId: null,
+        // ----- Persistence + UI state -----
+        fileHandle: null,        // FileSystemFileHandle when present
+        currentFilename: null,   // Last known filename
+        isDirty: false,          // Unsaved changes flag
+        autoSaveTimer: null,     // Debounce timer for auto-save
+        supportsFileSystemAccess: typeof window !== 'undefined'
+            && 'showSaveFilePicker' in window && 'showOpenFilePicker' in window,
+    };
+
+    function genVersionId() {
+        // Short, URL-safe ID. crypto.randomUUID is widely supported now.
+        const uuid = (window.crypto && window.crypto.randomUUID)
+            ? window.crypto.randomUUID()
+            : Math.random().toString(36).slice(2) + Date.now().toString(36);
+        return 'v_' + uuid.replace(/-/g, '').slice(0, 10);
+    }
+
+    function makeBlankVersion(name, basedOnId) {
+        return {
+            id: genVersionId(),
+            name: name || 'Neue Version',
+            basedOn: basedOnId || null,
+            createdAt: new Date().toISOString(),
+            values: {},
+            comments: {},   // rowId → string. Per-version, NOT cloned by createVersion.
+        };
+    }
+
+    function getActiveVersion() {
+        return state.versions.find(v => v.id === state.activeVersionId) || null;
+    }
+
+    function getVersionById(id) {
+        return state.versions.find(v => v.id === id) || null;
+    }
+
+    function getBaselineVersion() {
+        const a = getActiveVersion();
+        return (a && a.basedOn) ? getVersionById(a.basedOn) : null;
+    }
+
+    function isMultiVersion() {
+        return state.versions.length >= 2;
+    }
+
+    // Compute the four key totals (Einnahmen, Ausgaben yearly+monthly, diff)
+    // for a *version object's* stored values — not from DOM. Used for the
+    // versions-overview table where non-active versions don't appear in the
+    // DOM. Mirrors the fallback logic used by recomputeAll().
+    function computeTotalsForVersion(version) {
+        if (!version) {
+            return { einnahmenY: 0, einnahmenM: 0, ausgabenY: 0, ausgabenM: 0, diffY: 0, diffM: 0 };
+        }
+        let einY = 0, einM = 0, ausY = 0, ausM = 0;
+        Object.entries(SCHEMA).forEach(([groupId, rows]) => {
+            const isIncome = groupId === 'einnahmen';
+            rows.forEach((row) => {
+                const y = version.values[`${row.id}.jaehrlich`] || 0;
+                const m = version.values[`${row.id}.monatlich`] || 0;
+                const yearly  = y || (m * 12);
+                const monthly = m || (y / 12);
+                if (isIncome) { einY += yearly; einM += monthly; }
+                else          { ausY += yearly; ausM += monthly; }
+            });
+        });
+        return {
+            einnahmenY: einY,
+            einnahmenM: einM,
+            ausgabenY:  ausY,
+            ausgabenM:  ausM,
+            diffY: einY - ausY,
+            diffM: einM - ausM,
+        };
+    }
+
+    // Compute yearly value for a single row in a given version (with same
+    // fallback semantics: prefer explicit yearly, otherwise monthly × 12).
+    function rowYearlyInVersion(version, rowId) {
+        if (!version) return 0;
+        const y = version.values[`${rowId}.jaehrlich`] || 0;
+        const m = version.values[`${rowId}.monatlich`] || 0;
+        return y || (m * 12);
+    }
+    function rowMonthlyInVersion(version, rowId) {
+        if (!version) return 0;
+        const y = version.values[`${rowId}.jaehrlich`] || 0;
+        const m = version.values[`${rowId}.monatlich`] || 0;
+        return m || (y / 12);
+    }
+
+    // ----- Version mutations -------------------------------------------
+    // All mutations go through these to keep dependent UI in sync.
+
+    function captureFormToActiveVersion() {
+        // Persist current DOM form state into the active version's data.
+        // Called before switching versions to make sure unsaved edits land.
+        const active = getActiveVersion();
+        if (!active) return;
+        const values = {};
+        $$('input.amount-input').forEach((input) => {
+            const v = parseAmount(input.value);
+            if (v !== 0) {
+                values[`${input.dataset.rowId}.${input.dataset.period}`] = v;
+            }
+        });
+        active.values = values;
+
+        // Comments are read from the per-row textareas inside the expander rows.
+        const comments = {};
+        $$('textarea.comment-textarea').forEach((ta) => {
+            const txt = (ta.value || '').trim();
+            if (txt !== '') comments[ta.dataset.rowId] = txt;
+        });
+        active.comments = comments;
+    }
+
+    function hydrateFormFromActiveVersion() {
+        // Push the active version's data into the DOM form.
+        const active = getActiveVersion();
+        $$('input.amount-input').forEach((input) => { input.value = ''; delete input.dataset.userEdited; });
+        $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
+        // Collapse all expander rows; we'll re-open the ones with content below.
+        $$('.row-expander').forEach((btn) => {
+            const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
+            if (rowId) setRowExpanded(rowId, false);
+        });
+        if (!active) return;
+
+        Object.entries(active.values).forEach(([key, value]) => {
+            const [rowId, period] = key.split('.');
+            const input = $(`input[data-row-id="${rowId}"][data-period="${period}"]`);
+            if (input && Number.isFinite(value) && value !== 0) {
+                input.value = formatAmount(value);
+                input.dataset.userEdited = '1';
+            }
+        });
+        Object.entries(active.comments || {}).forEach(([rowId, text]) => {
+            const ta = $(`textarea.comment-textarea[data-row-id="${rowId}"]`);
+            if (ta && typeof text === 'string') {
+                ta.value = text;
+                // Auto-expand rows with existing content so the comment is visible.
+                if (text.trim() !== '') setRowExpanded(rowId, true);
+            }
+        });
+        refreshAllExpanderUI();
+    }
+
+    function switchVersion(id) {
+        if (!getVersionById(id)) return;
+        captureFormToActiveVersion();    // preserve any pending edits
+        state.activeVersionId = id;
+        hydrateFormFromActiveVersion();
+        applyModeToUI();
+        renderVersionTabs();
+
+        renderVersionsOverview();
+        recomputeAll();
+    }
+
+    function createVersion({ name, basedOnId }) {
+        captureFormToActiveVersion();    // make sure current edits land
+        const v = makeBlankVersion(name, basedOnId);
+        if (basedOnId) {
+            const base = getVersionById(basedOnId);
+            if (base) {
+                // Deep clone values so edits to the new version don't mutate
+                // the source. Comments are intentionally NOT cloned — a new
+                // version starts with an empty comment slate. The basedOn's
+                // comments remain reachable as tooltips on the expander
+                // buttons (see refreshExpanderUI).
+                v.values = { ...base.values };
+                // v.comments stays {} (set by makeBlankVersion).
+            }
+        }
+        state.versions.push(v);
+        state.activeVersionId = v.id;
+        hydrateFormFromActiveVersion();
+        applyModeToUI();
+        renderVersionTabs();
+
+        renderVersionsOverview();
+        recomputeAll();
+        markDirty();
+    }
+
+    function deleteVersion(id) {
+        if (state.versions.length <= 1) return; // never delete the last one
+        const idx = state.versions.findIndex(v => v.id === id);
+        if (idx === -1) return;
+
+        // If other versions referenced this one as their basedOn, clear that ref.
+        state.versions.forEach(v => { if (v.basedOn === id) v.basedOn = null; });
+
+        const wasActive = state.activeVersionId === id;
+        state.versions.splice(idx, 1);
+        if (wasActive) {
+            // Switch to the previous or first remaining version.
+            state.activeVersionId = state.versions[Math.max(0, idx - 1)].id;
+            hydrateFormFromActiveVersion();
+        } else {
+            // Active wasn't deleted, but its basedOn may have been — tooltips
+            // need a refresh.
+            refreshAllExpanderUI();
+        }
+        applyModeToUI();
+        renderVersionTabs();
+
+        renderVersionsOverview();
+        recomputeAll();
+        markDirty();
+    }
+
+    function renameVersion(id, newName) {
+        const v = getVersionById(id);
+        if (!v) return;
+        const trimmed = (newName || '').trim();
+        if (!trimmed || trimmed === v.name) return;
+        v.name = trimmed;
+        renderVersionTabs();
+        // The renamed version may be the active version's basedOn, and the
+        // basedOn name is shown inside expander tooltips.
+        refreshAllExpanderUI();
+        renderVersionsOverview();
+        markDirty();
+    }
+
+    function initSingleVersionState() {
+        // Used on a fresh load with no file: start with one empty version.
+        state.versions = [makeBlankVersion('Hauptversion', null)];
+        state.activeVersionId = state.versions[0].id;
+    }
+
+    // ----------------------------------------------------------------
+    // DOM helpers
+    // ----------------------------------------------------------------
+    const $  = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+    // ----------------------------------------------------------------
+    // Number formatting / parsing (Swiss locale)
+    // ----------------------------------------------------------------
+    function parseAmount(raw) {
+        if (raw === null || raw === undefined) return 0;
+        const s = String(raw).trim().replace(/['\s]/g, '').replace(',', '.');
+        if (s === '') return 0;
+        const n = Number(s);
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    function formatAmount(n) {
+        if (!Number.isFinite(n) || n === 0) return '';
+        // Swiss-style: 1'234.56
+        const fixed = n.toFixed(2);
+        const [intPart, decPart] = fixed.split('.');
+        const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+        return `${withThousands}.${decPart}`;
+    }
+
+    function formatComputed(n) {
+        if (!Number.isFinite(n)) return '0.00';
+        return formatAmount(n) || '0.00';
+    }
+
+    // ----------------------------------------------------------------
+    // Render rows from schema
+    // ----------------------------------------------------------------
+    // Cache of row lookups by ID (built once during renderRows). Avoids
+    // repeated O(n) searches when computing per-row diffs in the overview.
+    const ROW_INDEX = {};
+    function indexRow(row, groupId) {
+        ROW_INDEX[row.id] = { row, groupId };
+    }
+    function lookupRow(rowId) { return ROW_INDEX[rowId] || null; }
+
+    // Groups whose rows get a per-row comment expander. Expense rows only —
+    // matches the prior visual rhythm and where comments are most useful
+    // (notes about reductions, planned changes, …).
+    const EXPANDABLE_GROUPS = new Set(AUSGABEN_GROUPS);
+
+    // Chevron icon used by the comment expander button.
+    const CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+
+    function makeCommentExpanderButton(rowId, label) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'row-expander';
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-controls', `expander-${rowId}`);
+        btn.setAttribute('aria-label', `Kommentar für „${label}" ein-/ausblenden`);
+        btn.title = 'Kommentar';   // overridden by refreshExpanderUI when a basedOn comment exists
+        btn.innerHTML = CHEVRON_SVG;
+        btn.addEventListener('click', () => {
+            const isOpen = btn.getAttribute('aria-expanded') === 'true';
+            setRowExpanded(rowId, !isOpen);
+        });
+        return btn;
+    }
+
+    function makeCommentRow(row, groupId) {
+        // Collapsible sub-row underneath the main row that hosts the comment
+        // textarea for the active version. Hidden by default; opened either
+        // by user click or auto-opened by hydrateFormFromActiveVersion when
+        // a comment is already present.
+        const tr = document.createElement('tr');
+        tr.className = 'expander-row';
+        tr.id = `expander-${row.id}`;
+        tr.dataset.expanderFor = row.id;
+        tr.dataset.rowGroup = groupId;
+        tr.hidden = true;
+
+        const td = document.createElement('td');
+        td.colSpan = 4;
+        td.className = 'expander-cell-host';
+
+        const panel = document.createElement('div');
+        panel.className = 'comment-panel';
+
+        const lbl = document.createElement('label');
+        lbl.className = 'comment-panel-label';
+        const taId = `comment-${row.id}`;
+        lbl.htmlFor = taId;
+        lbl.textContent = `Kommentar zu ${row.prefix ? row.prefix + ' – ' : ''}${row.label}`;
+        panel.appendChild(lbl);
+
+        const ta = document.createElement('textarea');
+        ta.id = taId;
+        ta.className = 'comment-textarea';
+        ta.dataset.rowId = row.id;
+        ta.rows = 2;
+        ta.placeholder = 'Notiz zu dieser Position für diese Version – z. B. „Wechsel zu günstigerer Versicherung ab April".';
+        panel.appendChild(ta);
+
+        td.appendChild(panel);
+        tr.appendChild(td);
+        return tr;
+    }
+
+    function setRowExpanded(rowId, expanded) {
+        const btn = $(`.row-expander[aria-controls="expander-${rowId}"]`);
+        const sub = $(`#expander-${rowId}`);
+        if (!btn || !sub) return;
+        btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        sub.hidden = !expanded;
+    }
+
+    function refreshExpanderUI(rowId) {
+        // Two pieces of UI feedback per expander:
+        //   1. is-filled class — set when the *active* version has a non-empty
+        //      comment for this row (visual fill).
+        //   2. title attribute — set to the *basedOn* version's comment when
+        //      one exists (browser tooltip on hover). When there's no
+        //      previous-version comment, falls back to a generic label.
+        const btn = $(`.row-expander[aria-controls="expander-${rowId}"]`);
+        if (!btn) return;
+
+        const active   = getActiveVersion();
+        const baseline = getBaselineVersion();
+        const ownText  = active?.comments?.[rowId]  || '';
+        const baseText = baseline?.comments?.[rowId] || '';
+
+        btn.classList.toggle('is-filled', ownText.trim() !== '');
+
+        if (baseText.trim() !== '' && baseline) {
+            // Native tooltip — supports newlines on most browsers.
+            btn.title = `Kommentar in „${baseline.name}":\n${baseText}`;
+            btn.dataset.hasBaselineComment = '1';
+        } else {
+            btn.title = 'Kommentar';
+            delete btn.dataset.hasBaselineComment;
+        }
+    }
+
+    function refreshAllExpanderUI() {
+        $$('.row-expander').forEach((btn) => {
+            const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
+            if (rowId) refreshExpanderUI(rowId);
+        });
+    }
+
+    function renderRows() {
+        Object.entries(SCHEMA).forEach(([groupId, rows]) => {
+            const tbody = $(`tbody[data-subtotal-group="${groupId}"]`);
+            if (!tbody) return;
+
+            const hasCommentExpander = EXPANDABLE_GROUPS.has(groupId);
+
+            rows.forEach((row) => {
+                indexRow(row, groupId);
+
+                // ---- Main row -------------------------------------------
+                const tr = document.createElement('tr');
+                tr.dataset.rowId = row.id;
+                tr.dataset.group = groupId;
+
+                const labelTd = document.createElement('td');
+                labelTd.className = 'label-cell';
+
+                const inner = document.createElement('div');
+                inner.className = 'label-content';
+
+                if (hasCommentExpander) {
+                    inner.appendChild(makeCommentExpanderButton(row.id, row.label));
+                }
+
+                const textSpan = document.createElement('span');
+                textSpan.className = 'label-text';
+                if (row.prefix) {
+                    const span = document.createElement('span');
+                    span.className = 'row-prefix';
+                    span.textContent = row.prefix;
+                    textSpan.appendChild(span);
+                    textSpan.appendChild(document.createTextNode(' '));
+                }
+                textSpan.appendChild(document.createTextNode(row.label));
+                if (row.hint) {
+                    const hint = document.createElement('span');
+                    hint.className = 'hint';
+                    hint.textContent = row.hint;
+                    textSpan.appendChild(hint);
+                }
+                inner.appendChild(textSpan);
+
+                labelTd.appendChild(inner);
+                tr.appendChild(labelTd);
+
+                ['jaehrlich', 'monatlich'].forEach((period) => {
+                    const td = document.createElement('td');
+                    td.className = 'input-cell';
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.inputMode = 'decimal';
+                    input.className = 'amount-input';
+                    input.dataset.rowId = row.id;
+                    input.dataset.group = groupId;
+                    input.dataset.period = period;
+                    input.placeholder = '0.00';
+                    input.setAttribute('aria-label',
+                        `${row.prefix ? row.prefix + ' – ' : ''}${row.label} – ${period === 'jaehrlich' ? 'jährlich' : 'monatlich'}`);
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                });
+
+                const totalTd = document.createElement('td');
+                totalTd.className = 'total-cell';
+                const totalSpan = document.createElement('span');
+                totalSpan.className = 'computed';
+                totalSpan.dataset.rowTotal = row.id;
+                totalSpan.dataset.group = groupId;
+                totalSpan.textContent = '0.00';
+                totalTd.appendChild(totalSpan);
+                tr.appendChild(totalTd);
+
+                tbody.appendChild(tr);
+
+                if (hasCommentExpander) {
+                    tbody.appendChild(makeCommentRow(row, groupId));
+                }
+            });
+
+            // Subtotal row (per group)
+            const subtotalRow = document.createElement('tr');
+            subtotalRow.className = 'subtotal-row';
+            subtotalRow.innerHTML = `
+                <td class="label-cell">Subtotal</td>
+                <td class="input-cell"><span class="computed" data-subtotal="${groupId}" data-period="jaehrlich">0.00</span></td>
+                <td class="input-cell"><span class="computed" data-subtotal="${groupId}" data-period="monatlich">0.00</span></td>
+                <td class="total-cell"><span class="total-display" data-subtotal="${groupId}" data-period="total">0.00</span></td>
+            `;
+            tbody.appendChild(subtotalRow);
+        });
+    }
+
+    // ----------------------------------------------------------------
+    // Compute & re-render all derived values
+    // ----------------------------------------------------------------
+    function recomputeAll() {
+        // Per-group subtotals (income + expense amounts) and reductions
+        const groupTotals = {};
+
+        Object.keys(SCHEMA).forEach((groupId) => {
+            let yearly = 0;
+            let monthly = 0;
+
+            SCHEMA[groupId].forEach((row) => {
+                const yearlyInput  = $(`input[data-row-id="${row.id}"][data-period="jaehrlich"]`);
+                const monthlyInput = $(`input[data-row-id="${row.id}"][data-period="monatlich"]`);
+                const y = parseAmount(yearlyInput?.value);
+                const m = parseAmount(monthlyInput?.value);
+
+                // Per-row total/year: prefer yearly if present, otherwise monthly*12
+                const rowTotal = y || (m * 12);
+                const rowTotalEl = $(`span[data-row-total="${row.id}"]`);
+                if (rowTotalEl) rowTotalEl.textContent = formatComputed(rowTotal);
+
+                yearly  += y || (m * 12);
+                monthly += m || (y / 12);
+            });
+
+            groupTotals[groupId] = {
+                jaehrlich: yearly,
+                monatlich: monthly,
+            };
+
+            // Update subtotal display
+            $$(`[data-subtotal="${groupId}"][data-period="jaehrlich"]`).forEach(el => el.textContent = formatComputed(yearly));
+            $$(`[data-subtotal="${groupId}"][data-period="monatlich"]`).forEach(el => el.textContent = formatComputed(monthly));
+            $$(`[data-subtotal="${groupId}"][data-period="total"]`).forEach(el => el.textContent = formatComputed(yearly));
+        });
+
+        // Total Fixkosten
+        const fixkostenY = FIXKOSTEN_GROUPS.reduce((s, g) => s + groupTotals[g].jaehrlich, 0);
+        const fixkostenM = FIXKOSTEN_GROUPS.reduce((s, g) => s + groupTotals[g].monatlich, 0);
+        $$(`[data-grand-total="fixkosten"][data-period="jaehrlich"]`).forEach(el => el.textContent = formatComputed(fixkostenY));
+        $$(`[data-grand-total="fixkosten"][data-period="monatlich"]`).forEach(el => el.textContent = formatComputed(fixkostenM));
+        $$(`[data-grand-total="fixkosten"][data-period="total"]`).forEach(el => el.textContent = formatComputed(fixkostenY));
+
+        // Summary — Einnahmen, Ausgaben, Differenz (no Reduktion derivatives).
+        const einnahmenY = groupTotals.einnahmen.jaehrlich;
+        const einnahmenM = groupTotals.einnahmen.monatlich;
+        const ausgabenY  = AUSGABEN_GROUPS.reduce((s, g) => s + groupTotals[g].jaehrlich, 0);
+        const ausgabenM  = AUSGABEN_GROUPS.reduce((s, g) => s + groupTotals[g].monatlich, 0);
+        const diffY = einnahmenY - ausgabenY;
+        const diffM = einnahmenM - ausgabenM;
+
+        $(`[data-summary="einnahmen"][data-period="jaehrlich"]`).textContent = formatComputed(einnahmenY);
+        $(`[data-summary="einnahmen"][data-period="monatlich"]`).textContent = formatComputed(einnahmenM);
+        $(`[data-summary="ausgaben"][data-period="jaehrlich"]`).textContent  = formatComputed(ausgabenY);
+        $(`[data-summary="ausgaben"][data-period="monatlich"]`).textContent  = formatComputed(ausgabenM);
+        $(`[data-summary="differenz"][data-period="jaehrlich"]`).textContent = formatComputed(diffY);
+        $(`[data-summary="differenz"][data-period="monatlich"]`).textContent = formatComputed(diffM);
+
+        const diffRow = $('#differenceRow');
+        diffRow.classList.toggle('positive', diffY >= 0);
+        diffRow.classList.toggle('negative', diffY < 0);
+    }
+
+    // ----------------------------------------------------------------
+    // Serialize / hydrate state
+    // ----------------------------------------------------------------
+    function serialize() {
+        // Make sure the latest DOM edits are reflected in the active version.
+        captureFormToActiveVersion();
+        return {
+            format: APP_NAME,
+            version: FILE_FORMAT_VERSION,
+            savedAt: new Date().toISOString(),
+            data: {
+                versions: state.versions.map((v) => ({
+                    id: v.id,
+                    name: v.name,
+                    basedOn: v.basedOn,
+                    createdAt: v.createdAt,
+                    values: { ...v.values },
+                    comments: { ...(v.comments || {}) },
+                })),
+                activeVersionId: state.activeVersionId,
+            },
+        };
+    }
+
+    // ----------------------------------------------------------------
+    // Migration of legacy file formats (v1 / v2 / v3) into the v4 model.
+    //
+    // The Reduktion mechanism is gone; the multi-version model replaces it.
+    // To honor that mapping without throwing away user data, a legacy file
+    // that contains any reduktion entries is split into two linked versions:
+    //
+    //   "Original"        — the raw budget as it was entered
+    //   "Nach Reduktion"  — original values minus the recorded reductions
+    //                       (basedOn → Original, so the Versionsvergleich
+    //                       overview shows exactly the planned savings)
+    //
+    // Legacy files without reductions stay as a single "Hauptversion".
+    // ----------------------------------------------------------------
+    function classifyLegacyKey(key) {
+        // → { rowId, period, isReduktion } or null on malformed keys.
+        const [rowId, period] = key.split('.');
+        if (!rowId || !period) return null;
+        if (period === 'jaehrlich' || period === 'monatlich') {
+            return { rowId, period, isReduktion: false };
+        }
+        // v2 used a bare "reduktion" key (yearly). v3 used reduktion_jaehrlich/_monatlich.
+        if (period === 'reduktion')           return { rowId, period: 'jaehrlich',  isReduktion: true };
+        if (period === 'reduktion_jaehrlich') return { rowId, period: 'jaehrlich',  isReduktion: true };
+        if (period === 'reduktion_monatlich') return { rowId, period: 'monatlich',  isReduktion: true };
+        return null;
+    }
+
+    function splitLegacyValues(rawValues) {
+        // Returns { original, reduktionen } both keyed by "rowId.jaehrlich" /
+        // "rowId.monatlich". `reduktionen` only contains rows that had any
+        // recorded reduction.
+        const original   = {};
+        const reduktionen = {};
+        Object.entries(rawValues || {}).forEach(([key, value]) => {
+            const c = classifyLegacyKey(key);
+            if (!c || !Number.isFinite(value)) return;
+            const normalized = `${c.rowId}.${c.period}`;
+            if (c.isReduktion) reduktionen[normalized] = value;
+            else               original[normalized]    = value;
+        });
+        return { original, reduktionen };
+    }
+
+    function buildLegacyVersions(payload) {
+        const raw = payload.data?.values || {};
+        // Legacy v3 attached comments to the reduktion concept (the comment
+        // typically described *why* a reduction was made). After migration the
+        // comments belong on the "Nach Reduktion" version when one exists,
+        // otherwise on the single Hauptversion.
+        const legacyComments = (payload.data?.comments && typeof payload.data.comments === 'object')
+            ? { ...payload.data.comments } : {};
+        const { original, reduktionen } = splitLegacyValues(raw);
+        const createdAt = payload.savedAt || new Date().toISOString();
+        const hasReduktion = Object.keys(reduktionen).length > 0;
+
+        if (!hasReduktion) {
+            return [{
+                id: genVersionId(),
+                name: 'Hauptversion',
+                basedOn: null,
+                createdAt,
+                values: original,
+                comments: legacyComments,
+            }];
+        }
+
+        // Compute "Nach Reduktion" values = original − reduktion (per row+period).
+        const reducedValues = { ...original };
+        Object.entries(reduktionen).forEach(([key, redVal]) => {
+            const base = reducedValues[key] || 0;
+            reducedValues[key] = base - redVal;
+        });
+
+        const originalVersion = {
+            id: genVersionId(), name: 'Original', basedOn: null,
+            createdAt, values: original, comments: {},
+        };
+        const reducedVersion = {
+            id: genVersionId(), name: 'Nach Reduktion', basedOn: originalVersion.id,
+            createdAt, values: reducedValues, comments: legacyComments,
+        };
+        return [originalVersion, reducedVersion];
+    }
+
+    function hydrate(payload) {
+        // Reset state cleanly so a load fully replaces the prior state.
+        state.versions = [];
+        state.activeVersionId = null;
+
+        if (!payload || !payload.data) {
+            initSingleVersionState();
+        } else if (payload.version === 4 && Array.isArray(payload.data.versions)) {
+            // Native v4 — load versions array.
+            state.versions = payload.data.versions.map((v) => ({
+                id: v.id || genVersionId(),
+                name: typeof v.name === 'string' ? v.name : 'Version',
+                basedOn: v.basedOn || null,
+                createdAt: v.createdAt || new Date().toISOString(),
+                values: { ...(v.values || {}) },
+                comments: { ...(v.comments || {}) },
+            }));
+            if (state.versions.length === 0) initSingleVersionState();
+            const requested = payload.data.activeVersionId;
+            state.activeVersionId = (requested && getVersionById(requested))
+                ? requested
+                : state.versions[0].id;
+        } else {
+            // Legacy v1/v2/v3 — possibly split into Original + Nach Reduktion.
+            state.versions = buildLegacyVersions(payload);
+            state.activeVersionId = state.versions[0].id;
+        }
+
+        hydrateFormFromActiveVersion();
+        applyModeToUI();
+        renderVersionTabs();
+        renderVersionsOverview();
+        recomputeAll();
+    }
+
+    function isValidPayload(obj) {
+        if (!obj || typeof obj !== 'object') return false;
+        if (obj.format !== APP_NAME) return false;
+        if (typeof obj.version !== 'number') return false;
+        if (!SUPPORTED_VERSIONS.has(obj.version)) return false;
+        if (!obj.data || typeof obj.data !== 'object') return false;
+        // v4: versions array. v1-v3: legacy values map.
+        if (obj.version === 4) return Array.isArray(obj.data.versions);
+        return typeof obj.data.values === 'object';
+    }
+
+    // ----------------------------------------------------------------
+    // Mode / multi-version UI rendering
+    // ----------------------------------------------------------------
+    function applyModeToUI() {
+        // Two body classes drive multi-version-specific CSS. The baseline
+        // sub-mode no longer needs to influence styling — the per-row
+        // detail block in the overview is JS-toggled via the [hidden]
+        // attribute on #versionsDetailBlock.
+        const multi = isMultiVersion();
+        document.body.classList.toggle('mode-multi-version', multi);
+        document.body.classList.toggle('mode-single-version', !multi);
+    }
+
+    function suggestVersionName() {
+        // Pick the first candidate not already taken; fall back to "Version N".
+        const candidates = ['Nach Anpassung', 'Plan 2', 'Vorschlag', 'Alternative'];
+        const taken = new Set(state.versions.map(v => v.name));
+        for (const c of candidates) if (!taken.has(c)) return c;
+        return 'Version ' + (state.versions.length + 1);
+    }
+
+    function renderVersionTabs() {
+        const container = $('#versionTabs');
+        if (!container) return;
+        container.innerHTML = '';
+        container.dataset.count = String(state.versions.length);
+
+        state.versions.forEach((v) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'version-tab-wrapper';
+
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.className = 'version-tab';
+            tab.setAttribute('role', 'tab');
+            tab.setAttribute('aria-selected', v.id === state.activeVersionId ? 'true' : 'false');
+            tab.dataset.versionId = v.id;
+            tab.textContent = v.name;
+            tab.title = `Zu „${v.name}" wechseln (Doppelklick zum Umbenennen)`;
+            tab.addEventListener('click', () => {
+                if (v.id !== state.activeVersionId) switchVersion(v.id);
+            });
+            tab.addEventListener('dblclick', async () => {
+                const newName = await openRenameModal(v.id);
+                if (newName !== null) renameVersion(v.id, newName);
+            });
+            wrapper.appendChild(tab);
+
+            // Only render delete (×) when there's more than one version. The
+            // last surviving version cannot be deleted.
+            if (state.versions.length > 1) {
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.className = 'version-tab-close';
+                closeBtn.setAttribute('aria-label', `Version „${v.name}" löschen`);
+                closeBtn.title = 'Version löschen';
+                closeBtn.textContent = '×';
+                closeBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const ok = await openDeleteVersionModal(v.id);
+                    if (ok) {
+                        const name = v.name;
+                        deleteVersion(v.id);
+                        toast(`Version „${name}" gelöscht.`);
+                    }
+                });
+                wrapper.appendChild(closeBtn);
+            }
+
+            container.appendChild(wrapper);
+        });
+    }
+
+    function renderVersionsOverview() {
+        const section = $('#versionsOverviewSection');
+        const tbody = $('#versionsOverviewBody');
+        if (!section || !tbody) return;
+        if (!isMultiVersion()) {
+            section.hidden = true;
+            return;
+        }
+        section.hidden = false;
+
+        // Sync DOM → active version so the active row reflects live edits.
+        captureFormToActiveVersion();
+
+        // ---- Totals table ---------------------------------------------
+        tbody.innerHTML = '';
+        state.versions.forEach((v) => {
+            const totals = computeTotalsForVersion(v);
+            const baseline = v.basedOn ? getVersionById(v.basedOn) : null;
+            const baseTotals = baseline ? computeTotalsForVersion(baseline) : null;
+            const deltaDiff = baseTotals ? totals.diffY - baseTotals.diffY : null;
+
+            const tr = document.createElement('tr');
+            tr.dataset.versionId = v.id;
+            if (v.id === state.activeVersionId) tr.classList.add('is-active');
+
+            const sign = (n) => (n > 0 ? '+' : '');
+            const diffCls = totals.diffY >= 0 ? 'is-positive' : 'is-negative';
+
+            tr.innerHTML = `
+                <td>${escapeHtml(v.name)}${v.id === state.activeVersionId ? ' <span class="active-marker">aktiv</span>' : ''}</td>
+                <td>${baseline ? escapeHtml(baseline.name) : '<span class="root-marker">— (Wurzel)</span>'}</td>
+                <td class="num-cell">${formatComputed(totals.einnahmenY)}</td>
+                <td class="num-cell">${formatComputed(totals.ausgabenY)}</td>
+                <td class="num-cell ${diffCls}">${formatComputed(totals.diffY)}</td>
+                <td class="num-cell">${deltaDiff === null
+                    ? '<span class="root-marker">—</span>'
+                    : `<span class="${deltaDiff >= 0 ? 'is-positive' : 'is-negative'}">${sign(deltaDiff)}${formatComputed(deltaDiff)}</span>`}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // ---- Per-row diff detail block --------------------------------
+        renderVersionsDetail();
+    }
+
+    function renderVersionsDetail() {
+        // Show, position by position, where the active version differs from
+        // its basedOn. Hidden when active is a root version (no baseline).
+        const block       = $('#versionsDetailBlock');
+        const detailBody  = $('#versionsDetailBody');
+        const detailIntro = $('#versionsDetailIntro');
+        const detailEmpty = $('#versionsDetailEmpty');
+        const colBasis    = $('#detailColBasis');
+        const colActive   = $('#detailColActive');
+        if (!block || !detailBody) return;
+
+        const active   = getActiveVersion();
+        const baseline = getBaselineVersion();
+        if (!active || !baseline) {
+            block.hidden = true;
+            return;
+        }
+        block.hidden = false;
+
+        // Headline text
+        detailIntro.textContent =
+            `Aktive Version „${active.name}" verglichen mit Basis „${baseline.name}". `
+            + `Es werden nur Positionen mit einer Wertabweichung gelistet.`;
+        colBasis.textContent  = baseline.name;
+        colActive.textContent = active.name;
+
+        // Walk SCHEMA in declared order so the detail table mirrors the form.
+        detailBody.innerHTML = '';
+        const sign = (n) => (n > 0 ? '+' : '');
+        let diffCount = 0;
+
+        Object.entries(SCHEMA).forEach(([groupId, rows]) => {
+            rows.forEach((row) => {
+                const baseY = rowYearlyInVersion(baseline, row.id);
+                const baseM = rowMonthlyInVersion(baseline, row.id);
+                const actY  = rowYearlyInVersion(active,   row.id);
+                const actM  = rowMonthlyInVersion(active,   row.id);
+                const diffY = actY - baseY;
+                const diffM = actM - baseM;
+
+                // Skip unchanged rows (also skip when both sides are zero).
+                if (Math.abs(diffY) < 0.005 && Math.abs(diffM) < 0.005) return;
+                diffCount++;
+
+                const groupLabel = GROUP_LABELS[groupId] || groupId;
+                const labelHtml =
+                    `<span class="row-group-label">${escapeHtml(groupLabel)}</span>`
+                    + (row.prefix ? `<span class="row-prefix">${escapeHtml(row.prefix)}</span> ` : '')
+                    + escapeHtml(row.label);
+
+                const diffCls = diffY < 0 ? 'is-negative' : (diffY > 0 ? 'is-positive' : '');
+
+                const tr = document.createElement('tr');
+                tr.dataset.rowId = row.id;
+                tr.innerHTML = `
+                    <td>${labelHtml}</td>
+                    <td class="num-cell">${formatComputed(baseY)}</td>
+                    <td class="num-cell">${formatComputed(actY)}</td>
+                    <td class="num-cell ${diffCls}">${sign(diffY)}${formatComputed(diffY)}</td>
+                    <td class="num-cell ${diffCls}">${sign(diffM)}${formatComputed(diffM)}</td>
+                `;
+                detailBody.appendChild(tr);
+            });
+        });
+
+        if (diffCount === 0) {
+            detailEmpty.hidden = false;
+            $('#detailEmptyBaseName').textContent = baseline.name;
+        } else {
+            detailEmpty.hidden = true;
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Version modals (new / rename / delete)
+    // ----------------------------------------------------------------
+    // All three reuse the existing modal-backdrop pattern. Each returns a
+    // Promise that resolves to either the chosen value or null/false on cancel.
+    // Buttons are cloned-replaced to drop previous listeners before re-binding.
+
+    function openNewVersionModal() {
+        const fieldset = $('#newVersionBasedOn');
+        const nameInput = $('#newVersionName');
+        fieldset.innerHTML = '';
+
+        const empty = document.createElement('label');
+        empty.className = 'radio-option';
+        empty.innerHTML = '<input type="radio" name="basedOn" value=""> <span>Leer beginnen</span>';
+        fieldset.appendChild(empty);
+
+        state.versions.forEach((v) => {
+            const lbl = document.createElement('label');
+            lbl.className = 'radio-option';
+            const isActive = v.id === state.activeVersionId;
+            const safe = escapeHtml(v.name);
+            lbl.innerHTML = `<input type="radio" name="basedOn" value="${v.id}" ${isActive ? 'checked' : ''}> <span>${safe}${isActive ? ' (aktuelle)' : ''}</span>`;
+            fieldset.appendChild(lbl);
+        });
+
+        nameInput.value = '';
+        nameInput.placeholder = 'z. B. ' + suggestVersionName();
+
+        return new Promise((resolve) => {
+            const m = openModal('modalNewVersion');
+            const cleanup = (result) => {
+                m.querySelectorAll('[data-modal-action]').forEach(b => b.replaceWith(b.cloneNode(true)));
+                closeModal('modalNewVersion');
+                resolve(result);
+            };
+            m.querySelector('[data-modal-action="cancel"]').addEventListener('click', () => cleanup(null));
+            m.querySelector('[data-modal-action="confirm"]').addEventListener('click', () => {
+                const name = (nameInput.value || '').trim() || suggestVersionName();
+                const basedOnId = m.querySelector('input[name="basedOn"]:checked')?.value || null;
+                cleanup({ name, basedOnId });
+            });
+            setTimeout(() => nameInput.focus(), 50);
+        });
+    }
+
+    function openRenameModal(versionId) {
+        const v = getVersionById(versionId);
+        if (!v) return Promise.resolve(null);
+        const input = $('#renameVersionInput');
+        input.value = v.name;
+
+        return new Promise((resolve) => {
+            const m = openModal('modalRenameVersion');
+            const submit = () => {
+                const name = (input.value || '').trim();
+                cleanup(name && name !== v.name ? name : null);
+            };
+            const onKeydown = (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); submit(); }
+            };
+            const cleanup = (result) => {
+                input.removeEventListener('keydown', onKeydown);
+                m.querySelectorAll('[data-modal-action]').forEach(b => b.replaceWith(b.cloneNode(true)));
+                closeModal('modalRenameVersion');
+                resolve(result);
+            };
+            input.addEventListener('keydown', onKeydown);
+            m.querySelector('[data-modal-action="cancel"]').addEventListener('click', () => cleanup(null));
+            m.querySelector('[data-modal-action="confirm"]').addEventListener('click', submit);
+            setTimeout(() => { input.focus(); input.select(); }, 50);
+        });
+    }
+
+    function openDeleteVersionModal(versionId) {
+        const v = getVersionById(versionId);
+        if (!v) return Promise.resolve(false);
+        const text = $('#modalDeleteVersionText');
+        const dependents = state.versions.filter(x => x.basedOn === versionId);
+        if (dependents.length > 0) {
+            const names = dependents.map(d => `„${d.name}"`).join(', ');
+            text.textContent = `Version „${v.name}" löschen? ${dependents.length === 1 ? 'Die Version ' : 'Die Versionen '}${names} ${dependents.length === 1 ? 'verliert' : 'verlieren'} dadurch die Vergleichsbasis.`;
+        } else {
+            text.textContent = `Version „${v.name}" löschen? Diese Aktion kann nicht rückgängig gemacht werden.`;
+        }
+        return new Promise((resolve) => {
+            const m = openModal('modalDeleteVersion');
+            const cleanup = (result) => {
+                m.querySelectorAll('[data-modal-action]').forEach(b => b.replaceWith(b.cloneNode(true)));
+                closeModal('modalDeleteVersion');
+                resolve(result);
+            };
+            m.querySelector('[data-modal-action="cancel"]').addEventListener('click', () => cleanup(false));
+            m.querySelector('[data-modal-action="confirm"]').addEventListener('click', () => cleanup(true));
+        });
+    }
+
+    async function handleAddVersionClick() {
+        const result = await openNewVersionModal();
+        if (!result) return;
+        createVersion({ name: result.name, basedOnId: result.basedOnId });
+        toast(`Version „${result.name}" erstellt.`);
+    }
+
+    // ----------------------------------------------------------------
+    // Status indicator
+    // ----------------------------------------------------------------
+    function updateStatus() {
+        const statusEl = $('#status');
+        const textEl = $('#statusText');
+        const saveBtn = $('#btnSave');
+        const saveLabel = $('#btnSaveLabel');
+
+        if (state.fileHandle && !state.isDirty) {
+            statusEl.dataset.state = 'saved';
+            textEl.innerHTML = `Gespeichert · <span class="status-filename">${escapeHtml(state.currentFilename || 'Datei')}</span>`;
+            saveLabel.textContent = 'Gespeichert';
+            saveBtn.disabled = !state.isDirty && !!state.fileHandle;
+        } else if (state.fileHandle && state.isDirty) {
+            statusEl.dataset.state = 'dirty';
+            textEl.innerHTML = `Ungespeichert · <span class="status-filename">${escapeHtml(state.currentFilename || 'Datei')}</span>`;
+            saveLabel.textContent = 'Speichern';
+            saveBtn.disabled = false;
+        } else if (!state.fileHandle && state.isDirty) {
+            statusEl.dataset.state = 'dirty';
+            textEl.textContent = 'Ungespeicherte Änderungen – noch keine Datei';
+            saveLabel.textContent = 'Speichern unter…';
+            saveBtn.disabled = false;
+        } else {
+            statusEl.dataset.state = 'empty';
+            textEl.textContent = state.supportsFileSystemAccess
+                ? 'Keine Datei verbunden'
+                : 'Bereit – Speichern lädt Datei herunter';
+            saveLabel.textContent = state.supportsFileSystemAccess ? 'Speichern unter…' : 'Herunterladen';
+            saveBtn.disabled = false;
+        }
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        }[c]));
+    }
+
+    function setSavingStatus() {
+        const statusEl = $('#status');
+        const textEl = $('#statusText');
+        statusEl.dataset.state = 'saving';
+        textEl.textContent = 'Speichert…';
+    }
+
+    // ----------------------------------------------------------------
+    // Toast notifications
+    // ----------------------------------------------------------------
+    let toastTimer = null;
+    function toast(message, type) {
+        const t = $('#toast');
+        t.textContent = message;
+        t.className = 'toast is-visible' + (type ? ' is-' + type : '');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            t.className = 'toast' + (type ? ' is-' + type : '');
+        }, 3200);
+    }
+
+    // ----------------------------------------------------------------
+    // File operations — File System Access API path
+    // ----------------------------------------------------------------
+    async function openFile() {
+        try {
+            if (state.supportsFileSystemAccess) {
+                const [handle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'Budget-Datei',
+                        accept: { 'application/json': ['.json'] },
+                    }],
+                    multiple: false,
+                });
+                const file = await handle.getFile();
+                const text = await file.text();
+                const payload = JSON.parse(text);
+                if (!isValidPayload(payload)) throw new Error('Ungültiges Dateiformat');
+                state.fileHandle = handle;
+                state.currentFilename = file.name;
+                hydrate(payload);
+                state.isDirty = false;
+                updateStatus();
+                toast(`«${file.name}» geöffnet`, 'success');
+            } else {
+                // Fallback: hidden input upload
+                fallbackOpen();
+            }
+        } catch (err) {
+            if (err && err.name === 'AbortError') return;
+            console.error('Open failed', err);
+            toast('Datei konnte nicht geöffnet werden: ' + (err.message || err), 'error');
+        }
+    }
+
+    function fallbackOpen() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.addEventListener('change', async () => {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const payload = JSON.parse(text);
+                if (!isValidPayload(payload)) throw new Error('Ungültiges Dateiformat');
+                state.currentFilename = file.name;
+                hydrate(payload);
+                state.isDirty = false;
+                updateStatus();
+                toast(`«${file.name}» geladen. Speichern erstellt eine neue Datei.`, 'success');
+            } catch (err) {
+                console.error(err);
+                toast('Datei konnte nicht gelesen werden: ' + (err.message || err), 'error');
+            }
+        });
+        input.click();
+    }
+
+    async function saveFile() {
+        const payload = serialize();
+        const json = JSON.stringify(payload, null, 2);
+
+        try {
+            setSavingStatus();
+            if (state.fileHandle) {
+                // Have a handle — write directly (auto-save path)
+                const writable = await state.fileHandle.createWritable();
+                await writable.write(json);
+                await writable.close();
+                state.isDirty = false;
+                updateStatus();
+                return true;
+            }
+
+            if (state.supportsFileSystemAccess) {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: defaultFilename(),
+                    types: [{
+                        description: 'Budget-Datei',
+                        accept: { 'application/json': ['.json'] },
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(json);
+                await writable.close();
+                const file = await handle.getFile();
+                state.fileHandle = handle;
+                state.currentFilename = file.name;
+                state.isDirty = false;
+                updateStatus();
+                toast(`«${file.name}» gespeichert. Weitere Änderungen werden automatisch gesichert.`, 'success');
+                return true;
+            }
+
+            // Fallback download
+            triggerDownload(json, defaultFilename());
+            state.isDirty = false;
+            updateStatus();
+            toast('Datei heruntergeladen.', 'success');
+            return true;
+        } catch (err) {
+            updateStatus();
+            if (err && err.name === 'AbortError') return false;
+            console.error('Save failed', err);
+            toast('Speichern fehlgeschlagen: ' + (err.message || err), 'error');
+            return false;
+        }
+    }
+
+    function triggerDownload(text, filename) {
+        const blob = new Blob([text], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function defaultFilename() {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `budget-${yyyy}-${mm}-${dd}.json`;
+    }
+
+    // ----------------------------------------------------------------
+    // Auto-save (debounced) — only when handle is present
+    // ----------------------------------------------------------------
+    function scheduleAutoSave() {
+        if (!state.fileHandle) return;
+        clearTimeout(state.autoSaveTimer);
+        state.autoSaveTimer = setTimeout(() => {
+            saveFile();
+        }, 800);
+    }
+
+    // ----------------------------------------------------------------
+    // Modal helpers
+    // ----------------------------------------------------------------
+    function openModal(id) {
+        const m = $('#' + id);
+        m.hidden = false;
+        requestAnimationFrame(() => m.classList.add('is-open'));
+        return m;
+    }
+
+    function closeModal(id) {
+        const m = $('#' + id);
+        m.classList.remove('is-open');
+        setTimeout(() => { m.hidden = true; }, 250);
+    }
+
+    function confirmReset() {
+        return new Promise((resolve) => {
+            const m = openModal('modalReset');
+            const cleanup = (result) => {
+                m.querySelectorAll('[data-modal-action]').forEach(b => b.replaceWith(b.cloneNode(true)));
+                closeModal('modalReset');
+                resolve(result);
+            };
+            m.querySelector('[data-modal-action="cancel"]').addEventListener('click', () => cleanup(false));
+            m.querySelector('[data-modal-action="confirm"]').addEventListener('click', () => cleanup(true));
+        });
+    }
+
+    // ----------------------------------------------------------------
+    // Reset — clears the *active* version only. Other versions remain.
+    // ----------------------------------------------------------------
+    async function resetAll() {
+        const ok = await confirmReset();
+        if (!ok) return;
+        $$('input.amount-input').forEach((input) => {
+            input.value = '';
+            delete input.dataset.userEdited;
+            delete input.dataset.autoFilled;
+        });
+        $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
+        // Collapse all expander rows; refresh their visual state.
+        $$('.row-expander').forEach((btn) => {
+            const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
+            if (rowId) setRowExpanded(rowId, false);
+        });
+        // Wipe the active version's stored data so DOM and state stay aligned.
+        const active = getActiveVersion();
+        if (active) {
+            active.values = {};
+            active.comments = {};
+        }
+        refreshAllExpanderUI();
+        renderVersionsOverview();
+        recomputeAll();
+        markDirty();
+        toast(isMultiVersion()
+            ? `Version „${active ? active.name : ''}" geleert.`
+            : 'Alle Felder geleert.');
+    }
+
+    // ----------------------------------------------------------------
+    // Dirty tracking
+    // ----------------------------------------------------------------
+    function markDirty() {
+        state.isDirty = true;
+        updateStatus();
+        scheduleAutoSave();
+    }
+
+    // ----------------------------------------------------------------
+    // Input handling — auto-fill counterpart period
+    // ----------------------------------------------------------------
+    // Pairs of period names that mirror each other (×12 / ÷12).
+    const MIRROR_PAIRS = {
+        jaehrlich: 'monatlich',
+        monatlich: 'jaehrlich',
+    };
+
+    function handleAmountInputEvent(input) {
+        const period = input.dataset.period;
+        const counterpartPeriod = MIRROR_PAIRS[period];
+        if (counterpartPeriod) {
+            const counterpart = $(`input[data-row-id="${input.dataset.rowId}"][data-period="${counterpartPeriod}"]`);
+            if (counterpart && !counterpart.dataset.userEdited) {
+                const v = parseAmount(input.value);
+                if (v === 0) {
+                    counterpart.value = '';
+                } else {
+                    const mirror = (period === 'jaehrlich') ? v / 12 : v * 12;
+                    counterpart.value = formatAmount(mirror);
+                    counterpart.dataset.autoFilled = '1';
+                }
+            }
+            input.dataset.userEdited = '1';
+            if (parseAmount(input.value) === 0) delete input.dataset.userEdited;
+            delete input.dataset.autoFilled;
+        }
+        recomputeAll();
+        // Differences between versions are surfaced via renderVersionsOverview
+        // (totals + per-row detail table). No per-row expanders to refresh.
+        renderVersionsOverview();
+        markDirty();
+    }
+
+    function handleAmountInputBlur(input) {
+        const v = parseAmount(input.value);
+        input.value = v === 0 ? '' : formatAmount(v);
+        recomputeAll();
+    }
+
+    function attachMainInputListeners() {
+        // Attaches once at init: amount inputs + per-row comment textareas.
+        // Both element sets are static (created in renderRows), so a single
+        // pass is enough — no need to re-attach on version switches.
+        $$('input.amount-input').forEach((input) => {
+            input.addEventListener('input', () => handleAmountInputEvent(input));
+            input.addEventListener('blur',  () => handleAmountInputBlur(input));
+        });
+        $$('textarea.comment-textarea').forEach((ta) => {
+            ta.addEventListener('input', () => handleCommentInputEvent(ta));
+        });
+    }
+
+    function handleCommentInputEvent(ta) {
+        const rowId = ta.dataset.rowId;
+        const text  = (ta.value || '').trim();
+        const active = getActiveVersion();
+        if (active) {
+            if (text === '') delete active.comments[rowId];
+            else             active.comments[rowId] = ta.value;   // preserve whitespace/newlines
+        }
+        refreshExpanderUI(rowId);
+        markDirty();
+    }
+
+    // ----------------------------------------------------------------
+    // Init
+    // ----------------------------------------------------------------
+    function init() {
+        renderRows();
+        attachMainInputListeners();
+        // Bootstrap with a single empty version, then render the dependent UI.
+        // hydrate(null) handles state init, panels, tabs, overview and recompute.
+        hydrate(null);
+        updateStatus();
+
+        $('#btnOpen').addEventListener('click', openFile);
+        $('#btnSave').addEventListener('click', saveFile);
+        $('#btnReset').addEventListener('click', resetAll);
+        $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
+
+        // Backdrop click on ANY modal triggers its cancel button.
+        document.querySelectorAll('.modal-backdrop').forEach((m) => {
+            m.addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    e.currentTarget.querySelector('[data-modal-action="cancel"]')?.click();
+                }
+            });
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-backdrop.is-open').forEach((m) => {
+                    m.querySelector('[data-modal-action="cancel"]')?.click();
+                });
+            }
+            // Ctrl/Cmd+S
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                saveFile();
+            }
+        });
+
+        // Beforeunload — warn on unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (state.isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    // ---- Test bridge --------------------------------------------------
+    // Exposes select internals for end-to-end testing under JSDOM. Has no
+    // effect on normal use; users never touch window.__budget. Kept tiny
+    // and read-only-ish; mutating state through here is undefined behavior.
+    if (typeof window !== 'undefined') {
+        window.__budget = {
+            hydrate, serialize, state,
+            getActiveVersion, getBaselineVersion, getVersionById, isMultiVersion,
+            createVersion, deleteVersion, switchVersion, renameVersion,
+            computeTotalsForVersion,
+        };
+    }
+})();
+</script>
+
+</body>
+</html>

@@ -1,6 +1,10 @@
-# Projekt: Skillssammlung (GitHub Pages)
+# Projekt: Sammlung veröffentlichter HTML-Seiten (GitHub Pages)
 
 Statische Website unter **https://eraschle.github.io/skills/**.
+Das Repo dient als **Sammlung eigenständiger HTML-Seiten**, die nach und nach
+(häufig mit Claudes Hilfe aus bestehenden Vorlagen/Dokumenten digitalisiert)
+veröffentlicht werden — z. B. die interaktive Skillsliste und die Budgetvorlage.
+
 Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht wird
 **nur der Ordner `docs/`**. Pages-Quelle ist auf „GitHub Actions" gestellt.
 
@@ -8,9 +12,20 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 
 - **Quelle bleibt im Wurzelverzeichnis**, das **Ergebnis** liegt in `docs/`.
 - `docs/index.html` = Startseite (`/skills/`) = die generierte Skillsliste.
-- `docs/uebersicht.html` = generischer Hub, der die Seiten verlinkt.
-- Weitere Seiten: einfach eine HTML-Datei in `docs/` ablegen → online unter
-  `/skills/<datei>.html`, und in `docs/uebersicht.html` eine Karte ergänzen.
+- `docs/uebersicht.html` = generischer Hub, der alle Seiten verlinkt.
+- `docs/budgetvorlage.html` = eigenständige Budget-Seite (neutrale Vorlage).
+
+## Neue HTML-Seite veröffentlichen
+
+Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
+
+1. Die fertige HTML-Datei in **`docs/`** ablegen → online unter `/skills/<datei>.html`.
+2. Sämtliche personen-/organisationsspezifischen Angaben entfernen (neutralisieren),
+   da `docs/` **öffentlich** publiziert wird.
+3. **CSS muss in der Datei eingebettet bleiben** (kein externes Stylesheet), damit
+   die Seite auch lokal ohne Server/Internet funktioniert.
+4. Die Fusszeile muss den Urheber-Credit enthalten (siehe Konvention unten).
+5. In `docs/uebersicht.html` eine Karte ergänzen (Link + Kurzbeschreibung).
 
 ## Skillsliste pflegen (nicht von Hand editieren!)
 
