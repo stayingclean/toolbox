@@ -14,6 +14,7 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/index.html` = Startseite (`/toolbox/`) = Übersicht (Hub, verlinkt alle Seiten).
 - `docs/skillsliste.html` = die generierte Skillsliste.
 - `docs/budgetvorlage.html` = eigenständige Budget-Seite (neutrale Vorlage).
+- `docs/neutral_flyer.html` = Flyer-Editor (self-contained, Bilder eingebettet).
 
 ## Neue HTML-Seite veröffentlichen
 
