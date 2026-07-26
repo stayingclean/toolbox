@@ -15,6 +15,20 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/skillsliste.html` = die generierte Skillsliste.
 - `docs/budgetvorlage.html` = eigenständige Budget-Seite (neutrale Vorlage).
 - `docs/neutral_flyer.html` = Flyer-Editor (self-contained, Bilder eingebettet).
+- `docs/asrs-v1-1.html` = ASRS v1.1 (ADHS-Selbstbeurteilung, WHO – frei nutzbar).
+
+Die Übersicht ist **nach Themen gruppiert** (`<section class="group">` je Thema, z. B.
+„Werkzeuge", „ADHS").
+
+## Formulare / Fragebögen
+
+- Speichern-Konvention: **„Als HTML speichern"** (Antworten im eingebetteten
+  JSON-Block, öffnet gefüllt) **plus JSON-Export/-Import**. Kein localStorage
+  (der Benutzer speichert bewusst als Datei).
+- **Urheberrecht:** Viele Testinstrumente sind geschützt. Nur **frei lizenzierte**
+  Instrumente dürfen öffentlich (z. B. WHO ASRS v1.1 mit Quellenangabe). Geschützte
+  Roh-Formulare liegen in **`neue_docs/`** und sind per `.gitignore` **ausgeschlossen**
+  (kommen nicht ins öffentliche Repo, bis die Rechte vorliegen).
 
 ## Neue HTML-Seite veröffentlichen
 
