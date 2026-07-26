@@ -29,48 +29,67 @@ sind in der Datei eingebettet; es wird nichts nachgeladen.
 
 ### Funktionen im Detail
 
-- **Texte bearbeiten**
-  Position, **Schriftart**, **Schriftgrösse** und **Farbe** aller Texte ändern.
-  Sämtliche Inhalte lassen sich frei anpassen – vom Titel bis zur Fusszeile.
+- **Texte bearbeiten & formatieren**
+  Frei editierbare Textfelder mit voller Formatierung: **Schriftart** (Arial,
+  Georgia, Times, Verdana, Tahoma, Courier, Segoe UI …), **Schriftgrösse**,
+  **Fett / Kursiv / Unterstrichen / Durchgestrichen**, **Textfarbe**, Ausrichtung
+  (links / zentriert / rechts), **Buchstabenabstand** und **Zeilenhöhe**.
+  Formatierung mit einem Klick wieder entfernen.
 
-- **Gestaltung frei positionieren**
-  Alle Textelemente lassen sich **frei auf dem Flyer platzieren**. Verschiedene
-  Schriftarten kombinieren und das Layout individuell gestalten.
+- **Text auf Fotos lesbar machen**
+  Je Feld optional **Kontur (Outline)** und **Textschatten** – mit eigener
+  Konturfarbe –, damit Text auch auf Bildern gut lesbar bleibt.
 
-- **Vorder- & Rückseite tauschen**
-  Wechsle Vorder- und Rückseite mit **einem Klick** – praktisch, um beide Seiten
-  aufeinander abzustimmen.
+- **Felder frei anordnen**
+  Textfelder per Ziehen **verschieben** und in der **Grösse ändern**, neue Felder
+  **hinzufügen** (Alt+N), aktives Feld **löschen** (Alt+Entf) oder **sperren**
+  (Alt+L).
 
-- **Foto-Einpassung (3 Modi)**
-  Für jedes Bild wählbar, wie es in seinen Rahmen eingepasst wird:
-  - **Original** – kein Zuschnitt, Bild in Originalproportion.
-  - **Füllen (Cover)** – füllt den Rahmen vollständig, schneidet Überstand ab.
-  - **Einpassen (Contain)** – zeigt das ganze Bild, ohne zu beschneiden.
+- **Ausrichten & verteilen**
+  Mehrere Felder an Kanten ausrichten (links / rechts / oben / unten),
+  horizontal/vertikal zentrieren und (ab 3 Feldern) gleichmässig verteilen.
+
+- **Ebenen (Stapelreihenfolge)**
+  Felder **nach vorne / hinten** legen (Alt+Bild↑ / Alt+Bild↓).
+
+- **Bilder & Foto-Einpassung**
+  Vorder- und Rückseiten-Bild ersetzen; Darstellung wählbar: **Füllen (Cover)**,
+  **Ganz zeigen (Contain)** oder **Strecken** – plus Hintergrund der Seite.
+
+- **QR-Code einfügen**
+  QR-Code mit **frei wählbarem Inhalt** (z. B. Link) direkt auf den Flyer setzen.
+
+- **Vorder- & Rückseite**
+  Beide Seiten gestalten und mit **einem Klick tauschen**.
 
 - **Format wählen**
-  Definiere das Flyer-Format:
-  - **A4 Hochformat**
-  - **A5 Hochformat**
-  - **A4 Querformat**
-  - **A5 Querformat**
-  - oder **benutzerdefiniert** (eigene Masse)
+  Seitengrösse **A3 / A4 / A5 / A6**, **Letter** oder **benutzerdefiniert**
+  (Breite/Höhe in mm) – jeweils **Hoch-** oder **Querformat**.
 
-- **Änderungen speichern**
-  Speichere deinen Flyer als **neue HTML-Datei**. Diese kannst du jederzeit
-  wieder öffnen und **beliebig oft weiter anpassen** – dein Zwischenstand bleibt
-  erhalten.
+- **Rückgängig / Wiederholen**
+  Volle **Undo/Redo**-Unterstützung (Strg+Z / Strg+Y).
+
+- **Tastenkürzel**
+  Viele Aktionen per Shortcut; komplette Übersicht mit **F1**.
+
+- **Speichern & Drucken**
+  Fertigen Flyer als **neue HTML-Datei** speichern (Strg+S) und jederzeit
+  weiterbearbeiten – oder direkt aus dem Browser **drucken** (Strg+P).
 
 - **Kein Download. Keine Installation.**
-  Öffne die HTML-Datei einfach im Browser und leg los. Es wird keine Software,
-  kein Konto und keine Internetverbindung benötigt.
+  Öffne die HTML-Datei einfach im Browser und leg los. Editor und Bilder sind
+  eingebettet – es wird keine Software, kein Konto und keine Internetverbindung
+  benötigt.
 
 ### So nutzt du ihn
 
 1. [Flyer-Editor öffnen](https://stayingclean.github.io/toolbox/neutral_flyer.html)
    (oder die HTML-Datei lokal im Browser öffnen).
 2. Texte, Bilder, Format und Layout nach Wunsch anpassen.
-3. Über **💾 Speichern** die fertige Datei als neue HTML-Datei sichern.
+3. Über **💾 Speichern** (Strg+S) die fertige Datei als neue HTML-Datei sichern.
 4. Zum Weiterbearbeiten die gespeicherte Datei erneut im Browser öffnen.
+
+> Tipp: **F1** zeigt alle Tastenkürzel, **Strg+P** druckt den Flyer direkt.
 
 ---
 
