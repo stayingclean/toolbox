@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIT-CP Zielcheckliste</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Design Tokens ─────────────────────── */
+  :root {
+    --primary:        #008080;
+    --primary-dark:   #006666;
+    --primary-light:  #e0f2f1;
+    --primary-subtle: #f0faf9;
+    --text:           #2c3e50;
+    --text-muted:     #607d8b;
+    --surface:        #ffffff;
+    --bg:             #FAF8F5;
+    --border:         #cfd8dc;
+    --border-focus:   #4db6ac;
+    --radius:         8px;
+    --shadow-sm:      0 1px 3px rgba(0,0,0,.06);
+    --shadow-md:      0 4px 12px rgba(0,0,0,.08);
+    --font:           'Inter', -apple-system, sans-serif;
+    --font-display:   'Playfair Display', Georgia, serif;
+    --max-w:          860px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font);
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    padding-bottom: 80px;
+  }
+
+  /* ── Site header ────────────────────────────────────── */
+  .site-header {
+    background: var(--surface);
+    border-bottom: 3px solid var(--primary);
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+    position: sticky; top: 0; z-index: 200;
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
+  }
+  .brand-name {
+    font-family: var(--font-display);
+    font-size: 1.8rem; font-weight: 700;
+    color: var(--primary); line-height: 1;
+  }
+  .brand-sub {
+    font-size: .7rem; font-weight: 700; color: var(--primary-dark);
+    text-transform: uppercase; letter-spacing: .2em; margin-top: 2px;
+  }
+  .header-right { text-align: right; font-size: .8rem; color: var(--text-muted); line-height: 1.5; }
+  .header-right a { color: var(--primary); text-decoration: none; }
+
+  /* ── Main content ───────────────────────────────────── */
+  .main { max-width: var(--max-w); margin: 0 auto; padding: 24px 20px; }
+
+  /* ── Page title ─────────────────────────────────────── */
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 1.6rem; color: var(--primary); margin-bottom: 4px;
+  }
+  .page-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; }
+
+  /* ── Meta row ───────────────────────────────────────── */
+  .meta-row { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .meta-field label {
+    display: block; font-size: 11px; font-weight: 700;
+    color: var(--primary-dark); text-transform: uppercase;
+    letter-spacing: .08em; margin-bottom: 4px;
+  }
+  .meta-field input {
+    width: 100%; padding: 8px 11px; border: 1.5px solid var(--border);
+    border-radius: var(--radius); font-size: 13.5px; font-family: var(--font);
+    transition: border-color .15s;
+  }
+  .meta-field input:focus { outline: none; border-color: var(--border-focus); }
+
+  /* ── Instructions box ───────────────────────────────── */
+  .instr {
+    background: var(--primary-subtle);
+    border-left: 5px solid var(--primary);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 13px 16px; margin-bottom: 24px;
+    font-size: 13px; line-height: 1.6;
+  }
+  .instr ul { margin: 8px 0 0 18px; }
+  .instr li { margin-bottom: 4px; }
+
+  /* ── Counter badge ──────────────────────────────────── */
+  .counter-bar {
+    background: var(--primary); color: #fff;
+    border-radius: var(--radius); padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px; font-size: 13px;
+  }
+  .counter-num { font-size: 28px; font-weight: 700; line-height: 1; }
+  .counter-label { opacity: .85; }
+
+  /* ── Section card ───────────────────────────────────── */
+  .section-card {
+    background: var(--surface);
+    border-radius: var(--radius); box-shadow: var(--shadow-md);
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .section-hdr {
+    background: var(--primary); color: #fff;
+    padding: 12px 18px;
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
+  }
+  .section-hdr h2 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .section-hdr p  { font-size: 12px; opacity: .8; font-style: italic; }
+
+  /* ── Subsection ─────────────────────────────────────── */
+  .subsection { border-bottom: 1px solid var(--border); }
+  .subsection:last-child { border-bottom: none; }
+
+  .subsection-inner { display: grid; grid-template-columns: 180px 1fr; }
+
+  .sub-label {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 700; font-size: 12.5px;
+    padding: 12px 14px;
+    display: flex; align-items: flex-start;
+    border-right: 1px solid var(--border);
+    line-height: 1.35;
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
+  }
+
+  .sub-content { padding: 8px 14px 10px; }
+
+  /* ── Item row ───────────────────────────────────────── */
+  .item {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 5px 0; cursor: pointer;
+    border-radius: 4px; transition: background .1s;
+  }
+  .item:hover { background: var(--primary-subtle); padding-left: 4px; padding-right: 4px; }
+
+  .item input[type=checkbox] {
+    width: 17px; height: 17px; flex-shrink: 0; margin-top: 2px;
+    accent-color: var(--primary); cursor: pointer;
+  }
+  .item-num {
+    flex-shrink: 0; width: 22px; font-weight: 700; font-size: 12px;
+    color: var(--primary-dark); padding-top: 1px;
+  }
+  .item-text { font-size: 13px; line-height: 1.45; color: var(--text); }
+  .item.checked .item-text { color: var(--primary-dark); font-weight: 600; }
+
+  /* ── Comment field ──────────────────────────────────── */
+  .comment-wrap {
+    margin-top: 8px;
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+  }
+  .comment-label {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px;
+  }
+  textarea {
+    width: 100%; padding: 7px 10px;
+    border: 1.5px solid var(--border); border-radius: 6px;
+    font-family: var(--font); font-size: 12.5px; color: var(--text);
+    resize: vertical; min-height: 52px;
+    transition: border-color .15s;
+    background: #fcfefe;
+  }
+  textarea:focus { outline: none; border-color: var(--border-focus); }
+  textarea::placeholder { color: #b0bec5; }
+
+  /* ── Free text section ──────────────────────────────── */
+  .freetext-card {
+    background: var(--surface); border-radius: var(--radius);
+    box-shadow: var(--shadow-md); padding: 18px 20px; margin-bottom: 20px;
+  }
+  .freetext-card h3 { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
+
+  /* ── Top-5 section ──────────────────────────────────── */
+  .top5-card {
+    background: var(--surface); border-radius: var(--radius);
+    box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 20px;
+  }
+  .top5-hdr {
+    background: var(--primary-dark); color: #fff;
+    padding: 12px 18px;
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
+  }
+  .top5-hdr h2 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  .top5-hdr p  { font-size: 12px; opacity: .8; }
+
+  .top5-body { padding: 16px 20px; }
+
+  .top5-example {
+    background: var(--primary-subtle); border-left: 4px solid var(--primary);
+    padding: 10px 14px; border-radius: 0 6px 6px 0;
+    font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; font-style: italic;
+  }
+  .top5-example strong { color: var(--primary-dark); font-style: normal; }
+
+  .top5-row {
+    display: grid; grid-template-columns: 90px 1fr; gap: 10px;
+    margin-bottom: 12px; align-items: start;
+  }
+  .top5-num-wrap label {
+    font-size: 11px; font-weight: 700; color: var(--primary-dark);
+    text-transform: uppercase; letter-spacing: .07em; display: block; margin-bottom: 4px;
+  }
+  .top5-num-input {
+    width: 100%; padding: 7px 10px; border: 1.5px solid var(--border);
+    border-radius: 6px; font-family: var(--font); font-size: 14px;
+    font-weight: 700; color: var(--primary); text-align: center;
+    transition: border-color .15s;
+  }
+  .top5-num-input:focus { outline: none; border-color: var(--border-focus); }
+  .top5-text-wrap label {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .07em; display: block; margin-bottom: 4px;
+  }
+  .top5-text-input {
+    width: 100%; padding: 7px 10px; border: 1.5px solid var(--border);
+    border-radius: 6px; font-family: var(--font); font-size: 13px;
+    transition: border-color .15s;
+  }
+  .top5-text-input:focus { outline: none; border-color: var(--border-focus); }
+
+  /* ── Status bar (replaces toolbar) ─────────────────── */
+  .status-bar {
+    position: sticky; bottom: 0; z-index: 100;
+    background: var(--primary-dark);
+    padding: 9px 20px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.2);
+  }
+  .status-text { color: #9ecece; font-size: 12px; flex: 1; }
+  .btn {
+    padding: 7px 16px; border: none; border-radius: 6px;
+    font-weight: 700; font-size: 12.5px; cursor: pointer; font-family: var(--font);
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-clear { background: #b00000; color: #fff; }
+  /* ── Toolbox-Konvention: Atem, Footer, Buttons, Toast ── */
+  body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(ellipse 80% 55% at 50% 0%,var(--primary-light) 0%,transparent 68%);
+    opacity:.3;animation:breathe 7s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.22;transform:scaleY(1)}50%{opacity:.4;transform:scaleY(1.05)}}
+  .status-bar{flex-wrap:wrap}
+  .btn-save{background:var(--primary);color:#fff}
+  .btn-ghost{background:#fff;color:var(--primary-dark);border:1.5px solid var(--primary)}
+  .colophon{max-width:var(--max-w);margin:0 auto;text-align:center;color:var(--text-muted);
+    font-size:.82rem;padding:1.25rem 20px 0}
+  .footer-credit{display:inline-flex;align-items:center;gap:8px;margin-top:10px;color:var(--text-muted);
+    text-decoration:none;transition:color .15s}
+  .footer-credit:hover{color:var(--primary-dark)}
+  .footer-avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);object-fit:cover;display:block}
+  .toast{position:fixed;bottom:64px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--primary-dark);color:#fff;padding:.7rem 1.4rem;border-radius:8px;box-shadow:var(--shadow-md);
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ── Print ──────────────────────────────────────────── */
+  @media print {
+    body { background: #fff; padding: 0; font-size: 11px; }
+    .site-header { position: static; }
+    .header-right { display: none; }
+    .status-bar, .counter-bar, .toast { display: none !important; }
+    body::before { display: none !important; }
+    .section-card, .freetext-card, .top5-card { box-shadow: none; page-break-inside: avoid; }
+    .item:hover { background: none; padding-left: 0; padding-right: 0; }
+    textarea { border: 1px solid #ccc; min-height: 40px; }
+    .top5-num-input, .top5-text-input { border: 1px solid #ccc; }
+    .meta-field input { border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Site header ──────────────────────────────────────── -->
+<header class="site-header">
+  <div>
+    <div class="brand-name">BIT-CP</div>
+    <div class="brand-sub">Zielcheckliste</div>
+  </div>
+</header>
+
+<!-- ── Main ─────────────────────────────────────────────── -->
+<main class="main">
+
+  <div class="page-title">Berner Inventar für Therapieziele</div>
+  <div class="page-subtitle">Zielcheckliste (BIT-CP; Patientenversion) · Ihre Ziele für die kommende Therapie</div>
+
+  <!-- Meta -->
+  <div class="meta-row">
+    <div class="meta-field"><label>Name</label><input id="meta-name" type="text" placeholder="Vor- und Nachname"></div>
+    <div class="meta-field"><label>Datum</label><input id="meta-datum" type="date"></div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="instr">
+    Das Setzen von Zielen ist eine wichtige Voraussetzung für eine wirkungsvolle Therapie.
+    Bitte geben Sie hier Ihre persönlichen Ziele für die kommende stationäre Behandlung an.
+    <ul>
+      <li>Gehen Sie die Liste durch und <strong>kreuzen Sie alle Ziele an</strong>, die Sie mit Hilfe der kommenden Therapie erreichen wollen.</li>
+      <li>Nutzen Sie die <strong>Kommentarfelder</strong> für persönliche Gedanken, Fragen oder Ergänzungen zu jedem Bereich.</li>
+      <li>Tragen Sie am Ende Ihre <strong>wichtigsten fünf Ziele</strong> ein.</li>
+    </ul>
+    <div style="margin-top:8px;font-size:12px;color:var(--primary-dark);">
+      💾 Speichern Sie über die Leiste unten: <strong>Als HTML speichern</strong> (öffnet gefüllt) oder <strong>JSON exportieren</strong>.
+    </div>
+  </div>
+
+  <!-- Counter -->
+  <div class="counter-bar">
+    <div class="counter-num" id="counter">0</div>
+    <div class="counter-label">Ziele angekreuzt von 64 möglichen</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 1
+       ═══════════════════════════════════════════════════ -->
+  <div class="section-card">
+    <div class="section-hdr">
+      <h2>Bewältigung bestimmter Probleme und Symptome</h2>
+      <p>Mit Hilfe der Psychotherapie möchte ich…</p>
+    </div>
+
+    <!-- Depressives Erleben -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Depressives Erleben</div>
+        <div class="sub-content">
+          <label class="item" id="lbl1"><input type="checkbox" id="c1"><span class="item-num">1</span><span class="item-text">negative, kreisende Gedanken oder Schuldgefühle überwinden.</span></label>
+          <label class="item" id="lbl2"><input type="checkbox" id="c2"><span class="item-num">2</span><span class="item-text">aus meiner gedrückten Stimmung, Traurigkeit oder inneren Leere herauskommen.</span></label>
+          <label class="item" id="lbl3"><input type="checkbox" id="c3"><span class="item-num">3</span><span class="item-text">mit Stimmungsschwankungen besser umgehen lernen.</span></label>
+          <label class="item" id="lbl4"><input type="checkbox" id="c4"><span class="item-num">4</span><span class="item-text">wieder mehr Antrieb und Energie bekommen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_depressiv" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen zu Depressivem Erleben…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Körperliche Selbstverletzung -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Körperliche Selbstverletzung</div>
+        <div class="sub-content">
+          <label class="item" id="lbl5"><input type="checkbox" id="c5"><span class="item-num">5</span><span class="item-text">lernen, mir keine körperlichen Verletzungen mehr zuzufügen (z.B. mich absichtlich schneiden oder brennen).</span></label>
+          <label class="item" id="lbl6"><input type="checkbox" id="c6"><span class="item-num">6</span><span class="item-text">Selbstmordgedanken überwinden und wieder Lebenswillen finden.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_selbstverletzung" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ängste -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Ängste</div>
+        <div class="sub-content">
+          <label class="item" id="lbl7"><input type="checkbox" id="c7"><span class="item-num">7</span><span class="item-text">eine konkrete Angst bewältigen oder besser mit ihr umgehen lernen.</span></label>
+          <label class="item" id="lbl8"><input type="checkbox" id="c8"><span class="item-num">8</span><span class="item-text">lernen, Angst- und Panikanfälle in den Griff zu bekommen.</span></label>
+          <label class="item" id="lbl9"><input type="checkbox" id="c9"><span class="item-num">9</span><span class="item-text">lernen, ohne Angst und unsicheres Verhalten (z.B. Erröten, Stottern) unter die Leute zu gehen.</span></label>
+          <label class="item" id="lbl10"><input type="checkbox" id="c10"><span class="item-num">10</span><span class="item-text">lernen, wieder Dinge zu tun, die ich jetzt aus Angst vermeide.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_angst" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen zu Ängsten…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zwanghafte Gedanken -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Zwanghafte Gedanken und Handlungen</div>
+        <div class="sub-content">
+          <label class="item" id="lbl11"><input type="checkbox" id="c11"><span class="item-num">11</span><span class="item-text">ständig wiederkehrende, quälende Gedanken oder Impulse besser kontrollieren lernen.</span></label>
+          <label class="item" id="lbl12"><input type="checkbox" id="c12"><span class="item-num">12</span><span class="item-text">wiederholte, sinnlose und zeitraubende Handlungen (übertriebenes Händewaschen, Ordnen, Prüfen, Zählen etc.) einschränken lernen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_zwang" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Traumatische Erlebnisse -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Traumatische Erlebnisse</div>
+        <div class="sub-content">
+          <label class="item" id="lbl13"><input type="checkbox" id="c13"><span class="item-num">13</span><span class="item-text">traumatische Erlebnisse verarbeiten (z.B. schwerer Unfall, Gewaltverbrechen, Vergewaltigung, Naturkatastrophe u.a.).</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_trauma" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suchtverhalten -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Suchtverhalten (Alkohol, Drogen, Medikamente)</div>
+        <div class="sub-content">
+          <label class="item" id="lbl14"><input type="checkbox" id="c14"><span class="item-num">14</span><span class="item-text">den körperlichen Entzug von einem Suchtmittel durchführen.</span></label>
+          <label class="item" id="lbl15"><input type="checkbox" id="c15"><span class="item-num">15</span><span class="item-text">ohne Suchtmittel leben lernen.</span></label>
+          <label class="item" id="lbl16"><input type="checkbox" id="c16"><span class="item-num">16</span><span class="item-text">meinen Suchtmittelkonsum kontrollieren lernen.</span></label>
+          <label class="item" id="lbl17"><input type="checkbox" id="c17"><span class="item-num">17</span><span class="item-text">mit schwierigen Situationen anders umgehen lernen, statt zum Suchtmittel zu greifen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_sucht" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen zu Suchtverhalten…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Essverhalten -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Essverhalten</div>
+        <div class="sub-content">
+          <label class="item" id="lbl18"><input type="checkbox" id="c18"><span class="item-num">18</span><span class="item-text">meine Essprobleme (Magersucht, Ess-Brechsucht, Esssucht etc.) bewältigen.</span></label>
+          <label class="item" id="lbl19"><input type="checkbox" id="c19"><span class="item-num">19</span><span class="item-text">mit meinem Gewicht umgehen lernen (es reduzieren oder so akzeptieren).</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_essen" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schlaf -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Schlaf</div>
+        <div class="sub-content">
+          <label class="item" id="lbl20"><input type="checkbox" id="c20"><span class="item-num">20</span><span class="item-text">meine Schlafprobleme (Schwierigkeiten beim Ein- oder Durchschlafen, frühes Erwachen etc.) bewältigen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_schlaf" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sexualität -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Sexualität</div>
+        <div class="sub-content">
+          <label class="item" id="lbl21"><input type="checkbox" id="c21"><span class="item-num">21</span><span class="item-text">sexuelle Probleme bewältigen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_sexualitaet" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Körperliche Schmerzen -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Körperliche Schmerzen und Krankheiten</div>
+        <div class="sub-content">
+          <label class="item" id="lbl22"><input type="checkbox" id="c22"><span class="item-num">22</span><span class="item-text">mit körperlichen Schmerzen umgehen lernen oder diese nach Möglichkeit verringern.</span></label>
+          <label class="item" id="lbl23"><input type="checkbox" id="c23"><span class="item-num">23</span><span class="item-text">mit meiner körperlichen Krankheit umgehen lernen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_schmerz" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lebensbereiche -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Schwierigkeiten in bestimmten Lebensbereichen</div>
+        <div class="sub-content">
+          <label class="item" id="lbl24"><input type="checkbox" id="c24"><span class="item-num">24</span><span class="item-text">meine Wohnsituation klären (ein Problem bewältigen oder ein Ziel anstreben).</span></label>
+          <label class="item" id="lbl25"><input type="checkbox" id="c25"><span class="item-num">25</span><span class="item-text">konkrete Probleme im Zusammenhang mit meiner Arbeit oder meiner Ausbildung bewältigen.</span></label>
+          <label class="item" id="lbl26"><input type="checkbox" id="c26"><span class="item-num">26</span><span class="item-text">meinen Alltag besser organisieren lernen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_lebensbereich" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stress -->
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Stress</div>
+        <div class="sub-content">
+          <label class="item" id="lbl27"><input type="checkbox" id="c27"><span class="item-num">27</span><span class="item-text">besser mit Stresssituationen umgehen lernen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_stress" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /section-card 1 -->
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 2
+       ═══════════════════════════════════════════════════ -->
+  <div class="section-card">
+    <div class="section-hdr">
+      <h2>Ziele im zwischenmenschlichen Bereich</h2>
+      <p>Mit Hilfe der Psychotherapie möchte ich…</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Bestehende Partnerschaft</div>
+        <div class="sub-content">
+          <label class="item" id="lbl28"><input type="checkbox" id="c28"><span class="item-num">28</span><span class="item-text">die Beziehung mit meinem Partner/meiner Partnerin verbessern.</span></label>
+          <label class="item" id="lbl29"><input type="checkbox" id="c29"><span class="item-num">29</span><span class="item-text">das Sexualleben mit meinem Partner/meiner Partnerin verbessern.</span></label>
+          <label class="item" id="lbl30"><input type="checkbox" id="c30"><span class="item-num">30</span><span class="item-text">meine Erwartungen und Gefühle bezügl. Partner/Partnerin klären.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_partnerschaft" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Elternschaft und aktuelle Familie</div>
+        <div class="sub-content">
+          <label class="item" id="lbl31"><input type="checkbox" id="c31"><span class="item-num">31</span><span class="item-text">mich mit meiner Vater- bzw. Mutterrolle auseinandersetzen.</span></label>
+          <label class="item" id="lbl32"><input type="checkbox" id="c32"><span class="item-num">32</span><span class="item-text">die Beziehung zu meinem Kind/meinen Kindern verbessern.</span></label>
+          <label class="item" id="lbl33"><input type="checkbox" id="c33"><span class="item-num">33</span><span class="item-text">versuchen, etwas an der ganzen familiären Situation zu verändern.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_elternschaft" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Herkunftsfamilie</div>
+        <div class="sub-content">
+          <label class="item" id="lbl34"><input type="checkbox" id="c34"><span class="item-num">34</span><span class="item-text">die Beziehung zu meinen Eltern verändern (mich ablösen, Schuldgefühle oder Abhängigkeit überwinden etc.).</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_herkunft" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Andere Beziehungen</div>
+        <div class="sub-content">
+          <label class="item" id="lbl35"><input type="checkbox" id="c35"><span class="item-num">35</span><span class="item-text">die Beziehung zu bestimmten Personen aus dem privaten oder beruflichen Umfeld klären oder verbessern.</span></label>
+          <label class="item" id="lbl36"><input type="checkbox" id="c36"><span class="item-num">36</span><span class="item-text">die Trennung von meinem Ex-Partner/meiner Ex-Partnerin verarbeiten.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_beziehungen" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Alleinsein und Trauer</div>
+        <div class="sub-content">
+          <label class="item" id="lbl37"><input type="checkbox" id="c37"><span class="item-num">37</span><span class="item-text">meine Zeit alleine verbringen lernen.</span></label>
+          <label class="item" id="lbl38"><input type="checkbox" id="c38"><span class="item-num">38</span><span class="item-text">den Tod einer geliebten Person verarbeiten.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_trauer" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Selbstbehauptung und Abgrenzung</div>
+        <div class="sub-content">
+          <label class="item" id="lbl39"><input type="checkbox" id="c39"><span class="item-num">39</span><span class="item-text">mich anderen gegenüber besser durchsetzen und abgrenzen lernen.</span></label>
+          <label class="item" id="lbl40"><input type="checkbox" id="c40"><span class="item-num">40</span><span class="item-text">mit den Reaktionen anderer (Kritik, Ablehnung, Lob etc.) auf mein Verhalten besser umgehen lernen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_abgrenzung" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Kontakt und Nähe</div>
+        <div class="sub-content">
+          <label class="item" id="lbl41"><input type="checkbox" id="c41"><span class="item-num">41</span><span class="item-text">lernen, besser mit Menschen Kontakt aufzunehmen und zu pflegen (z.B. lernen, wie ich Leute kennenlerne, Freundschaften aufbaue etc.).</span></label>
+          <label class="item" id="lbl42"><input type="checkbox" id="c42"><span class="item-num">42</span><span class="item-text">Nähe zulassen und Vertrauen zu anderen Menschen aufbauen lernen.</span></label>
+          <label class="item" id="lbl43"><input type="checkbox" id="c43"><span class="item-num">43</span><span class="item-text">mich auf eine neue Partnerschaft vorbereiten.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_kontakt" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /section-card 2 -->
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 3
+       ═══════════════════════════════════════════════════ -->
+  <div class="section-card">
+    <div class="section-hdr">
+      <h2>Verbesserung des Wohlbefindens</h2>
+      <p>Mit Hilfe der Psychotherapie möchte ich…</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Bewegung und Aktivität</div>
+        <div class="sub-content">
+          <label class="item" id="lbl44"><input type="checkbox" id="c44"><span class="item-num">44</span><span class="item-text">mehr Sport und andere körperliche Aktivitäten betreiben.</span></label>
+          <label class="item" id="lbl45"><input type="checkbox" id="c45"><span class="item-num">45</span><span class="item-text">meine Freizeit aktiver gestalten (Hobbies, kulturelle Aktivitäten etc.).</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_bewegung" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Entspannung und Gelassenheit</div>
+        <div class="sub-content">
+          <label class="item" id="lbl46"><input type="checkbox" id="c46"><span class="item-num">46</span><span class="item-text">Techniken erlernen, die mir helfen, mich zu entspannen.</span></label>
+          <label class="item" id="lbl47"><input type="checkbox" id="c47"><span class="item-num">47</span><span class="item-text">lernen, Probleme und Herausforderungen gelassener anzugehen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_entspannung" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Wohlbefinden</div>
+        <div class="sub-content">
+          <label class="item" id="lbl48"><input type="checkbox" id="c48"><span class="item-num">48</span><span class="item-text">mehr Optimismus und Lebensfreude entwickeln.</span></label>
+          <label class="item" id="lbl49"><input type="checkbox" id="c49"><span class="item-num">49</span><span class="item-text">lernen, mich in meinem Körper wohl zu fühlen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_wohlbefinden" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /section-card 3 -->
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 4
+       ═══════════════════════════════════════════════════ -->
+  <div class="section-card">
+    <div class="section-hdr">
+      <h2>Orientierung im Leben</h2>
+      <p>Mit Hilfe der Psychotherapie möchte ich…</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Vergangenheit, Gegenwart und Zukunft</div>
+        <div class="sub-content">
+          <label class="item" id="lbl50"><input type="checkbox" id="c50"><span class="item-num">50</span><span class="item-text">mit Teilen meiner Vergangenheit besser zurechtkommen lernen.</span></label>
+          <label class="item" id="lbl51"><input type="checkbox" id="c51"><span class="item-num">51</span><span class="item-text">mir klarer werden wer ich bin, was ich kann und was ich will.</span></label>
+          <label class="item" id="lbl52"><input type="checkbox" id="c52"><span class="item-num">52</span><span class="item-text">neue Zukunftsperspektiven (private oder berufliche) erarbeiten.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_vergangenheit" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Sinnfindung</div>
+        <div class="sub-content">
+          <label class="item" id="lbl53"><input type="checkbox" id="c53"><span class="item-num">53</span><span class="item-text">Sinnfragen in meinem Leben klären.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_sinn" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /section-card 4 -->
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 5
+       ═══════════════════════════════════════════════════ -->
+  <div class="section-card">
+    <div class="section-hdr">
+      <h2>Selbstbezogene Ziele</h2>
+      <p>Mit Hilfe der Psychotherapie möchte ich…</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Einstellung zu mir selbst</div>
+        <div class="sub-content">
+          <label class="item" id="lbl54"><input type="checkbox" id="c54"><span class="item-num">54</span><span class="item-text">mehr Selbstvertrauen und Selbstsicherheit entwickeln.</span></label>
+          <label class="item" id="lbl55"><input type="checkbox" id="c55"><span class="item-num">55</span><span class="item-text">mich akzeptieren lernen, so wie ich bin.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_einstellung" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Bedürfnisse und Wünsche</div>
+        <div class="sub-content">
+          <label class="item" id="lbl56"><input type="checkbox" id="c56"><span class="item-num">56</span><span class="item-text">meine Bedürfnisse wahrnehmen und ausdrücken lernen.</span></label>
+          <label class="item" id="lbl57"><input type="checkbox" id="c57"><span class="item-num">57</span><span class="item-text">meine Grenzen besser erkennen und danach handeln lernen.</span></label>
+          <label class="item" id="lbl58"><input type="checkbox" id="c58"><span class="item-num">58</span><span class="item-text">eigene Wünsche und Pläne besser verwirklichen lernen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_beduerfnisse" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Verantwortung, Leistung und Kontrolle</div>
+        <div class="sub-content">
+          <label class="item" id="lbl59"><input type="checkbox" id="c59"><span class="item-num">59</span><span class="item-text">lernen, Verantwortung für mich selbst zu übernehmen (eigenständig leben, Entscheidungen treffen usw.).</span></label>
+          <label class="item" id="lbl60"><input type="checkbox" id="c60"><span class="item-num">60</span><span class="item-text">mehr Selbstdisziplin und Durchhaltevermögen entwickeln.</span></label>
+          <label class="item" id="lbl61"><input type="checkbox" id="c61"><span class="item-num">61</span><span class="item-text">meine hohen Ansprüche an mich oder an andere herabsetzen lernen.</span></label>
+          <label class="item" id="lbl62"><input type="checkbox" id="c62"><span class="item-num">62</span><span class="item-text">Verantwortung und Kontrolle abgeben lernen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_verantwortung" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-inner">
+        <div class="sub-label">Umgang mit Gefühlen</div>
+        <div class="sub-content">
+          <label class="item" id="lbl63"><input type="checkbox" id="c63"><span class="item-num">63</span><span class="item-text">Gefühle zulassen und äussern lernen.</span></label>
+          <label class="item" id="lbl64"><input type="checkbox" id="c64"><span class="item-num">64</span><span class="item-text">mit starken negativen Gefühlen (z.B. Ärger, Wutausbrüchen) umgehen lernen.</span></label>
+          <div class="comment-wrap">
+            <div class="comment-label">Kommentar / Fragen</div>
+            <textarea id="cm_gefuehle" placeholder="Persönliche Gedanken, Fragen oder Ergänzungen…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /section-card 5 -->
+
+  <!-- ── Weitere Ziele (Freitext) ─────────────────────── -->
+  <div class="freetext-card">
+    <h3>Weitere persönliche Ziele</h3>
+    <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">
+      Wenn Sie noch andere Ziele haben, die nicht in der Liste aufgeführt sind, können Sie diese hier aufschreiben.
+    </p>
+    <textarea id="further_goals" style="min-height:90px;"
+      placeholder="Eigene Ziele, die in der Checkliste nicht enthalten sind…"></textarea>
+  </div>
+
+  <!-- ── Top-5 ─────────────────────────────────────────── -->
+  <div class="top5-card">
+    <div class="top5-hdr">
+      <h2>Meine fünf wichtigsten Ziele</h2>
+      <p>Bitte wählen Sie aus allen angekreuzten Zielen Ihre fünf wichtigsten aus und formulieren Sie diese in eigene Worte um.</p>
+    </div>
+    <div class="top5-body">
+      <div class="top5-example">
+        <strong>Beispiel — Ziel Nr. 10:</strong>
+        Ich möchte lernen, wieder ohne Angst alleine aus dem Haus zu gehen und öffentliche Verkehrsmittel zu benutzen.
+      </div>
+      <div id="top5-rows"></div>
+    </div>
+  </div>
+
+  <footer class="colophon">
+    BIT-CP – Berner Inventar für Therapieziele · Zielcheckliste (Patientenversion)
+    <br>
+    <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+      <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+      <span>Erstellt von stayingclean</span>
+    </a>
+  </footer>
+
+</main>
+
+<!-- ── Status bar ────────────────────────────────────────── -->
+<div class="status-bar">
+  <span class="status-text" id="status-text">BIT-CP Zielcheckliste</span>
+  <button class="btn btn-save" id="btn-html">💾 Als HTML speichern</button>
+  <button class="btn btn-ghost" id="btn-json">JSON exportieren</button>
+  <button class="btn btn-ghost" id="btn-load">JSON laden</button>
+  <button class="btn btn-clear" id="btn-clear">✕ Löschen</button>
+  <input type="file" id="file-input" accept="application/json,.json" hidden>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const TOTAL_ITEMS = 64;
+const TOP5_COUNT  = 5;
+
+(function buildTop5(){
+  const wrap=document.getElementById('top5-rows');
+  for(let i=1;i<=TOP5_COUNT;i++){
+    wrap.insertAdjacentHTML('beforeend',
+      '<div class="top5-row">'
+      + '<div class="top5-num-wrap"><label>Ziel Nr.</label>'
+      + '<input class="top5-num-input" id="t5n'+i+'" type="text" maxlength="3" placeholder="\u2014"></div>'
+      + '<div class="top5-text-wrap"><label>Mein pers\u00f6nlich formuliertes Ziel</label>'
+      + '<input class="top5-text-input" id="t5t'+i+'" type="text" placeholder="Ich m\u00f6chte\u2026"></div>'
+      + '</div>');
+  }
+})();
+
+function val(id){ const el=document.getElementById(id); return el?el.value:''; }
+function setVal(id,v){ const el=document.getElementById(id); if(el) el.value=v||''; }
+
+function collectData(){
+  const checked={}, comments={};
+  for(let n=1;n<=TOTAL_ITEMS;n++){ const el=document.getElementById('c'+n); if(el&&el.checked) checked[n]=true; }
+  document.querySelectorAll('textarea[id^="cm_"], textarea#further_goals').forEach(function(ta){ if(ta.value) comments[ta.id]=ta.value; });
+  const top5=[];
+  for(let i=1;i<=TOP5_COUNT;i++){ top5.push({num:val('t5n'+i),text:val('t5t'+i)}); }
+  return {instrument:'BIT-CP',version:1,savedAt:new Date().toISOString(),
+    meta:{name:val('meta-name'),datum:val('meta-datum')}, checked:checked, comments:comments, top5:top5};
+}
+
+function syncCheckStyle(num,checked){ const lbl=document.getElementById('lbl'+num); if(lbl) lbl.classList.toggle('checked',checked); }
+function updateCounter(){ let n=0; for(let i=1;i<=TOTAL_ITEMS;i++){ const el=document.getElementById('c'+i); if(el&&el.checked) n++; } document.getElementById('counter').textContent=n; }
+
+function applyData(data){
+  if(!data) return;
+  if(data.meta){ setVal('meta-name',data.meta.name); setVal('meta-datum',data.meta.datum); }
+  for(let n=1;n<=TOTAL_ITEMS;n++){ const el=document.getElementById('c'+n); if(el){ el.checked=!!(data.checked&&data.checked[n]); syncCheckStyle(n,el.checked); } }
+  if(data.comments){ Object.keys(data.comments).forEach(function(id){ const el=document.getElementById(id); if(el) el.value=data.comments[id]; }); }
+  if(data.top5){ data.top5.forEach(function(row,i){ setVal('t5n'+(i+1),row.num); setVal('t5t'+(i+1),row.text); }); }
+  updateCounter();
+}
+
+function restoreEmbedded(){ const b=document.getElementById('bitcp-data'); if(!b||!b.textContent.trim()) return; try{ applyData(JSON.parse(b.textContent)); }catch(e){ console.warn('Datenblock unlesbar',e); } }
+
+function reflectDom(){
+  document.querySelectorAll('input[type=checkbox]').forEach(function(el){ if(el.checked) el.setAttribute('checked','checked'); else el.removeAttribute('checked'); });
+  document.querySelectorAll('.top5-num-input,.top5-text-input,#meta-name,#meta-datum').forEach(function(el){ if(el.value) el.setAttribute('value',el.value); else el.removeAttribute('value'); });
+  document.querySelectorAll('textarea').forEach(function(el){ el.textContent=el.value; });
+}
+
+function fileBase(){ const name=(val('meta-name')||'').trim().replace(/\s+/g,'-'); const d=val('meta-datum')||new Date().toISOString().slice(0,10); return ['BIT-CP',name,d].filter(Boolean).join('_').replace(/[^\w\-\u00e4\u00f6\u00fc\u00c4\u00d6\u00dc\u00df]/g,'_'); }
+function download(content,type,fn){ const b=new Blob([content],{type:type}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=fn; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function(){URL.revokeObjectURL(u);},1500); }
+
+function saveAsHTML(){
+  reflectDom();
+  let b=document.getElementById('bitcp-data'); if(!b){ b=document.createElement('script'); b.type='application/json'; b.id='bitcp-data'; document.body.appendChild(b); }
+  b.textContent=JSON.stringify(collectData(),null,2);
+  download('<!DOCTYPE html>\n'+document.documentElement.outerHTML,'text/html;charset=utf-8',fileBase()+'.html');
+  toast('Als HTML gespeichert');
+}
+function exportJSON(){ download(JSON.stringify(collectData(),null,2),'application/json;charset=utf-8',fileBase()+'.json'); toast('JSON exportiert'); }
+function importJSON(file){ const r=new FileReader(); r.onload=function(){ try{ applyData(JSON.parse(r.result)); toast('JSON geladen'); }catch(e){ toast('JSON konnte nicht gelesen werden'); } }; r.readAsText(file); }
+
+function clearAll(){
+  if(!confirm('Alle Angaben wirklich l\u00f6schen?')) return;
+  for(let n=1;n<=TOTAL_ITEMS;n++){ const el=document.getElementById('c'+n); if(el){ el.checked=false; syncCheckStyle(n,false); } }
+  document.querySelectorAll('textarea').forEach(function(t){ t.value=''; });
+  document.querySelectorAll('.top5-num-input,.top5-text-input').forEach(function(i){ i.value=''; });
+  setVal('meta-name',''); document.getElementById('meta-datum').value=new Date().toISOString().slice(0,10);
+  updateCounter(); toast('Zur\u00fcckgesetzt');
+}
+
+let toastTimer;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove('show');},2600); }
+
+document.addEventListener('change', function(e){ if(e.target.type==='checkbox'){ const num=parseInt(e.target.id.replace('c','')); syncCheckStyle(num,e.target.checked); updateCounter(); } });
+
+(function init(){
+  if(!document.getElementById('meta-datum').value) document.getElementById('meta-datum').value=new Date().toISOString().slice(0,10);
+  restoreEmbedded();
+  updateCounter();
+  document.getElementById('btn-html').addEventListener('click',saveAsHTML);
+  document.getElementById('btn-json').addEventListener('click',exportJSON);
+  document.getElementById('btn-load').addEventListener('click',function(){document.getElementById('file-input').click();});
+  document.getElementById('file-input').addEventListener('change',function(e){ if(e.target.files[0]) importJSON(e.target.files[0]); e.target.value=''; });
+  document.getElementById('btn-clear').addEventListener('click',clearAll);
+})();
+</script>
+<!-- Eingebettete Antwortdaten (beim Speichern befüllt) -->
+<script type="application/json" id="bitcp-data"></script>
+
+</body>
+</html>

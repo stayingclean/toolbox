@@ -16,6 +16,7 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/budgetvorlage.html` = eigenständige Budget-Seite (neutrale Vorlage).
 - `docs/neutral_flyer.html` = Flyer-Editor (self-contained, Bilder eingebettet).
 - `docs/asrs-v1-1.html` = ASRS v1.1 (ADHS-Selbstbeurteilung, WHO – frei nutzbar).
+- `docs/bit-cp-zielcheckliste.html` = BIT-CP Zielcheckliste (Therapieziele; vom Nutzer freigegeben).
 
 Die Übersicht ist **nach Themen gruppiert** (`<section class="group">` je Thema, z. B.
 „Werkzeuge", „ADHS").
