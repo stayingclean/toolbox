@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASRS v1.1 – ADHS-Selbstbeurteilung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary:#008080; --primary-dark:#006666; --primary-light:#E6F2F2; --primary-subtle:#F5FAFA;
+    --bg:#FAF8F5; --surface:#FFFFFF; --border:#E8E4DF; --text:#1C1C1C; --muted:#7A7268;
+    --gray:#D4D4D4; --stripe:#F5FAFA;
+    --radius:10px; --shadow-sm:0 1px 3px rgba(0,64,64,.08); --shadow-md:0 4px 16px rgba(0,64,64,.12);
+    --font:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+    --font-display:'Playfair Display',Georgia,serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);line-height:1.5;
+    -webkit-font-smoothing:antialiased;padding-bottom:76px}
+
+  /* Dezenter „atmender" Hintergrund (wie die übrigen Toolbox-Seiten) */
+  body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(ellipse 80% 55% at 50% 0%,var(--primary-light) 0%,transparent 68%);
+    opacity:.3;animation:breathe 7s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.22;transform:scaleY(1)}50%{opacity:.4;transform:scaleY(1.05)}}
+
+  .container{max-width:980px;margin:0 auto;padding:2rem 1.25rem}
+
+  header.brand{background:var(--surface);border-radius:12px;box-shadow:var(--shadow-sm);
+    padding:1.5rem 1.75rem;margin-bottom:1.25rem;border-top:3px solid var(--primary)}
+  header.brand h1{font-family:var(--font-display);font-weight:700;font-size:2rem;color:var(--primary-dark);
+    letter-spacing:-.5px;margin-bottom:.15rem}
+  header.brand p{color:var(--muted);font-size:.95rem}
+
+  .card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow-sm);
+    padding:1.4rem 1.6rem;margin-bottom:1.25rem}
+  .card h2{font-family:var(--font-display);font-weight:700;color:var(--primary-dark);font-size:1.3rem;margin-bottom:.9rem}
+
+  .meta-row{display:grid;gap:12px;grid-template-columns:2fr 1fr 1fr}
+  .meta-field label{display:block;font-size:11px;font-weight:700;color:var(--primary-dark);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+  .meta-field input{width:100%;padding:.55rem .7rem;border:1.5px solid var(--border);border-radius:8px;
+    font:inherit;color:var(--text);background:#fff;transition:border-color .15s,box-shadow .15s}
+  .meta-field input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,128,128,.15)}
+  @media(max-width:640px){.meta-row{grid-template-columns:1fr}}
+
+  .instr{background:var(--primary-subtle);border-left:4px solid var(--primary);border-radius:0 8px 8px 0;
+    padding:.85rem 1.1rem;margin-bottom:1rem;font-size:13.5px;line-height:1.55}
+  .instr strong{color:var(--primary-dark)}
+
+  .asrs-table{width:100%;border-collapse:collapse;margin-bottom:.5rem}
+  .asrs-table th,.asrs-table td{border:1px solid var(--border);padding:0}
+  .asrs-table thead th{background:var(--primary);color:#fff;text-align:center;font-size:12px;padding:8px 4px;vertical-align:middle}
+  .asrs-table thead th.q-col{text-align:left;padding:8px 14px}
+  .asrs-table thead th .sub{font-size:11px;opacity:.85;font-weight:400}
+  .asrs-table td.q-cell{padding:9px 14px;vertical-align:middle;line-height:1.4}
+  .asrs-table td.q-cell .q-num{font-weight:700;color:var(--primary-dark)}
+  .asrs-table td.opt-cell{text-align:center;vertical-align:middle;padding:6px 4px;background:#fff}
+  .asrs-table td.opt-cell.thresh{background:var(--gray)}
+  .asrs-table tbody tr:nth-child(odd) td.q-cell,
+  .asrs-table tbody tr:nth-child(odd) td.opt-cell:not(.thresh){background:var(--stripe)}
+  .asrs-table input[type=radio]{width:18px;height:18px;cursor:pointer;accent-color:var(--primary)}
+  .section-hdr{background:var(--primary-light);color:var(--primary-dark);font-weight:700;font-size:13px;padding:8px 14px}
+
+  .sums-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem;margin-top:1.25rem}
+  .sum-pill{background:var(--primary-light);border-radius:8px;padding:.85rem 1rem;text-align:center}
+  .sum-pill .label{color:var(--primary-dark);font-size:.8rem;font-weight:500;display:block}
+  .sum-pill .value{font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--primary-dark);line-height:1.2}
+  .sum-pill.flag .value{color:#b3441f}
+  .screen-note{margin-top:.9rem;font-size:.9rem;color:var(--muted)}
+  .screen-note strong{color:var(--primary-dark)}
+
+  .source-note{font-size:.8rem;color:var(--muted);line-height:1.5;margin-top:.5rem}
+
+  footer.colophon{text-align:center;color:var(--muted);font-size:.82rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)}
+  .footer-credit{display:inline-flex;align-items:center;gap:8px;margin-top:10px;color:var(--muted);text-decoration:none;transition:color .15s}
+  .footer-credit:hover{color:var(--primary-dark)}
+  .footer-avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);object-fit:cover;display:block}
+
+  .toolbar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--surface);
+    border-top:1px solid var(--border);box-shadow:0 -2px 12px rgba(0,0,0,.06);
+    padding:.75rem 1.25rem;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+  .toolbar .status{color:var(--muted);font-size:.85rem;flex:1;min-width:140px}
+  .toolbar .status strong{color:var(--primary-dark)}
+  .btn{font:inherit;font-weight:600;font-size:.85rem;padding:.6rem 1.1rem;border:1.5px solid transparent;
+    border-radius:8px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-dark)}
+  .btn-ghost{background:#fff;color:var(--primary-dark);border-color:var(--primary)}
+  .btn-ghost:hover{background:var(--primary-subtle)}
+
+  .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--primary-dark);color:#fff;padding:.7rem 1.4rem;border-radius:8px;box-shadow:var(--shadow-md);
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:200}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media print{
+    body{background:#fff;padding:0}
+    body::before,.toolbar,.toast{display:none !important}
+    .container{max-width:none;padding:0}
+    .card,header.brand{box-shadow:none;break-inside:avoid}
+    .asrs-table tbody tr{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="brand">
+    <h1>ASRS v1.1</h1>
+    <p>Adult ADHD Self-Report Scale – Selbstbeurteilung zu ADHS-Symptomen</p>
+  </header>
+
+  <section class="card">
+    <h2>Angaben</h2>
+    <div class="meta-row">
+      <div class="meta-field"><label>Name</label><input type="text" id="m-name" autocomplete="off" placeholder="Vor- und Nachname"></div>
+      <div class="meta-field"><label>Alter</label><input type="number" id="m-alter" min="0" max="120" inputmode="numeric" placeholder="Jahre"></div>
+      <div class="meta-field"><label>Datum</label><input type="date" id="m-datum"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Fragebogen</h2>
+    <div class="instr">
+      <strong>Anleitung:</strong> Markieren Sie pro Zeile die Antwort, die am besten beschreibt, wie Sie sich in den
+      <strong>letzten 6 Monaten</strong> gefühlt und verhalten haben. Die <strong>grau hinterlegten Felder</strong>
+      kennzeichnen den klinisch auffälligen Bereich. Bitte lassen Sie keine Frage aus.
+    </div>
+
+    <table class="asrs-table">
+      <thead>
+        <tr>
+          <th class="q-col">Frage</th>
+          <th>nie<br><span class="sub">0</span></th>
+          <th>selten<br><span class="sub">1</span></th>
+          <th>manchmal<br><span class="sub">2</span></th>
+          <th>oft<br><span class="sub">3</span></th>
+          <th>sehr oft<br><span class="sub">4</span></th>
+        </tr>
+      </thead>
+      <tbody id="asrs-body"></tbody>
+    </table>
+
+    <div class="sums-grid">
+      <div class="sum-pill" id="pill-a"><span class="label">Teil A – Markierungen im grauen Bereich</span><span class="value" id="sc-a-count">0 / 6</span></div>
+      <div class="sum-pill"><span class="label">Summe Teil A (Fragen 1–6)</span><span class="value" id="sc-a-sum">0</span></div>
+      <div class="sum-pill"><span class="label">Summe Teil B (Fragen 7–18)</span><span class="value" id="sc-b-sum">0</span></div>
+      <div class="sum-pill"><span class="label">Gesamtsumme (1–18)</span><span class="value" id="sc-total">0</span></div>
+    </div>
+    <p class="screen-note" id="screen-note">
+      <strong>Screening-Hinweis:</strong> <span id="screen-text">Noch keine Antworten in Teil A.</span>
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Quelle &amp; Hinweise</h2>
+    <p class="source-note">
+      <strong>Quelle:</strong> WHO Adult ADHD Self-Report Scale (ASRS&#8209;v1.1) Symptom Checklist.
+      © 2003 World Health Organization. Wiedergabe mit Genehmigung der WHO; frei für die klinische Nutzung.
+    </p>
+    <p class="source-note">
+      Dies ist ein <strong>Screening-Instrument</strong>, keine Diagnose. Vier oder mehr Markierungen im grau
+      hinterlegten Bereich von Teil A sprechen für Symptome, die mit einer ADHS im Erwachsenenalter vereinbar sind,
+      und sollten fachlich abgeklärt werden.
+    </p>
+  </section>
+
+  <footer class="colophon">
+    ASRS v1.1 · © World Health Organization 2003
+    <br>
+    <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+      <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+      <span>Erstellt von stayingclean</span>
+    </a>
+  </footer>
+</div>
+
+<div class="toolbar">
+  <span class="status" id="status">Noch nicht gespeichert</span>
+  <button type="button" class="btn btn-primary" id="btn-html">💾 Als HTML speichern</button>
+  <button type="button" class="btn btn-ghost" id="btn-json">JSON exportieren</button>
+  <button type="button" class="btn btn-ghost" id="btn-load">JSON laden</button>
+  <input type="file" id="file-input" accept="application/json,.json" hidden>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  /* ============================================================
+     ASRS v1.1 – eigenständige Toolbox-Seite
+     Speichern: (1) als HTML mit eingebettetem Datenblock,
+                (2) als JSON-Export/Import.
+     ============================================================ */
+
+  // Grau hinterlegte (klinisch auffällige) Spalten je Frage. 0=nie … 4=sehr oft
+  const ASRS_THRESH = {
+    1:[2,3,4], 2:[2,3,4], 3:[2,3,4], 4:[2,3,4], 5:[3,4], 6:[3,4],
+    7:[2,3,4], 8:[2,3,4], 9:[2,3,4],10:[2,3,4],11:[2,3,4],12:[2,3,4],
+   13:[2,3,4],14:[2,3,4],15:[2,3,4],16:[2,3,4],17:[2,3,4],18:[2,3,4]
+  };
+
+  const ASRS_Q = [
+    {p:'A',n:1, t:"Wie oft haben Sie Schwierigkeiten sich auf das zu konzentrieren, was andere sagen, selbst wenn sie direkt mit Ihnen sprechen?"},
+    {p:'A',n:2, t:"Wie oft verlassen Sie Ihren Sitzplatz in Situationen, in denen von Ihnen erwartet wird, dass Sie sitzen bleiben?"},
+    {p:'A',n:3, t:"Wie oft haben Sie Schwierigkeiten zur Ruhe zu kommen und sich zu entspannen, wenn Sie Zeit für sich haben?"},
+    {p:'A',n:4, t:"Wie oft beenden Sie in Unterhaltungen den Satz anderer Personen, bevor diese ihn selbst zu Ende sprechen können?"},
+    {p:'A',n:5, t:"Wie oft verschieben Sie Dinge bis auf die letzte Minute?"},
+    {p:'A',n:6, t:"Wie oft brauchen Sie die Unterstützung anderer, um Struktur in Ihren Alltag zu bringen und auf Details zu achten?"},
+    {p:'B',n:7, t:"Wie oft machen Sie Flüchtigkeitsfehler, wenn Sie an einem langweiligen oder schwierigen Projekt arbeiten müssen?"},
+    {p:'B',n:8, t:"Wie oft haben Sie Schwierigkeiten, aufmerksam zu bleiben, wenn Sie langweilige oder sich wiederholende Arbeiten verrichten?"},
+    {p:'B',n:9, t:"Wie oft haben Sie Schwierigkeiten, sich auf das, was man Ihnen sagt, zu konzentrieren, selbst wenn man Sie direkt anspricht?"},
+    {p:'B',n:10,t:"Wie oft verlegen Sie Dinge zuhause oder bei der Arbeit bzw. haben Schwierigkeiten, sie zu finden?"},
+    {p:'B',n:11,t:"Wie oft lassen Sie sich durch Aktivitäten oder Geräusche in Ihrer Umgebung ablenken?"},
+    {p:'B',n:12,t:"Wie oft verlassen Sie Ihren Platz bei Besprechungen oder in anderen Situationen, wo von Ihnen erwartet wird, dass Sie sitzen bleiben?"},
+    {p:'B',n:13,t:"Wie oft sind Sie unruhig oder zappelig?"},
+    {p:'B',n:14,t:"Wie oft haben Sie Schwierigkeiten, abzuschalten und sich zu entspannen, wenn Sie Zeit für sich haben?"},
+    {p:'B',n:15,t:"Wie oft passiert es Ihnen, dass Sie in geselligen Situationen zu viel reden?"},
+    {p:'B',n:16,t:"Wie oft kommt es in einer Unterhaltung vor, dass Sie die Sätze Ihrer Gesprächspartner beenden, bevor diese sie selbst beenden können?"},
+    {p:'B',n:17,t:"Wie oft haben Sie Schwierigkeiten zu warten, bis Sie an der Reihe sind?"},
+    {p:'B',n:18,t:"Wie oft unterbrechen Sie andere Leute, wenn diese arbeiten oder mit anderen Dingen beschäftigt sind?"}
+  ];
+
+  function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  function renderItems(){
+    const tbody=document.getElementById('asrs-body');
+    let currentPart=null; const rows=[];
+    ASRS_Q.forEach(q=>{
+      if(q.p!==currentPart){
+        currentPart=q.p;
+        rows.push(`<tr><td colspan="6" class="section-hdr">${q.p==='A'
+          ? 'Teil A – Screening (Fragen 1–6)'
+          : 'Teil B – Erweitertes Screening (Fragen 7–18)'}</td></tr>`);
+      }
+      const thresh=ASRS_THRESH[q.n]||[];
+      let cells=`<td class="q-cell"><span class="q-num">${q.n}.&nbsp;</span>${escapeHtml(q.t)}</td>`;
+      for(let ci=0;ci<5;ci++){
+        cells+=`<td class="opt-cell${thresh.includes(ci)?' thresh':''}">
+          <input type="radio" name="asrs_q${q.n}" value="${ci}" aria-label="Frage ${q.n}, Wert ${ci}"></td>`;
+      }
+      rows.push(`<tr>${cells}</tr>`);
+    });
+    tbody.innerHTML=rows.join('');
+  }
+
+  function updateScore(){
+    let aSum=0,bSum=0,aCount=0,aAnswered=0;
+    ASRS_Q.forEach(q=>{
+      const sel=document.querySelector(`input[name="asrs_q${q.n}"]:checked`);
+      if(!sel) return;
+      const v=parseInt(sel.value,10);
+      if(q.p==='A'){ aSum+=v; aAnswered++; if((ASRS_THRESH[q.n]||[]).includes(v)) aCount++; }
+      else { bSum+=v; }
+    });
+    document.getElementById('sc-a-count').textContent=`${aCount} / 6`;
+    document.getElementById('sc-a-sum').textContent=aSum;
+    document.getElementById('sc-b-sum').textContent=bSum;
+    document.getElementById('sc-total').textContent=aSum+bSum;
+    const pillA=document.getElementById('pill-a');
+    pillA.classList.toggle('flag', aCount>=4);
+    const st=document.getElementById('screen-text');
+    if(aAnswered===0){ st.textContent='Noch keine Antworten in Teil A.'; }
+    else if(aCount>=4){ st.textContent=`${aCount} von 6 Markierungen liegen im grauen Bereich – Symptome, die mit ADHS vereinbar sind. Eine fachliche Abklärung wird empfohlen.`; }
+    else { st.textContent=`${aCount} von 6 Markierungen im grauen Bereich (unter dem Schwellenwert von 4).`; }
+  }
+
+  /* ---------- Daten sammeln / anwenden ---------- */
+  function collectData(){
+    const answers={};
+    ASRS_Q.forEach(q=>{
+      const sel=document.querySelector(`input[name="asrs_q${q.n}"]:checked`);
+      if(sel) answers[q.n]=parseInt(sel.value,10);
+    });
+    return {
+      instrument:'ASRS-v1.1', version:1, savedAt:new Date().toISOString(),
+      meta:{ name:val('m-name'), alter:val('m-alter'), datum:val('m-datum') },
+      answers
+    };
+  }
+  function val(id){ return document.getElementById(id).value; }
+
+  function applyData(data){
+    if(!data) return;
+    if(data.meta){
+      document.getElementById('m-name').value=data.meta.name||'';
+      document.getElementById('m-alter').value=data.meta.alter||'';
+      document.getElementById('m-datum').value=data.meta.datum||'';
+    }
+    if(data.answers){
+      Object.entries(data.answers).forEach(([n,v])=>{
+        const r=document.querySelector(`input[name="asrs_q${n}"][value="${v}"]`);
+        if(r) r.checked=true;
+      });
+    }
+    updateScore();
+  }
+
+  function restoreEmbedded(){
+    const block=document.getElementById('asrs-data');
+    if(!block||!block.textContent.trim()) return;
+    try{ applyData(JSON.parse(block.textContent)); }catch(e){ console.warn('Datenblock unlesbar',e); }
+  }
+
+  /* ---------- Speichern als HTML ---------- */
+  function saveAsHTML(){
+    // Formzustand in Attribute spiegeln, damit die gespeicherte Datei gefüllt öffnet
+    document.querySelectorAll('input[type="radio"]').forEach(el=>{
+      if(el.checked) el.setAttribute('checked','checked'); else el.removeAttribute('checked');
+    });
+    document.querySelectorAll('#m-name,#m-alter,#m-datum').forEach(el=>{
+      if(el.value) el.setAttribute('value',el.value); else el.removeAttribute('value');
+    });
+    let block=document.getElementById('asrs-data');
+    if(!block){ block=document.createElement('script'); block.type='application/json'; block.id='asrs-data'; document.body.appendChild(block); }
+    block.textContent=JSON.stringify(collectData(),null,2);
+
+    const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+    download(html,'text/html;charset=utf-8',fileBase()+'.html');
+    showToast('Als HTML gespeichert');
+  }
+
+  /* ---------- JSON Export / Import ---------- */
+  function exportJSON(){
+    download(JSON.stringify(collectData(),null,2),'application/json;charset=utf-8',fileBase()+'.json');
+    showToast('JSON exportiert');
+  }
+  function importJSON(file){
+    const reader=new FileReader();
+    reader.onload=()=>{ try{ applyData(JSON.parse(reader.result)); showToast('JSON geladen'); }
+      catch(e){ showToast('JSON konnte nicht gelesen werden'); } };
+    reader.readAsText(file);
+  }
+
+  function fileBase(){
+    const name=(val('m-name')||'').trim().replace(/\s+/g,'-');
+    const datum=val('m-datum')||new Date().toISOString().slice(0,10);
+    return ['ASRS-v1-1',name,datum].filter(Boolean).join('_').replace(/[^\w\-äöüÄÖÜß]/g,'_');
+  }
+  function download(content,type,filename){
+    const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
+
+  let toastTimer;
+  function showToast(msg){
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    renderItems();
+    restoreEmbedded();
+    if(!val('m-datum')) document.getElementById('m-datum').value=new Date().toISOString().slice(0,10);
+    document.addEventListener('change',e=>{ if(e.target.matches('input[type="radio"]')) updateScore(); });
+    document.getElementById('btn-html').addEventListener('click',saveAsHTML);
+    document.getElementById('btn-json').addEventListener('click',exportJSON);
+    document.getElementById('btn-load').addEventListener('click',()=>document.getElementById('file-input').click());
+    document.getElementById('file-input').addEventListener('change',e=>{ if(e.target.files[0]) importJSON(e.target.files[0]); e.target.value=''; });
+    updateScore();
+  });
+</script>
+
+<!-- Eingebettete Antwortdaten (beim Speichern befüllt) -->
+<script type="application/json" id="asrs-data"></script>
+
+</body>
+</html>
