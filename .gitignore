@@ -4,5 +4,8 @@ workspacesobriety/
 # Temporäre Analyse-/Build-Hilfsordner
 _tmp/
 
+# Isolierte Arbeitskopien (git worktree)
+.worktrees/
+
 # Nur lokale Vergleichs-/Arbeitskopie, gehört nicht ins Repo
 docs/budgetvorlag_aktuell.html
