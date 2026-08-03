@@ -139,3 +139,37 @@ def test_vorschlagsvorlage_setzt_die_turnstile_aktion():
     """Ohne data-action lehnt der Worker jede Einreichung ab."""
     vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
     assert 'data-action="skill-vorschlag"' in vorlage
+
+
+def test_vorschlagsvorlage_emojifeld_hat_kein_maxlength_und_bietet_auswahl():
+    """maxlength="2" zaehlt UTF-16-Einheiten und blockiert zusammengesetzte
+    Emoji (z. B. 🧘‍♀️) stumm. Stattdessen muss die Vorlage eine eingebettete
+    Emoji-Auswahl anbieten (kein Nachladen, keine fremde Bibliothek)."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    emoji_feld = re.search(r'<input[^>]*id="emoji"[^>]*>', vorlage)
+    assert emoji_feld, "Emoji-Eingabefeld nicht gefunden"
+    assert "maxlength" not in emoji_feld.group(0)
+    assert "Intl.Segmenter" in vorlage
+    assert "Schon verwendet" in vorlage
+
+
+def test_vorschlagsvorlage_emoji_pruefung_hat_notbremse_und_rueckfallweg():
+    """Die Client-Pruefung muss dieselbe 16-Codepunkt-Notbremse haben wie
+    worker/validate.js – sonst weist der Worker eine sehr lange, aber als EIN
+    Graphem zaehlende ZWJ-Kette ab, obwohl das Formular sie durchliess (die
+    Person sieht dann eine unerklaerliche Meldung nach dem Absenden). Fehlt
+    Intl.Segmenter (aeltere Firefox-Fassungen), darf das Absenden nicht mit
+    einem unbehandelten Fehler abbrechen."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    assert "EMOJI_CODEPUNKT_GRENZE" in vorlage
+    assert "typeof Intl.Segmenter" in vorlage
+    assert "Array.from(wert).length" in vorlage
+
+
+def test_vorschlagsvorlage_themengruppen_stehen_vor_schon_verwendet():
+    """'Schon verwendet' kann viele Eintraege haben und darf die kuratierten
+    Themengruppen darum nicht unter die Scroll-Kante schieben."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    erste_themengruppe = vorlage.index("Körper & Bewegung")
+    schon_verwendet_literal = vorlage.index("'Schon verwendet'")
+    assert erste_themengruppe < schon_verwendet_literal

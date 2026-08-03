@@ -134,6 +134,18 @@ def test_pruefung_lehnt_unbekannte_stufe_ab():
     assert grund and "Stufe" in grund
 
 
+def test_pruefung_nimmt_ein_zusammengesetztes_emoji_an():
+    # 🧘‍♀️ ist EIN sichtbares Zeichen (Person + ZWJ + Geschlechtszeichen),
+    # aber vier Codepunkte – genau der Fall, den die alte Grenze von 2
+    # faelschlich blockiert hat.
+    assert vh.pruefe_eintrag({**BEISPIEL, "emoji": "🧘‍♀️"}, BESTAND) is None
+
+
+def test_pruefung_lehnt_eine_zu_lange_emoji_kette_ab():
+    grund = vh.pruefe_eintrag({**BEISPIEL, "emoji": "🎧" * 20}, BESTAND)
+    assert grund == "Emoji ist zu lang."
+
+
 def test_pruefung_lehnt_fehlenden_pflichtschluessel_ab():
     ohne = {s: w for s, w in BEISPIEL.items() if s != "emoji"}
     grund = vh.pruefe_eintrag(ohne, BESTAND)
@@ -143,6 +155,26 @@ def test_pruefung_lehnt_fehlenden_pflichtschluessel_ab():
 def test_pruefung_lehnt_leeren_pflichtwert_ab():
     grund = vh.pruefe_eintrag({**BEISPIEL, "titel": "   "}, BESTAND)
     assert grund and "Titel" in grund
+
+
+def test_hat_label_erkennt_vorhandenes_label():
+    issue = {"labels": [{"name": "in Pruefung"}, {"name": "freigegeben"}]}
+    assert vh.hat_label(issue, "freigegeben") is True
+
+
+def test_hat_label_erkennt_fehlendes_label():
+    issue = {"labels": [{"name": "in Pruefung"}]}
+    assert vh.hat_label(issue, "freigegeben") is False
+
+
+def test_hat_label_bei_leerer_labelliste():
+    issue = {"labels": []}
+    assert vh.hat_label(issue, "freigegeben") is False
+
+
+def test_hat_label_bei_fehlendem_labelschluessel():
+    issue = {}
+    assert vh.hat_label(issue, "freigegeben") is False
 
 
 def test_anhaengen_legt_fehlende_von_spalte_an(tmp_path):

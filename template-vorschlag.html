@@ -35,6 +35,21 @@
     input[type=text]:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
     textarea{resize:vertical;min-height:88px}
     .falle{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+    .emoji-zeile{display:flex;gap:8px;align-items:stretch}
+    .emoji-zeile input{flex:1;min-width:0}
+    .emoji-knopf{flex:0 0 auto;font-family:inherit;font-size:.85rem;font-weight:600;padding:0 14px;
+      border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--accent-dark);
+      cursor:pointer;transition:background .15s ease}
+    .emoji-knopf:hover{background:var(--accent-tint)}
+    .emoji-knopf[aria-expanded="true"]{background:var(--accent-tint);border-color:var(--accent)}
+    .emoji-auswahl{margin-top:8px;padding:12px;border:1px solid var(--border);border-radius:10px;
+      background:var(--bg);max-height:220px;overflow-y:auto}
+    .emoji-gruppe-titel{margin:10px 0 6px;font-size:.78rem;font-weight:600;color:var(--muted)}
+    .emoji-gruppe-titel:first-child{margin-top:0}
+    .emoji-reihe{display:flex;flex-wrap:wrap;gap:4px}
+    .emoji-wahl{font-size:1.25rem;line-height:1;padding:6px 8px;border:1px solid transparent;
+      border-radius:8px;background:transparent;cursor:pointer}
+    .emoji-wahl:hover,.emoji-wahl:focus-visible{background:var(--accent-tint);border-color:var(--accent);outline:none}
     button{font-family:inherit;font-size:1rem;font-weight:600;padding:12px 22px;border:0;border-radius:10px;
       background:var(--accent);color:#fff;cursor:pointer;transition:background .15s ease}
     button:hover{background:var(--accent-dark)}
@@ -73,8 +88,12 @@
 
       <div class="feld">
         <label for="emoji">Symbol</label>
-        <p class="hinweis">Ein einzelnes Emoji, z. B. 🎧</p>
-        <input type="text" id="emoji" maxlength="2" required>
+        <p class="hinweis">Ein einzelnes Emoji, z. B. 🎧 – mit <strong>Windows</strong> + <strong>.</strong> eintippen oder eins aus der Auswahl nehmen.</p>
+        <div class="emoji-zeile">
+          <input type="text" id="emoji" required>
+          <button type="button" id="emoji-knopf" aria-expanded="false" aria-controls="emoji-auswahl">Auswählen</button>
+        </div>
+        <div class="emoji-auswahl" id="emoji-auswahl" hidden></div>
       </div>
 
       <div class="feld">
@@ -141,6 +160,130 @@ var STUFEN = [["hoch","Hoch"],["mittel","Mittel"],["tief","Tief"]];
 
 function el(id){ return document.getElementById(id); }
 
+// Muss zur gleichnamigen Schranke in worker/validate.js passen: eine Notbremse
+// gegen absurd lange Codepunkt-Ketten, unabhaengig davon, wie viele sichtbare
+// Zeichen sie ergeben.
+var EMOJI_CODEPUNKT_GRENZE = 16;
+
+function emojiZaehlerVerfuegbar(){
+  return typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function';
+}
+
+/* Zaehlt sichtbare Zeichen (Graphem-Cluster), nicht Speichereinheiten:
+   🧘‍♀️ ist EIN Zeichen, besteht aber aus vier Codepunkten und fuenf
+   UTF-16-Einheiten – darum kein maxlength am Feld, sondern diese Pruefung. */
+function grapheme(wert){
+  if(emojiZaehlerVerfuegbar()){
+    return [...new Intl.Segmenter('de', { granularity: 'grapheme' }).segment(wert)].length;
+  }
+  // Rueckfallweg fuer Browser ohne Intl.Segmenter (z. B. Firefox vor 125):
+  // grobe Codepunkt-Zaehlung statt Graphem-Cluster. Das kann ein
+  // zusammengesetztes Emoji faelschlich als "mehr als 1 Zeichen" werten – wird
+  // darum unten NICHT fuer die exakte Ein-Zeichen-Pruefung verwendet, nur fuer
+  // die grobe Laengenschranke. Die Feinpruefung uebernimmt in diesem Fall der
+  // Worker.
+  return Array.from(wert).length;
+}
+
+/* Prueft das Emoji-Feld genauso wie worker/validate.js: genau ein sichtbares
+   Zeichen, hoechstens EMOJI_CODEPUNKT_GRENZE Codepunkte. Fehlt Intl.Segmenter,
+   wird die exakte Ein-Zeichen-Pruefung ausgelassen (siehe grapheme()) – lieber
+   eine gelegentlich zu grosszuegige Annahme hier als eine Seite, die beim
+   Absenden ohne Meldung stehen bleibt. Der Worker prueft ohnehin serverseitig
+   nach. */
+function emojiUngueltig(wert){
+  if(Array.from(wert).length > EMOJI_CODEPUNKT_GRENZE){ return true; }
+  return emojiZaehlerVerfuegbar() && grapheme(wert) !== 1;
+}
+
+/* Emoji-Auswahl: erste die kuratierten Themen-Gruppen (das Wichtigste zuerst,
+   ohne Scrollen erreichbar), danach die in der Skillsliste bereits
+   verwendeten Emoji. Alles eingebettet, nichts wird nachgeladen. */
+var EMOJI_GRUPPEN = [
+  ['Körper & Bewegung', ['🏃','🚶','🧘','💃','🤸','🏋️','🚴','🧗','🥋','🤾','🏊','⚽','🕺']],
+  ['Ruhe & Atem', ['🌬️','🕯️','🛌','😴','🧘‍♀️','🧘‍♂️','🌙','🫧','🛀','☁️','🤍','💤']],
+  ['Sinne', ['👂','👃','👀','✋','👅','🎵','🍫','🌸','🧊','🔥','🖐️']],
+  ['Natur & Draussen', ['🌳','🌊','🌞','🌧️','🌈','🍃','🌻','🏞️','🐦','🌌','⛰️','🌿']],
+  ['Menschen & Kontakt', ['🤗','📞','💬','👥','🫂','💌','🐾','🤝','❤️','👋']],
+  ['Alltag & Ordnung', ['🧹','🧺','📓','🗓️','🧴','🧽','🪥','📦','🧾','✅','🧦']]
+];
+
+// Hoechstens so viele Emoji in "Schon verwendet": eine ungefilterte Wand aus
+// allen je verwendeten Emoji (koennen leicht 70+ sein) waere selbst am Ende
+// des Panels noch unhandlich lang. Die meistgenutzten sagen am ehesten etwas
+// darueber aus, was in dieser Skillsliste thematisch passt.
+var SCHON_VERWENDET_MAX = 15;
+
+function schonVerwendet(){
+  var anzahl = {}, reihenfolge = [];
+  ['hoch','mittel','tief'].forEach(function(schluessel){
+    var stufe = DATEN[schluessel];
+    if(!stufe) return;
+    (stufe.kategorien||[]).forEach(function(k){
+      (k.skills||[]).forEach(function(s){
+        if(!s.e) return;
+        if(!anzahl[s.e]){ anzahl[s.e]=0; reihenfolge.push(s.e); }
+        anzahl[s.e]++;
+      });
+    });
+  });
+  // Haeufigste zuerst (stabile Sortierung: bei Gleichstand bleibt die
+  // Reihenfolge des ersten Auftretens erhalten).
+  return reihenfolge
+    .sort(function(a,b){ return anzahl[b]-anzahl[a]; })
+    .slice(0, SCHON_VERWENDET_MAX);
+}
+
+function emojiAuswahlFuellen(){
+  var panel = el('emoji-auswahl');
+  panel.innerHTML = '';
+  var gruppen = EMOJI_GRUPPEN.slice();
+  var verwendet = schonVerwendet();
+  if(verwendet.length){ gruppen.push(['Schon verwendet', verwendet]); }
+  gruppen.forEach(function(gruppe){
+    var titel = document.createElement('p');
+    titel.className = 'emoji-gruppe-titel';
+    titel.textContent = gruppe[0];
+    panel.appendChild(titel);
+    var reihe = document.createElement('div');
+    reihe.className = 'emoji-reihe';
+    gruppe[1].forEach(function(emoji){
+      var knopf = document.createElement('button');
+      knopf.type = 'button';
+      knopf.className = 'emoji-wahl';
+      knopf.textContent = emoji;
+      knopf.setAttribute('aria-label', 'Emoji ' + emoji + ' auswählen');
+      knopf.addEventListener('click', function(){
+        el('emoji').value = emoji;
+        emojiAuswahlSchliessen();
+        el('emoji').focus();
+      });
+      reihe.appendChild(knopf);
+    });
+    panel.appendChild(reihe);
+  });
+}
+
+function emojiAuswahlOeffnen(){
+  emojiAuswahlFuellen();
+  el('emoji-auswahl').hidden = false;
+  el('emoji-knopf').setAttribute('aria-expanded', 'true');
+}
+function emojiAuswahlSchliessen(){
+  el('emoji-auswahl').hidden = true;
+  el('emoji-knopf').setAttribute('aria-expanded', 'false');
+}
+el('emoji-knopf').addEventListener('click', function(){
+  if(el('emoji-auswahl').hidden){ emojiAuswahlOeffnen(); }
+  else{ emojiAuswahlSchliessen(); }
+});
+document.addEventListener('keydown', function(ereignis){
+  if(ereignis.key === 'Escape' && !el('emoji-auswahl').hidden){
+    emojiAuswahlSchliessen();
+    el('emoji-knopf').focus();
+  }
+});
+
 /* Stufen-Auswahl aus dem Datenstand füllen */
 STUFEN.forEach(function(paar){
   var o=document.createElement('option');
@@ -176,6 +319,13 @@ el('formular').addEventListener('submit', async function(ereignis){
       el(pflicht[i]).focus();
       return;
     }
+  }
+
+  if(emojiUngueltig(el('emoji').value.trim())){
+    el('fehler').textContent='Bitte genau ein Emoji angeben.';
+    el('fehler').hidden=false;
+    el('emoji').focus();
+    return;
   }
 
   var token=(document.querySelector('[name="cf-turnstile-response"]')||{}).value||'';

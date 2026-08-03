@@ -44,12 +44,20 @@ BOT = "eraschle"
 
 # Muessen zu den Grenzen in worker/validate.js passen.
 GRENZEN = {
-    "emoji": 2,
     "titel": 60,
     "beschreibung": 300,
     "tipp": 200,
     "von": 30,
 }
+
+# Der Worker zaehlt beim Emoji Graphem-Cluster (sichtbare Zeichen) ueber
+# Intl.Segmenter, damit ein zusammengesetztes Emoji wie 🧘‍♀️ (vier Codepunkte,
+# aber EIN sichtbares Zeichen) nicht faelschlich abgelehnt wird. Python hat
+# keine eingebaute Graphem-Zerlegung, und eine Abhaengigkeit dafuer wollen wir
+# nicht – darum hier bewusst nur eine grobe, grosszuegige Schranke in
+# Codepunkten: ein einzelnes Emoji bleibt weit darunter, aber beliebig lange
+# Ketten werden trotzdem abgelehnt.
+EMOJI_CODEPUNKT_GRENZE = 16
 FELDNAMEN = {
     "emoji": "Emoji",
     "titel": "Titel",
@@ -108,7 +116,14 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
 
     # Tipp und Von duerfen fehlen und gelten dann als leer.
     felder = {s: str(eintrag.get(s) or "").strip() for s in GRENZEN}
+    felder["emoji"] = str(eintrag.get("emoji") or "").strip()
     felder.update({s: str(eintrag.get(s) or "").strip() for s in ("stufe", "kategorie")})
+
+    # Emoji steht nicht in GRENZEN: eigenstaendige, groebere Pruefung (siehe
+    # Kommentar bei EMOJI_CODEPUNKT_GRENZE) an der Stelle, an der zuvor die
+    # Laengenpruefung fuer Emoji lief.
+    if len(felder["emoji"]) > EMOJI_CODEPUNKT_GRENZE:
+        return "Emoji ist zu lang."
 
     for schluessel, grenze in GRENZEN.items():
         if len(felder[schluessel]) > grenze:
@@ -161,11 +176,18 @@ def lade_datenstand() -> dict:
 
 
 def hole_issues():
-    """Fragt die freigegebenen, offenen Issues über das GitHub-CLI ab."""
+    """Fragt alle offenen Issues über das GitHub-CLI ab (ungefiltert).
+
+    Der serverseitige Label-Filter von GitHub (`--label`) ist nicht sofort
+    aktuell: ein frisch gesetztes Label taucht dort erst nach einigen Sekunden
+    auf. Darum werden hier alle offenen Issues samt Labels geholt und das
+    Filtern nach `hat_label()` in Python erledigt.
+    """
     try:
         ergebnis = subprocess.run(
-            ["gh", "issue", "list", "--repo", REPO, "--label", LABEL,
-             "--state", "open", "--limit", "100", "--json", "number,title,body,author"],
+            ["gh", "issue", "list", "--repo", REPO,
+             "--state", "open", "--limit", "100",
+             "--json", "number,title,body,author,labels"],
             capture_output=True, text=True, encoding="utf-8",
         )
     except FileNotFoundError:
@@ -182,6 +204,16 @@ def hole_issues():
             + "\n\nIst `gh` installiert und angemeldet? Prüfe mit: gh auth status"
         )
     return json.loads(ergebnis.stdout or "[]")
+
+
+def hat_label(issue: dict, name: str) -> bool:
+    """Prueft das Label in Python statt ueber den Server.
+
+    Der serverseitige Label-Filter von GitHub ist nicht sofort aktuell: ein
+    frisch gesetztes Label taucht dort erst nach einigen Sekunden auf. Wer
+    freigibt und sofort startet, bekaeme sonst faelschlich „nichts zu tun".
+    """
+    return any(l.get("name") == name for l in issue.get("labels", []))
 
 
 def an_excel_anhaengen(pfad: Path, eintraege: list) -> int:
@@ -220,9 +252,12 @@ def issue_schliessen(nummer: int):
 
 
 def main():
-    issues = hole_issues()
+    alle_offenen = hole_issues()
+    issues = [i for i in alle_offenen if hat_label(i, LABEL)]
     if not issues:
         print("Keine freigegebenen Vorschläge offen. Nichts zu tun.")
+        if alle_offenen:
+            print(f"({len(alle_offenen)} Vorschlaege warten noch auf deine Freigabe.)")
         return
 
     bestand = lade_datenstand()

@@ -4,12 +4,17 @@
  */
 
 export const GRENZEN = {
-  emoji: 2,
   titel: 60,
   beschreibung: 300,
   tipp: 200,
   von: 30,
 };
+
+// Ein einzelnes, zusammengesetztes Emoji (Geschlecht, Hautton, Familie) besteht
+// aus mehreren Unicode-Codepunkten. Ohne diese Schranke waere ein Angreifer
+// nicht durch die Graphem-Pruefung gebremst, wenn eine absurd lange Kette von
+// Codepunkten zufaellig als eine Handvoll Grapheme durchgeht.
+const EMOJI_CODEPUNKT_GRENZE = 16;
 
 // Anzeigename (Formular) -> Schlüssel in skills-daten.json
 const STUFEN = { Hoch: "hoch", Mittel: "mittel", Tief: "tief" };
@@ -31,6 +36,12 @@ function text(wert) {
 
 function laenge(wert) {
   return Array.from(wert).length;
+}
+
+function grapheme(wert) {
+  // Zaehlt sichtbare Zeichen, nicht Speichereinheiten: 🧘‍♀️ ist EIN Zeichen,
+  // besteht aber aus vier Codepunkten und fuenf UTF-16-Einheiten.
+  return [...new Intl.Segmenter("de", { granularity: "grapheme" }).segment(wert)].length;
 }
 
 export function pruefeVorschlag(eingabe, daten) {
@@ -70,6 +81,14 @@ export function pruefeVorschlag(eingabe, daten) {
     if (!wert[feld]) {
       return { ok: false, fehler: `Pflichtfeld fehlt: ${FELDNAMEN[feld]}.` };
     }
+  }
+
+  // Das Emoji steht nicht in GRENZEN: das fachlich richtige Mass ist hier der
+  // Graphem-Cluster (was ein Mensch als ein Zeichen sieht), nicht eine Anzahl
+  // Codepunkte oder UTF-16-Einheiten – deshalb eine eigenstaendige Pruefung an
+  // der Stelle, an der zuvor die Laengenpruefung fuer Emoji lief.
+  if (laenge(wert.emoji) > EMOJI_CODEPUNKT_GRENZE || grapheme(wert.emoji) !== 1) {
+    return { ok: false, fehler: "Bitte genau ein Emoji angeben." };
   }
 
   for (const [feld, grenze] of Object.entries(GRENZEN)) {
