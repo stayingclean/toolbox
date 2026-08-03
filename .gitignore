@@ -19,3 +19,6 @@ docs/budgetvorlag_aktuell.html
 # Urheberrechtlich geschützte Roh-Formulare (BDI-II, ADHS-SB, WURS-K, BIT-CP) –
 # dürfen NICHT ins öffentliche Repo. Nur frei lizenzierte Instrumente publizieren.
 neue_docs/
+
+# Lokaler Zwischenspeicher von wrangler
+.wrangler/
