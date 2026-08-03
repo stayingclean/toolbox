@@ -13,7 +13,7 @@ mit eingebettetem CSS/JavaScript und funktioniert auch komplett offline.
 |---|---|---|
 | **Skillsliste** | Interaktive Skills zur Krisenbewältigung (nach Anspannungsgrad). | [öffnen](https://stayingclean.github.io/toolbox/skillsliste.html) |
 | **Budgetvorlage** | Einnahmen & Ausgaben erfassen, mehrere Varianten vergleichen, drucken. | [öffnen](https://stayingclean.github.io/toolbox/budgetvorlage.html) |
-| **Flyer-Editor** | Flyer direkt im Browser gestalten und als HTML-Datei speichern. | [öffnen](https://stayingclean.github.io/toolbox/neutral_flyer.html) |
+| **Flyer-Editor** | Flyer direkt im Browser gestalten und als HTML, Bild (PNG/JPG) oder PDF speichern. | [öffnen](https://stayingclean.github.io/toolbox/neutral_flyer.html) |
 
 ---
 
@@ -72,9 +72,15 @@ sind in der Datei eingebettet; es wird nichts nachgeladen.
 - **Tastenkürzel**
   Viele Aktionen per Shortcut; komplette Übersicht mit **F1**.
 
-- **Speichern & Drucken**
-  Fertigen Flyer als **neue HTML-Datei** speichern (Strg+S) und jederzeit
-  weiterbearbeiten – oder direkt aus dem Browser **drucken** (Strg+P).
+- **Speichern, Exportieren & Drucken**
+  Vier Wege aus dem Editor heraus:
+  - **💾 Speichern** (Strg+S) – Arbeitskopie als HTML, jederzeit weiterbearbeitbar.
+  - **📄 Ansicht-HTML** – der fertige Flyer ohne Editor: nichts kann mehr
+    verrutschen, ideal zum Weitergeben und Veröffentlichen.
+  - **📷 Bild speichern** – Vorder- und Rückseite als **PNG oder JPG** in 1×, 2×
+    oder 3× Auflösung, zum Posten und Verschicken.
+  - **🖨 Drucken** (Strg+P) – im Druckdialog liefert „Als PDF speichern" ein
+    PDF mit scharfem Vektortext.
 
 - **Kein Download. Keine Installation.**
   Öffne die HTML-Datei einfach im Browser und leg los. Editor und Bilder sind
@@ -86,10 +92,12 @@ sind in der Datei eingebettet; es wird nichts nachgeladen.
 1. [Flyer-Editor öffnen](https://stayingclean.github.io/toolbox/neutral_flyer.html)
    (oder die HTML-Datei lokal im Browser öffnen).
 2. Texte, Bilder, Format und Layout nach Wunsch anpassen.
-3. Über **💾 Speichern** (Strg+S) die fertige Datei als neue HTML-Datei sichern.
+3. Über **💾 Speichern** (Strg+S) die Arbeitskopie als neue HTML-Datei sichern.
 4. Zum Weiterbearbeiten die gespeicherte Datei erneut im Browser öffnen.
+5. Zum Weitergeben **📄 Ansicht-HTML** oder **📷 Bild speichern** verwenden.
 
 > Tipp: **F1** zeigt alle Tastenkürzel, **Strg+P** druckt den Flyer direkt.
+> Für ein PDF im Druckdialog als Ziel „Als PDF speichern" wählen.
 
 ---
 

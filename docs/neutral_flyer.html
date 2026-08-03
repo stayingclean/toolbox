@@ -251,8 +251,19 @@
   </div>
   <div class="grp">
     <button id="bKbd" title="Tastenkürzel anzeigen (F1)">⌨</button>
-    <button class="primary" id="bSave" title="Als neue HTML speichern (Strg+S)">💾 Speichern</button>
-    <button class="print" id="bPrint" title="Drucken (Strg+P)">🖨 Drucken</button>
+    <button class="primary" id="bSave" title="Arbeitskopie mit Editor speichern (Strg+S)">💾 Speichern</button>
+    <button id="bExpHtml" title="Fertigen Flyer ohne Editor als HTML speichern (nur Ansicht)">📄 Ansicht-HTML</button>
+    <button id="bExpImg" title="Vorder- und Rückseite als Bilddateien speichern">📷 Bild speichern</button>
+    <select id="expFmt" title="Bildformat">
+      <option value="png">PNG</option>
+      <option value="jpg">JPG</option>
+    </select>
+    <select id="expScale" title="Auflösung des Bildes">
+      <option value="1">1×</option>
+      <option value="2" selected>2×</option>
+      <option value="3">3×</option>
+    </select>
+    <button class="print" id="bPrint" title="Drucken (Strg+P) – für PDF im Druckdialog „Als PDF speichern“ wählen">🖨 Drucken</button>
   </div>
 </div>
 <input type="file" id="bgFile" accept="image/*" style="display:none">
@@ -296,7 +307,7 @@
   </table>
 </div>
 
-<div class="hint" id="hint">Feld anklicken zum Bearbeiten · ＋ neues Feld, 🗑 löschen, 🔓 sperren · Hilfslinien beim Verschieben (Felder, Seitenmitte, Rand) · Shift-Klick + „Ausrichten"/„Verteilen" · 🖼 Bild- und ▦ QR-Felder · ↶ Rückgängig · <kbd>F1</kbd> zeigt alle Tastenkürzel · „Speichern" sichert eine neue HTML.</div>
+<div class="hint" id="hint">Feld anklicken zum Bearbeiten · ＋ neues Feld, 🗑 löschen, 🔓 sperren · Hilfslinien beim Verschieben (Felder, Seitenmitte, Rand) · Shift-Klick + „Ausrichten"/„Verteilen" · 🖼 Bild- und ▦ QR-Felder · ↶ Rückgängig · <kbd>F1</kbd> zeigt alle Tastenkürzel · „Speichern" sichert die Arbeitskopie, „Ansicht-HTML" den fertigen Flyer, „Bild speichern" beide Seiten als PNG/JPG.</div>
 
 <script>
 (function(){
@@ -1162,7 +1173,145 @@
     setActive(null); clearMulti();
   });
 
-  /* ---- Speichern ---- */
+  /* ---- Speichern & Export ---- */
+
+  /* Regeln, die im Export die Editor-Hinweise stilllegen. Werden sowohl in die
+     Ansicht-HTML als auch in das Export-SVG des Bildes eingefügt. */
+  var EXPORT_CSS =
+    '.field{cursor:default !important;}' +
+    '.field:hover,.field.active,.field:focus,.field.locked,.field.locked:hover,' +
+    '.field.locked.active,.field.multi{outline:none !important;box-shadow:none !important;}' +
+    '.field.isempty::before{content:none !important;}';
+
+  /* Editor-Zustand aus einem Klon entfernen (die Live-Seite bleibt unberührt) */
+  function stripEditorState(root){
+    [].forEach.call(root.querySelectorAll('.field'), function(f){
+      f.removeAttribute('contenteditable');
+      f.removeAttribute('tabindex');
+      f.removeAttribute('spellcheck');
+      f.removeAttribute('data-ph');
+      f.classList.remove('active','multi','isempty');
+    });
+  }
+
+  /* alle Stylesheets der Seite als ein CSS-Text */
+  function collectCss(){
+    return [].map.call(document.querySelectorAll('style'), function(s){
+      return s.textContent; }).join('\n');
+  }
+
+  function downloadBlob(blob, name){
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  /* ---- Ansicht-HTML: fertiger Flyer ohne Editor ---- */
+  function doExportHtml(){
+    var doc=document.documentElement.cloneNode(true);
+    var kill=doc.querySelectorAll(
+      '.toolbar,#hint,.draghandle,.resizehandle,.guide,.kbdhelp,script,input[type=file]');
+    [].forEach.call(kill, function(el){ el.parentNode.removeChild(el); });
+    stripEditorState(doc);
+    // Achtung: `doc` ist ein <html>-Element, kein Document — .body gibt es hier nicht
+    var bd=doc.querySelector('body');
+    if(bd) bd.classList.remove('saving');
+    var sh=doc.querySelector('#sheets');
+    if(sh) sh.style.paddingTop='';
+    var t=doc.querySelector('title');
+    if(t) t.textContent='Flyer';
+    var st=document.createElement('style');
+    st.textContent=EXPORT_CSS+'.sheets{padding:24px 12px 40px !important;}';
+    doc.querySelector('head').appendChild(st);
+    downloadBlob(new Blob(['<!DOCTYPE html>\n'+doc.outerHTML],
+      {type:'text/html;charset=utf-8'}), 'flyer-ansicht.html');
+    flash('Ansicht-HTML gespeichert (nicht mehr bearbeitbar).');
+  }
+
+  /* ---- Bild-Export ----
+     Die Seite wird als XHTML in ein SVG-<foreignObject> verpackt und vom Browser
+     selbst gerendert. Nur so stimmen die Container-Query-Schriftgrössen (cqw/cqh);
+     Bibliotheken, die CSS nachrechnen, scheitern daran. */
+  function pageToSvg(page, scale){
+    var r=page.getBoundingClientRect();
+    var w=Math.round(r.width), h=Math.round(r.height);
+    var clone=page.cloneNode(true);
+    stripEditorState(clone);
+    clone.style.margin='0';
+    clone.style.boxShadow='none';
+    var markup=new XMLSerializer().serializeToString(clone);
+    var css=collectCss()+EXPORT_CSS+'.page{box-shadow:none !important;margin:0 !important;}';
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+Math.round(w*scale)+
+      '" height="'+Math.round(h*scale)+'" viewBox="0 0 '+w+' '+h+'">'+
+      '<foreignObject x="0" y="0" width="'+w+'" height="'+h+'">'+
+      '<div xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0;">'+
+      '<style><![CDATA['+css+']]></style>'+markup+'</div>'+
+      '</foreignObject></svg>';
+    return { svg:svg, w:Math.round(w*scale), h:Math.round(h*scale) };
+  }
+
+  /* SVG-Bild laden — Data-URI, nicht Blob-URL!
+     Ein SVG mit <foreignObject> aus einer Blob-URL macht den Canvas "tainted",
+     d. h. toBlob() wirft danach einen SecurityError. Aus einer Data-URI geladen
+     bleibt der Canvas sauber. Die Blob-URL dient nur als Notnagel, falls die
+     Data-URI (Längenbegrenzung) nicht lädt. */
+  function loadSvgImage(svg, ok, fail){
+    var img=new Image();
+    img.onload=function(){ ok(img, function(){}); };
+    img.onerror=function(){
+      var url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+      var img2=new Image();
+      img2.onload=function(){ ok(img2, function(){ URL.revokeObjectURL(url); }); };
+      img2.onerror=function(){ URL.revokeObjectURL(url); fail(); };
+      img2.src=url;
+    };
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  }
+
+  function pageToBlob(page, scale, fmt, ok, fail){
+    var s;
+    try{ s=pageToSvg(page, scale); }
+    catch(e){ fail('Die Seite konnte nicht in ein Bild umgewandelt werden.'); return; }
+    loadSvgImage(s.svg, function(img, done){
+      try{
+        var c=document.createElement('canvas');
+        c.width=s.w; c.height=s.h;
+        var ctx=c.getContext('2d');
+        if(fmt==='jpg'){ ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,c.width,c.height); }
+        ctx.drawImage(img,0,0,c.width,c.height);
+        c.toBlob(function(blob){
+          done();
+          if(blob) ok(blob); else fail('Das Bild konnte nicht erzeugt werden.');
+        }, fmt==='jpg'?'image/jpeg':'image/png', fmt==='jpg'?0.92:undefined);
+      }catch(e){
+        done();
+        fail('Das Bild konnte nicht erzeugt werden ('+(e && e.name || 'Fehler')+').');
+      }
+    }, function(){ fail('Die Seite konnte nicht gerendert werden.'); });
+  }
+
+  function doExportImg(){
+    var fmt=$('expFmt').value, scale=parseFloat($('expScale').value)||2;
+    var ext=(fmt==='jpg')?'jpg':'png';
+    var jobs=[
+      { el:document.querySelector('.page-front'), name:'flyer-vorderseite.'+ext },
+      { el:document.querySelector('.page-back'),  name:'flyer-rueckseite.'+ext }
+    ].filter(function(j){ return !!j.el; });
+    setActive(null); clearMulti(); hideGuides();
+    flash('Bilder werden erstellt …');
+    var i=0;
+    (function next(){
+      if(i>=jobs.length){ flash(jobs.length+' Bilder gespeichert ('+ext.toUpperCase()+', '+scale+'×).'); return; }
+      var job=jobs[i++];
+      pageToBlob(job.el, scale, fmt, function(blob){
+        downloadBlob(blob, job.name);
+        setTimeout(next, 700);          // gestaffelt: sonst blockt der Browser den 2. Download
+      }, function(msg){ flash(msg); });
+    })();
+  }
+
   function doSave(){
     // transiente Editor-Zustände nicht mitspeichern
     var marked=[].slice.call(document.querySelectorAll('.field.active,.field.multi,.field.isempty'));
@@ -1179,14 +1328,12 @@
     if(dhShown) dragH.classList.add('show');
     if(rhShown) resizeH.classList.add('show');
     if(helpShown) $('kbdHelp').classList.add('show');
-    var blob=new Blob([html],{type:'text/html;charset=utf-8'});
-    var a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='neutral_flyer_bearbeitet.html';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    downloadBlob(new Blob([html],{type:'text/html;charset=utf-8'}),
+      'neutral_flyer_bearbeitet.html');
   }
   $('bSave').addEventListener('click', function(e){ e.preventDefault(); doSave(); });
+  $('bExpHtml').addEventListener('click', function(e){ e.preventDefault(); doExportHtml(); });
+  $('bExpImg').addEventListener('click', function(e){ e.preventDefault(); doExportImg(); });
 
   /* ---- Seitengröße & Ausrichtung ---- */
   var SIZES={ A6:[105,148], A5:[148,210], A4:[210,297], A3:[297,420], Letter:[216,279] };
