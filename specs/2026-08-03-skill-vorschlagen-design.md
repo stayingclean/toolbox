@@ -244,9 +244,10 @@ Kurze Seite im Toolbox-Design, die erklärt, wofür die Unterstützung verwendet
 wird, und die Wege auflistet. Kein eingebettetes Widget — nur schlichte Links,
 sonst lädt die Seite fremde Skripte.
 
-- **Buy Me a Coffee** — `https://buymeacoffee.com/stayclean`. Die Adresse
-  antwortet am 2026-08-03 noch mit 404 (Seite vermutlich noch nicht
-  veröffentlicht); vor dem Push prüfen, siehe Abschlussliste.
+- **Buy Me a Coffee** — `https://buymeacoffee.com/stayingclean` (aus dem
+  Dashboard des Kontoinhabers). Die Adresse antwortet am 2026-08-03 von aussen
+  mit 404, die Seite ist also vermutlich noch nicht veröffentlicht — vor dem
+  Push freischalten und prüfen, siehe Abschlussliste.
 - **TWINT/PayPal** — Abschnitt wird vorbereitet und bleibt ausgeblendet, bis das
   Konto eingerichtet ist.
 
