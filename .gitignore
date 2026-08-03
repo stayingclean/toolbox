@@ -7,6 +7,9 @@ _tmp/
 # Arbeitsdateien der Plan-Abarbeitung (Fortschritt, Aufgabenauszüge, Berichte)
 .superpowers/
 
+# Python-Zwischenspeicher aus den Testläufen
+__pycache__/
+
 # Nur lokale Vergleichs-/Arbeitskopie, gehört nicht ins Repo
 docs/budgetvorlag_aktuell.html
 
