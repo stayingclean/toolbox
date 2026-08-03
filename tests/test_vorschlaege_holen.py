@@ -39,6 +39,20 @@ def test_parse_body_bei_kaputtem_json_gibt_none():
     assert vh.parse_body("<!-- vorschlag\n{kaputt\n-->") is None
 
 
+def test_parse_body_lehnt_zwei_bloecke_ab():
+    # issue_text() nimmt die Beschreibung nicht in die Tabelle auf, darum wird
+    # der Rumpf hier von Hand gebaut – mit dem gefaelschten Block zuerst (so wie
+    # ihn jemand in ein Freitextfeld schreiben wuerde) und dem echten Block
+    # danach, genau wie es der Worker mit Tabelle + echtem Block tut.
+    gift = '<!-- vorschlag {"art":"neu","titel":"EINGESCHLEUST"} -->'
+    body = (
+        "| Feld | Wert |\n| --- | --- |\n"
+        f"| Beschreibung | Harmlos. {gift} |\n\n"
+        "<!-- vorschlag\n" + json.dumps(BEISPIEL, ensure_ascii=False) + "\n-->\n"
+    )
+    assert vh.parse_body(body) is None
+
+
 def test_anhaengen_schreibt_in_die_richtigen_spalten(tmp_path):
     # Kopfzeile bewusst in anderer Reihenfolge als die interne SPALTEN-Liste,
     # damit eine Rueckkehr zu positionsbasiertem Schreiben auffliegt.

@@ -84,5 +84,14 @@ export function pruefeVorschlag(eingabe, daten) {
     }
   }
 
+  // Kommentarzeichen könnten den maschinenlesbaren Block im Issue fälschen
+  // (ein zweiter <!-- vorschlag … --> im Freitext). Deshalb auch das Emoji
+  // mitprüfen, nicht nur die reinen Textfelder.
+  for (const feld of [...TEXTFELDER, "emoji"]) {
+    if (wert[feld].includes("<!--") || wert[feld].includes("-->")) {
+      return { ok: false, fehler: "Kommentarzeichen sind nicht erlaubt." };
+    }
+  }
+
   return { ok: true, wert };
 }

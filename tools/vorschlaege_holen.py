@@ -53,14 +53,16 @@ BLOCK = re.compile(r"<!--\s*vorschlag\s*(\{.*?\})\s*-->", re.DOTALL)
 def parse_body(body: str):
     """Liest den maschinenlesbaren Block aus einem Issue-Rumpf.
 
-    Liefert None, wenn kein Block vorhanden ist oder das JSON nicht lesbar ist –
-    solche Issues bleiben offen und werden am Ende gemeldet.
+    Liefert None, wenn kein Block vorhanden ist, das JSON nicht lesbar ist oder
+    MEHR ALS EIN Block gefunden wird. Der letzte Fall ist der Abwehrschritt gegen
+    einen gefaelschten Block, den jemand in ein Freitextfeld geschrieben hat –
+    solche Issues bleiben offen und werden gemeldet.
     """
-    treffer = BLOCK.search(body or "")
-    if not treffer:
+    treffer = BLOCK.findall(body or "")
+    if len(treffer) != 1:
         return None
     try:
-        daten = json.loads(treffer.group(1))
+        daten = json.loads(treffer[0])
     except json.JSONDecodeError:
         return None
     return daten if isinstance(daten, dict) else None

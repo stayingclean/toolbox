@@ -117,3 +117,19 @@ test("lehnt 31 Zeichen im Namen ab", () => {
   assert.equal(r.ok, false);
   assert.match(r.fehler, /Name/);
 });
+
+test("lehnt Kommentarzeichen in allen Textfeldern ab", () => {
+  for (const feld of ["titel", "beschreibung", "tipp", "von"]) {
+    const auf = pruefeVorschlag({ ...GUELTIG, [feld]: "a <!-- b" }, DATEN);
+    assert.equal(auf.ok, false, `${feld} muss <!-- ablehnen`);
+    assert.match(auf.fehler, /Kommentarzeichen/);
+    const zu = pruefeVorschlag({ ...GUELTIG, [feld]: "a --> b" }, DATEN);
+    assert.equal(zu.ok, false, `${feld} muss --> ablehnen`);
+  }
+});
+
+test("lehnt einen gefaelschten Vorschlagsblock in der Beschreibung ab", () => {
+  const gift = 'Harmlos. <!-- vorschlag {"titel":"EINGESCHLEUST"} -->';
+  const r = pruefeVorschlag({ ...GUELTIG, beschreibung: gift }, DATEN);
+  assert.equal(r.ok, false);
+});
