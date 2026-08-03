@@ -83,6 +83,44 @@ def test_vorschlagsseite_wird_erzeugt(mappe, monkeypatch, tmp_path):
     assert "/*__BUILD_DATA__*/" not in html
 
 
+def test_script_block_kann_nicht_verlassen_werden(mappe, monkeypatch, tmp_path):
+    """Ein </script> im Freitext darf das Skriptelement nicht beenden."""
+    gift = "</script><script>alert(1)</script>"
+    zeile = SKILLS_ROW[:4] + [gift, "Kopfhörer"]
+    pfad = mappe(SKILLS_HEADER, [zeile])
+    ziel = tmp_path / "skillsliste.html"
+    monkeypatch.setattr(build, "XLSX", pfad)
+    monkeypatch.setattr(build, "OUTPUT", ziel)
+
+    build.render(build.load_data())
+
+    html = ziel.read_bytes().decode("utf-8-sig")
+    assert gift not in html, "die Zeichenfolge darf nicht wörtlich im Erzeugnis stehen"
+    assert "\\u003c/script\\u003e" in html
+    assert "<script>alert(1)" not in html
+
+    # Der Wert selbst bleibt unverändert – der Browser (bzw. json.loads) setzt
+    # die Escapes beim Parsen zurück.
+    # Die Datenzeile ist eine einzige Zeile: bis zum Zeilenende lesen, ohne ";".
+    roh = html.split("var DATA = ", 1)[1].split("\n", 1)[0].rstrip().rstrip(";")
+    wieder = json.loads(roh)
+    assert wieder["hoch"]["kategorien"][0]["skills"][0]["b"] == gift
+
+
+def test_daten_json_endet_mit_zeilenumbruch(mappe, monkeypatch, tmp_path):
+    """Feste Zeilenenden, sonst gibt es plattformabhängige Scheinunterschiede."""
+    pfad = mappe(SKILLS_HEADER, [SKILLS_ROW])
+    ziel = tmp_path / "skills-daten.json"
+    monkeypatch.setattr(build, "XLSX", pfad)
+    monkeypatch.setattr(build, "DATEN_JSON", ziel)
+
+    build.write_daten_json(build.load_data())
+
+    roh = ziel.read_bytes()
+    assert roh.endswith(b"\n")
+    assert b"\r\n" not in roh
+
+
 def test_vorschlagsvorlage_hat_pflichtbestandteile():
     vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
     for baustein in ['name="falle"', "cf-turnstile", "footer-credit", "WORKER_URL"]:

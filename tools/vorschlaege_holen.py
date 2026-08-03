@@ -34,8 +34,33 @@ sys.stderr.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parent.parent
 XLSX = ROOT / "skills_daten.xlsx"
 BUILD = ROOT / "build.py"
+DATEN_JSON = ROOT / "docs" / "skills-daten.json"
 REPO = "stayingclean/skills-suggestions"
 LABEL = "freigegeben"
+
+# Nur Issues von diesem Konto werden uebernommen. Der Worker legt sie unter dem
+# Token dieses Kontos an; von Hand eroeffnete Issues sind nie geprueft worden.
+BOT = "eraschle"
+
+# Muessen zu den Grenzen in worker/validate.js passen.
+GRENZEN = {
+    "emoji": 2,
+    "titel": 60,
+    "beschreibung": 300,
+    "tipp": 200,
+    "von": 30,
+}
+FELDNAMEN = {
+    "emoji": "Emoji",
+    "titel": "Titel",
+    "beschreibung": "Beschreibung",
+    "tipp": "Tipp",
+    "von": "Name",
+}
+PFLICHT = ["stufe", "kategorie", "emoji", "titel", "beschreibung"]
+TEXTFELDER = ["titel", "beschreibung", "tipp", "von"]
+# Anzeigename -> Schluessel in docs/skills-daten.json
+STUFEN = {"Hoch": "hoch", "Mittel": "mittel", "Tief": "tief"}
 
 SPALTEN = [
     ("Stufe", "stufe"),
@@ -68,12 +93,79 @@ def parse_body(body: str):
     return daten if isinstance(daten, dict) else None
 
 
+def pruefe_eintrag(eintrag: dict, daten: dict):
+    """Prueft einen Vorschlag gegen den aktuellen Datenbestand.
+
+    Liefert None, wenn alles stimmt, sonst eine verstaendliche Meldung.
+    Der Worker prueft dasselbe – hier geht es um Issues, die nicht ueber das
+    Formular kamen, und um Vorschlaege, deren Kategorie inzwischen weg ist.
+    """
+    for schluessel in PFLICHT:
+        wert = eintrag.get(schluessel)
+        if not isinstance(wert, str) or not wert.strip():
+            name = FELDNAMEN.get(schluessel, schluessel.capitalize())
+            return f"Pflichtfeld fehlt oder ist leer: {name}."
+
+    # Tipp und Von duerfen fehlen und gelten dann als leer.
+    felder = {s: str(eintrag.get(s) or "").strip() for s in GRENZEN}
+    felder.update({s: str(eintrag.get(s) or "").strip() for s in ("stufe", "kategorie")})
+
+    for schluessel, grenze in GRENZEN.items():
+        if len(felder[schluessel]) > grenze:
+            return (
+                f"Zu lang: {FELDNAMEN[schluessel]} "
+                f"({len(felder[schluessel])} statt hoechstens {grenze} Zeichen)."
+            )
+
+    for schluessel in TEXTFELDER:
+        if "http" in felder[schluessel].lower():
+            return "Links sind nicht erlaubt."
+
+    for schluessel in TEXTFELDER + ["emoji"]:
+        wert = felder[schluessel]
+        if "<!--" in wert or "-->" in wert:
+            return "Kommentarzeichen sind nicht erlaubt."
+        if "<" in wert or ">" in wert:
+            return "Spitze Klammern sind nicht erlaubt."
+
+    stufe = felder["stufe"]
+    if stufe not in STUFEN:
+        return f"Unbekannte Stufe: '{stufe}' (erlaubt sind Hoch, Mittel, Tief)."
+
+    stufen_daten = daten.get(STUFEN[stufe]) or {}
+    kategorien = [k.get("label") for k in stufen_daten.get("kategorien", [])]
+    if felder["kategorie"] not in kategorien:
+        return (
+            f"Unbekannte Kategorie: '{felder['kategorie']}' "
+            f"gibt es in der Stufe '{stufe}' nicht (mehr)."
+        )
+
+    return None
+
+
+def lade_datenstand() -> dict:
+    """Liest docs/skills-daten.json – den Stand, gegen den geprueft wird."""
+    if not DATEN_JSON.exists():
+        raise SystemExit(
+            f"❌ {DATEN_JSON.name} fehlt.\n\n"
+            "   Ohne diese Datei laesst sich nicht pruefen, welche Stufen und\n"
+            "   Kategorien es gibt. Bitte zuerst build.bat ausfuehren."
+        )
+    try:
+        return json.loads(DATEN_JSON.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        raise SystemExit(
+            f"❌ {DATEN_JSON.name} ist nicht lesbar.\n\n"
+            "   Bitte zuerst build.bat ausfuehren."
+        )
+
+
 def hole_issues():
     """Fragt die freigegebenen, offenen Issues über das GitHub-CLI ab."""
     try:
         ergebnis = subprocess.run(
             ["gh", "issue", "list", "--repo", REPO, "--label", LABEL,
-             "--state", "open", "--limit", "100", "--json", "number,title,body"],
+             "--state", "open", "--limit", "100", "--json", "number,title,body,author"],
             capture_output=True, text=True, encoding="utf-8",
         )
     except FileNotFoundError:
@@ -133,11 +225,27 @@ def main():
         print("Keine freigegebenen Vorschläge offen. Nichts zu tun.")
         return
 
-    uebernehmen, uebersprungen = [], []
+    bestand = lade_datenstand()
+
+    uebernehmen, uebersprungen, abgelehnt = [], [], []
     for issue in issues:
+        # Herkunft zuerst: das Repo ist oeffentlich, jede Person mit GitHub-Konto
+        # kann dort ein Issue eroeffnen – solche Rumpfe hat nie jemand geprueft.
+        konto = (issue.get("author") or {}).get("login", "")
+        if konto != BOT:
+            abgelehnt.append(
+                (issue, f"stammt von '{konto or 'unbekannt'}', nicht vom Formular")
+            )
+            continue
         daten = parse_body(issue.get("body", ""))
         if daten is None or daten.get("art") != "neu":
             uebersprungen.append(issue)
+            continue
+        # Erst pruefen, dann anhaengen: ein Abbruch nach dem Speichern wuerde
+        # beim naechsten Lauf Dubletten erzeugen (Excel geschrieben, Issue offen).
+        grund = pruefe_eintrag(daten, bestand)
+        if grund:
+            abgelehnt.append((issue, grund))
             continue
         uebernehmen.append((issue, daten))
 
@@ -167,9 +275,24 @@ def main():
             f'(kein lesbarer Vorschlagsblock oder andere Art) – bleibt offen.'
         )
 
+    for issue, grund in abgelehnt:
+        print(
+            f'⚠ Issue #{issue["number"]} „{issue["title"]}" nicht übernommen: '
+            f"{grund} – bleibt offen."
+        )
+
     if anzahl:
         print("\nSkillsliste wird neu gebaut …\n")
-        subprocess.run([sys.executable, str(BUILD)], check=True)
+        ergebnis = subprocess.run([sys.executable, str(BUILD)], check=False)
+        if ergebnis.returncode != 0:
+            print(
+                "\n⚠ ACHTUNG: Der Neubau der Skillsliste ist gescheitert.\n"
+                "   Was zu korrigieren ist, steht in der Meldung weiter oben.\n"
+                f"   Die Vorschlaege stehen bereits in {XLSX.name} – nach der\n"
+                "   Korrektur genuegt ein Doppelklick auf build.bat, ein erneuter\n"
+                "   Lauf von vorschlaege.bat ist nicht noetig."
+            )
+            return
         print(
             "\nJetzt anschauen: docs/skillsliste.html\n"
             "Wenn es passt:  git add -A && git commit -m \"Neue Skills übernommen\" && git push"

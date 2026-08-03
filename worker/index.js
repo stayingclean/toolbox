@@ -62,18 +62,31 @@ async function turnstileGeprueft(token, secret, ip) {
   }
 }
 
-function issueRumpf(w) {
+/**
+ * Maskiert einen Wert fuer eine Markdown-Tabellenzelle.
+ *
+ * Ein `|` oder ein Zeilenumbruch im Freitext wuerde die Tabelle zerreissen –
+ * die Betreuung saehe dann etwas anderes als das, was der JSON-Block traegt und
+ * was spaeter uebernommen wird. Die Tabelle ist die einzige Ansicht, die sie zu
+ * Gesicht bekommt; sie muss zum Block passen.
+ */
+export function zelle(wert) {
+  return String(wert).replace(/\|/g, "\\|").replace(/\r?\n/g, "<br>");
+}
+
+export function issueRumpf(w) {
   const zeilen = [
     "| Feld | Wert |",
     "| --- | --- |",
-    `| Stufe | ${w.stufe} |`,
-    `| Kategorie | ${w.kategorie} |`,
-    `| Emoji | ${w.emoji} |`,
-    `| Titel | ${w.titel} |`,
-    `| Beschreibung | ${w.beschreibung} |`,
-    `| Tipp | ${w.tipp || "—"} |`,
-    `| Name | ${w.von || "— (anonym)"} |`,
+    `| Stufe | ${zelle(w.stufe)} |`,
+    `| Kategorie | ${zelle(w.kategorie)} |`,
+    `| Emoji | ${zelle(w.emoji)} |`,
+    `| Titel | ${zelle(w.titel)} |`,
+    `| Beschreibung | ${zelle(w.beschreibung)} |`,
+    `| Tipp | ${w.tipp ? zelle(w.tipp) : "—"} |`,
+    `| Name | ${w.von ? zelle(w.von) : "— (anonym)"} |`,
   ];
+  // Der JSON-Block bleibt unveraendert – er traegt die Wahrheit.
   return (
     zeilen.join("\n") +
     "\n\n<!-- vorschlag\n" +
@@ -98,6 +111,15 @@ export default {
     }
     if (anfrage.method !== "POST") {
       return antwort({ fehler: "Nur POST." }, 405);
+    }
+
+    // Sichtbar scheitern statt still falsch laufen: fehlt RATE_SALT, liefe der
+    // Salt als "undefined" mit und die Ratenbegrenzung waere vorhersagbar.
+    // Ein vertippter Secret-Name ist genau so schon einmal passiert.
+    for (const name of ["RATE_SALT", "GITHUB_TOKEN", "TURNSTILE_SECRET"]) {
+      if (!umgebung[name]) {
+        return antwort({ fehler: "Der Dienst ist nicht vollstaendig eingerichtet." }, 500);
+      }
     }
 
     const ip = anfrage.headers.get("CF-Connecting-IP") || "";

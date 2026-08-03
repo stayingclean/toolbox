@@ -82,6 +82,69 @@ def test_anhaengen_schreibt_in_die_richtigen_spalten(tmp_path):
     }
 
 
+BESTAND = {
+    "hoch": {"kategorien": [{"id": "ablenkung", "label": "Ablenkung", "skills": []}]},
+    "mittel": {"kategorien": []},
+    "tief": {"kategorien": []},
+}
+
+
+def test_pruefung_laesst_einen_gueltigen_eintrag_durch():
+    assert vh.pruefe_eintrag(BEISPIEL, BESTAND) is None
+
+
+def test_pruefung_erlaubt_fehlenden_tipp_und_namen():
+    eintrag = {s: w for s, w in BEISPIEL.items() if s not in ("tipp", "von")}
+    assert vh.pruefe_eintrag(eintrag, BESTAND) is None
+
+
+def test_pruefung_lehnt_zu_langen_titel_ab():
+    grund = vh.pruefe_eintrag({**BEISPIEL, "titel": "x" * 61}, BESTAND)
+    assert grund and "Titel" in grund
+
+
+def test_pruefung_erlaubt_genau_60_zeichen_im_titel():
+    assert vh.pruefe_eintrag({**BEISPIEL, "titel": "x" * 60}, BESTAND) is None
+
+
+def test_pruefung_lehnt_spitze_klammern_ab():
+    gift = "harmlos</script><script>alert(1)</script>"
+    grund = vh.pruefe_eintrag({**BEISPIEL, "beschreibung": gift}, BESTAND)
+    assert grund == "Spitze Klammern sind nicht erlaubt."
+
+
+def test_pruefung_lehnt_kommentarzeichen_ab():
+    grund = vh.pruefe_eintrag({**BEISPIEL, "tipp": "a <!-- b"}, BESTAND)
+    assert grund == "Kommentarzeichen sind nicht erlaubt."
+
+
+def test_pruefung_lehnt_links_ab():
+    grund = vh.pruefe_eintrag({**BEISPIEL, "beschreibung": "siehe HTTP://spam.example"}, BESTAND)
+    assert grund == "Links sind nicht erlaubt."
+
+
+def test_pruefung_lehnt_unbekannte_kategorie_ab():
+    """Der Fall, der beim Umbenennen einer Kategorie real auftritt."""
+    grund = vh.pruefe_eintrag({**BEISPIEL, "kategorie": "Erfunden"}, BESTAND)
+    assert grund and "Kategorie" in grund and "Erfunden" in grund
+
+
+def test_pruefung_lehnt_unbekannte_stufe_ab():
+    grund = vh.pruefe_eintrag({**BEISPIEL, "stufe": "Sehr hoch"}, BESTAND)
+    assert grund and "Stufe" in grund
+
+
+def test_pruefung_lehnt_fehlenden_pflichtschluessel_ab():
+    ohne = {s: w for s, w in BEISPIEL.items() if s != "emoji"}
+    grund = vh.pruefe_eintrag(ohne, BESTAND)
+    assert grund and "Emoji" in grund
+
+
+def test_pruefung_lehnt_leeren_pflichtwert_ab():
+    grund = vh.pruefe_eintrag({**BEISPIEL, "titel": "   "}, BESTAND)
+    assert grund and "Titel" in grund
+
+
 def test_anhaengen_legt_fehlende_von_spalte_an(tmp_path):
     pfad = tmp_path / "skills_daten.xlsx"
     wb = openpyxl.Workbook()

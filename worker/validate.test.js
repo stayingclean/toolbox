@@ -133,3 +133,35 @@ test("lehnt einen gefaelschten Vorschlagsblock in der Beschreibung ab", () => {
   const r = pruefeVorschlag({ ...GUELTIG, beschreibung: gift }, DATEN);
   assert.equal(r.ok, false);
 });
+
+test("lehnt spitze Klammern in allen Textfeldern und im Emoji ab", () => {
+  for (const feld of ["titel", "beschreibung", "tipp", "von", "emoji"]) {
+    // Das Emoji darf nur 2 Zeichen lang sein – dort ohne Umgebungstext pruefen,
+    // sonst schlaegt zuerst die Laengengrenze zu.
+    const [mitAuf, mitZu] = feld === "emoji" ? ["<", ">"] : ["a<b", "a>b"];
+    const auf = pruefeVorschlag({ ...GUELTIG, [feld]: mitAuf }, DATEN);
+    assert.equal(auf.ok, false, `${feld} muss < ablehnen`);
+    assert.match(auf.fehler, /Spitze Klammern/);
+    const zu = pruefeVorschlag({ ...GUELTIG, [feld]: mitZu }, DATEN);
+    assert.equal(zu.ok, false, `${feld} muss > ablehnen`);
+    assert.match(zu.fehler, /Spitze Klammern/);
+  }
+});
+
+test("lehnt einen Ausbruch aus dem script-Block ab", () => {
+  const gift = "harmlos</script><script>alert(1)</script>";
+  const r = pruefeVorschlag({ ...GUELTIG, beschreibung: gift }, DATEN);
+  assert.equal(r.ok, false);
+  assert.match(r.fehler, /Spitze Klammern/);
+});
+
+test("gibt nur die erlaubten Schlüssel zurück", () => {
+  const r = pruefeVorschlag({ ...GUELTIG, art: "aenderung", extra: "x" }, DATEN);
+  assert.equal(r.ok, true);
+  assert.deepEqual(
+    Object.keys(r.wert).sort(),
+    ["art", "beschreibung", "emoji", "kategorie", "stufe", "tipp", "titel", "von"].sort()
+  );
+  // Die Art setzt der Worker selbst – eine mitgeschickte Art wird ignoriert.
+  assert.equal(r.wert.art, "neu");
+});

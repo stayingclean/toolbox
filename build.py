@@ -259,6 +259,9 @@ def _render(template_path, output_path, placeholder, ersatz, data: dict):
             f"Die Vorlage muss '{placeholder}' enthalten."
         )
     payload = json.dumps(data, ensure_ascii=False, separators=(", ", ": "))
+    # Ausgabecodierung fuer den <script>-Block: sonst beendet ein </script> im
+    # Freitext das Skriptelement und der Rest wird als Markup ausgefuehrt.
+    payload = payload.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     html = template.replace(placeholder, ersatz % payload, 1)
     # gleiche Datei-Konvention wie das Original: UTF-8 mit BOM
     output_path.write_bytes(b"\xef\xbb\xbf" + html.encode("utf-8"))
@@ -282,9 +285,14 @@ def write_daten_json(data: dict):
     """Schreibt den Datenstand für die Vorschlagsseite und den Worker.
 
     Bewusst OHNE BOM: JSON.parse im Worker stolpert sonst über das erste Zeichen.
+    Zeilenenden fest auf Unix-Art und ein Zeilenumbruch am Schluss – sonst
+    erzeugt ein Build auf einem anderen Betriebssystem einen Scheinunterschied
+    über die ganze Datei.
     """
     DATEN_JSON.write_text(
-        json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8"
+        json.dumps(data, ensure_ascii=False, indent=1) + "\n",
+        encoding="utf-8",
+        newline="\n",
     )
 
 

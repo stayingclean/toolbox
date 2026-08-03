@@ -93,5 +93,14 @@ export function pruefeVorschlag(eingabe, daten) {
     }
   }
 
+  // Spitze Klammern koennten in der erzeugten Skillsliste das <script>-Element
+  // beenden (dort schuetzt zwar die Ausgabecodierung in build.py, aber diese
+  // Sperre ist die zweite Schicht). Kein Skilltext braucht spitze Klammern.
+  for (const feld of [...TEXTFELDER, "emoji"]) {
+    if (wert[feld].includes("<") || wert[feld].includes(">")) {
+      return { ok: false, fehler: "Spitze Klammern sind nicht erlaubt." };
+    }
+  }
+
   return { ok: true, wert };
 }

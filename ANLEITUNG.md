@@ -126,3 +126,15 @@ landet als Eintrag in einer Liste, die nur du freigeben kannst.
 
 Wenn im Fenster steht „Keine freigegebenen Vorschläge offen", hast du gerade
 nichts freigegeben — dann ist alles in Ordnung.
+
+**Wenn im Fenster steht, ein Issue habe nicht geschlossen werden können:** Öffne
+das genannte Issue (die Nummer steht in der Meldung, z. B. `#12`) auf GitHub und
+schliesse es von Hand mit dem Knopf „Close issue". Der Vorschlag steht dann
+bereits in der Excel — bleibt das Issue offen, wird er beim nächsten Doppelklick
+auf `vorschlaege.bat` ein zweites Mal übernommen und erscheint doppelt in der
+Skillsliste.
+
+Steht im Fenster, ein Vorschlag sei **nicht übernommen** worden (mit einer
+Begründung wie „Unbekannte Kategorie" oder „stammt von …, nicht vom Formular"),
+bleibt das Issue absichtlich offen — da ist nichts zu tun ausser es anzuschauen
+und gegebenenfalls das Label `abgelehnt` zu setzen.

@@ -113,6 +113,20 @@ Absenden geht ohne Netz ohnehin nicht. CSS bleibt eingebettet, aber die Regel
 „funktioniert lokal ohne Server/Internet" lässt sich für ein Einreichformular
 nicht halten. Das ist bewusst so.
 
+### Regel: Ausgabecodierung beim Einsetzen in den `<script>`-Block
+
+`build.py` setzt den Datenbestand als JSON in einen `<script>`-Block von
+`template.html` und `template-vorschlag.html`. `json.dumps` maskiert `<` und `/`
+**nicht** — eine eingereichte Beschreibung wie `…</script><script>…` beendet
+sonst wörtlich im Erzeugnis das Skriptelement, und der Rest läuft als fremder
+Code auf `stayingclean.github.io`.
+
+Deshalb gilt als feste Regel: **vor dem Einsetzen werden `<`, `>` und `&` im
+JSON-Text durch die Escape-Form `\u003c`, `\u003e` und `\u0026` ersetzt.** Das
+bleibt gültiges JSON und verändert die Werte nicht — der Browser setzt die
+Escapes beim Parsen zurück. Die Regel gilt für jeden künftigen Platzhalter, der
+Daten in ein Skriptelement schreibt.
+
 ### `docs/skills-daten.json`
 
 Wird von `build.py` miterzeugt und enthält den vollständigen Bestand: Stufen,
@@ -140,16 +154,34 @@ Aufgaben:
 6. Issue anlegen über ein GitHub-Token (Bot), das als Secret im Worker liegt
 7. Die Adresse des angelegten Issues an die Seite zurückgeben
 
+**Reichweite dieser Prüfung:** `validate.js` ist die Prüfinstanz **für
+Einreichungen über das Formular** — nicht für alles, was im Vorschlags-Repo
+landet. Weil das Repo öffentlich ist, kann jede Person mit GitHub-Konto dort von
+Hand ein Issue eröffnen, mit einem eigenen `<!-- vorschlag … -->`-Block, den die
+gerenderte Ansicht unsichtbar macht. Der Worker sieht davon nichts. Deshalb prüft
+das Übernahme-Skript zusätzlich die **Herkunft** (nur Issues des Bot-Kontos) und
+die **Felder** noch einmal — Letzteres fängt auch den Fall ab, dass eine
+Kategorie zwischen Einreichung und Freigabe umbenannt oder gelöscht wurde.
+
 **Keine Aufwachzeit:** Workers laufen als Isolate im Cloudflare-Netz und starten
 in unter einer Millisekunde — anders als schlafende Server bei Render oder
 Heroku. Die Seite selbst liegt statisch auf GitHub Pages; der Worker wird erst
 beim Klick auf „Absenden" angesprochen. Gratis-Kontingent: 100'000 Aufrufe/Tag.
 
 **Anonymität:** Der Worker schreibt weder IP-Adresse noch Browserkennung
-irgendwohin — nicht ins Issue, nicht in ein Log. Für die Ratenbegrenzung wird
-die IP nur als Hashwert mit einer Stunde Gültigkeit gehalten und verfällt dann.
-Das Issue enthält ausschliesslich die Formularfelder. Die einreichende Person
-ist damit auch für die Betreuung nicht identifizierbar; das ist gewollt.
+irgendwohin — nicht ins Issue, nicht in ein Log. Die Workers Logs werden dafür in
+`wrangler.toml` ausdrücklich abgeschaltet (`[observability] enabled = false`),
+weil sie bei neuen Workers sonst eingeschaltet wären und die Anfrage samt IP
+mehrere Tage vorhielten. Für die Ratenbegrenzung wird die IP nur als Hashwert mit
+einer Stunde Gültigkeit gehalten und verfällt dann. Das Issue enthält
+ausschliesslich die Formularfelder. Die einreichende Person ist damit auch für
+die Betreuung nicht identifizierbar; das ist gewollt.
+
+Eine Ausnahme gehört genannt: Die IP-Adresse wird als `remoteip` an Cloudflares
+eigene Turnstile-Prüfung mitgeschickt — an denselben Anbieter, der die Verbindung
+ohnehin terminiert und die IP damit ohnehin sieht. Sie verlässt den Weg der
+Anfrage also nicht, aber „irgendwohin geschrieben" ist an dieser einen Stelle zu
+absolut formuliert.
 
 ### `stayingclean/skills-suggestions`
 
@@ -186,10 +218,17 @@ Doppelklick genügt, gleiche Bedienlogik wie `build.bat`. Das Skript läuft
 interaktiv im Konsolenfenster.
 
 1. `gh issue list --repo stayingclean/skills-suggestions --label freigegeben
-   --state open` — holt die freigegebenen, noch offenen Vorschläge
-2. JSON-Block aus jedem Issue lesen
-3. **Optionale Duplikatprüfung** (siehe unten)
-4. Übernehmen:
+   --state open --json number,title,body,author` — holt die freigegebenen, noch
+   offenen Vorschläge
+2. **Herkunft prüfen:** nur Issues, die unter dem Bot-Konto angelegt wurden.
+   Alles andere ist von Hand eröffnet und nie durch den Worker gelaufen
+3. JSON-Block aus jedem Issue lesen
+4. **Felder prüfen** (Pflichtfelder, Längen, keine Links, keine Kommentarzeichen
+   und keine spitzen Klammern, Stufe und Kategorie gegen `skills-daten.json`) —
+   **vor** dem Schreiben in die Excel, damit kein Abbruch eine halb geschriebene
+   Excel mit offenen Issues hinterlässt
+5. **Optionale Duplikatprüfung** (siehe unten)
+6. Übernehmen:
    - `art: neu` → Zeile ans Blatt `Skills` anhängen
    - `art: aenderung` → bestehende Zeile suchen (Schlüssel: Stufe + Kategorie +
      ursprünglicher Titel) und die geänderten Felder ersetzen. Wird die Zeile
