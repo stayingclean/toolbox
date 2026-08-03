@@ -10,6 +10,9 @@ _tmp/
 # Python-Zwischenspeicher aus den Testläufen
 __pycache__/
 
+# Zusätzliche Arbeitsverzeichnisse (git worktree) für parallele Sitzungen
+.worktrees/
+
 # Nur lokale Vergleichs-/Arbeitskopie, gehört nicht ins Repo
 docs/budgetvorlag_aktuell.html
 
