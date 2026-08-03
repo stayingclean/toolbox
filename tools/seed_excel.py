@@ -90,7 +90,7 @@ def main():
     # ── Blatt Skills ─────────────────────────────────────────
     ws = wb.active
     ws.title = "Skills"
-    ws.append(["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"])
+    ws.append(["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp", "Von"])
     for key, d in data.items():
         for kat in d["kategorien"]:
             for s in kat["skills"]:
@@ -102,9 +102,10 @@ def main():
                         s.get("t", ""),
                         s.get("b", ""),
                         strip_birne(s.get("tip", "")),
+                        s.get("von", ""),
                     ]
                 )
-    style_sheet(ws, 6, [9, 18, 8, 26, 60, 55], emoji_col=3)
+    style_sheet(ws, 7, [9, 18, 8, 26, 60, 55, 16], emoji_col=3)
     for row in ws.iter_rows(min_row=2):
         row[4].alignment = WRAP_TOP   # Beschreibung
         row[5].alignment = WRAP_TOP   # Tipp
