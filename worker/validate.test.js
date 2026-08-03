@@ -95,3 +95,25 @@ test("verträgt fehlende Felder ohne Absturz", () => {
   const r = pruefeVorschlag({}, DATEN);
   assert.equal(r.ok, false);
 });
+
+test("erlaubt genau 300 Zeichen in der Beschreibung", () => {
+  const r = pruefeVorschlag({ ...GUELTIG, beschreibung: "x".repeat(300) }, DATEN);
+  assert.equal(r.ok, true);
+});
+
+test("lehnt 301 Zeichen in der Beschreibung ab", () => {
+  const r = pruefeVorschlag({ ...GUELTIG, beschreibung: "x".repeat(301) }, DATEN);
+  assert.equal(r.ok, false);
+  assert.match(r.fehler, /Beschreibung/);
+});
+
+test("erlaubt genau 30 Zeichen im Namen", () => {
+  const r = pruefeVorschlag({ ...GUELTIG, von: "x".repeat(30) }, DATEN);
+  assert.equal(r.ok, true);
+});
+
+test("lehnt 31 Zeichen im Namen ab", () => {
+  const r = pruefeVorschlag({ ...GUELTIG, von: "x".repeat(31) }, DATEN);
+  assert.equal(r.ok, false);
+  assert.match(r.fehler, /Name/);
+});

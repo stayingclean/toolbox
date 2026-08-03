@@ -14,6 +14,15 @@ export const GRENZEN = {
 // Anzeigename (Formular) -> Schlüssel in skills-daten.json
 const STUFEN = { Hoch: "hoch", Mittel: "mittel", Tief: "tief" };
 
+// Feldschlüssel -> Bezeichnung in Fehlermeldungen (so wie im Formular beschriftet)
+const FELDNAMEN = {
+  emoji: "Emoji",
+  titel: "Titel",
+  beschreibung: "Beschreibung",
+  tipp: "Tipp",
+  von: "Name",
+};
+
 const TEXTFELDER = ["titel", "beschreibung", "tipp", "von"];
 
 function text(wert) {
@@ -59,15 +68,13 @@ export function pruefeVorschlag(eingabe, daten) {
 
   for (const feld of ["emoji", "titel", "beschreibung"]) {
     if (!wert[feld]) {
-      const feldName = feld.charAt(0).toUpperCase() + feld.slice(1);
-      return { ok: false, fehler: `Pflichtfeld fehlt: ${feldName}.` };
+      return { ok: false, fehler: `Pflichtfeld fehlt: ${FELDNAMEN[feld]}.` };
     }
   }
 
   for (const [feld, grenze] of Object.entries(GRENZEN)) {
     if (laenge(wert[feld]) > grenze) {
-      const feldName = feld.charAt(0).toUpperCase() + feld.slice(1);
-      return { ok: false, fehler: `Zu lang: ${feldName} (max. ${grenze} Zeichen).` };
+      return { ok: false, fehler: `Zu lang: ${FELDNAMEN[feld]} (max. ${grenze} Zeichen).` };
     }
   }
 
