@@ -4,6 +4,9 @@ workspacesobriety/
 # Temporäre Analyse-/Build-Hilfsordner
 _tmp/
 
+# Arbeitsdateien der Plan-Abarbeitung (Fortschritt, Aufgabenauszüge, Berichte)
+.superpowers/
+
 # Nur lokale Vergleichs-/Arbeitskopie, gehört nicht ins Repo
 docs/budgetvorlag_aktuell.html
 

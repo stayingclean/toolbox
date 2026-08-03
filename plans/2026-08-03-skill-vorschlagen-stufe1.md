@@ -1129,6 +1129,14 @@ def test_vorschlagsvorlage_hat_pflichtbestandteile():
     vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
     for baustein in ['name="falle"', "cf-turnstile", "footer-credit", "WORKER_URL"]:
         assert baustein in vorlage, baustein
+
+
+def test_vorschlagsvorlage_hat_keine_platzhalter_mehr():
+    """Fängt ab, dass die Seite mit unersetzter Worker-Adresse veröffentlicht wird."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    for platzhalter in ("WORKER_URL_HIER_EINSETZEN", "TURNSTILE_SITEKEY_HIER_EINSETZEN"):
+        assert platzhalter not in vorlage, platzhalter
+    assert "https://" in vorlage.split('var WORKER_URL = "')[1][:60]
 ```
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
@@ -1437,7 +1445,7 @@ und die Erfolgsmeldung:
 - [ ] **Step 5: Tests laufen lassen**
 
 Run: `uv run --with pytest --with openpyxl pytest tests -v`
-Expected: PASS, 7 Tests.
+Expected: PASS, 8 Tests.
 
 - [ ] **Step 6: Bauen und im Browser prüfen**
 
@@ -1718,7 +1726,7 @@ if __name__ == "__main__":
 - [ ] **Step 4: Tests laufen lassen**
 
 Run: `uv run --with pytest --with openpyxl pytest tests -v`
-Expected: PASS, 12 Tests.
+Expected: PASS, 13 Tests.
 
 - [ ] **Step 5: Startdatei anlegen**
 
