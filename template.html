@@ -138,6 +138,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .modal-body{padding:1.1rem 1.2rem 1.6rem}
 .modal-desc{font-size:.93rem;line-height:1.68;color:var(--text);margin-bottom:1rem}
 .modal-tip{background:var(--active-h);border-left:3px solid var(--active);border-radius:0 var(--r-xs) var(--r-xs) 0;padding:.65rem .9rem;font-size:.85rem;color:var(--text);line-height:1.55;transition:background var(--tr),border-color var(--tr)}
+.modal-von{margin-top:.9rem;font-size:.78rem;color:var(--muted);font-style:italic}
 /* Auf Desktop zentrieren */
 @media(min-width:580px){
   .modal-backdrop{align-items:center}
@@ -289,6 +290,7 @@ footer{text-align:center;padding:2rem 1rem;font-size:.74rem;color:var(--muted);b
     <div class="modal-body">
       <p class="modal-desc" id="m-desc"></p>
       <div class="modal-tip" id="m-tip"></div>
+      <div class="modal-von" id="m-von" hidden></div>
     </div>
   </div>
 </div>
@@ -375,7 +377,7 @@ function render(anim){
 
     k.skills.forEach(function(s){
       totalCount++;
-      var sObj={lv:S.level,kid:k.id,klbl:k.label,idx:cardIdx,e:s.e,t:s.t,b:s.b,tip:s.tip};
+      var sObj={lv:S.level,kid:k.id,klbl:k.label,idx:cardIdx,e:s.e,t:s.t,b:s.b,tip:s.tip,von:s.von};
       var card=document.createElement('div');
       card.className='sk card-anim';
       card.style.animationDelay=(cardIdx*26)+'ms';
@@ -404,7 +406,7 @@ function render(anim){
 /* ── MODAL ──────────────────────────────────────────────── */
 var _scrollY=0;
 var mb=el('mb'), modal=el('modal');
-var mEmoji=el('m-emoji'), mCat=el('m-cat'), mTitle=el('m-title'), mDesc=el('m-desc'), mTip=el('m-tip');
+var mEmoji=el('m-emoji'), mCat=el('m-cat'), mTitle=el('m-title'), mDesc=el('m-desc'), mTip=el('m-tip'), mVon=el('m-von');
 
 function openModal(s){
   mEmoji.textContent = s.e||'💡';
@@ -412,6 +414,8 @@ function openModal(s){
   mTitle.textContent = s.t;
   mDesc.textContent  = s.b;
   mTip.textContent   = s.tip;
+  if(s.von){ mVon.textContent='Vorgeschlagen von '+s.von; mVon.hidden=false; }
+  else { mVon.textContent=''; mVon.hidden=true; }
 
   _scrollY=window.scrollY;
   mb.classList.add('open');

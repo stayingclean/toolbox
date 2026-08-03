@@ -27,3 +27,10 @@ def test_pflichtspalte_fehlt_bricht_ab(mappe, monkeypatch):
         assert "Tipp" in str(fehler)
     else:
         raise AssertionError("BuildError erwartet")
+
+
+def test_vorlage_enthaelt_namenszeile():
+    vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
+    assert 'id="m-von"' in vorlage
+    assert "modal-von" in vorlage
+    assert "s.von" in vorlage
