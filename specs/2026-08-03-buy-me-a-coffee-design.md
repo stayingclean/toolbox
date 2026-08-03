@@ -75,9 +75,10 @@ Begründung der Entscheidungen:
 editiert, sondern nach der Template-Änderung über `build.bat` (`uv run build.py`)
 neu erzeugt.
 
-**Bewusst nicht angefasst:** `docs/budgetvorlag_aktuell.html` — alte Restdatei,
-nirgends verlinkt und schon heute ohne Urheber-Credit. Ob sie gelöscht oder
-mitgepflegt wird, ist eine separate Entscheidung.
+**Wird gelöscht:** `docs/budgetvorlag_aktuell.html` — alte Restdatei, nirgends
+verlinkt und ohne Urheber-Credit. Sie wurde von `docs/budgetvorlage.html` abgelöst
+und bekommt deshalb keinen Kaffee-Link, sondern verschwindet. Die Historie behält
+den Stand; bei Bedarf ist die Datei aus Git wiederherstellbar.
 
 ## Flyer-Editor: Wohin mit dem Hinweis
 

@@ -751,11 +751,18 @@
         .footer p {
             margin: 0.25rem 0;
         }
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 8px 14px;
+            margin-top: 12px;
+        }
         .footer-credit {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin-top: 12px;
             color: var(--color-text-muted);
             text-decoration: none;
             transition: color var(--transition-fast);
@@ -768,6 +775,18 @@
             border: 1px solid var(--color-border);
             object-fit: cover;
             display: block;
+        }
+        .footer-coffee {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--color-text-muted);
+            text-decoration: none;
+            transition: color var(--transition-fast);
+        }
+        .footer-coffee:hover { color: var(--color-primary-dark); }
+        @media (max-width: 480px) {
+            .footer-sep { display: none; }
         }
 
         /* ============================================================
@@ -1649,10 +1668,16 @@
 
 <footer class="footer">
     <p style="font-size: 0.75rem; color: var(--color-text-light);">Basierend auf der Budgetvorlage des Dachverbands Budgetberatung Schweiz</p>
-    <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
-        <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
-        <span>Erstellt von stayingclean</span>
-    </a>
+    <div class="footer-links">
+        <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+            <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+            <span>Erstellt von stayingclean</span>
+        </a>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+            <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+        </a>
+    </div>
 </footer>
 
 <!-- ============================================================

@@ -101,11 +101,17 @@
       border-radius: 6px;
       border: 1px solid var(--border);
     }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 14px;
+      margin-top: 12px;
+    }
     .footer-credit {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin-top: 12px;
       color: var(--muted);
       text-decoration: none;
       transition: color 0.15s ease;
@@ -118,6 +124,18 @@
       border: 1px solid var(--border);
       object-fit: cover;
       display: block;
+    }
+    .footer-coffee {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .footer-coffee:hover { color: var(--accent); }
+    @media (max-width: 480px) {
+      .footer-sep { display: none; }
     }
   </style>
 </head>
@@ -139,7 +157,7 @@
           <span class="name">Budgetvorlage</span>
           <span class="meta">Einnahmen &amp; Ausgaben erfassen</span>
         </a>
-        <a class="card" href="neutral_flyer.html">
+        <a class="card" href="flyer-editor.html">
           <span class="name">Flyer-Editor</span>
           <span class="meta">Flyer im Browser gestalten &amp; als HTML, Bild oder PDF speichern</span>
         </a>
@@ -164,10 +182,16 @@
 
     <footer>
       <div>Gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>
-      <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
-        <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
-        <span>Erstellt von stayingclean</span>
-      </a>
+      <div class="footer-links">
+        <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+          <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+          <span>Erstellt von stayingclean</span>
+        </a>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+          <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+        </a>
+      </div>
     </footer>
   </div>
 </body>
