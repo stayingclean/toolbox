@@ -70,8 +70,20 @@ Ein Klick erzeugt zwei Dateien: `flyer-vorderseite.<ext>` und `flyer-rueckseite.
 3. Die Auflösung wird **in das SVG hineingebacken**: `width`/`height` = Seitenmass ×
    Faktor, dazu `viewBox` auf das Original-Seitenmass. Der Browser rastert dadurch
    direkt in Zielauflösung, statt eine kleine Bitmap hochzuskalieren.
-4. Das SVG wird über eine Blob-URL in ein `<img>` geladen und auf ein `<canvas>`
+4. Das SVG wird als **Data-URI** in ein `<img>` geladen und auf ein `<canvas>`
    gezeichnet; `canvas.toBlob` liefert die Datei.
+
+**Data-URI, nicht Blob-URL** — im Test messbar belegt: ein SVG mit `<foreignObject>`
+aus einer Blob-URL macht den Canvas „tainted", `toBlob()` wirft danach einen
+`SecurityError`. Aus einer Data-URI geladen bleibt der Canvas sauber:
+
+| Quelle | ohne foreignObject | mit foreignObject |
+|---|---|---|
+| Blob-URL | sauber | **SecurityError** |
+| Data-URI | sauber | sauber |
+
+Die Blob-URL bleibt nur als Notnagel, falls die Data-URI an einer Längenbegrenzung
+scheitert.
 
 Entscheidend: **der Browser rendert selbst**, deshalb stimmen die `cqw`/`cqh`-Grössen.
 
@@ -87,12 +99,13 @@ Entscheidend: **der Browser rendert selbst**, deshalb stimmen die `cqw`/`cqh`-Gr
 
 ### Bekannte Risiken und Umgang damit
 
-| Risiko | Umgang |
-|---|---|
-| Blob-URL unter `file://` wird nicht geladen | `img.onerror` → zweiter Versuch mit Data-URI |
-| Canvas wird „tainted", `toBlob` wirft `SecurityError` | Fehler abfangen, verständliche Meldung in der Statuszeile statt stiller Fehlschlag |
-| Safari rendert `foreignObject`-in-SVG unzuverlässig | Zielbrowser sind Chrome/Edge/Firefox; Einschränkung wird dokumentiert, nicht kaschiert |
-| Fällt die Technik ganz durch | Rückfallplan: `html-to-image` (MIT, ~30 KB) inline einbetten — gleiche Technik, mehr Sonderfall-Behandlung |
+| Risiko | Umgang | Stand |
+|---|---|---|
+| Canvas „tainted", `toBlob` wirft `SecurityError` | Data-URI statt Blob-URL; Fehler wird zusätzlich abgefangen und als Meldung in der Statuszeile angezeigt statt still zu scheitern | gelöst |
+| Data-URI lädt nicht (Längenbegrenzung) | `img.onerror` → zweiter Versuch mit Blob-URL | abgesichert |
+| Betrieb unter `file://` (Doppelklick, ohne Server) | headless getestet: beide Exporte funktionieren | verifiziert |
+| Safari rendert `foreignObject`-in-SVG unzuverlässig | Zielbrowser sind Chrome/Edge/Firefox; Einschränkung wird dokumentiert, nicht kaschiert | offen, dokumentiert |
+| Fällt die Technik ganz durch | Rückfallplan: `html-to-image` (MIT, ~30 KB) inline einbetten | nicht nötig |
 
 ## Aufbau im Code
 
@@ -106,13 +119,22 @@ Beide Exporte teilen sich Hilfsfunktionen, damit die Logik nur einmal existiert:
 `doSave()` (die bestehende Arbeitskopie) wird auf `downloadBlob` umgestellt, sonst
 aber nicht angefasst.
 
-## Verifikation
+## Verifikation — Ergebnis
 
-Manuell im Chrome, nicht nur „müsste gehen":
+Im Browser durchgeführt (Chromium), nicht nur „müsste gehen":
 
-1. Datei per `file://` öffnen, Text ändern, Feld verschieben.
-2. `📄 Ansicht-HTML` → Ergebnisdatei öffnen: identisches Aussehen, kein Klick
-   verändert etwas, keine gestrichelten Rahmen beim Überfahren, Drucken geht.
-3. `📷 Bild speichern` in PNG 2× und JPG 1× → Bildmasse und Aussehen prüfen,
-   besonders Schriftgrössen (Container-Queries) und Textkontur/-schatten.
-4. Konsole auf Fehler prüfen.
+| Prüfung | Ergebnis |
+|---|---|
+| JS-Syntax (`node --check`) | fehlerfrei |
+| PNG 2×, A5 hoch | 1118×1588 px, 3.6 MB / 3.0 MB — Schriftgrössen, Schriftarten und Positionen stimmen mit der Bildschirmdarstellung überein |
+| JPG 1×, A5 hoch | 559×794 px, 167 KB / 132 KB |
+| PNG 2×, A4 quer | 2246×1588 px — Formatwechsel wird korrekt übernommen |
+| QR-Feld (Inline-SVG) im Bild | vollständig und scharf gerastert |
+| Ansicht-HTML | 0 `<script>`, 0 `contenteditable`, 0 Editor-Elemente, 2 Seiten, 6 Felder, `@page`-Regel und Urheber-Credit erhalten, `cursor:default`, `isContentEditable === false` |
+| Betrieb unter `file://` | beide Exporte funktionieren (headless verifiziert) |
+| `💾 Speichern` nach dem Umbau auf `downloadBlob` | unverändert funktionsfähig |
+| Browser-Konsole | keine Fehler |
+
+Nicht abgedeckt: Safari (siehe Risiken) und eingefügte Bildfelder mit selbst
+gewählter Datei — technisch identisch zu den eingebetteten Hintergrundbildern,
+die im Test korrekt gerastert wurden.
