@@ -1,3 +1,5 @@
+import re
+
 import build
 
 SKILLS_HEADER = ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"]
@@ -33,4 +35,15 @@ def test_vorlage_enthaelt_namenszeile():
     vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
     assert 'id="m-von"' in vorlage
     assert "modal-von" in vorlage
-    assert "s.von" in vorlage
+
+    # Nicht nur "s.von" irgendwo suchen (koennte ein Kommentar sein), sondern
+    # den zusammenhaengenden if/else-Block aus openModal pruefen: er muss die
+    # Namenszeile bei vorhandenem "von" anzeigen UND bei fehlendem "von" wieder
+    # verstecken/leeren (sonst bliebe der Name eines fruehreren Skills stehen).
+    treffer = re.search(r"if\s*\(s\.von\)\s*\{.*?\}\s*else\s*\{.*?\}", vorlage, re.DOTALL)
+    assert treffer, "if/else-Block fuer s.von in openModal nicht gefunden"
+    block = re.sub(r"\s+", " ", treffer.group(0)).strip()
+    assert block == (
+        "if(s.von){ mVon.textContent='Vorgeschlagen von '+s.von; mVon.hidden=false; } "
+        "else { mVon.textContent=''; mVon.hidden=true; }"
+    )
