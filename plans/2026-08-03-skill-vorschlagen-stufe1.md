@@ -27,7 +27,7 @@
 
 ```bash
 uv run --with pytest --with openpyxl pytest tests -v     # Python
-node --test worker/                                       # Worker
+(cd worker && node --test)                                       # Worker
 ```
 
 ---
@@ -654,7 +654,7 @@ test("verträgt fehlende Felder ohne Absturz", () => {
 
 - [ ] **Step 3: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `node --test worker/`
+Run: `(cd worker && node --test)`
 Expected: FAIL — `Cannot find module .../worker/validate.js`
 
 - [ ] **Step 4: Prüflogik schreiben**
@@ -745,7 +745,7 @@ export function pruefeVorschlag(eingabe, daten) {
 
 - [ ] **Step 5: Tests laufen lassen**
 
-Run: `node --test worker/`
+Run: `(cd worker && node --test)`
 Expected: PASS, 13 Tests.
 
 - [ ] **Step 6: Commit**
@@ -1077,7 +1077,7 @@ zeigt die Fehlermeldung an. Die Toolbox selbst ist nicht betroffen.
 ## Prüflogik
 
 Die reinen Prüffunktionen stehen in `validate.js` und werden mit
-`node --test worker/` geprüft. Sie kennen die gültigen Stufen und Kategorien
+`(cd worker && node --test)` geprüft. Sie kennen die gültigen Stufen und Kategorien
 nicht selbst, sondern lesen sie aus `docs/skills-daten.json` — diese Datei
 erzeugt `build.py` bei jedem Build mit.
 ```
@@ -1946,7 +1946,7 @@ Expected: die Zeile ist aus `docs/skillsliste.html` verschwunden.
 
 ```bash
 uv run --with pytest --with openpyxl pytest tests -v
-node --test worker/
+(cd worker && node --test)
 ```
 
 Expected: beide grün.
