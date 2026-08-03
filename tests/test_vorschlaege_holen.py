@@ -40,12 +40,14 @@ def test_parse_body_bei_kaputtem_json_gibt_none():
 
 
 def test_anhaengen_schreibt_in_die_richtigen_spalten(tmp_path):
+    # Kopfzeile bewusst in anderer Reihenfolge als die interne SPALTEN-Liste,
+    # damit eine Rueckkehr zu positionsbasiertem Schreiben auffliegt.
     pfad = tmp_path / "skills_daten.xlsx"
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Skills"
-    ws.append(["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp", "Von"])
-    ws.append(["Hoch", "Ablenkung", "🌶️", "Vorhanden", "Alte Zeile", "", ""])
+    ws.append(["Titel", "Stufe", "Von", "Kategorie", "Beschreibung", "Emoji", "Tipp"])
+    ws.append(["Vorhanden", "Hoch", "", "Ablenkung", "Alte Zeile", "🌶️", ""])
     wb.save(pfad)
 
     anzahl = vh.an_excel_anhaengen(pfad, [BEISPIEL])
@@ -53,10 +55,17 @@ def test_anhaengen_schreibt_in_die_richtigen_spalten(tmp_path):
     assert anzahl == 1
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
     assert ws2.max_row == 3
-    assert [c.value for c in ws2[3]] == [
-        "Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.",
-        "Kopfhörer bereitlegen", "Max",
-    ]
+    kopf = [c.value for c in ws2[1]]
+    zeile = dict(zip(kopf, [c.value for c in ws2[3]]))
+    assert zeile == {
+        "Titel": "Musik hören",
+        "Stufe": "Hoch",
+        "Von": "Max",
+        "Kategorie": "Ablenkung",
+        "Beschreibung": "Ein Lied auflegen.",
+        "Emoji": "🎧",
+        "Tipp": "Kopfhörer bereitlegen",
+    }
 
 
 def test_anhaengen_legt_fehlende_von_spalte_an(tmp_path):

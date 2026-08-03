@@ -26,6 +26,7 @@ import sys
 from pathlib import Path
 
 import openpyxl
+from openpyxl.utils import get_column_letter
 
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
@@ -67,11 +68,19 @@ def parse_body(body: str):
 
 def hole_issues():
     """Fragt die freigegebenen, offenen Issues über das GitHub-CLI ab."""
-    ergebnis = subprocess.run(
-        ["gh", "issue", "list", "--repo", REPO, "--label", LABEL,
-         "--state", "open", "--limit", "100", "--json", "number,title,body"],
-        capture_output=True, text=True, encoding="utf-8",
-    )
+    try:
+        ergebnis = subprocess.run(
+            ["gh", "issue", "list", "--repo", REPO, "--label", LABEL,
+             "--state", "open", "--limit", "100", "--json", "number,title,body"],
+            capture_output=True, text=True, encoding="utf-8",
+        )
+    except FileNotFoundError:
+        raise SystemExit(
+            "❌ Das GitHub-Programm `gh` wurde nicht gefunden.\n\n"
+            "   Lade es von https://cli.github.com herunter, installiere es und\n"
+            "   melde dich danach einmal mit  gh auth login  an.\n"
+            "   Ohne `gh` kann dieses Skript die Vorschlaege nicht abholen."
+        )
     if ergebnis.returncode != 0:
         raise SystemExit(
             "❌ Konnte die Vorschläge nicht abrufen:\n"
@@ -97,6 +106,13 @@ def an_excel_anhaengen(pfad: Path, eintraege: list) -> int:
         for name, schluessel in SPALTEN:
             zeile[kopf.index(name)] = eintrag.get(schluessel, "")
         ws.append(zeile)
+    # Filterbereich und Stufen-Dropdown auf die neuen Zeilen ausdehnen, sonst
+    # fallen sie heraus und beim Sortieren koennen Werte verrutschen.
+    letzte = ws.max_row
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(kopf))}{letzte}"
+    for pruefung in ws.data_validations.dataValidation:
+        if str(pruefung.sqref).startswith("A2:A"):
+            pruefung.sqref = f"A2:A{letzte}"
     wb.save(pfad)
     return len(eintraege)
 
@@ -124,11 +140,24 @@ def main():
         uebernehmen.append((issue, daten))
 
     anzahl = an_excel_anhaengen(XLSX, [d for _, d in uebernehmen])
+    nicht_geschlossen = []
     for issue, daten in uebernehmen:
         print(f"  + {daten['stufe']} / {daten['kategorie']}: {daten['titel']}")
-        issue_schliessen(issue["number"])
+        try:
+            issue_schliessen(issue["number"])
+        except Exception:
+            nicht_geschlossen.append(issue["number"])
 
     print(f"\n✅ {anzahl} Vorschlag/Vorschläge in {XLSX.name} übernommen.")
+
+    if nicht_geschlossen:
+        nummern = ", ".join(f"#{n}" for n in nicht_geschlossen)
+        print(
+            f"\n⚠ ACHTUNG: {nummern} konnte(n) nicht geschlossen werden.\n"
+            f"   Die Vorschlaege sind bereits in der Excel. Schliesse diese Issues\n"
+            f"   von Hand, sonst werden sie beim naechsten Lauf ein zweites Mal\n"
+            f"   angehaengt."
+        )
 
     for issue in uebersprungen:
         print(
