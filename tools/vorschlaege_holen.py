@@ -161,11 +161,18 @@ def lade_datenstand() -> dict:
 
 
 def hole_issues():
-    """Fragt die freigegebenen, offenen Issues über das GitHub-CLI ab."""
+    """Fragt alle offenen Issues über das GitHub-CLI ab (ungefiltert).
+
+    Der serverseitige Label-Filter von GitHub (`--label`) ist nicht sofort
+    aktuell: ein frisch gesetztes Label taucht dort erst nach einigen Sekunden
+    auf. Darum werden hier alle offenen Issues samt Labels geholt und das
+    Filtern nach `hat_label()` in Python erledigt.
+    """
     try:
         ergebnis = subprocess.run(
-            ["gh", "issue", "list", "--repo", REPO, "--label", LABEL,
-             "--state", "open", "--limit", "100", "--json", "number,title,body,author"],
+            ["gh", "issue", "list", "--repo", REPO,
+             "--state", "open", "--limit", "100",
+             "--json", "number,title,body,author,labels"],
             capture_output=True, text=True, encoding="utf-8",
         )
     except FileNotFoundError:
@@ -182,6 +189,16 @@ def hole_issues():
             + "\n\nIst `gh` installiert und angemeldet? Prüfe mit: gh auth status"
         )
     return json.loads(ergebnis.stdout or "[]")
+
+
+def hat_label(issue: dict, name: str) -> bool:
+    """Prueft das Label in Python statt ueber den Server.
+
+    Der serverseitige Label-Filter von GitHub ist nicht sofort aktuell: ein
+    frisch gesetztes Label taucht dort erst nach einigen Sekunden auf. Wer
+    freigibt und sofort startet, bekaeme sonst faelschlich „nichts zu tun".
+    """
+    return any(l.get("name") == name for l in issue.get("labels", []))
 
 
 def an_excel_anhaengen(pfad: Path, eintraege: list) -> int:
@@ -220,9 +237,12 @@ def issue_schliessen(nummer: int):
 
 
 def main():
-    issues = hole_issues()
+    alle_offenen = hole_issues()
+    issues = [i for i in alle_offenen if hat_label(i, LABEL)]
     if not issues:
         print("Keine freigegebenen Vorschläge offen. Nichts zu tun.")
+        if alle_offenen:
+            print(f"({len(alle_offenen)} Vorschlaege warten noch auf deine Freigabe.)")
         return
 
     bestand = lade_datenstand()

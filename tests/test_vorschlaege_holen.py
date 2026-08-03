@@ -145,6 +145,26 @@ def test_pruefung_lehnt_leeren_pflichtwert_ab():
     assert grund and "Titel" in grund
 
 
+def test_hat_label_erkennt_vorhandenes_label():
+    issue = {"labels": [{"name": "in Pruefung"}, {"name": "freigegeben"}]}
+    assert vh.hat_label(issue, "freigegeben") is True
+
+
+def test_hat_label_erkennt_fehlendes_label():
+    issue = {"labels": [{"name": "in Pruefung"}]}
+    assert vh.hat_label(issue, "freigegeben") is False
+
+
+def test_hat_label_bei_leerer_labelliste():
+    issue = {"labels": []}
+    assert vh.hat_label(issue, "freigegeben") is False
+
+
+def test_hat_label_bei_fehlendem_labelschluessel():
+    issue = {}
+    assert vh.hat_label(issue, "freigegeben") is False
+
+
 def test_anhaengen_legt_fehlende_von_spalte_an(tmp_path):
     pfad = tmp_path / "skills_daten.xlsx"
     wb = openpyxl.Workbook()
