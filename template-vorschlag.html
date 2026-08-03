@@ -160,16 +160,45 @@ var STUFEN = [["hoch","Hoch"],["mittel","Mittel"],["tief","Tief"]];
 
 function el(id){ return document.getElementById(id); }
 
+// Muss zur gleichnamigen Schranke in worker/validate.js passen: eine Notbremse
+// gegen absurd lange Codepunkt-Ketten, unabhaengig davon, wie viele sichtbare
+// Zeichen sie ergeben.
+var EMOJI_CODEPUNKT_GRENZE = 16;
+
+function emojiZaehlerVerfuegbar(){
+  return typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function';
+}
+
 /* Zaehlt sichtbare Zeichen (Graphem-Cluster), nicht Speichereinheiten:
    🧘‍♀️ ist EIN Zeichen, besteht aber aus vier Codepunkten und fuenf
    UTF-16-Einheiten – darum kein maxlength am Feld, sondern diese Pruefung. */
 function grapheme(wert){
-  return [...new Intl.Segmenter('de', { granularity: 'grapheme' }).segment(wert)].length;
+  if(emojiZaehlerVerfuegbar()){
+    return [...new Intl.Segmenter('de', { granularity: 'grapheme' }).segment(wert)].length;
+  }
+  // Rueckfallweg fuer Browser ohne Intl.Segmenter (z. B. Firefox vor 125):
+  // grobe Codepunkt-Zaehlung statt Graphem-Cluster. Das kann ein
+  // zusammengesetztes Emoji faelschlich als "mehr als 1 Zeichen" werten – wird
+  // darum unten NICHT fuer die exakte Ein-Zeichen-Pruefung verwendet, nur fuer
+  // die grobe Laengenschranke. Die Feinpruefung uebernimmt in diesem Fall der
+  // Worker.
+  return Array.from(wert).length;
 }
 
-/* Emoji-Auswahl: erste Gruppe aus den in der Skillsliste bereits verwendeten
-   Emoji (keine Dubletten), danach feste Themen-Gruppen. Alles eingebettet,
-   nichts wird nachgeladen. */
+/* Prueft das Emoji-Feld genauso wie worker/validate.js: genau ein sichtbares
+   Zeichen, hoechstens EMOJI_CODEPUNKT_GRENZE Codepunkte. Fehlt Intl.Segmenter,
+   wird die exakte Ein-Zeichen-Pruefung ausgelassen (siehe grapheme()) – lieber
+   eine gelegentlich zu grosszuegige Annahme hier als eine Seite, die beim
+   Absenden ohne Meldung stehen bleibt. Der Worker prueft ohnehin serverseitig
+   nach. */
+function emojiUngueltig(wert){
+  if(Array.from(wert).length > EMOJI_CODEPUNKT_GRENZE){ return true; }
+  return emojiZaehlerVerfuegbar() && grapheme(wert) !== 1;
+}
+
+/* Emoji-Auswahl: erste die kuratierten Themen-Gruppen (das Wichtigste zuerst,
+   ohne Scrollen erreichbar), danach die in der Skillsliste bereits
+   verwendeten Emoji. Alles eingebettet, nichts wird nachgeladen. */
 var EMOJI_GRUPPEN = [
   ['Körper & Bewegung', ['🏃','🚶','🧘','💃','🤸','🏋️','🚴','🧗','🥋','🤾','🏊','⚽','🕺']],
   ['Ruhe & Atem', ['🌬️','🕯️','🛌','😴','🧘‍♀️','🧘‍♂️','🌙','🫧','🛀','☁️','🤍','💤']],
@@ -179,27 +208,38 @@ var EMOJI_GRUPPEN = [
   ['Alltag & Ordnung', ['🧹','🧺','📓','🗓️','🧴','🧽','🪥','📦','🧾','✅','🧦']]
 ];
 
+// Hoechstens so viele Emoji in "Schon verwendet": eine ungefilterte Wand aus
+// allen je verwendeten Emoji (koennen leicht 70+ sein) waere selbst am Ende
+// des Panels noch unhandlich lang. Die meistgenutzten sagen am ehesten etwas
+// darueber aus, was in dieser Skillsliste thematisch passt.
+var SCHON_VERWENDET_MAX = 15;
+
 function schonVerwendet(){
-  var gesehen = [], gefunden = {};
+  var anzahl = {}, reihenfolge = [];
   ['hoch','mittel','tief'].forEach(function(schluessel){
     var stufe = DATEN[schluessel];
     if(!stufe) return;
     (stufe.kategorien||[]).forEach(function(k){
       (k.skills||[]).forEach(function(s){
-        if(s.e && !gefunden[s.e]){ gefunden[s.e]=true; gesehen.push(s.e); }
+        if(!s.e) return;
+        if(!anzahl[s.e]){ anzahl[s.e]=0; reihenfolge.push(s.e); }
+        anzahl[s.e]++;
       });
     });
   });
-  return gesehen;
+  // Haeufigste zuerst (stabile Sortierung: bei Gleichstand bleibt die
+  // Reihenfolge des ersten Auftretens erhalten).
+  return reihenfolge
+    .sort(function(a,b){ return anzahl[b]-anzahl[a]; })
+    .slice(0, SCHON_VERWENDET_MAX);
 }
 
 function emojiAuswahlFuellen(){
   var panel = el('emoji-auswahl');
   panel.innerHTML = '';
-  var gruppen = [];
+  var gruppen = EMOJI_GRUPPEN.slice();
   var verwendet = schonVerwendet();
   if(verwendet.length){ gruppen.push(['Schon verwendet', verwendet]); }
-  gruppen = gruppen.concat(EMOJI_GRUPPEN);
   gruppen.forEach(function(gruppe){
     var titel = document.createElement('p');
     titel.className = 'emoji-gruppe-titel';
@@ -281,7 +321,7 @@ el('formular').addEventListener('submit', async function(ereignis){
     }
   }
 
-  if(grapheme(el('emoji').value.trim())!==1){
+  if(emojiUngueltig(el('emoji').value.trim())){
     el('fehler').textContent='Bitte genau ein Emoji angeben.';
     el('fehler').hidden=false;
     el('emoji').focus();
