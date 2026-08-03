@@ -92,9 +92,11 @@ def get_sheet(wb, name: str):
     return wb[name]
 
 
-def read_rows(ws, expected_header):
+def read_rows(ws, expected_header, optional_header=()):
     """Liest ein Blatt als Liste von dicts {Spaltenname: Wert}.
 
+    Spalten aus `optional_header` werden gelesen, wenn sie vorhanden sind, und
+    sonst als leerer String geliefert – so bricht eine ältere Excel nicht.
     Liefert zusätzlich die echte Excel-Zeilennummer für Fehlermeldungen.
     """
     rows = list(ws.iter_rows(values_only=True))
@@ -107,10 +109,14 @@ def read_rows(ws, expected_header):
             f"Im Blatt '{ws.title}' fehlen die Spalten: {', '.join(missing)}. "
             f"Bitte die Kopfzeile nicht umbenennen."
         )
-    idx = {name: header.index(name) for name in expected_header}
+    alle = list(expected_header) + list(optional_header)
+    idx = {name: header.index(name) for name in alle if name in header}
     out = []
     for excel_row, raw in enumerate(rows[1:], start=2):
-        record = {name: clean(raw[i]) if i < len(raw) else "" for name, i in idx.items()}
+        record = {name: "" for name in alle}
+        record.update(
+            {name: clean(raw[i]) if i < len(raw) else "" for name, i in idx.items()}
+        )
         if not any(record.values()):
             continue  # komplett leere Zeile überspringen
         record["_row"] = excel_row
@@ -132,6 +138,7 @@ def load_data():
     skill_rows = read_rows(
         get_sheet(wb, "Skills"),
         ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"],
+        optional_header=["Von"],
     )
     wb.close()
 
@@ -202,6 +209,7 @@ def load_data():
                 "t": rec["Titel"],
                 "b": rec["Beschreibung"],
                 "tip": format_tip(rec["Tipp"]),
+                "von": rec["Von"],
             }
         )
 
