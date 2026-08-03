@@ -1,0 +1,11 @@
+name = "skill-vorschlag"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+REPO = "stayingclean/skills-suggestions"
+DATEN_URL = "https://stayingclean.github.io/toolbox/skills-daten.json"
+
+[[kv_namespaces]]
+binding = "RATE"
+id = "HIER_DIE_ID_AUS_SCHRITT_6"
