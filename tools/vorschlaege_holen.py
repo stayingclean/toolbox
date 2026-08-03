@@ -44,12 +44,20 @@ BOT = "eraschle"
 
 # Muessen zu den Grenzen in worker/validate.js passen.
 GRENZEN = {
-    "emoji": 2,
     "titel": 60,
     "beschreibung": 300,
     "tipp": 200,
     "von": 30,
 }
+
+# Der Worker zaehlt beim Emoji Graphem-Cluster (sichtbare Zeichen) ueber
+# Intl.Segmenter, damit ein zusammengesetztes Emoji wie 🧘‍♀️ (vier Codepunkte,
+# aber EIN sichtbares Zeichen) nicht faelschlich abgelehnt wird. Python hat
+# keine eingebaute Graphem-Zerlegung, und eine Abhaengigkeit dafuer wollen wir
+# nicht – darum hier bewusst nur eine grobe, grosszuegige Schranke in
+# Codepunkten: ein einzelnes Emoji bleibt weit darunter, aber beliebig lange
+# Ketten werden trotzdem abgelehnt.
+EMOJI_CODEPUNKT_GRENZE = 16
 FELDNAMEN = {
     "emoji": "Emoji",
     "titel": "Titel",
@@ -108,7 +116,14 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
 
     # Tipp und Von duerfen fehlen und gelten dann als leer.
     felder = {s: str(eintrag.get(s) or "").strip() for s in GRENZEN}
+    felder["emoji"] = str(eintrag.get("emoji") or "").strip()
     felder.update({s: str(eintrag.get(s) or "").strip() for s in ("stufe", "kategorie")})
+
+    # Emoji steht nicht in GRENZEN: eigenstaendige, groebere Pruefung (siehe
+    # Kommentar bei EMOJI_CODEPUNKT_GRENZE) an der Stelle, an der zuvor die
+    # Laengenpruefung fuer Emoji lief.
+    if len(felder["emoji"]) > EMOJI_CODEPUNKT_GRENZE:
+        return "Emoji ist zu lang."
 
     for schluessel, grenze in GRENZEN.items():
         if len(felder[schluessel]) > grenze:

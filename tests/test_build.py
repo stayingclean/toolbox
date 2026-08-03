@@ -139,3 +139,15 @@ def test_vorschlagsvorlage_setzt_die_turnstile_aktion():
     """Ohne data-action lehnt der Worker jede Einreichung ab."""
     vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
     assert 'data-action="skill-vorschlag"' in vorlage
+
+
+def test_vorschlagsvorlage_emojifeld_hat_kein_maxlength_und_bietet_auswahl():
+    """maxlength="2" zaehlt UTF-16-Einheiten und blockiert zusammengesetzte
+    Emoji (z. B. 🧘‍♀️) stumm. Stattdessen muss die Vorlage eine eingebettete
+    Emoji-Auswahl anbieten (kein Nachladen, keine fremde Bibliothek)."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    emoji_feld = re.search(r'<input[^>]*id="emoji"[^>]*>', vorlage)
+    assert emoji_feld, "Emoji-Eingabefeld nicht gefunden"
+    assert "maxlength" not in emoji_feld.group(0)
+    assert "Intl.Segmenter" in vorlage
+    assert "Schon verwendet" in vorlage

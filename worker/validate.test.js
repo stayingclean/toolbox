@@ -78,8 +78,32 @@ test("zählt Emoji nach Zeichen, nicht nach Bytes", () => {
   assert.equal(r.ok, true);
 });
 
+test("nimmt ein zusammengesetztes Emoji an (Graphem-Cluster statt UTF-16-Einheiten)", () => {
+  // 🧘‍♀️ ist EIN sichtbares Zeichen, aber vier Codepunkte und fuenf
+  // UTF-16-Einheiten – genau der Fall, den maxlength="2" bzw. das alte
+  // GRENZEN.emoji faelschlich blockiert hat.
+  const r = pruefeVorschlag({ ...GUELTIG, emoji: "🧘‍♀️" }, DATEN);
+  assert.equal(r.ok, true);
+});
+
+test("lehnt ein leeres Emoji ab", () => {
+  const r = pruefeVorschlag({ ...GUELTIG, emoji: "" }, DATEN);
+  assert.equal(r.ok, false);
+});
+
+test("lehnt zwei einfache Zeichen als Emoji ab", () => {
+  const r = pruefeVorschlag({ ...GUELTIG, emoji: "ab" }, DATEN);
+  assert.equal(r.ok, false);
+  assert.match(r.fehler, /genau ein Emoji/);
+});
+
 test("lehnt drei Emoji ab", () => {
   const r = pruefeVorschlag({ ...GUELTIG, emoji: "🎧🎧🎧" }, DATEN);
+  assert.equal(r.ok, false);
+});
+
+test("lehnt eine sehr lange Emoji-Kette ab", () => {
+  const r = pruefeVorschlag({ ...GUELTIG, emoji: "🎧".repeat(20) }, DATEN);
   assert.equal(r.ok, false);
 });
 
