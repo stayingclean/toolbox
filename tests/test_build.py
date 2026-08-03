@@ -1,3 +1,4 @@
+import json
 import re
 
 import build
@@ -47,3 +48,20 @@ def test_vorlage_enthaelt_namenszeile():
         "if(s.von){ mVon.textContent='Vorgeschlagen von '+s.von; mVon.hidden=false; } "
         "else { mVon.textContent=''; mVon.hidden=true; }"
     )
+
+
+def test_daten_json_wird_geschrieben(mappe, monkeypatch, tmp_path):
+    pfad = mappe(SKILLS_HEADER + ["Von"], [SKILLS_ROW + ["Max"]])
+    ziel = tmp_path / "skills-daten.json"
+    monkeypatch.setattr(build, "XLSX", pfad)
+    monkeypatch.setattr(build, "DATEN_JSON", ziel)
+
+    build.write_daten_json(build.load_data())
+
+    roh = ziel.read_bytes()
+    assert not roh.startswith(b"\xef\xbb\xbf"), "JSON darf kein BOM haben"
+    daten = json.loads(roh.decode("utf-8"))
+    assert set(daten) == {"hoch", "mittel", "tief"}
+    skill = daten["hoch"]["kategorien"][0]["skills"][0]
+    assert skill["t"] == "Musik hören"
+    assert skill["von"] == "Max"

@@ -32,6 +32,7 @@ ROOT = Path(__file__).resolve().parent
 XLSX = ROOT / "skills_daten.xlsx"
 TEMPLATE = ROOT / "template.html"
 OUTPUT = ROOT / "docs" / "skillsliste.html"   # generierte Skillsliste-Seite
+DATEN_JSON = ROOT / "docs" / "skills-daten.json"   # Datenstand für Formular + Worker
 PLACEHOLDER = "var DATA = /*__BUILD_DATA__*/{};"
 
 # Anzeige-Name (Excel)  ->  interner Schlüssel (HTML/JS, darf sich NICHT ändern)
@@ -259,10 +260,21 @@ def render(data: dict):
     OUTPUT.write_bytes(b"\xef\xbb\xbf" + html.encode("utf-8"))
 
 
+def write_daten_json(data: dict):
+    """Schreibt den Datenstand für die Vorschlagsseite und den Worker.
+
+    Bewusst OHNE BOM: JSON.parse im Worker stolpert sonst über das erste Zeichen.
+    """
+    DATEN_JSON.write_text(
+        json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8"
+    )
+
+
 def main():
     try:
         data = load_data()
         render(data)
+        write_daten_json(data)
     except BuildError as exc:
         print("\n❌ Build abgebrochen – bitte folgendes in skills_daten.xlsx korrigieren:\n")
         for msg in exc.messages:
@@ -272,6 +284,7 @@ def main():
 
     total = sum(len(k["skills"]) for d in data.values() for k in d["kategorien"])
     print(f"✅ {OUTPUT.relative_to(ROOT).as_posix()} wurde neu erstellt.")
+    print(f"✅ {DATEN_JSON.relative_to(ROOT).as_posix()} wurde neu erstellt.")
     print(f"   Stufen: {len(data)} | Kategorien: "
           f"{sum(len(d['kategorien']) for d in data.values())} | Skills: {total}")
 
