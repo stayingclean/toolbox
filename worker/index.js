@@ -10,6 +10,11 @@ import { pruefeVorschlag } from "./validate.js";
 
 const HERKUNFT = "https://stayingclean.github.io";
 const MAX_PRO_STUNDE = 5;
+// Benannte Turnstile-Aktion: muss mit data-action auf der Formularseite
+// übereinstimmen, sonst liesse sich ein anderswo erzeugtes Token hier
+// wiederverwenden.
+const AKTION = "skill-vorschlag";
+const ERLAUBTE_HOSTS = new Set(["stayingclean.github.io"]);
 
 function antwort(rumpf, status = 200) {
   return new Response(JSON.stringify(rumpf), {
@@ -39,12 +44,22 @@ async function turnstileGeprueft(token, secret, ip) {
   formular.append("secret", secret);
   formular.append("response", token);
   if (ip) formular.append("remoteip", ip);
-  const res = await fetch(
-    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-    { method: "POST", body: formular }
-  );
-  const ergebnis = await res.json();
-  return ergebnis.success === true;
+  try {
+    const res = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      { method: "POST", body: formular, signal: AbortSignal.timeout(10000) }
+    );
+    if (!res.ok) return false;
+    const ergebnis = await res.json();
+    // Geschlossen scheitern: nur eine in jeder Hinsicht gueltige Antwort zaehlt.
+    return (
+      ergebnis.success === true &&
+      ergebnis.action === AKTION &&
+      ERLAUBTE_HOSTS.has(ergebnis.hostname)
+    );
+  } catch {
+    return false;
+  }
 }
 
 function issueRumpf(w) {
@@ -116,7 +131,12 @@ export default {
     if (!datenRes.ok) {
       return antwort({ fehler: "Datenstand nicht erreichbar." }, 503);
     }
-    const daten = await datenRes.json();
+    let daten;
+    try {
+      daten = await datenRes.json();
+    } catch {
+      return antwort({ fehler: "Datenstand nicht erreichbar." }, 503);
+    }
 
     const geprueft = pruefeVorschlag(eingabe, daten);
     if (!geprueft.ok) {
@@ -142,7 +162,12 @@ export default {
     if (!issueRes.ok) {
       return antwort({ fehler: "Konnte den Vorschlag nicht ablegen." }, 502);
     }
-    const issue = await issueRes.json();
+    let issue;
+    try {
+      issue = await issueRes.json();
+    } catch {
+      return antwort({ fehler: "Konnte den Vorschlag nicht ablegen." }, 502);
+    }
 
     await umgebung.RATE.put(schluessel, String(bisher + 1), {
       expirationTtl: 3600,
