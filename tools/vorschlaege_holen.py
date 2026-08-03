@@ -34,7 +34,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parent.parent
 XLSX = ROOT / "skills_daten.xlsx"
 BUILD = ROOT / "build.py"
-REPO = "stayingclean/toolbox-vorschlaege"
+REPO = "stayingclean/skills-suggestions"
 LABEL = "freigegeben"
 
 SPALTEN = [

@@ -24,7 +24,7 @@ mag, hinterlässt einen Namen und wird auf der Skillsliste genannt.
 | Wer darf einreichen? | Alle, ohne Konto | Ein GitHub-Konto ist für die Zielgruppe eine reale Hürde |
 | Anonym? | Ja, zwingend | Wer aus eigener Erfahrung beiträgt, soll sich nicht outen müssen |
 | Nach Freigabe | Halbautomatisch | Excel bleibt Datenquelle, kein Umbau der Pipeline; Push bleibt beim Menschen |
-| Posteingang | Öffentliches Repo `stayingclean/toolbox-vorschlaege` | Transparenz gewünscht; getrennt vom Code-Repo |
+| Posteingang | Öffentliches Repo `stayingclean/skills-suggestions` | Transparenz gewünscht; getrennt vom Code-Repo |
 | Rückmeldung | Link auf das eigene Issue | Öffentlicher Posteingang macht Statusverfolgung ohne Konto möglich |
 | Name der einreichenden Person | Optionales Feld, Anzeige nur im Detail-Dialog | Kein Tooltip: auf Touch-Geräten unsichtbar |
 | Änderungen an bestehenden Skills | Zweiter Reiter auf derselben Seite | Gemeinsame Gestaltung, ein Link in der Übersicht, weniger Doppelcode |
@@ -49,7 +49,7 @@ skill-vorschlagen.html
                                           │
                                           ▼
                                    Issue in
-                                   stayingclean/toolbox-vorschlaege
+                                   stayingclean/skills-suggestions
                                           │
    Dankesmeldung ◀── Link aufs Issue ──────┤
    („Stand hier verfolgen")                │
@@ -151,7 +151,7 @@ die IP nur als Hashwert mit einer Stunde Gültigkeit gehalten und verfällt dann
 Das Issue enthält ausschliesslich die Formularfelder. Die einreichende Person
 ist damit auch für die Betreuung nicht identifizierbar; das ist gewollt.
 
-### `stayingclean/toolbox-vorschlaege`
+### `stayingclean/skills-suggestions`
 
 Neues, öffentliches Repo. Enthält keinen Code und keinen Workflow, nur Issues
 als Posteingang. Weil der Link zum Issue die einzige Rückmeldung ist, sind die
@@ -185,7 +185,7 @@ unberührt.
 Doppelklick genügt, gleiche Bedienlogik wie `build.bat`. Das Skript läuft
 interaktiv im Konsolenfenster.
 
-1. `gh issue list --repo stayingclean/toolbox-vorschlaege --label freigegeben
+1. `gh issue list --repo stayingclean/skills-suggestions --label freigegeben
    --state open` — holt die freigegebenen, noch offenen Vorschläge
 2. JSON-Block aus jedem Issue lesen
 3. **Optionale Duplikatprüfung** (siehe unten)

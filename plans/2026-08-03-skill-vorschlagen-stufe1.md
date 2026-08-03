@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Eine Person kann auf `stayingclean.github.io/toolbox/skill-vorschlagen.html` anonym einen neuen Skill einreichen; der Vorschlag landet als Issue im öffentlichen Repo `stayingclean/toolbox-vorschlaege`, und ein lokales Skript übernimmt freigegebene Vorschläge in die Excel und baut die Skillsliste neu.
+**Goal:** Eine Person kann auf `stayingclean.github.io/toolbox/skill-vorschlagen.html` anonym einen neuen Skill einreichen; der Vorschlag landet als Issue im öffentlichen Repo `stayingclean/skills-suggestions`, und ein lokales Skript übernimmt freigegebene Vorschläge in die Excel und baut die Skillsliste neu.
 
 **Architecture:** Statische Formularseite auf GitHub Pages → Cloudflare Worker als Relais (prüft und legt das Issue an) → Issues als Posteingang → lokales Python-Skript `vorschlaege_holen.py` schreibt in `skills_daten.xlsx` und ruft `build.py`. Der Push bleibt manuell. `build.py` erzeugt neu zusätzlich `docs/skill-vorschlagen.html` und `docs/skills-daten.json`; letztere versorgt sowohl das Formular als auch die Prüfung im Worker mit dem aktuellen Bestand.
 
@@ -19,7 +19,7 @@
 - **Feldgrenzen (Zeichen, gezählt mit `Array.from(s).length` bzw. `len(s)`):** Emoji 2, Titel 60, Beschreibung 300, Tipp 200, Name 30.
 - **Link-Sperre:** Jede Einreichung, die in einem Textfeld `http` enthält (Gross-/Kleinschreibung egal), wird abgelehnt.
 - **Ratenbegrenzung:** höchstens 5 Einreichungen pro Stunde und Absender.
-- **Repo des Posteingangs:** `stayingclean/toolbox-vorschlaege`, öffentlich, Labels `in Prüfung`, `freigegeben`, `abgelehnt`.
+- **Repo des Posteingangs:** `stayingclean/skills-suggestions`, öffentlich, Labels `in Prüfung`, `freigegeben`, `abgelehnt`.
 - **Push bleibt manuell.** Kein Schritt in diesem Plan pusht nach `master`.
 - **Nicht in dieser Stufe:** Reiter „Bestehenden ergänzen" (Stufe 2), KI-Duplikatprüfung und Kaffeekasse (Stufe 3).
 
@@ -782,14 +782,14 @@ git commit -m "Prueflogik des Workers mit Tests"
 - [ ] **Step 1: Vorschlags-Repo anlegen**
 
 ```bash
-gh repo create stayingclean/toolbox-vorschlaege --public \
+gh repo create stayingclean/skills-suggestions --public \
   --description "Posteingang für Skill-Vorschläge aus der Toolbox"
-gh label create "in Prüfung" --repo stayingclean/toolbox-vorschlaege --color FBCA04 --description "Wird gerade angeschaut"
-gh label create "freigegeben" --repo stayingclean/toolbox-vorschlaege --color 0E8A16 --description "Kommt in die Skillsliste"
-gh label create "abgelehnt"   --repo stayingclean/toolbox-vorschlaege --color B60205 --description "Wird nicht übernommen"
+gh label create "in Prüfung" --repo stayingclean/skills-suggestions --color FBCA04 --description "Wird gerade angeschaut"
+gh label create "freigegeben" --repo stayingclean/skills-suggestions --color 0E8A16 --description "Kommt in die Skillsliste"
+gh label create "abgelehnt"   --repo stayingclean/skills-suggestions --color B60205 --description "Wird nicht übernommen"
 ```
 
-Expected: Repo erreichbar unter `https://github.com/stayingclean/toolbox-vorschlaege`, drei Labels angelegt.
+Expected: Repo erreichbar unter `https://github.com/stayingclean/skills-suggestions`, drei Labels angelegt.
 
 - [ ] **Step 2: GitHub-Token für den Worker erzeugen**
 
@@ -797,7 +797,7 @@ Im Browser: GitHub → Settings → Developer settings → Personal access token
 
 - Name: `toolbox-vorschlag-worker`
 - Resource owner: `stayingclean`
-- Repository access: *Only select repositories* → `toolbox-vorschlaege`
+- Repository access: *Only select repositories* → `skills-suggestions`
 - Permissions → Repository permissions → **Issues: Read and write** (sonst nichts)
 - Ablauf: 1 Jahr, Erinnerung notieren
 
@@ -983,7 +983,7 @@ main = "index.js"
 compatibility_date = "2026-01-01"
 
 [vars]
-REPO = "stayingclean/toolbox-vorschlaege"
+REPO = "stayingclean/skills-suggestions"
 DATEN_URL = "https://stayingclean.github.io/toolbox/skills-daten.json"
 
 [[kv_namespaces]]
@@ -1051,7 +1051,7 @@ Datei `worker/README.md`:
 # Worker: Skill-Vorschläge entgegennehmen
 
 Nimmt das Formular `docs/skill-vorschlagen.html` entgegen, prüft die Eingaben
-und legt daraus ein Issue in `stayingclean/toolbox-vorschlaege` an.
+und legt daraus ein Issue in `stayingclean/skills-suggestions` an.
 
 ## Erneut veröffentlichen
 
@@ -1062,7 +1062,7 @@ und legt daraus ein Issue in `stayingclean/toolbox-vorschlaege` an.
 
 | Secret | Woher |
 | --- | --- |
-| `GITHUB_TOKEN` | GitHub → Fine-grained token, nur `toolbox-vorschlaege`, Issues: Read and write |
+| `GITHUB_TOKEN` | GitHub → Fine-grained token, nur `skills-suggestions`, Issues: Read and write |
 | `TURNSTILE_SECRET` | Cloudflare → Turnstile → Widget `toolbox-skill-vorschlag` |
 | `RATE_SALT` | beliebige Zufallszeichenfolge, `python -c "import secrets; print(secrets.token_hex(32))"` |
 
@@ -1070,7 +1070,7 @@ Setzen mit `npx wrangler secret put <NAME>`.
 
 ## Notbremse
 
-Bei Missbrauch: im Repo `toolbox-vorschlaege` unter Settings die Issues
+Bei Missbrauch: im Repo `skills-suggestions` unter Settings die Issues
 abschalten. Der Worker antwortet dann mit einem Fehler, die Formularseite
 zeigt die Fehlermeldung an. Die Toolbox selbst ist nicht betroffen.
 
@@ -1607,7 +1607,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parent.parent
 XLSX = ROOT / "skills_daten.xlsx"
 BUILD = ROOT / "build.py"
-REPO = "stayingclean/toolbox-vorschlaege"
+REPO = "stayingclean/skills-suggestions"
 LABEL = "freigegeben"
 
 SPALTEN = [
@@ -1796,7 +1796,7 @@ Nach dem Abschnitt „Skillsliste pflegen" einen neuen Abschnitt einfügen:
 
 Besucher können über `docs/skill-vorschlagen.html` anonym neue Skills einreichen.
 Der Weg: Formular → Cloudflare Worker (`worker/`) → Issue in
-`stayingclean/toolbox-vorschlaege`.
+`stayingclean/skills-suggestions`.
 
 **Freigeben und übernehmen:**
 
@@ -1824,7 +1824,7 @@ Am Ende einen Abschnitt in derselben, für Nicht-Techniker gedachten Tonlage erg
 Auf der Website gibt es die Seite „Skill vorschlagen". Wer dort etwas einträgt,
 landet als Eintrag in einer Liste, die nur du freigeben kannst.
 
-1. **Anschauen:** Öffne https://github.com/stayingclean/toolbox-vorschlaege/issues
+1. **Anschauen:** Öffne https://github.com/stayingclean/skills-suggestions/issues
    (auf dem Handy geht die GitHub-App). Jeder Eintrag ist ein Vorschlag.
 2. **Entscheiden:** Rechts unter „Labels" wählst du
    - `freigegeben` → soll in die Skillsliste
@@ -1895,7 +1895,7 @@ Expected: Dankesmeldung mit Link; der Link öffnet ein Issue im Vorschlags-Repo.
 - [ ] **Step 3: Anonymität und Format prüfen**
 
 ```bash
-gh issue view 1 --repo stayingclean/toolbox-vorschlaege
+gh issue view 1 --repo stayingclean/skills-suggestions
 ```
 
 Expected:
@@ -1914,13 +1914,13 @@ Expected: ab der sechsten die Meldung „Zu viele Einreichungen. Bitte in einer 
 Die dabei entstandenen Test-Issues anschliessend löschen:
 
 ```bash
-gh issue delete <nummer> --repo stayingclean/toolbox-vorschlaege --yes
+gh issue delete <nummer> --repo stayingclean/skills-suggestions --yes
 ```
 
 - [ ] **Step 5: Freigeben und übernehmen**
 
 ```bash
-gh issue edit 1 --repo stayingclean/toolbox-vorschlaege --add-label "freigegeben"
+gh issue edit 1 --repo stayingclean/skills-suggestions --add-label "freigegeben"
 uv run tools/vorschlaege_holen.py
 ```
 
