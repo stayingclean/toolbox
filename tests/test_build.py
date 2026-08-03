@@ -65,3 +65,39 @@ def test_daten_json_wird_geschrieben(mappe, monkeypatch, tmp_path):
     skill = daten["hoch"]["kategorien"][0]["skills"][0]
     assert skill["t"] == "Musik hören"
     assert skill["von"] == "Max"
+
+
+def test_vorschlagsseite_wird_erzeugt(mappe, monkeypatch, tmp_path):
+    pfad = mappe(SKILLS_HEADER + ["Von"], [SKILLS_ROW + ["Max"]])
+    ziel = tmp_path / "skill-vorschlagen.html"
+    monkeypatch.setattr(build, "XLSX", pfad)
+    monkeypatch.setattr(build, "OUTPUT_VORSCHLAG", ziel)
+
+    build.render_vorschlag(build.load_data())
+
+    roh = ziel.read_bytes()
+    assert roh.startswith(b"\xef\xbb\xbf")
+    html = roh.decode("utf-8-sig")
+    assert "var DATEN = {" in html
+    assert "Ablenkung" in html
+    assert "/*__BUILD_DATA__*/" not in html
+
+
+def test_vorschlagsvorlage_hat_pflichtbestandteile():
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    for baustein in ['name="falle"', "cf-turnstile", "footer-credit", "WORKER_URL"]:
+        assert baustein in vorlage, baustein
+
+
+def test_vorschlagsvorlage_hat_keine_platzhalter_mehr():
+    """Fängt ab, dass die Seite mit unersetzter Worker-Adresse veröffentlicht wird."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    for platzhalter in ("WORKER_URL_HIER_EINSETZEN", "TURNSTILE_SITEKEY_HIER_EINSETZEN"):
+        assert platzhalter not in vorlage, platzhalter
+    assert "https://" in vorlage.split('var WORKER_URL = "')[1][:60]
+
+
+def test_vorschlagsvorlage_setzt_die_turnstile_aktion():
+    """Ohne data-action lehnt der Worker jede Einreichung ab."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    assert 'data-action="skill-vorschlag"' in vorlage

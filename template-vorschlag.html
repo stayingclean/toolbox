@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skill vorschlagen – Toolbox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#FAF8F5; --card:#FFFFFF; --border:#E8E4DF; --text:#1C1C1C;
+      --muted:#7A7268; --accent:#008080; --accent-dark:#006666; --accent-tint:#E6F2F2;
+      --font-display:'Playfair Display',Georgia,serif;
+      --font-body:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+    body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+      background:radial-gradient(ellipse 80% 55% at 50% 0%,var(--accent-tint) 0%,transparent 68%);
+      opacity:.3;animation:breathe 7s ease-in-out infinite}
+    @keyframes breathe{0%,100%{opacity:.22;transform:scaleY(1)}50%{opacity:.40;transform:scaleY(1.05)}}
+    .wrap{max-width:680px;margin:0 auto;padding:48px 20px 64px}
+    h1{font-family:var(--font-display);font-size:2rem;font-weight:600;margin:0 0 8px;letter-spacing:-.01em;color:var(--accent-dark)}
+    .sub{color:var(--muted);margin:0 0 8px;font-size:1rem}
+    .zurueck{display:inline-block;margin-bottom:24px;color:var(--accent);text-decoration:none;font-size:.88rem}
+    .zurueck:hover{text-decoration:underline}
+    form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
+    .feld{margin-bottom:18px}
+    label{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
+    .hinweis{color:var(--muted);font-size:.8rem;margin:0 0 6px}
+    input[type=text],textarea,select{
+      width:100%;padding:10px 12px;font-family:inherit;font-size:1rem;color:var(--text);
+      background:var(--bg);border:1px solid var(--border);border-radius:10px}
+    input[type=text]:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    textarea{resize:vertical;min-height:88px}
+    .falle{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+    button{font-family:inherit;font-size:1rem;font-weight:600;padding:12px 22px;border:0;border-radius:10px;
+      background:var(--accent);color:#fff;cursor:pointer;transition:background .15s ease}
+    button:hover{background:var(--accent-dark)}
+    button[disabled]{opacity:.55;cursor:progress}
+    .fehler{margin-top:14px;color:#B60205;font-size:.9rem}
+    .danke{background:var(--card);border:1px solid var(--accent);border-radius:14px;padding:24px}
+    .danke h2{font-family:var(--font-display);margin:0 0 8px;color:var(--accent-dark)}
+    .link-box{display:flex;gap:8px;align-items:center;margin:14px 0;flex-wrap:wrap}
+    .link-box a{color:var(--accent);word-break:break-all}
+    .link-box button{padding:8px 14px;font-size:.85rem}
+    .status-liste{color:var(--muted);font-size:.85rem;padding-left:1.2em;margin:12px 0 0}
+    footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:.82rem}
+    .footer-credit{display:inline-flex;align-items:center;gap:8px;margin-top:12px;color:var(--muted);text-decoration:none;transition:color .15s ease}
+    .footer-credit:hover{color:var(--accent)}
+    .footer-avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);object-fit:cover;display:block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="zurueck" href="index.html">← Zur Übersicht</a>
+    <h1>Skill vorschlagen</h1>
+    <p class="sub">Du kennst einen Skill, der in der Liste fehlt? Trag ihn hier ein — ohne Konto, ohne Anmeldung.</p>
+    <p class="hinweis">Wir speichern nichts über dich: keine Adresse, keine Kennung. Dein Vorschlag wird angeschaut und, wenn er passt, in die Skillsliste aufgenommen.</p>
+
+    <form id="formular" novalidate>
+      <div class="feld">
+        <label for="stufe">Anspannungsstufe</label>
+        <p class="hinweis">Bei welcher Anspannung hilft dieser Skill?</p>
+        <select id="stufe" required></select>
+      </div>
+
+      <div class="feld">
+        <label for="kategorie">Kategorie</label>
+        <select id="kategorie" required></select>
+      </div>
+
+      <div class="feld">
+        <label for="emoji">Symbol</label>
+        <p class="hinweis">Ein einzelnes Emoji, z. B. 🎧</p>
+        <input type="text" id="emoji" maxlength="2" required>
+      </div>
+
+      <div class="feld">
+        <label for="titel">Titel</label>
+        <p class="hinweis">Kurz und konkret, höchstens 60 Zeichen.</p>
+        <input type="text" id="titel" maxlength="60" required>
+      </div>
+
+      <div class="feld">
+        <label for="beschreibung">Beschreibung</label>
+        <p class="hinweis">Was macht man genau? Höchstens 300 Zeichen.</p>
+        <textarea id="beschreibung" maxlength="300" required></textarea>
+      </div>
+
+      <div class="feld">
+        <label for="tipp">Tipp <span class="hinweis" style="display:inline">(freiwillig)</span></label>
+        <p class="hinweis">Ein praktischer Hinweis, höchstens 200 Zeichen.</p>
+        <textarea id="tipp" maxlength="200"></textarea>
+      </div>
+
+      <div class="feld">
+        <label for="von">Dein Name <span class="hinweis" style="display:inline">(freiwillig)</span></label>
+        <p class="hinweis"><strong>Achtung:</strong> Der Name erscheint öffentlich und dauerhaft auf der Skillsliste. Vorname oder Spitzname genügt. Lass das Feld leer, wenn du anonym bleiben willst.</p>
+        <input type="text" id="von" maxlength="30">
+      </div>
+
+      <input class="falle" type="text" name="falle" id="falle" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAAEFdexxBmLiMysXl" data-action="skill-vorschlag"></div>
+
+      <button type="submit" id="senden">Vorschlag absenden</button>
+      <div class="fehler" id="fehler" hidden></div>
+    </form>
+
+    <div class="danke" id="danke" hidden>
+      <h2>Danke!</h2>
+      <p>Dein Vorschlag ist angekommen. Wir können dich nicht benachrichtigen — merk dir diesen Link, dort siehst du den Stand:</p>
+      <div class="link-box">
+        <a id="issue-link" href="#" target="_blank" rel="noopener"></a>
+        <button type="button" id="kopieren">Link kopieren</button>
+      </div>
+      <ul class="status-liste">
+        <li><strong>ohne Kennzeichnung</strong> — eingegangen, noch nicht angeschaut</li>
+        <li><strong>in Prüfung</strong> — wird gerade angeschaut</li>
+        <li><strong>freigegeben</strong> — kommt in die Skillsliste</li>
+        <li><strong>abgelehnt</strong> — wird nicht übernommen, mit Begründung</li>
+      </ul>
+    </div>
+
+    <footer>
+      <div>Gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>
+      <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+        <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+        <span>Erstellt von stayingclean</span>
+      </a>
+    </footer>
+  </div>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+var DATEN = /*__BUILD_DATA__*/{};
+var WORKER_URL = "https://skill-vorschlag.erichraschle.workers.dev";
+var STUFEN = [["hoch","Hoch"],["mittel","Mittel"],["tief","Tief"]];
+
+function el(id){ return document.getElementById(id); }
+
+/* Stufen-Auswahl aus dem Datenstand füllen */
+STUFEN.forEach(function(paar){
+  var o=document.createElement('option');
+  o.value=paar[1];
+  o.textContent=paar[1]+' – '+(DATEN[paar[0]]?DATEN[paar[0]].label:paar[1]);
+  el('stufe').appendChild(o);
+});
+
+/* Kategorien hängen von der gewählten Stufe ab */
+function kategorienFuellen(){
+  var schluessel=STUFEN.filter(function(p){return p[1]===el('stufe').value;})[0][0];
+  var liste=(DATEN[schluessel]&&DATEN[schluessel].kategorien)||[];
+  el('kategorie').innerHTML='';
+  liste.forEach(function(k){
+    var o=document.createElement('option');
+    o.value=k.label;
+    o.textContent=(k.icon?k.icon+' ':'')+k.label;
+    el('kategorie').appendChild(o);
+  });
+}
+el('stufe').addEventListener('change', kategorienFuellen);
+kategorienFuellen();
+
+el('formular').addEventListener('submit', async function(ereignis){
+  ereignis.preventDefault();
+  el('fehler').hidden=true;
+
+  var pflicht=['emoji','titel','beschreibung'];
+  for(var i=0;i<pflicht.length;i++){
+    if(!el(pflicht[i]).value.trim()){
+      el('fehler').textContent='Bitte Emoji, Titel und Beschreibung ausfüllen.';
+      el('fehler').hidden=false;
+      el(pflicht[i]).focus();
+      return;
+    }
+  }
+
+  var token=(document.querySelector('[name="cf-turnstile-response"]')||{}).value||'';
+  if(!token){
+    el('fehler').textContent='Bitte warte kurz, bis die Sicherheitsprüfung fertig ist, und versuch es dann erneut.';
+    el('fehler').hidden=false;
+    return;
+  }
+
+  el('senden').disabled=true;
+  el('senden').textContent='Wird gesendet …';
+
+  try{
+    var antwort=await fetch(WORKER_URL,{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({
+        stufe:el('stufe').value,
+        kategorie:el('kategorie').value,
+        emoji:el('emoji').value,
+        titel:el('titel').value,
+        beschreibung:el('beschreibung').value,
+        tipp:el('tipp').value,
+        von:el('von').value,
+        falle:el('falle').value,
+        turnstile:token
+      })
+    });
+    var ergebnis=await antwort.json();
+    if(!antwort.ok){ throw new Error(ergebnis.fehler||'Unbekannter Fehler'); }
+    el('issue-link').href=ergebnis.url;
+    el('issue-link').textContent=ergebnis.url;
+    el('formular').hidden=true;
+    el('danke').hidden=false;
+    window.scrollTo(0,0);
+  }catch(fehler){
+    el('fehler').textContent='Das hat nicht geklappt: '+fehler.message+' Bitte versuch es später noch einmal.';
+    el('fehler').hidden=false;
+    if(window.turnstile){ window.turnstile.reset(); }
+  }finally{
+    el('senden').disabled=false;
+    el('senden').textContent='Vorschlag absenden';
+  }
+});
+
+el('kopieren').addEventListener('click', function(){
+  navigator.clipboard.writeText(el('issue-link').href).then(function(){
+    el('kopieren').textContent='Kopiert ✓';
+    setTimeout(function(){ el('kopieren').textContent='Link kopieren'; },2000);
+  });
+});
+</script>
+</body>
+</html>

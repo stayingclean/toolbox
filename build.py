@@ -35,6 +35,10 @@ OUTPUT = ROOT / "docs" / "skillsliste.html"   # generierte Skillsliste-Seite
 DATEN_JSON = ROOT / "docs" / "skills-daten.json"   # Datenstand für Formular + Worker
 PLACEHOLDER = "var DATA = /*__BUILD_DATA__*/{};"
 
+TEMPLATE_VORSCHLAG = ROOT / "template-vorschlag.html"
+OUTPUT_VORSCHLAG = ROOT / "docs" / "skill-vorschlagen.html"
+PLACEHOLDER_VORSCHLAG = "var DATEN = /*__BUILD_DATA__*/{};"
+
 # Anzeige-Name (Excel)  ->  interner Schlüssel (HTML/JS, darf sich NICHT ändern)
 STUFE_KEY = {"Hoch": "hoch", "Mittel": "mittel", "Tief": "tief"}
 STUFE_ORDER = ["hoch", "mittel", "tief"]
@@ -245,19 +249,33 @@ def load_data():
 
 
 # ── HTML schreiben ───────────────────────────────────────────
-def render(data: dict):
-    if not TEMPLATE.exists():
-        raise BuildError(f"Vorlage nicht gefunden: {TEMPLATE.name}")
-    template = TEMPLATE.read_bytes().decode("utf-8-sig")  # evtl. BOM entfernen
-    if PLACEHOLDER not in template:
+def _render(template_path, output_path, placeholder, ersatz, data: dict):
+    if not template_path.exists():
+        raise BuildError(f"Vorlage nicht gefunden: {template_path.name}")
+    template = template_path.read_bytes().decode("utf-8-sig")  # evtl. BOM entfernen
+    if placeholder not in template:
         raise BuildError(
-            f"Platzhalter nicht in {TEMPLATE.name} gefunden. "
-            f"Die Vorlage muss '{PLACEHOLDER}' enthalten."
+            f"Platzhalter nicht in {template_path.name} gefunden. "
+            f"Die Vorlage muss '{placeholder}' enthalten."
         )
     payload = json.dumps(data, ensure_ascii=False, separators=(", ", ": "))
-    html = template.replace(PLACEHOLDER, f"var DATA = {payload};", 1)
-    # gleiche Datei-Konvention wie das Original: UTF-8 mit BOM, CRLF
-    OUTPUT.write_bytes(b"\xef\xbb\xbf" + html.encode("utf-8"))
+    html = template.replace(placeholder, ersatz % payload, 1)
+    # gleiche Datei-Konvention wie das Original: UTF-8 mit BOM
+    output_path.write_bytes(b"\xef\xbb\xbf" + html.encode("utf-8"))
+
+
+def render(data: dict):
+    _render(TEMPLATE, OUTPUT, PLACEHOLDER, "var DATA = %s;", data)
+
+
+def render_vorschlag(data: dict):
+    _render(
+        TEMPLATE_VORSCHLAG,
+        OUTPUT_VORSCHLAG,
+        PLACEHOLDER_VORSCHLAG,
+        "var DATEN = %s;",
+        data,
+    )
 
 
 def write_daten_json(data: dict):
@@ -274,6 +292,7 @@ def main():
     try:
         data = load_data()
         render(data)
+        render_vorschlag(data)
         write_daten_json(data)
     except BuildError as exc:
         print("\n❌ Build abgebrochen – bitte folgendes in skills_daten.xlsx korrigieren:\n")
@@ -284,6 +303,7 @@ def main():
 
     total = sum(len(k["skills"]) for d in data.values() for k in d["kategorien"])
     print(f"✅ {OUTPUT.relative_to(ROOT).as_posix()} wurde neu erstellt.")
+    print(f"✅ {OUTPUT_VORSCHLAG.relative_to(ROOT).as_posix()} wurde neu erstellt.")
     print(f"✅ {DATEN_JSON.relative_to(ROOT).as_posix()} wurde neu erstellt.")
     print(f"   Stufen: {len(data)} | Kategorien: "
           f"{sum(len(d['kategorien']) for d in data.values())} | Skills: {total}")
