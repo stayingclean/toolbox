@@ -244,8 +244,9 @@ Kurze Seite im Toolbox-Design, die erklärt, wofür die Unterstützung verwendet
 wird, und die Wege auflistet. Kein eingebettetes Widget — nur schlichte Links,
 sonst lädt die Seite fremde Skripte.
 
-- **Buy Me a Coffee** — Link wird bei der Umsetzung eingesetzt (Benutzername
-  fehlt noch).
+- **Buy Me a Coffee** — `https://buymeacoffee.com/stayclean`. Die Adresse
+  antwortet am 2026-08-03 noch mit 404 (Seite vermutlich noch nicht
+  veröffentlicht); vor dem Push prüfen, siehe Abschlussliste.
 - **TWINT/PayPal** — Abschnitt wird vorbereitet und bleibt ausgeblendet, bis das
   Konto eingerichtet ist.
 
@@ -317,3 +318,5 @@ Deploy-Workflow.
 - Bestehende Excel ohne Spalte `Von` baut weiterhin fehlerfrei
 - Detail-Dialog zeigt die Namenszeile nur bei vorhandenem Namen
 - Fusszeilen-Link erscheint auf allen Seiten in `docs/`
+- Der Buy-Me-a-Coffee-Link führt auf eine erreichbare Seite (nicht 404), bevor
+  `docs/unterstuetzen.html` gepusht wird
