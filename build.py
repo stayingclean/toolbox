@@ -32,7 +32,12 @@ ROOT = Path(__file__).resolve().parent
 XLSX = ROOT / "skills_daten.xlsx"
 TEMPLATE = ROOT / "template.html"
 OUTPUT = ROOT / "docs" / "skillsliste.html"   # generierte Skillsliste-Seite
+DATEN_JSON = ROOT / "docs" / "skills-daten.json"   # Datenstand für Formular + Worker
 PLACEHOLDER = "var DATA = /*__BUILD_DATA__*/{};"
+
+TEMPLATE_VORSCHLAG = ROOT / "template-vorschlag.html"
+OUTPUT_VORSCHLAG = ROOT / "docs" / "skill-vorschlagen.html"
+PLACEHOLDER_VORSCHLAG = "var DATEN = /*__BUILD_DATA__*/{};"
 
 # Anzeige-Name (Excel)  ->  interner Schlüssel (HTML/JS, darf sich NICHT ändern)
 STUFE_KEY = {"Hoch": "hoch", "Mittel": "mittel", "Tief": "tief"}
@@ -92,9 +97,11 @@ def get_sheet(wb, name: str):
     return wb[name]
 
 
-def read_rows(ws, expected_header):
+def read_rows(ws, expected_header, optional_header=()):
     """Liest ein Blatt als Liste von dicts {Spaltenname: Wert}.
 
+    Spalten aus `optional_header` werden gelesen, wenn sie vorhanden sind, und
+    sonst als leerer String geliefert – so bricht eine ältere Excel nicht.
     Liefert zusätzlich die echte Excel-Zeilennummer für Fehlermeldungen.
     """
     rows = list(ws.iter_rows(values_only=True))
@@ -107,10 +114,14 @@ def read_rows(ws, expected_header):
             f"Im Blatt '{ws.title}' fehlen die Spalten: {', '.join(missing)}. "
             f"Bitte die Kopfzeile nicht umbenennen."
         )
-    idx = {name: header.index(name) for name in expected_header}
+    alle = list(expected_header) + list(optional_header)
+    idx = {name: header.index(name) for name in alle if name in header}
     out = []
     for excel_row, raw in enumerate(rows[1:], start=2):
-        record = {name: clean(raw[i]) if i < len(raw) else "" for name, i in idx.items()}
+        record = {name: "" for name in alle}
+        record.update(
+            {name: clean(raw[i]) if i < len(raw) else "" for name, i in idx.items()}
+        )
         if not any(record.values()):
             continue  # komplett leere Zeile überspringen
         record["_row"] = excel_row
@@ -132,6 +143,7 @@ def load_data():
     skill_rows = read_rows(
         get_sheet(wb, "Skills"),
         ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"],
+        optional_header=["Von"],
     )
     wb.close()
 
@@ -202,6 +214,7 @@ def load_data():
                 "t": rec["Titel"],
                 "b": rec["Beschreibung"],
                 "tip": format_tip(rec["Tipp"]),
+                "von": rec["Von"],
             }
         )
 
@@ -236,25 +249,59 @@ def load_data():
 
 
 # ── HTML schreiben ───────────────────────────────────────────
-def render(data: dict):
-    if not TEMPLATE.exists():
-        raise BuildError(f"Vorlage nicht gefunden: {TEMPLATE.name}")
-    template = TEMPLATE.read_bytes().decode("utf-8-sig")  # evtl. BOM entfernen
-    if PLACEHOLDER not in template:
+def _render(template_path, output_path, placeholder, ersatz, data: dict):
+    if not template_path.exists():
+        raise BuildError(f"Vorlage nicht gefunden: {template_path.name}")
+    template = template_path.read_bytes().decode("utf-8-sig")  # evtl. BOM entfernen
+    if placeholder not in template:
         raise BuildError(
-            f"Platzhalter nicht in {TEMPLATE.name} gefunden. "
-            f"Die Vorlage muss '{PLACEHOLDER}' enthalten."
+            f"Platzhalter nicht in {template_path.name} gefunden. "
+            f"Die Vorlage muss '{placeholder}' enthalten."
         )
     payload = json.dumps(data, ensure_ascii=False, separators=(", ", ": "))
-    html = template.replace(PLACEHOLDER, f"var DATA = {payload};", 1)
-    # gleiche Datei-Konvention wie das Original: UTF-8 mit BOM, CRLF
-    OUTPUT.write_bytes(b"\xef\xbb\xbf" + html.encode("utf-8"))
+    # Ausgabecodierung fuer den <script>-Block: sonst beendet ein </script> im
+    # Freitext das Skriptelement und der Rest wird als Markup ausgefuehrt.
+    payload = payload.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    html = template.replace(placeholder, ersatz % payload, 1)
+    # gleiche Datei-Konvention wie das Original: UTF-8 mit BOM
+    output_path.write_bytes(b"\xef\xbb\xbf" + html.encode("utf-8"))
+
+
+def render(data: dict):
+    _render(TEMPLATE, OUTPUT, PLACEHOLDER, "var DATA = %s;", data)
+
+
+def render_vorschlag(data: dict):
+    _render(
+        TEMPLATE_VORSCHLAG,
+        OUTPUT_VORSCHLAG,
+        PLACEHOLDER_VORSCHLAG,
+        "var DATEN = %s;",
+        data,
+    )
+
+
+def write_daten_json(data: dict):
+    """Schreibt den Datenstand für die Vorschlagsseite und den Worker.
+
+    Bewusst OHNE BOM: JSON.parse im Worker stolpert sonst über das erste Zeichen.
+    Zeilenenden fest auf Unix-Art und ein Zeilenumbruch am Schluss – sonst
+    erzeugt ein Build auf einem anderen Betriebssystem einen Scheinunterschied
+    über die ganze Datei.
+    """
+    DATEN_JSON.write_text(
+        json.dumps(data, ensure_ascii=False, indent=1) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
 
 
 def main():
     try:
         data = load_data()
         render(data)
+        render_vorschlag(data)
+        write_daten_json(data)
     except BuildError as exc:
         print("\n❌ Build abgebrochen – bitte folgendes in skills_daten.xlsx korrigieren:\n")
         for msg in exc.messages:
@@ -264,6 +311,8 @@ def main():
 
     total = sum(len(k["skills"]) for d in data.values() for k in d["kategorien"])
     print(f"✅ {OUTPUT.relative_to(ROOT).as_posix()} wurde neu erstellt.")
+    print(f"✅ {OUTPUT_VORSCHLAG.relative_to(ROOT).as_posix()} wurde neu erstellt.")
+    print(f"✅ {DATEN_JSON.relative_to(ROOT).as_posix()} wurde neu erstellt.")
     print(f"   Stufen: {len(data)} | Kategorien: "
           f"{sum(len(d['kategorien']) for d in data.values())} | Skills: {total}")
 

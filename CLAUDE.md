@@ -16,6 +16,8 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/budgetvorlage.html` = eigenständige Budget-Seite (neutrale Vorlage).
 - `docs/neutral_flyer.html` = Flyer-Editor (self-contained, Bilder eingebettet).
 - `docs/asrs-v1-1.html` = ASRS v1.1 (ADHS-Selbstbeurteilung, WHO – frei nutzbar).
+- `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
+- `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
 
 Die Übersicht ist **nach Themen gruppiert** (`<section class="group">` je Thema, z. B.
 „Werkzeuge", „ADHS").
@@ -54,6 +56,27 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    (nur Erst-Einrichtung/Reset).
 
 Details für Nicht-Techniker: `ANLEITUNG.md`.
+
+## Skill-Vorschläge von aussen
+
+Besucher können über `docs/skill-vorschlagen.html` anonym neue Skills einreichen.
+Der Weg: Formular → Cloudflare Worker (`worker/`) → Issue in
+`stayingclean/skills-suggestions`.
+
+**Freigeben und übernehmen:**
+
+1. Im Vorschlags-Repo das Issue anschauen und Label `freigegeben` setzen
+   (oder `abgelehnt` mit einer kurzen Begründung als Kommentar).
+2. **`vorschlaege.bat`** doppelklicken → übernimmt alle freigegebenen Vorschläge
+   in `skills_daten.xlsx`, schliesst die Issues und baut die Skillsliste neu.
+3. Ergebnis anschauen, dann committen und pushen. **Nichts geht ohne Push online.**
+
+Die Formularseite ist generiert (`template-vorschlag.html` + `build.py`) — nicht
+direkt bearbeiten. Sie ist die einzige Seite in `docs/`, die Internet braucht
+(Spam-Schutz und Absenden); das CSS bleibt trotzdem eingebettet.
+
+Der Worker liegt in `worker/`, wird aber **nicht** veröffentlicht. Details und
+Notbremse: `worker/README.md`.
 
 ## Konvention: Fusszeile mit Urheber-Credit
 

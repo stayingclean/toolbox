@@ -1,0 +1,17 @@
+name = "skill-vorschlag"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+# Anonymitaet ist eine harte Zusage: Workers Logs sind bei neuen Workers
+# standardmaessig eingeschaltet und halten die Anfrage samt IP-Adresse mehrere
+# Tage vor. Hier bewusst abgeschaltet statt auf eine Voreinstellung zu vertrauen.
+[observability]
+enabled = false
+
+[vars]
+REPO = "stayingclean/skills-suggestions"
+DATEN_URL = "https://stayingclean.github.io/toolbox/skills-daten.json"
+
+[[kv_namespaces]]
+binding = "RATE"
+id = "a85b414e94074141ab69bdde290885d5"

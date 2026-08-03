@@ -4,7 +4,13 @@ workspacesobriety/
 # Temporäre Analyse-/Build-Hilfsordner
 _tmp/
 
-# Isolierte Arbeitskopien (git worktree)
+# Arbeitsdateien der Plan-Abarbeitung (Fortschritt, Aufgabenauszüge, Berichte)
+.superpowers/
+
+# Python-Zwischenspeicher aus den Testläufen
+__pycache__/
+
+# Isolierte Arbeitskopien (git worktree) für parallele Sitzungen
 .worktrees/
 
 # Nur lokale Vergleichs-/Arbeitskopie, gehört nicht ins Repo
@@ -13,3 +19,6 @@ docs/budgetvorlag_aktuell.html
 # Urheberrechtlich geschützte Roh-Formulare (BDI-II, ADHS-SB, WURS-K, BIT-CP) –
 # dürfen NICHT ins öffentliche Repo. Nur frei lizenzierte Instrumente publizieren.
 neue_docs/
+
+# Lokaler Zwischenspeicher von wrangler
+.wrangler/
