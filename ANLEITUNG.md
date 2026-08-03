@@ -107,3 +107,22 @@ immer farbig**.
 Nach dem Bauen liegt das fertige Ergebnis im Ordner `docs/`. Beim Hochladen
 (Push) der Änderungen wird `docs/` automatisch via GitHub Pages online gestellt —
 am Vorgehen ändert sich für dich nichts.
+
+## Vorschläge von anderen übernehmen
+
+Auf der Website gibt es die Seite „Skill vorschlagen". Wer dort etwas einträgt,
+landet als Eintrag in einer Liste, die nur du freigeben kannst.
+
+1. **Anschauen:** Öffne https://github.com/stayingclean/skills-suggestions/issues
+   (auf dem Handy geht die GitHub-App). Jeder Eintrag ist ein Vorschlag.
+2. **Entscheiden:** Rechts unter „Labels" wählst du
+   - `freigegeben` → soll in die Skillsliste
+   - `abgelehnt` → nicht übernehmen (schreib kurz dazu, warum)
+   - `in Prüfung` → du schaust es dir später nochmal an
+3. **Übernehmen:** Doppelklick auf **`vorschlaege.bat`**. Das Fenster zeigt, was
+   übernommen wurde, und baut die Skillsliste neu.
+4. **Veröffentlichen:** Schau `docs/skillsliste.html` an. Wenn es passt, wie
+   gewohnt committen und pushen. Vorher ist online nichts verändert.
+
+Wenn im Fenster steht „Keine freigegebenen Vorschläge offen", hast du gerade
+nichts freigegeben — dann ist alles in Ordnung.
