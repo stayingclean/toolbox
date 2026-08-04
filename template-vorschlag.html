@@ -26,6 +26,19 @@
     .zurueck{display:inline-block;margin-bottom:24px;color:var(--accent);text-decoration:none;font-size:.88rem}
     .zurueck:hover{text-decoration:underline}
     form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
+    .reiter{display:flex;gap:6px;margin-bottom:16px}
+    .reiter-knopf{flex:1;padding:10px 12px;font-family:inherit;font-size:.95rem;
+      background:var(--card);color:var(--muted);border:1px solid var(--border);
+      border-radius:10px;cursor:pointer;transition:background .15s ease,color .15s ease}
+    /* Muss die allgemeine button:hover-Regel weiter unten ueberstimmen (gleiche
+       Vorsicht wie beim .emoji-knopf): sonst faerbt sich der INAKTIVE Reiter
+       beim Darueberfahren dunkelgruen und sieht aus wie der aktive. */
+    .reiter-knopf:hover{background:var(--accent-tint);color:var(--accent-dark)}
+    .reiter-knopf.aktiv{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+    .reiter-knopf.aktiv:hover{background:var(--accent-dark);color:#fff}
+    .nur-aenderung{display:none}
+    body.modus-aenderung .nur-aenderung{display:block}
+    body.modus-aenderung .nur-neu{display:none}
     .feld{margin-bottom:18px}
     label{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
     .hinweis{color:var(--muted);font-size:.8rem;margin:0 0 6px}
@@ -78,6 +91,13 @@
     <p class="sub">Du kennst einen Skill, der in der Liste fehlt? Trag ihn hier ein — ohne Konto, ohne Anmeldung.</p>
     <p class="hinweis">Wir speichern nichts über dich: keine Adresse, keine Kennung. Dein Vorschlag wird angeschaut und, wenn er passt, in die Skillsliste aufgenommen.</p>
 
+    <div class="reiter" role="tablist">
+      <button type="button" class="reiter-knopf aktiv" id="reiter-neu"
+              role="tab" aria-selected="true" aria-controls="formular">Neuer Skill</button>
+      <button type="button" class="reiter-knopf" id="reiter-aenderung"
+              role="tab" aria-selected="false" aria-controls="formular">Bestehenden ergänzen</button>
+    </div>
+
     <form id="formular" novalidate>
       <div class="feld">
         <label for="stufe">Anspannungsstufe</label>
@@ -88,6 +108,12 @@
       <div class="feld">
         <label for="kategorie">Kategorie</label>
         <select id="kategorie" required></select>
+      </div>
+
+      <div class="feld nur-aenderung">
+        <label for="original">Welchen Skill möchtest du ergänzen?</label>
+        <p class="hinweis">Die Felder darunter werden mit dem bisherigen Text gefüllt. Ändere, was du ändern möchtest.</p>
+        <select id="original"></select>
       </div>
 
       <div class="feld">
@@ -120,7 +146,8 @@
 
       <div class="feld">
         <label for="von">Dein Name <span class="hinweis" style="display:inline">(freiwillig)</span></label>
-        <p class="hinweis"><strong>Achtung:</strong> Der Name erscheint öffentlich und dauerhaft auf der Skillsliste. Vorname oder Spitzname genügt. Lass das Feld leer, wenn du anonym bleiben willst.</p>
+        <p class="hinweis nur-neu"><strong>Achtung:</strong> Der Name erscheint öffentlich und dauerhaft auf der Skillsliste. Vorname oder Spitzname genügt. Lass das Feld leer, wenn du anonym bleiben willst.</p>
+        <p class="hinweis nur-aenderung"><strong>Achtung:</strong> Der Name erscheint öffentlich und dauerhaft auf der Skillsliste, neben dem Namen der Person, die den Skill ursprünglich vorgeschlagen hat. Lass das Feld leer, wenn du anonym bleiben willst.</p>
         <input type="text" id="von" maxlength="30">
       </div>
 
@@ -302,9 +329,15 @@ STUFEN.forEach(function(paar){
   el('stufe').appendChild(o);
 });
 
+/* Anzeigename der Stufe -> interner Schluessel im Datenbestand. Die Auswahl
+   wird aus STUFEN selbst gefuellt, darum passt immer genau ein Eintrag. */
+function stufenSchluessel(){
+  return STUFEN.filter(function(p){return p[1]===el('stufe').value;})[0][0];
+}
+
 /* Kategorien hängen von der gewählten Stufe ab */
 function kategorienFuellen(){
-  var schluessel=STUFEN.filter(function(p){return p[1]===el('stufe').value;})[0][0];
+  var schluessel=stufenSchluessel();
   var liste=(DATEN[schluessel]&&DATEN[schluessel].kategorien)||[];
   el('kategorie').innerHTML='';
   liste.forEach(function(k){
@@ -313,7 +346,77 @@ function kategorienFuellen(){
     o.textContent=(k.icon?k.icon+' ':'')+k.label;
     el('kategorie').appendChild(o);
   });
+  if(modus==='aenderung'){ originalAuswahlFuellen(); }
 }
+
+/* ── Zweiter Reiter: einen bestehenden Skill ergänzen ─────────
+   Stufe und Kategorie bleiben dabei unveraendert – sie bilden zusammen mit dem
+   urspruenglichen Titel den Schluessel, ueber den die Uebernahme die Zeile in
+   der Excel wiederfindet. */
+var modus='neu';
+
+/* Setzt ein Feld und meldet das wie eine Eingabe von Hand.
+   Ein per JavaScript gesetztes .value loest von sich aus KEIN input-Ereignis
+   aus. Alles, was am Feld mithoert, staende sonst auf dem Stand davor – heute
+   hoert nichts mit, ein Zeichenzaehler waere aber der naheliegende naechste
+   Zusatz, und dann faellt der Fehler kaum auf. */
+function feldSetzen(id, wert){
+  el(id).value=wert;
+  el(id).dispatchEvent(new Event('input',{bubbles:true}));
+}
+
+function skillsDerKategorie(){
+  var schluessel=stufenSchluessel();
+  var liste=(DATEN[schluessel]&&DATEN[schluessel].kategorien)||[];
+  var kat=liste.filter(function(k){return k.label===el('kategorie').value;})[0];
+  return (kat&&kat.skills)||[];
+}
+
+function originalAuswahlFuellen(){
+  var wahl=el('original');
+  wahl.innerHTML='';
+  skillsDerKategorie().forEach(function(s){
+    var o=document.createElement('option');
+    o.value=s.t;
+    o.textContent=(s.e?s.e+' ':'')+s.t;
+    wahl.appendChild(o);
+  });
+  originalUebernehmen();
+}
+
+function originalUebernehmen(){
+  if(modus!=='aenderung'){ return; }
+  var s=skillsDerKategorie().filter(function(k){return k.t===el('original').value;})[0];
+  if(!s){ return; }
+  feldSetzen('emoji', s.e||'');
+  feldSetzen('titel', s.t||'');
+  feldSetzen('beschreibung', s.b||'');
+  // Der Tipp traegt in den Daten eine fuehrende Gluehbirne; im Formular gehoert
+  // sie nicht hinein, sie wird beim Bauen wieder ergaenzt (build.py, format_tip).
+  feldSetzen('tipp', (s.tip||'').replace(/^💡\s*/,''));
+}
+
+function modusSetzen(neuerModus){
+  modus=neuerModus;
+  document.body.classList.toggle('modus-aenderung', modus==='aenderung');
+  el('reiter-neu').classList.toggle('aktiv', modus==='neu');
+  el('reiter-aenderung').classList.toggle('aktiv', modus==='aenderung');
+  el('reiter-neu').setAttribute('aria-selected', modus==='neu');
+  el('reiter-aenderung').setAttribute('aria-selected', modus==='aenderung');
+  el('fehler').hidden=true;
+  if(modus==='aenderung'){ originalAuswahlFuellen(); }
+  else { ['emoji','titel','beschreibung','tipp'].forEach(function(f){ feldSetzen(f,''); }); }
+}
+
+el('reiter-neu').addEventListener('click', function(){ modusSetzen('neu'); });
+el('reiter-aenderung').addEventListener('click', function(){ modusSetzen('aenderung'); });
+el('original').addEventListener('change', originalUebernehmen);
+// Ein Wechsel der Stufe laeuft ueber kategorienFuellen; ein Wechsel der
+// Kategorie allein hat sonst niemanden, der die Skill-Auswahl nachzieht.
+el('kategorie').addEventListener('change', function(){
+  if(modus==='aenderung'){ originalAuswahlFuellen(); }
+});
+
 el('stufe').addEventListener('change', kategorienFuellen);
 kategorienFuellen();
 
@@ -352,7 +455,19 @@ el('formular').addEventListener('submit', async function(ereignis){
     var antwort=await fetch(WORKER_URL,{
       method:'POST',
       headers:{'content-type':'application/json'},
-      body:JSON.stringify({
+      body:JSON.stringify(modus==='aenderung' ? {
+        art:'aenderung',
+        stufe:el('stufe').value,
+        kategorie:el('kategorie').value,
+        original:el('original').value,
+        emoji:el('emoji').value,
+        titel:el('titel').value,
+        beschreibung:el('beschreibung').value,
+        tipp:el('tipp').value,
+        erg:el('von').value,
+        falle:el('falle').value,
+        turnstile:token
+      } : {
         stufe:el('stufe').value,
         kategorie:el('kategorie').value,
         emoji:el('emoji').value,

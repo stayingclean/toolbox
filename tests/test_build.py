@@ -199,3 +199,24 @@ def test_vorlage_nennt_beide_beitragenden():
     assert 'id="m-von"' in vorlage
     assert "s.erg" in vorlage
     assert "Ergänzt von" in vorlage
+
+
+def test_vorschlagsvorlage_hat_zwei_reiter():
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    assert 'id="reiter-neu"' in vorlage
+    assert 'id="reiter-aenderung"' in vorlage
+    assert 'role="tab"' in vorlage
+
+
+def test_vorschlagsvorlage_sendet_die_aenderungsart():
+    """Ohne art und original kann der Worker eine Aenderung nicht zuordnen."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    # Einfache Anführungszeichen: die Vorlage schreibt JavaScript durchgängig so.
+    assert "art:'aenderung'" in vorlage
+    assert "original:el('original').value" in vorlage
+
+    # Der bestehende Weg bleibt unverändert: ein neuer Skill sendet weiterhin
+    # "von" und KEIN "art" (ein fehlendes art liest der Worker als "neu").
+    neuer_zweig = vorlage.split("} : {", 1)[1]
+    assert "von:el('von').value" in neuer_zweig
+    assert "art:" not in neuer_zweig
