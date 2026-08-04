@@ -46,6 +46,10 @@ function grapheme(wert) {
  * `namensfeld` ist der Schluessel des freiwilligen Namens – bei einem neuen
  * Skill `von`, bei einer Aenderung `erg`.
  * Liefert null, wenn alles stimmt, sonst die Fehlermeldung.
+ *
+ * Die Reihenfolge der Pruefungen ist nicht beliebig: sie legt fest, welche
+ * Fehlermeldung eine Eingabe bekommt, die mehrere Regeln gleichzeitig verletzt.
+ * Wer die Reihenfolge umstellt, aendert damit sichtbares Verhalten.
  */
 function feldregeln(wert, namensfeld) {
   for (const feld of ["emoji", "titel", "beschreibung"]) {
@@ -53,6 +57,10 @@ function feldregeln(wert, namensfeld) {
       return `Pflichtfeld fehlt: ${FELDNAMEN[feld]}.`;
     }
   }
+  // Das Emoji steht nicht in GRENZEN: das fachlich richtige Mass ist hier der
+  // Graphem-Cluster (was ein Mensch als ein Zeichen sieht), nicht eine Anzahl
+  // Codepunkte oder UTF-16-Einheiten – deshalb eine eigenstaendige Pruefung
+  // statt eines Eintrags in der gemeinsamen Laengentabelle.
   if (
     Array.from(wert.emoji).length > EMOJI_CODEPUNKT_GRENZE ||
     grapheme(wert.emoji) !== 1
@@ -72,11 +80,24 @@ function feldregeln(wert, namensfeld) {
       return "Links sind nicht erlaubt.";
     }
   }
+  // Kommentarzeichen könnten den maschinenlesbaren Block im Issue fälschen
+  // (ein zweiter <!-- vorschlag … --> im Freitext). Deshalb auch das Emoji
+  // mitprüfen, nicht nur die reinen Textfelder.
+  //
+  // Für "emoji" ist diese Bedingung mit der aktuellen Prüfreihenfolge in der
+  // Praxis unerreichbar: Der Graphem-Check weiter oben verlangt genau EIN
+  // Graphem, aber "<!--" und "-->" sind je 3–4 eigenständige ASCII-Zeichen
+  // ohne verbindenden Unicode-Joiner, also nie ein einzelnes Graphem. Bewusst
+  // trotzdem so belassen (nicht umsortiert) – die Klammer-Sperre direkt danach
+  // deckt denselben Fall ohnehin ab, da beide Marker spitze Klammern enthalten.
   for (const feld of [...textfelder, "emoji"]) {
     const inhalt = wert[feld] || "";
     if (inhalt.includes("<!--") || inhalt.includes("-->")) {
       return "Kommentarzeichen sind nicht erlaubt.";
     }
+    // Spitze Klammern koennten in der erzeugten Skillsliste das <script>-Element
+    // beenden (dort schuetzt zwar die Ausgabecodierung in build.py, aber diese
+    // Sperre ist die zweite Schicht). Kein Skilltext braucht spitze Klammern.
     if (inhalt.includes("<") || inhalt.includes(">")) {
       return "Spitze Klammern sind nicht erlaubt.";
     }
