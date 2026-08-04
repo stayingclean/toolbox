@@ -91,14 +91,17 @@
     <p class="sub">Du kennst einen Skill, der in der Liste fehlt? Trag ihn hier ein — ohne Konto, ohne Anmeldung.</p>
     <p class="hinweis">Wir speichern nichts über dich: keine Adresse, keine Kennung. Dein Vorschlag wird angeschaut und, wenn er passt, in die Skillsliste aufgenommen.</p>
 
-    <div class="reiter" role="tablist">
+    <div class="reiter" id="reiterleiste" role="tablist" aria-label="Art des Vorschlags">
       <button type="button" class="reiter-knopf aktiv" id="reiter-neu"
-              role="tab" aria-selected="true" aria-controls="formular">Neuer Skill</button>
+              role="tab" aria-selected="true" aria-controls="formular" tabindex="0">Neuer Skill</button>
       <button type="button" class="reiter-knopf" id="reiter-aenderung"
-              role="tab" aria-selected="false" aria-controls="formular">Bestehenden ergänzen</button>
+              role="tab" aria-selected="false" aria-controls="formular" tabindex="-1">Bestehenden ergänzen</button>
     </div>
 
-    <form id="formular" novalidate>
+    <!-- Ein einziger Bereich für beide Reiter: die Felder wechseln, das Formular
+         bleibt dasselbe. aria-labelledby zeigt darum immer auf den aktiven
+         Reiter und wird beim Umschalten nachgezogen. -->
+    <form id="formular" role="tabpanel" aria-labelledby="reiter-neu" novalidate>
       <div class="feld">
         <label for="stufe">Anspannungsstufe</label>
         <p class="hinweis">Bei welcher Anspannung hilft dieser Skill?</p>
@@ -396,20 +399,54 @@ function originalUebernehmen(){
   feldSetzen('tipp', (s.tip||'').replace(/^💡\s*/,''));
 }
 
+/* Was jemand fuer einen NEUEN Skill schon getippt hat, darf ein neugieriger
+   Blick in den anderen Reiter nicht loeschen: hier beschreiben Menschen etwas
+   Persoenliches, das sie kein zweites Mal tippen. Darum wird der Entwurf beim
+   Verlassen gesichert und beim Zurueckkommen wieder eingesetzt.
+   Gesichert wird ausschliesslich, solange der Modus noch 'neu' ist – sonst
+   geriete der vorausgefuellte Text einer Aenderung in den Entwurf und wuerde
+   beim naechsten Absenden als neuer Skill eingereicht. */
+var NEU_FELDER=['emoji','titel','beschreibung','tipp','von'];
+var entwurfNeu=null;
+
+function entwurfSichern(){
+  entwurfNeu={};
+  NEU_FELDER.forEach(function(f){ entwurfNeu[f]=el(f).value; });
+}
+
+function entwurfZurueck(){
+  NEU_FELDER.forEach(function(f){ feldSetzen(f, entwurfNeu?entwurfNeu[f]:''); });
+}
+
 function modusSetzen(neuerModus){
+  if(modus==='neu'){ entwurfSichern(); }
   modus=neuerModus;
   document.body.classList.toggle('modus-aenderung', modus==='aenderung');
   el('reiter-neu').classList.toggle('aktiv', modus==='neu');
   el('reiter-aenderung').classList.toggle('aktiv', modus==='aenderung');
   el('reiter-neu').setAttribute('aria-selected', modus==='neu');
   el('reiter-aenderung').setAttribute('aria-selected', modus==='aenderung');
+  // Rollendes tabindex: nur der aktive Reiter liegt im Tabulator-Weg, zwischen
+  // den Reitern wechselt man mit den Pfeiltasten (uebliches Reiter-Muster).
+  el('reiter-neu').tabIndex=modus==='neu'?0:-1;
+  el('reiter-aenderung').tabIndex=modus==='aenderung'?0:-1;
+  el('formular').setAttribute('aria-labelledby','reiter-'+modus);
   el('fehler').hidden=true;
   if(modus==='aenderung'){ originalAuswahlFuellen(); }
-  else { ['emoji','titel','beschreibung','tipp'].forEach(function(f){ feldSetzen(f,''); }); }
+  else { entwurfZurueck(); }
 }
 
 el('reiter-neu').addEventListener('click', function(){ modusSetzen('neu'); });
 el('reiter-aenderung').addEventListener('click', function(){ modusSetzen('aenderung'); });
+el('reiterleiste').addEventListener('keydown', function(ereignis){
+  if(['ArrowLeft','ArrowRight','Home','End'].indexOf(ereignis.key)<0){ return; }
+  ereignis.preventDefault();
+  var ziel = ereignis.key==='Home' ? 'neu'
+           : ereignis.key==='End' ? 'aenderung'
+           : (modus==='neu' ? 'aenderung' : 'neu');
+  modusSetzen(ziel);
+  el('reiter-'+ziel).focus();
+});
 el('original').addEventListener('change', originalUebernehmen);
 // Ein Wechsel der Stufe laeuft ueber kategorienFuellen; ein Wechsel der
 // Kategorie allein hat sonst niemanden, der die Skill-Auswahl nachzieht.

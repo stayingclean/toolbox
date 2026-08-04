@@ -220,3 +220,34 @@ def test_vorschlagsvorlage_sendet_die_aenderungsart():
     neuer_zweig = vorlage.split("} : {", 1)[1]
     assert "von:el('von').value" in neuer_zweig
     assert "art:" not in neuer_zweig
+
+
+def test_vorschlagsvorlage_bewahrt_den_entwurf_beim_reiterwechsel():
+    """Ein schon getippter neuer Skill darf durch einen neugierigen Blick in den
+    anderen Reiter nicht verloren gehen — wer etwas Persönliches beschrieben hat,
+    tippt es kein zweites Mal. Zugleich darf der vorausgefüllte Text einer
+    Änderung NIE in diesen Entwurf geraten, sonst wird ein bestehender Skill als
+    neuer eingereicht. Beides hängt daran, dass nur gesichert wird, solange der
+    alte Modus noch 'neu' ist."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    assert "var NEU_FELDER=['emoji','titel','beschreibung','tipp','von'];" in vorlage
+
+    treffer = re.search(r"function modusSetzen\(neuerModus\)\{.*?\n\}", vorlage, re.DOTALL)
+    assert treffer, "modusSetzen nicht gefunden"
+    rumpf = re.sub(r"\s+", " ", treffer.group(0))
+    assert rumpf.index("if(modus==='neu'){ entwurfSichern(); }") < rumpf.index("modus=neuerModus;")
+    assert "entwurfZurueck();" in rumpf
+    assert "value=''" not in rumpf, "beim Rückwechsel wird zurückgeschrieben, nicht geleert"
+
+
+def test_vorschlagsvorlage_reiterleiste_ist_vollstaendig_ausgezeichnet():
+    """role=tab ohne zugehörigen tabpanel kündigt einem Screenreader einen
+    Bereich an, den es nicht gibt. Und ohne Pfeiltasten samt rollendem tabindex
+    ist eine Reiterleiste mit der Tastatur nicht wie erwartet bedienbar."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    assert 'role="tabpanel"' in vorlage
+    assert 'aria-labelledby="reiter-neu"' in vorlage
+    assert "el('formular').setAttribute('aria-labelledby'" in vorlage
+    assert "el('reiter-neu').tabIndex=" in vorlage
+    assert "el('reiter-aenderung').tabIndex=" in vorlage
+    assert "ArrowLeft" in vorlage and "ArrowRight" in vorlage
