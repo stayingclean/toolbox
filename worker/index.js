@@ -6,7 +6,7 @@
  * und verfällt nach einer Stunde.
  */
 
-import { pruefeVorschlag, pruefeAenderung } from "./validate.js";
+import { pruefeVorschlag, pruefeAenderung, STUFEN } from "./validate.js";
 
 const HERKUNFT = "https://stayingclean.github.io";
 const MAX_PRO_STUNDE = 5;
@@ -127,7 +127,6 @@ export function issueRumpfAenderung(w, alt) {
  * pruefeAenderung hat bereits sichergestellt, dass es ihn gibt.
  */
 function altenSkillFinden(daten, wert) {
-  const STUFEN = { Hoch: "hoch", Mittel: "mittel", Tief: "tief" };
   const kat = daten[STUFEN[wert.stufe]].kategorien.find(
     (k) => k.label === wert.kategorie
   );

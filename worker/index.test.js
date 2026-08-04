@@ -5,7 +5,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { issueRumpf, zelle } from "./index.js";
+import { issueRumpf, issueRumpfAenderung, zelle } from "./index.js";
 
 const WERT = {
   art: "neu",
@@ -90,8 +90,6 @@ test("der Rumpf enthält genau einen Vorschlagsblock", () => {
   const treffer = rumpf.match(/<!-- vorschlag/g) || [];
   assert.equal(treffer.length, 1);
 });
-
-import { issueRumpfAenderung } from "./index.js";
 
 const ALT = { e: "🎧", t: "Musik hören", b: "Ein Lied auflegen.", tip: "", von: "Max", erg: "" };
 const NEU = {

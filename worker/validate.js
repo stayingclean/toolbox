@@ -17,7 +17,7 @@ export const GRENZEN = {
 const EMOJI_CODEPUNKT_GRENZE = 16;
 
 // Anzeigename (Formular) -> Schlüssel in skills-daten.json
-const STUFEN = { Hoch: "hoch", Mittel: "mittel", Tief: "tief" };
+export const STUFEN = { Hoch: "hoch", Mittel: "mittel", Tief: "tief" };
 
 // Feldschlüssel -> Bezeichnung in Fehlermeldungen (so wie im Formular beschriftet)
 const FELDNAMEN = {
