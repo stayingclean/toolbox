@@ -6,7 +6,7 @@
  * und verfällt nach einer Stunde.
  */
 
-import { pruefeVorschlag } from "./validate.js";
+import { pruefeVorschlag, pruefeAenderung } from "./validate.js";
 
 const HERKUNFT = "https://stayingclean.github.io";
 const MAX_PRO_STUNDE = 5;
@@ -95,6 +95,45 @@ export function issueRumpf(w) {
   );
 }
 
+/**
+ * Rumpf fuer eine Aenderung: links der bisherige Stand, rechts der
+ * vorgeschlagene. Die betreuende Person soll auf einen Blick sehen, was sich
+ * aendert, ohne die Skillsliste daneben aufschlagen zu muessen.
+ */
+export function issueRumpfAenderung(w, alt) {
+  const zeilen = [
+    "| Feld | Bisher | Neu |",
+    "| --- | --- | --- |",
+    `| Emoji | ${zelle(alt.e)} | ${zelle(w.emoji)} |`,
+    `| Titel | ${zelle(alt.t)} | ${zelle(w.titel)} |`,
+    `| Beschreibung | ${zelle(alt.b)} | ${zelle(w.beschreibung)} |`,
+    `| Tipp | ${alt.tip ? zelle(alt.tip) : "—"} | ${w.tipp ? zelle(w.tipp) : "—"} |`,
+  ];
+  const kopf =
+    `**Stufe:** ${zelle(w.stufe)} · **Kategorie:** ${zelle(w.kategorie)}` +
+    (w.erg ? ` · **Ergänzt von:** ${zelle(w.erg)}` : " · **Ergänzt von:** — (anonym)");
+  return (
+    kopf +
+    "\n\n" +
+    zeilen.join("\n") +
+    "\n\n<!-- vorschlag\n" +
+    JSON.stringify(w) +
+    "\n-->\n"
+  );
+}
+
+/**
+ * Sucht den bisherigen Stand des Skills im Datenbestand.
+ * pruefeAenderung hat bereits sichergestellt, dass es ihn gibt.
+ */
+function altenSkillFinden(daten, wert) {
+  const STUFEN = { Hoch: "hoch", Mittel: "mittel", Tief: "tief" };
+  const kat = daten[STUFEN[wert.stufe]].kategorien.find(
+    (k) => k.label === wert.kategorie
+  );
+  return kat.skills.find((s) => s.t === wert.original);
+}
+
 export default {
   async fetch(anfrage, umgebung) {
     if (anfrage.method === "OPTIONS") {
@@ -160,7 +199,10 @@ export default {
       return antwort({ fehler: "Datenstand nicht erreichbar." }, 503);
     }
 
-    const geprueft = pruefeVorschlag(eingabe, daten);
+    const istAenderung = eingabe && eingabe.art === "aenderung";
+    const geprueft = istAenderung
+      ? pruefeAenderung(eingabe, daten)
+      : pruefeVorschlag(eingabe, daten);
     if (!geprueft.ok) {
       return antwort({ fehler: geprueft.fehler }, 400);
     }
@@ -176,8 +218,12 @@ export default {
           "user-agent": "toolbox-skill-vorschlag",
         },
         body: JSON.stringify({
-          title: geprueft.wert.titel,
-          body: issueRumpf(geprueft.wert),
+          title: istAenderung
+            ? `[Änderung] ${geprueft.wert.original}`
+            : geprueft.wert.titel,
+          body: istAenderung
+            ? issueRumpfAenderung(geprueft.wert, altenSkillFinden(daten, geprueft.wert))
+            : issueRumpf(geprueft.wert),
         }),
       }
     );

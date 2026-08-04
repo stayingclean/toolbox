@@ -90,3 +90,49 @@ test("der Rumpf enthält genau einen Vorschlagsblock", () => {
   const treffer = rumpf.match(/<!-- vorschlag/g) || [];
   assert.equal(treffer.length, 1);
 });
+
+import { issueRumpfAenderung } from "./index.js";
+
+const ALT = { e: "🎧", t: "Musik hören", b: "Ein Lied auflegen.", tip: "", von: "Max", erg: "" };
+const NEU = {
+  art: "aenderung",
+  stufe: "Hoch",
+  kategorie: "Ablenkung",
+  original: "Musik hören",
+  emoji: "🎵",
+  titel: "Musik bewusst hören",
+  beschreibung: "Ein Lied aussuchen und nur darauf achten.",
+  tipp: "Kopfhörer bereitlegen",
+  erg: "Lea",
+};
+
+test("zeigt bisher und neu nebeneinander", () => {
+  const rumpf = issueRumpfAenderung(NEU, ALT);
+  assert.match(rumpf, /bisher/i);
+  assert.match(rumpf, /neu/i);
+  assert.ok(rumpf.includes("Musik hören"), "alter Titel fehlt");
+  assert.ok(rumpf.includes("Musik bewusst hören"), "neuer Titel fehlt");
+  assert.ok(rumpf.includes("Ein Lied auflegen."), "alte Beschreibung fehlt");
+});
+
+test("enthält genau einen maschinenlesbaren Block mit gültigem JSON", () => {
+  const rumpf = issueRumpfAenderung(NEU, ALT);
+  const treffer = rumpf.match(/<!-- vorschlag/g) || [];
+  assert.equal(treffer.length, 1);
+  const block = rumpf.match(/<!-- vorschlag\n([\s\S]*?)\n-->/);
+  const daten = JSON.parse(block[1]);
+  assert.equal(daten.art, "aenderung");
+  assert.equal(daten.original, "Musik hören");
+  assert.equal(daten.erg, "Lea");
+});
+
+test("maskiert Trennstriche und Zeilenumbrüche in beiden Spalten", () => {
+  const rumpf = issueRumpfAenderung(
+    { ...NEU, beschreibung: "a | b\nc" },
+    { ...ALT, b: "x | y" }
+  );
+  const tabelle = rumpf.split("<!-- vorschlag")[0];
+  assert.ok(!/[^\\]\| b/.test(tabelle), "Trennstrich im neuen Wert nicht maskiert");
+  assert.ok(!/[^\\]\| y/.test(tabelle), "Trennstrich im alten Wert nicht maskiert");
+  assert.ok(!tabelle.includes("b\nc"), "Zeilenumbruch nicht maskiert");
+});
