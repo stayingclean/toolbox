@@ -817,7 +817,7 @@ Im Absende-Handler den Rumpf abhängig vom Modus bilden. Ersetze das bestehende 
 - [ ] **Step 7: Tests und Build**
 
 Run: `uv run --with pytest --with openpyxl pytest tests -v`
-Expected: PASS, 49 Tests.
+Expected: PASS, 51 Tests.
 
 Run: `uv run build.py`
 Expected: drei ✅-Zeilen.
@@ -1101,7 +1101,7 @@ In der Ausgabeschleife die Art sichtbar machen:
 - [ ] **Step 6: Tests laufen lassen**
 
 Run: `uv run --with pytest --with openpyxl pytest tests -v`
-Expected: PASS, 54 Tests (49 aus Task 4 + 5 neue). Bestehende Tests unverändert.
+Expected: PASS, 56 Tests (51 aus Task 4 + 5 neue). Bestehende Tests unverändert.
 
 - [ ] **Step 7: Leerlauf gegen das echte Repo**
 
