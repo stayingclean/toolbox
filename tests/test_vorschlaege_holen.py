@@ -1,7 +1,9 @@
 import json
 import os
 import stat
+import subprocess
 import sys
+import types
 from pathlib import Path
 
 import openpyxl
@@ -215,3 +217,111 @@ def test_anhaengen_legt_fehlende_von_spalte_an(tmp_path):
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
     assert [c.value for c in ws2[1]][6] == "Von"
     assert [c.value for c in ws2[2]][6] == "Max"
+
+
+def test_bereinigt_entfernt_randweissraum_der_die_pruefung_besteht():
+    # Genau der gemeldete Fall: 60 Zeichen plus zwei Leerzeichen bestehen die
+    # Pruefung (die auf der getrimmten Fassung prueft), duerfen aber nicht mit
+    # 62 Zeichen in der Excel landen.
+    eintrag = {**BEISPIEL, "titel": "x" * 60 + "  "}
+    assert vh.pruefe_eintrag(eintrag, BESTAND) is None
+    assert vh.bereinigt(eintrag)["titel"] == "x" * 60
+
+
+def test_bereinigt_trimmt_alle_excel_spalten():
+    eintrag = {**BEISPIEL, "beschreibung": "  Ein Lied auflegen.  ", "von": " Max "}
+    ergebnis = vh.bereinigt(eintrag)
+    assert ergebnis["beschreibung"] == "Ein Lied auflegen."
+    assert ergebnis["von"] == "Max"
+
+
+def freigegebenes_issue(nummer: int, daten: dict = BEISPIEL) -> dict:
+    """Baut ein Issue, wie main() es von hole_issues() bekaeme – freigegeben,
+    vom Formular-Konto, mit lesbarem Vorschlagsblock."""
+    return {
+        "number": nummer,
+        "title": daten.get("titel", "t"),
+        "author": {"login": vh.BOT},
+        "labels": [{"name": vh.LABEL}],
+        "body": issue_text(daten),
+    }
+
+
+def test_main_laesst_unerwartete_fehler_beim_schliessen_durchschlagen(monkeypatch):
+    # except Exception war zu breit: ein Programmierfehler beim Schliessen sah
+    # damit aus wie ein gescheiterter Netzaufruf. Nur subprocess.CalledProcessError
+    # (der tatsaechliche Fehlerfall von issue_schliessen mit check=True) darf
+    # abgefangen werden – alles andere muss durchschlagen.
+    monkeypatch.setattr(vh, "hole_issues", lambda: [freigegebenes_issue(1)])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
+    monkeypatch.setattr(vh, "an_excel_anhaengen", lambda pfad, eintraege: 0)
+
+    def schlaegt_unerwartet_fehl(nummer):
+        raise RuntimeError("Programmierfehler")
+
+    monkeypatch.setattr(vh, "issue_schliessen", schlaegt_unerwartet_fehl)
+
+    with pytest.raises(RuntimeError):
+        vh.main()
+
+
+def test_main_faengt_calledprocesserror_ab_und_zeigt_keine_widerspruechliche_erfolgszeile(
+    monkeypatch, capsys
+):
+    monkeypatch.setattr(vh, "hole_issues", lambda: [freigegebenes_issue(1)])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
+    # 0 zurueckgeben, um in diesem Test den Skillsliste-Neubau (subprocess) nicht
+    # auszuloesen – der Fokus liegt hier auf dem Schliessen-Fehler und der
+    # Erfolgszeile, nicht auf build.py.
+    monkeypatch.setattr(vh, "an_excel_anhaengen", lambda pfad, eintraege: 0)
+
+    def schlaegt_wie_gh_fehl(nummer):
+        raise subprocess.CalledProcessError(1, ["gh"])
+
+    monkeypatch.setattr(vh, "issue_schliessen", schlaegt_wie_gh_fehl)
+
+    vh.main()
+
+    ausgabe = capsys.readouterr().out
+    assert "#1" in ausgabe
+    assert "konnte(n) nicht geschlossen werden" in ausgabe
+    # Bei 0 tatsaechlich uebernommenen Zeilen darf kein gruenes Haekchen mit
+    # einer Null erscheinen – widerspruechlich neben der Warnung direkt darunter.
+    assert "✅" not in ausgabe
+
+
+def test_main_gibt_keine_erfolgszeile_bei_null_uebernahmen_aus(monkeypatch, capsys):
+    abgelehntes_issue = freigegebenes_issue(1, {**BEISPIEL, "kategorie": "Erfunden"})
+    monkeypatch.setattr(vh, "hole_issues", lambda: [abgelehntes_issue])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
+    monkeypatch.setattr(vh, "an_excel_anhaengen", lambda pfad, eintraege: 0)
+
+    vh.main()
+
+    ausgabe = capsys.readouterr().out
+    assert "✅" not in ausgabe
+    assert "nicht übernommen" in ausgabe
+
+
+def test_main_verwendet_einzahl_und_mehrzahl_korrekt(monkeypatch, capsys):
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
+    monkeypatch.setattr(vh, "issue_schliessen", lambda nummer: None)
+    # main() ruft nach einer Uebernahme build.py auf; hier nur die Ausgabe der
+    # Erfolgszeile pruefen, ohne einen echten build.py-Lauf auszuloesen.
+    monkeypatch.setattr(
+        vh.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0)
+    )
+
+    monkeypatch.setattr(vh, "hole_issues", lambda: [freigegebenes_issue(1)])
+    monkeypatch.setattr(vh, "an_excel_anhaengen", lambda pfad, eintraege: len(eintraege))
+    vh.main()
+    einzahl = capsys.readouterr().out
+    assert "1 Vorschlag in" in einzahl
+    assert "1 Vorschläge" not in einzahl
+
+    monkeypatch.setattr(
+        vh, "hole_issues", lambda: [freigegebenes_issue(1), freigegebenes_issue(2)]
+    )
+    vh.main()
+    mehrzahl = capsys.readouterr().out
+    assert "2 Vorschläge in" in mehrzahl

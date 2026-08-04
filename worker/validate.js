@@ -106,6 +106,13 @@ export function pruefeVorschlag(eingabe, daten) {
   // Kommentarzeichen könnten den maschinenlesbaren Block im Issue fälschen
   // (ein zweiter <!-- vorschlag … --> im Freitext). Deshalb auch das Emoji
   // mitprüfen, nicht nur die reinen Textfelder.
+  //
+  // Für "emoji" ist diese Bedingung mit der aktuellen Prüfreihenfolge in der
+  // Praxis unerreichbar: Der Graphem-Check weiter oben verlangt genau EIN
+  // Graphem, aber "<!--" und "-->" sind je 3–4 eigenständige ASCII-Zeichen
+  // ohne verbindenden Unicode-Joiner, also nie ein einzelnes Graphem. Bewusst
+  // trotzdem so belassen (nicht umsortiert) – die Klammer-Sperre weiter unten
+  // deckt denselben Fall ab, da beide Marker spitze Klammern enthalten.
   for (const feld of [...TEXTFELDER, "emoji"]) {
     if (wert[feld].includes("<!--") || wert[feld].includes("-->")) {
       return { ok: false, fehler: "Kommentarzeichen sind nicht erlaubt." };
