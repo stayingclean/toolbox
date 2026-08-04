@@ -72,7 +72,7 @@ def test_vorlage_nennt_beide_beitragenden():
     vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
     assert 'id="m-von"' in vorlage
     assert "s.erg" in vorlage
-    assert "ergänzt von" in vorlage
+    assert "Ergänzt von" in vorlage
 ```
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
@@ -113,7 +113,7 @@ wird zu:
 ```javascript
   var teile=[];
   if(s.von){ teile.push('Vorgeschlagen von '+s.von); }
-  if(s.erg){ teile.push('ergänzt von '+s.erg); }
+  if(s.erg){ teile.push('Ergänzt von '+s.erg); }
   if(teile.length){ mVon.textContent=teile.join(' · '); mVon.hidden=false; }
   else { mVon.textContent=''; mVon.hidden=true; }
 ```
@@ -1142,7 +1142,7 @@ nebeneinander.
 
 Beide Beitragenden werden genannt: die Spalte `Von` bleibt beim ursprünglichen
 Vorschlag, die neue Spalte `Ergaenzt` nennt die Person, die ergänzt hat. Im
-Detail-Dialog steht dann „Vorgeschlagen von A · ergänzt von B".
+Detail-Dialog steht dann „Vorgeschlagen von A · Ergänzt von B".
 ```
 
 Im Abschnitt „Skillsliste pflegen" den Hinweis auf die Blätter um die Spalte ergänzen:
@@ -1272,7 +1272,7 @@ print('Zeilen:', ws.max_row, 'Filter:', ws.auto_filter.ref)
 Expected: **gleiche Zeilenzahl wie vorher** — eine Änderung darf keine Zeile hinzufügen.
 
 `docs/skillsliste.html` öffnen, den Skill antippen.
-Expected: der geänderte Text, und die Zeile „Vorgeschlagen von … · ergänzt von …".
+Expected: der geänderte Text, und die Zeile „Vorgeschlagen von … · Ergänzt von …".
 
 - [ ] **Step 7: Randfall prüfen — verschwundener Skill**
 
