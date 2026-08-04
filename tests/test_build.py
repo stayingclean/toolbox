@@ -7,6 +7,30 @@ SKILLS_HEADER = ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"]
 SKILLS_ROW = ["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen", "Kopfhörer"]
 
 
+def js_funktion(quelltext: str, name: str) -> str:
+    """Schneidet eine JavaScript-Funktion über passende Klammerzählung heraus.
+
+    Verlässlicher als ein Regex, der am nächsten `}` am Zeilenanfang abbricht:
+    das hinge an der Einrückung. Geschweifte Klammern in Zeichenketten oder
+    Kommentaren zählt diese einfache Zählung allerdings mit — für die geprüften
+    Funktionen kommen dort keine vor.
+    """
+    start = quelltext.index(f"function {name}(")
+    tiefe = 0
+    for i in range(quelltext.index("{", start), len(quelltext)):
+        if quelltext[i] == "{":
+            tiefe += 1
+        elif quelltext[i] == "}":
+            tiefe -= 1
+            if tiefe == 0:
+                return quelltext[start : i + 1]
+    raise AssertionError(f"Funktion {name} wird nicht geschlossen")
+
+
+def ohne_umbrueche(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def test_von_wird_gelesen_wenn_spalte_vorhanden(mappe, monkeypatch):
     pfad = mappe(SKILLS_HEADER + ["Von"], [SKILLS_ROW + ["Max"]])
     monkeypatch.setattr(build, "XLSX", pfad)
@@ -215,29 +239,54 @@ def test_vorschlagsvorlage_sendet_die_aenderungsart():
     assert "art:'aenderung'" in vorlage
     assert "original:el('original').value" in vorlage
 
-    # Der bestehende Weg bleibt unverändert: ein neuer Skill sendet weiterhin
-    # "von" und KEIN "art" (ein fehlendes art liest der Worker als "neu").
-    neuer_zweig = vorlage.split("} : {", 1)[1]
-    assert "von:el('von').value" in neuer_zweig
-    assert "art:" not in neuer_zweig
+    # Der bestehende Weg bleibt unverändert. Nicht auf "art:" prüfen — das wäre
+    # ein Teilwort und ginge an einem künftigen "start:" grundlos kaputt.
+    # Stattdessen die Schlüssel des Zweigs vollständig festnageln.
+    neuer_zweig = vorlage.split("} : {", 1)[1].split("})", 1)[0]
+    assert re.findall(r"^\s*(\w+):", neuer_zweig, re.M) == [
+        "stufe", "kategorie", "emoji", "titel", "beschreibung", "tipp",
+        "von", "falle", "turnstile",
+    ]
 
 
 def test_vorschlagsvorlage_bewahrt_den_entwurf_beim_reiterwechsel():
-    """Ein schon getippter neuer Skill darf durch einen neugierigen Blick in den
-    anderen Reiter nicht verloren gehen — wer etwas Persönliches beschrieben hat,
-    tippt es kein zweites Mal. Zugleich darf der vorausgefüllte Text einer
-    Änderung NIE in diesen Entwurf geraten, sonst wird ein bestehender Skill als
-    neuer eingereicht. Beides hängt daran, dass nur gesichert wird, solange der
-    alte Modus noch 'neu' ist."""
+    """Ein schon getippter Text darf durch einen Blick in den anderen Reiter
+    nicht verloren gehen — wer etwas Persönliches beschrieben hat, tippt es kein
+    zweites Mal. Zugleich darf der vorausgefüllte Text einer Änderung NIE in den
+    Entwurf für einen neuen Skill geraten, sonst wird ein bestehender Skill als
+    neuer eingereicht. Beides hängt daran, dass gesichert wird, solange `modus`
+    noch der alte ist."""
     vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
-    assert "var NEU_FELDER=['emoji','titel','beschreibung','tipp','von'];" in vorlage
+    assert "var ENTWURF_FELDER=['emoji','titel','beschreibung','tipp','von'];" in vorlage
 
-    treffer = re.search(r"function modusSetzen\(neuerModus\)\{.*?\n\}", vorlage, re.DOTALL)
-    assert treffer, "modusSetzen nicht gefunden"
-    rumpf = re.sub(r"\s+", " ", treffer.group(0))
-    assert rumpf.index("if(modus==='neu'){ entwurfSichern(); }") < rumpf.index("modus=neuerModus;")
-    assert "entwurfZurueck();" in rumpf
+    rumpf = ohne_umbrueche(js_funktion(vorlage, "modusSetzen"))
+    # Ein Klick auf den ohnehin aktiven Reiter (oder Pos1/Ende) darf gar nichts
+    # anfassen — sonst füllt er den schon bearbeiteten Text neu vor.
+    assert rumpf.index("if(neuerModus===modus){ return; }") < rumpf.index("entwurfSichern();")
+    assert rumpf.index("entwurfSichern();") < rumpf.index("modus=neuerModus;")
+    assert "felderSetzen(entwuerfe.neu);" in rumpf
     assert "value=''" not in rumpf, "beim Rückwechsel wird zurückgeschrieben, nicht geleert"
+
+
+def test_vorschlagsvorlage_haelt_beide_entwuerfe_getrennt():
+    """Beide Reiter haben einen Entwurf, und sie dürfen sich nicht vermischen.
+    Zum Änderungs-Entwurf gehört die getroffene Skill-Auswahl dazu: wer
+    'Scharfer Senf' gewählt und bearbeitet hat, muss beides zurückbekommen und
+    nicht wieder den ersten Eintrag der Liste."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    assert "var entwuerfe={neu:null,aenderung:null};" in vorlage
+
+    sichern = ohne_umbrueche(js_funktion(vorlage, "entwurfSichern"))
+    # Unter dem gerade aktiven Modus ablegen, nie unter einem festen Schlüssel.
+    assert "entwuerfe[modus]=e;" in sichern
+    assert "if(modus==='aenderung'){ e.original=el('original').value; }" in sichern
+
+    betreten = ohne_umbrueche(js_funktion(vorlage, "aenderungBetreten"))
+    assert "el('original').value=e.original;" in betreten
+    # Stufe/Kategorie können sich zwischendurch geändert haben: eine Auswahl,
+    # die es nicht mehr gibt, darf nicht zurückgeschrieben werden.
+    assert "skillsDerKategorie()" in betreten
+    assert "entwuerfe.neu" not in betreten, "die beiden Puffer bleiben getrennt"
 
 
 def test_vorschlagsvorlage_reiterleiste_ist_vollstaendig_ausgezeichnet():
@@ -251,3 +300,10 @@ def test_vorschlagsvorlage_reiterleiste_ist_vollstaendig_ausgezeichnet():
     assert "el('reiter-neu').tabIndex=" in vorlage
     assert "el('reiter-aenderung').tabIndex=" in vorlage
     assert "ArrowLeft" in vorlage and "ArrowRight" in vorlage
+
+    # Nach dem Absenden verschwindet das Formular. Bleibt die Leiste stehen,
+    # zeigen zwei Reiter auf einen unsichtbaren Bereich und tun sichtbar nichts.
+    assert "el('reiterleiste').hidden=true;" in vorlage
+    # display:flex schlägt das [hidden] des Browsers — ohne diese Regel bliebe
+    # die Leiste trotz hidden sichtbar.
+    assert ".reiter[hidden]{display:none}" in vorlage

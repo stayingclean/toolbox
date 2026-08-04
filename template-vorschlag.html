@@ -27,6 +27,10 @@
     .zurueck:hover{text-decoration:underline}
     form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
     .reiter{display:flex;gap:6px;margin-bottom:16px}
+    /* display:flex schlaegt das [hidden] des Browsers – ohne diese Regel bliebe
+       die Leiste nach dem Absenden sichtbar und zeigte auf ein verstecktes
+       Formular. */
+    .reiter[hidden]{display:none}
     .reiter-knopf{flex:1;padding:10px 12px;font-family:inherit;font-size:.95rem;
       background:var(--card);color:var(--muted);border:1px solid var(--border);
       border-radius:10px;cursor:pointer;transition:background .15s ease,color .15s ease}
@@ -294,7 +298,10 @@ function emojiAuswahlFuellen(){
       knopf.textContent = emoji;
       knopf.setAttribute('aria-label', 'Emoji ' + emoji + ' auswählen');
       knopf.addEventListener('click', function(){
-        el('emoji').value = emoji;
+        // Ueber feldSetzen, damit auch diese Auswahl wie eine Eingabe von Hand
+        // gemeldet wird (siehe dort) – die einzige Stelle, die frueher am
+        // Helfer vorbei gesetzt hat.
+        feldSetzen('emoji', emoji);
         emojiAuswahlSchliessen();
         el('emoji').focus();
       });
@@ -399,27 +406,54 @@ function originalUebernehmen(){
   feldSetzen('tipp', (s.tip||'').replace(/^💡\s*/,''));
 }
 
-/* Was jemand fuer einen NEUEN Skill schon getippt hat, darf ein neugieriger
-   Blick in den anderen Reiter nicht loeschen: hier beschreiben Menschen etwas
-   Persoenliches, das sie kein zweites Mal tippen. Darum wird der Entwurf beim
-   Verlassen gesichert und beim Zurueckkommen wieder eingesetzt.
-   Gesichert wird ausschliesslich, solange der Modus noch 'neu' ist – sonst
-   geriete der vorausgefuellte Text einer Aenderung in den Entwurf und wuerde
-   beim naechsten Absenden als neuer Skill eingereicht. */
-var NEU_FELDER=['emoji','titel','beschreibung','tipp','von'];
-var entwurfNeu=null;
+/* Was jemand schon getippt hat, darf ein Blick in den anderen Reiter nicht
+   loeschen: hier beschreiben Menschen etwas Persoenliches, das sie kein zweites
+   Mal tippen. Jeder Reiter hat darum seinen eigenen Entwurf; beim Verlassen
+   wird gesichert, beim Zurueckkommen wieder eingesetzt.
+   Die beiden Entwuerfe duerfen sich nie vermischen – sonst geriete der
+   vorausgefuellte Text einer Aenderung in den Entwurf fuer einen neuen Skill
+   und wuerde als neuer Skill eingereicht. Das haelt entwurfSichern dadurch
+   auseinander, dass es unter dem GERADE noch aktiven Modus ablegt und
+   ausschliesslich aus modusSetzen vor dem Umsetzen von `modus` aufgerufen
+   wird. */
+var ENTWURF_FELDER=['emoji','titel','beschreibung','tipp','von'];
+var entwuerfe={neu:null,aenderung:null};
 
 function entwurfSichern(){
-  entwurfNeu={};
-  NEU_FELDER.forEach(function(f){ entwurfNeu[f]=el(f).value; });
+  var e={};
+  ENTWURF_FELDER.forEach(function(f){ e[f]=el(f).value; });
+  // Zur Aenderung gehoert die getroffene Skill-Auswahl dazu: wer einen Skill
+  // ausgesucht und seinen Text bearbeitet hat, will beides wiederfinden.
+  if(modus==='aenderung'){ e.original=el('original').value; }
+  entwuerfe[modus]=e;
 }
 
-function entwurfZurueck(){
-  NEU_FELDER.forEach(function(f){ feldSetzen(f, entwurfNeu?entwurfNeu[f]:''); });
+function felderSetzen(e){
+  ENTWURF_FELDER.forEach(function(f){ feldSetzen(f, e?e[f]:''); });
+}
+
+/* Rueckkehr in den Aenderungs-Reiter: erst die Auswahlliste zur eingestellten
+   Stufe/Kategorie fuellen (das fuellt auch die Felder vor), dann den eigenen
+   Entwurf zurueckholen. Aber nur, wenn der damals gewaehlte Skill hier
+   ueberhaupt noch vorkommt – Stufe oder Kategorie koennen zwischendurch
+   umgestellt worden sein. Sonst bleibt es beim frisch vorausgefuellten
+   Eintrag. */
+function aenderungBetreten(){
+  originalAuswahlFuellen();
+  var e=entwuerfe.aenderung;
+  if(!e){ return; }
+  var vorhanden=skillsDerKategorie().filter(function(s){ return s.t===e.original; }).length>0;
+  if(!vorhanden){ return; }
+  el('original').value=e.original;
+  felderSetzen(e);
 }
 
 function modusSetzen(neuerModus){
-  if(modus==='neu'){ entwurfSichern(); }
+  // Aendert sich nichts, wird auch nichts angefasst: ein Klick auf den ohnehin
+  // aktiven Reiter (oder Pos1/Ende) wuerde sonst das Vorausfuellen erneut
+  // ausloesen und den bereits bearbeiteten Text ueberschreiben.
+  if(neuerModus===modus){ return; }
+  entwurfSichern();
   modus=neuerModus;
   document.body.classList.toggle('modus-aenderung', modus==='aenderung');
   el('reiter-neu').classList.toggle('aktiv', modus==='neu');
@@ -432,8 +466,8 @@ function modusSetzen(neuerModus){
   el('reiter-aenderung').tabIndex=modus==='aenderung'?0:-1;
   el('formular').setAttribute('aria-labelledby','reiter-'+modus);
   el('fehler').hidden=true;
-  if(modus==='aenderung'){ originalAuswahlFuellen(); }
-  else { entwurfZurueck(); }
+  if(modus==='aenderung'){ aenderungBetreten(); }
+  else { felderSetzen(entwuerfe.neu); }
 }
 
 el('reiter-neu').addEventListener('click', function(){ modusSetzen('neu'); });
@@ -521,6 +555,9 @@ el('formular').addEventListener('submit', async function(ereignis){
     el('issue-link').href=ergebnis.url;
     el('issue-link').textContent=ergebnis.url;
     el('formular').hidden=true;
+    // Die Reiter zeigen auf das Formular: bleibt die Leiste stehen, verweist
+    // sie auf einen unsichtbaren Bereich und ein Klick bewirkt sichtbar nichts.
+    el('reiterleiste').hidden=true;
     el('danke').hidden=false;
     window.scrollTo(0,0);
   }catch(fehler){
