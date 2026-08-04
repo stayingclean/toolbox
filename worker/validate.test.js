@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pruefeVorschlag } from "./validate.js";
+import { pruefeVorschlag, pruefeAenderung } from "./validate.js";
 
 const DATEN = {
   hoch: { kategorien: [{ id: "ablenkung", label: "Ablenkung", skills: [] }] },
@@ -188,4 +188,93 @@ test("gibt nur die erlaubten Schlüssel zurück", () => {
   );
   // Die Art setzt der Worker selbst – eine mitgeschickte Art wird ignoriert.
   assert.equal(r.wert.art, "neu");
+});
+
+const DATEN_MIT_SKILL = {
+  hoch: {
+    kategorien: [
+      {
+        id: "ablenkung",
+        label: "Ablenkung",
+        skills: [
+          { e: "🎧", t: "Musik hören", b: "Ein Lied auflegen.", tip: "", von: "Max", erg: "" },
+        ],
+      },
+    ],
+  },
+  mittel: { kategorien: [] },
+  tief: { kategorien: [] },
+};
+
+const AENDERUNG = {
+  stufe: "Hoch",
+  kategorie: "Ablenkung",
+  original: "Musik hören",
+  emoji: "🎧",
+  titel: "Musik bewusst hören",
+  beschreibung: "Ein Lied aussuchen und nur darauf achten.",
+  tipp: "Kopfhörer bereitlegen",
+  erg: "Lea",
+  falle: "",
+};
+
+test("nimmt eine gültige Änderung an", () => {
+  const r = pruefeAenderung(AENDERUNG, DATEN_MIT_SKILL);
+  assert.equal(r.ok, true);
+  assert.equal(r.wert.art, "aenderung");
+  assert.equal(r.wert.original, "Musik hören");
+  assert.equal(r.wert.titel, "Musik bewusst hören");
+  assert.equal(r.wert.erg, "Lea");
+});
+
+test("liefert nur die erlaubten Schlüssel zurück", () => {
+  const r = pruefeAenderung({ ...AENDERUNG, art: "neu", extra: "x" }, DATEN_MIT_SKILL);
+  assert.deepEqual(
+    Object.keys(r.wert).sort(),
+    ["art", "beschreibung", "emoji", "erg", "kategorie", "original", "stufe", "tipp", "titel"].sort()
+  );
+  assert.equal(r.wert.art, "aenderung");
+});
+
+test("lehnt eine Änderung an einem unbekannten Skill ab", () => {
+  const r = pruefeAenderung({ ...AENDERUNG, original: "Gibt es nicht" }, DATEN_MIT_SKILL);
+  assert.equal(r.ok, false);
+  assert.match(r.fehler, /nicht mehr|unbekannt/i);
+});
+
+test("lehnt eine Änderung in unbekannter Kategorie ab", () => {
+  const r = pruefeAenderung({ ...AENDERUNG, kategorie: "Erfunden" }, DATEN_MIT_SKILL);
+  assert.equal(r.ok, false);
+  assert.match(r.fehler, /Kategorie/);
+});
+
+test("lehnt eine Änderung mit ausgefüllter Falle ab", () => {
+  const r = pruefeAenderung({ ...AENDERUNG, falle: "bot" }, DATEN_MIT_SKILL);
+  assert.equal(r.ok, false);
+});
+
+test("wendet dieselben Feldregeln an wie bei einem neuen Skill", () => {
+  for (const [feld, wert, muster] of [
+    ["titel", "x".repeat(61), /Titel/],
+    ["beschreibung", "x".repeat(301), /Beschreibung/],
+    ["erg", "x".repeat(31), /Name/],
+    ["titel", "siehe http://spam.example", /Link/],
+    ["beschreibung", "a <!-- b", /Kommentarzeichen/],
+    ["tipp", "a < b", /Klammern/],
+  ]) {
+    const r = pruefeAenderung({ ...AENDERUNG, [feld]: wert }, DATEN_MIT_SKILL);
+    assert.equal(r.ok, false, `${feld} muss abgelehnt werden`);
+    assert.match(r.fehler, muster);
+  }
+});
+
+test("verlangt genau ein Emoji auch bei einer Änderung", () => {
+  assert.equal(pruefeAenderung({ ...AENDERUNG, emoji: "🧘‍♀️" }, DATEN_MIT_SKILL).ok, true);
+  assert.equal(pruefeAenderung({ ...AENDERUNG, emoji: "ab" }, DATEN_MIT_SKILL).ok, false);
+});
+
+test("der Name des Ergänzenden ist freiwillig", () => {
+  const r = pruefeAenderung({ ...AENDERUNG, erg: "" }, DATEN_MIT_SKILL);
+  assert.equal(r.ok, true);
+  assert.equal(r.wert.erg, "");
 });
