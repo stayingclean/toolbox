@@ -1,8 +1,11 @@
 import json
+import os
+import stat
 import sys
 from pathlib import Path
 
 import openpyxl
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 
@@ -175,6 +178,28 @@ def test_hat_label_bei_leerer_labelliste():
 def test_hat_label_bei_fehlendem_labelschluessel():
     issue = {}
     assert vh.hat_label(issue, "freigegeben") is False
+
+
+def test_anhaengen_meldet_verstaendlich_wenn_datei_gesperrt(tmp_path):
+    # Simuliert eine in Excel geoeffnete Datei: schreibgeschuetzt gesetzt,
+    # damit wb.save() ein PermissionError wirft, genau wie beim echten Sperren.
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp", "Von"])
+    wb.save(pfad)
+
+    os.chmod(pfad, stat.S_IREAD)
+    try:
+        with pytest.raises(SystemExit) as ausnahme:
+            vh.an_excel_anhaengen(pfad, [BEISPIEL])
+        meldung = str(ausnahme.value)
+        assert "laesst sich nicht speichern" in meldung
+        assert "Excel" in meldung
+        assert "nichts veraendert" in meldung
+    finally:
+        os.chmod(pfad, stat.S_IWRITE | stat.S_IREAD)
 
 
 def test_anhaengen_legt_fehlende_von_spalte_an(tmp_path):

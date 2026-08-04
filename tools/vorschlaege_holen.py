@@ -239,7 +239,16 @@ def an_excel_anhaengen(pfad: Path, eintraege: list) -> int:
     for pruefung in ws.data_validations.dataValidation:
         if str(pruefung.sqref).startswith("A2:A"):
             pruefung.sqref = f"A2:A{letzte}"
-    wb.save(pfad)
+    try:
+        wb.save(pfad)
+    except PermissionError:
+        raise SystemExit(
+            f"❌ Die Datei {pfad.name} laesst sich nicht speichern.\n\n"
+            f"   Sie ist vermutlich gerade in Excel geoeffnet. Bitte schliesse\n"
+            f"   Excel und starte vorschlaege.bat noch einmal.\n\n"
+            f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben\n"
+            f"   und werden beim naechsten Lauf uebernommen."
+        )
     return len(eintraege)
 
 
