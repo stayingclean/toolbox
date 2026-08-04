@@ -719,7 +719,7 @@ Direkt **nach** dem Kategorie-Feld einfügen:
 Das bestehende Namensfeld bekommt zwei Beschriftungen, je nach Reiter. Ersetze den Beschriftungstext des Namensfeldes durch:
 
 ```html
-        <label for="von"><span class="nur-neu">Dein Name</span><span class="nur-aenderung">Dein Name</span> <span class="hinweis" style="display:inline">(freiwillig)</span></label>
+        <label for="von">Dein Name <span class="hinweis" style="display:inline">(freiwillig)</span></label>
         <p class="hinweis nur-neu"><strong>Achtung:</strong> Der Name erscheint öffentlich und dauerhaft auf der Skillsliste. Vorname oder Spitzname genügt. Lass das Feld leer, wenn du anonym bleiben willst.</p>
         <p class="hinweis nur-aenderung"><strong>Achtung:</strong> Der Name erscheint öffentlich und dauerhaft auf der Skillsliste, neben dem Namen der Person, die den Skill ursprünglich vorgeschlagen hat. Lass das Feld leer, wenn du anonym bleiben willst.</p>
 ```
