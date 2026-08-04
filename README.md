@@ -13,7 +13,7 @@ mit eingebettetem CSS/JavaScript und funktioniert auch komplett offline.
 |---|---|---|
 | **Skillsliste** | Interaktive Skills zur Krisenbewältigung (nach Anspannungsgrad). | [öffnen](https://stayingclean.github.io/toolbox/skillsliste.html) |
 | **Budgetvorlage** | Einnahmen & Ausgaben erfassen, mehrere Varianten vergleichen, drucken. | [öffnen](https://stayingclean.github.io/toolbox/budgetvorlage.html) |
-| **Flyer-Editor** | Flyer direkt im Browser gestalten und als HTML, Bild (PNG/JPG) oder PDF speichern. | [öffnen](https://stayingclean.github.io/toolbox/neutral_flyer.html) |
+| **Flyer-Editor** | Flyer direkt im Browser gestalten und als HTML, Bild (PNG/JPG) oder PDF speichern. | [öffnen](https://stayingclean.github.io/toolbox/flyer-editor.html) |
 
 ---
 
@@ -25,7 +25,7 @@ sind in der Datei eingebettet; es wird nichts nachgeladen.
 
 | Vorderseite | Rückseite |
 |:---:|:---:|
-| <img src="assets/neutral_flyer_vorderseite.png" alt="Flyer Vorderseite" width="360"> | <img src="assets/neutral_flyer_rueckseite.png" alt="Flyer Rückseite" width="360"> |
+| <img src="assets/flyer_vorderseite.png" alt="Flyer Vorderseite" width="360"> | <img src="assets/flyer_rueckseite.png" alt="Flyer Rückseite" width="360"> |
 
 ### Funktionen im Detail
 
@@ -89,7 +89,7 @@ sind in der Datei eingebettet; es wird nichts nachgeladen.
 
 ### So nutzt du ihn
 
-1. [Flyer-Editor öffnen](https://stayingclean.github.io/toolbox/neutral_flyer.html)
+1. [Flyer-Editor öffnen](https://stayingclean.github.io/toolbox/flyer-editor.html)
    (oder die HTML-Datei lokal im Browser öffnen).
 2. Texte, Bilder, Format und Layout nach Wunsch anpassen.
 3. Über **💾 Speichern** (Strg+S) die Arbeitskopie als neue HTML-Datei sichern.
