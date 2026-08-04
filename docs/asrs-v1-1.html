@@ -75,9 +75,13 @@
   .source-note{font-size:.8rem;color:var(--muted);line-height:1.5;margin-top:.5rem}
 
   footer.colophon{text-align:center;color:var(--muted);font-size:.82rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)}
-  .footer-credit{display:inline-flex;align-items:center;gap:8px;margin-top:10px;color:var(--muted);text-decoration:none;transition:color .15s}
+  .footer-links{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;margin-top:10px}
+  .footer-credit{display:inline-flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;transition:color .15s}
   .footer-credit:hover{color:var(--primary-dark)}
   .footer-avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);object-fit:cover;display:block}
+  .footer-coffee{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;transition:color .15s}
+  .footer-coffee:hover{color:var(--primary-dark)}
+  @media (max-width:480px){.footer-sep{display:none}}
 
   .toolbar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--surface);
     border-top:1px solid var(--border);box-shadow:0 -2px 12px rgba(0,0,0,.06);
@@ -171,10 +175,16 @@
   <footer class="colophon">
     ASRS v1.1 · © World Health Organization 2003
     <br>
-    <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
-      <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
-      <span>Erstellt von stayingclean</span>
-    </a>
+    <div class="footer-links">
+      <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+        <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+        <span>Erstellt von stayingclean</span>
+      </a>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+        <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+      </a>
+    </div>
   </footer>
 </div>
 
