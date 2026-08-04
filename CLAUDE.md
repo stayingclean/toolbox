@@ -14,7 +14,7 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/index.html` = Startseite (`/toolbox/`) = Übersicht (Hub, verlinkt alle Seiten).
 - `docs/skillsliste.html` = die generierte Skillsliste.
 - `docs/budgetvorlage.html` = eigenständige Budget-Seite (neutrale Vorlage).
-- `docs/neutral_flyer.html` = Flyer-Editor (self-contained, Bilder eingebettet).
+- `docs/flyer-editor.html` = Flyer-Editor (self-contained, Bilder eingebettet).
 - `docs/asrs-v1-1.html` = ASRS v1.1 (ADHS-Selbstbeurteilung, WHO – frei nutzbar).
 - `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
 - `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
@@ -41,7 +41,8 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    da `docs/` **öffentlich** publiziert wird.
 3. **CSS muss in der Datei eingebettet bleiben** (kein externes Stylesheet), damit
    die Seite auch lokal ohne Server/Internet funktioniert.
-4. Die Fusszeile muss den Urheber-Credit enthalten (siehe Konvention unten).
+4. Die Fusszeile muss den Urheber-Credit und den Kaffee-Link enthalten (siehe
+   Konvention unten).
 5. In `docs/index.html` (Übersicht) eine Karte ergänzen (Link + Kurzbeschreibung).
 
 ## Skillsliste pflegen (nicht von Hand editieren!)
@@ -78,30 +79,51 @@ direkt bearbeiten. Sie ist die einzige Seite in `docs/`, die Internet braucht
 Der Worker liegt in `worker/`, wird aber **nicht** veröffentlicht. Details und
 Notbremse: `worker/README.md`.
 
-## Konvention: Fusszeile mit Urheber-Credit
+## Konvention: Fusszeile mit Urheber-Credit und Kaffee-Link
 
-**Jede HTML-Seite in `docs/` MUSS in der `<footer>` den Urheber-Credit enthalten**
-(Avatar der GitHub-Organisation + „Erstellt von stayingclean", verlinkt auf die Org):
+**Jede HTML-Seite in `docs/` MUSS in der `<footer>` den Urheber-Credit und den
+Kaffee-Link enthalten** (Avatar der GitHub-Organisation + „Erstellt von
+stayingclean", verlinkt auf die Org; daneben der Hinweis auf Buy me a coffee):
 
 ```html
-<a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
-  <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80"
-       alt="stayingclean" loading="lazy" width="28" height="28">
-  <span>Erstellt von stayingclean</span>
-</a>
+<div class="footer-links">
+  <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+    <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80"
+         alt="stayingclean" loading="lazy" width="28" height="28">
+    <span>Erstellt von stayingclean</span>
+  </a>
+  <span class="footer-sep" aria-hidden="true">·</span>
+  <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+    <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+  </a>
+</div>
 ```
 
 Dazu dieses CSS (Farben/Abstände an das jeweilige Theme der Seite anpassen):
 
 ```css
-.footer-credit{display:inline-flex;align-items:center;gap:8px;margin-top:12px;
+.footer-links{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:12px}
+.footer-credit{display:inline-flex;align-items:center;gap:8px;
   color:var(--muted);text-decoration:none;transition:color .15s ease}
 .footer-credit:hover{color:var(--accent)}            /* bzw. Akzentfarbe der Seite */
 .footer-avatar{width:28px;height:28px;border-radius:50%;
   border:1px solid var(--border);object-fit:cover;display:block}
+.footer-coffee{display:inline-flex;align-items:center;gap:6px;
+  color:var(--muted);text-decoration:none;transition:color .15s ease}
+.footer-coffee:hover{color:var(--accent)}
+@media (max-width:480px){.footer-sep{display:none}}  /* sonst baumelt das „·" nach dem Umbruch */
 ```
 
 - Avatar kommt direkt von `https://github.com/stayingclean.png` (aktualisiert sich
   automatisch, wenn das Organisations-Logo geändert wird).
-- Bei der Skillsliste steht der Credit in **`template.html`** (nicht in der
-  generierten `docs/skillsliste.html`), sonst direkt in der jeweiligen HTML-Datei.
+- **Kein Bild für den Kaffee-Link** — nur das Zeichen ☕. So bleibt jede Seite ohne
+  Internet lauffähig, und der offizielle gelbe Button würde zu keinem Theme passen.
+- Bei zentrierten Fusszeilen zusätzlich `justify-content:center` auf `.footer-links`.
+- Bei der Skillsliste steht die Fusszeile in **`template.html`**, beim
+  Vorschlagsformular in **`template-vorschlag.html`** (nicht in den generierten
+  Seiten in `docs/`), sonst direkt in der jeweiligen HTML-Datei.
+- **Ausnahme:** `docs/neutral_flyer.html` ist nur eine Weiterleitung auf
+  `flyer-editor.html` (alter Link) und braucht keine Fusszeile.
+- Beim Flyer-Editor steht die Fusszeile als `<footer class="site-credit">` am Ende
+  von `<body>`, ausserhalb von `#sheets`. Dadurch erscheint sie im Editor und in der
+  exportierten Ansicht-HTML, aber **nicht** im Bild-Export und **nicht** im Druck.
