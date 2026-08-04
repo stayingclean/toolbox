@@ -22,3 +22,11 @@ neue_docs/
 
 # Lokaler Zwischenspeicher von wrangler
 .wrangler/
+
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
+
+# Sperrdateien, die Excel beim Oeffnen anlegt
+~$*
