@@ -426,7 +426,7 @@ function openModal(s){
   mTip.textContent   = s.tip;
   var teile=[];
   if(s.von){ teile.push('Vorgeschlagen von '+s.von); }
-  if(s.erg){ teile.push('ergänzt von '+s.erg); }
+  if(s.erg){ teile.push('Ergänzt von '+s.erg); }
   if(teile.length){ mVon.textContent=teile.join(' · '); mVon.hidden=false; }
   else { mVon.textContent=''; mVon.hidden=true; }
 

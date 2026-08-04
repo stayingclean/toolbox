@@ -47,7 +47,7 @@ def test_vorlage_enthaelt_namenszeile():
     block = re.sub(r"\s+", " ", treffer.group(0)).strip()
     assert block == (
         "var teile=[]; if(s.von){ teile.push('Vorgeschlagen von '+s.von); } "
-        "if(s.erg){ teile.push('ergänzt von '+s.erg); } "
+        "if(s.erg){ teile.push('Ergänzt von '+s.erg); } "
         "if(teile.length){ mVon.textContent=teile.join(' · '); mVon.hidden=false; } "
         "else { mVon.textContent=''; mVon.hidden=true; }"
     )
@@ -198,4 +198,4 @@ def test_vorlage_nennt_beide_beitragenden():
     vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
     assert 'id="m-von"' in vorlage
     assert "s.erg" in vorlage
-    assert "ergänzt von" in vorlage
+    assert "Ergänzt von" in vorlage
