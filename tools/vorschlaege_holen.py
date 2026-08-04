@@ -28,7 +28,7 @@ from pathlib import Path
 import openpyxl
 from openpyxl.utils import get_column_letter
 
-sys.stdout.reconfigure(encoding="utf-8")
+sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
 sys.stderr.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -156,6 +156,20 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
         )
 
     return None
+
+
+def bereinigt(eintrag: dict) -> dict:
+    """Liefert eine Kopie mit getrimmten Werten fuer alle Excel-Spalten.
+
+    pruefe_eintrag() prueft Laengen und Inhalte auf der getrimmten Fassung
+    (`.strip()`), aber der rohe Eintrag enthaelt noch den Randweissraum. Ohne
+    diesen Schritt wuerde z. B. ein Titel aus 60 Zeichen plus zwei Leerzeichen
+    die Pruefung bestehen und trotzdem mit 62 Zeichen in der Excel landen.
+    """
+    ergebnis = dict(eintrag)
+    for schluessel in (s for _, s in SPALTEN):
+        ergebnis[schluessel] = str(eintrag.get(schluessel) or "").strip()
+    return ergebnis
 
 
 def lade_datenstand() -> dict:
@@ -291,7 +305,7 @@ def main():
         if grund:
             abgelehnt.append((issue, grund))
             continue
-        uebernehmen.append((issue, daten))
+        uebernehmen.append((issue, bereinigt(daten)))
 
     anzahl = an_excel_anhaengen(XLSX, [d for _, d in uebernehmen])
     nicht_geschlossen = []
@@ -299,10 +313,12 @@ def main():
         print(f"  + {daten['stufe']} / {daten['kategorie']}: {daten['titel']}")
         try:
             issue_schliessen(issue["number"])
-        except Exception:
+        except subprocess.CalledProcessError:
             nicht_geschlossen.append(issue["number"])
 
-    print(f"\n✅ {anzahl} Vorschlag/Vorschläge in {XLSX.name} übernommen.")
+    if anzahl:
+        wort = "Vorschlag" if anzahl == 1 else "Vorschläge"
+        print(f"\n✅ {anzahl} {wort} in {XLSX.name} übernommen.")
 
     if nicht_geschlossen:
         nummern = ", ".join(f"#{n}" for n in nicht_geschlossen)
