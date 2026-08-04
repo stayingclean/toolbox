@@ -387,7 +387,7 @@ function render(anim){
 
     k.skills.forEach(function(s){
       totalCount++;
-      var sObj={lv:S.level,kid:k.id,klbl:k.label,idx:cardIdx,e:s.e,t:s.t,b:s.b,tip:s.tip,von:s.von};
+      var sObj={lv:S.level,kid:k.id,klbl:k.label,idx:cardIdx,e:s.e,t:s.t,b:s.b,tip:s.tip,von:s.von,erg:s.erg};
       var card=document.createElement('div');
       card.className='sk card-anim';
       card.style.animationDelay=(cardIdx*26)+'ms';
@@ -424,7 +424,10 @@ function openModal(s){
   mTitle.textContent = s.t;
   mDesc.textContent  = s.b;
   mTip.textContent   = s.tip;
-  if(s.von){ mVon.textContent='Vorgeschlagen von '+s.von; mVon.hidden=false; }
+  var teile=[];
+  if(s.von){ teile.push('Vorgeschlagen von '+s.von); }
+  if(s.erg){ teile.push('ergänzt von '+s.erg); }
+  if(teile.length){ mVon.textContent=teile.join(' · '); mVon.hidden=false; }
   else { mVon.textContent=''; mVon.hidden=true; }
 
   _scrollY=window.scrollY;

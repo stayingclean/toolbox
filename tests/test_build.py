@@ -37,15 +37,18 @@ def test_vorlage_enthaelt_namenszeile():
     assert 'id="m-von"' in vorlage
     assert "modal-von" in vorlage
 
-    # Nicht nur "s.von" irgendwo suchen (koennte ein Kommentar sein), sondern
-    # den zusammenhaengenden if/else-Block aus openModal pruefen: er muss die
-    # Namenszeile bei vorhandenem "von" anzeigen UND bei fehlendem "von" wieder
-    # verstecken/leeren (sonst bliebe der Name eines fruehreren Skills stehen).
-    treffer = re.search(r"if\s*\(s\.von\)\s*\{.*?\}\s*else\s*\{.*?\}", vorlage, re.DOTALL)
-    assert treffer, "if/else-Block fuer s.von in openModal nicht gefunden"
+    # Nicht nur "s.von"/"s.erg" irgendwo suchen (koennte ein Kommentar sein),
+    # sondern den zusammenhaengenden Anzeige-Block aus openModal pruefen: er
+    # muss die Namenszeile bei vorhandenem "von" und/oder "erg" zusammensetzen
+    # UND bei beiden fehlend wieder verstecken/leeren (sonst bliebe der Name
+    # eines fruehreren Skills stehen).
+    treffer = re.search(r"var teile=\[\];.*?else\s*\{.*?\}", vorlage, re.DOTALL)
+    assert treffer, "Anzeige-Block fuer s.von/s.erg in openModal nicht gefunden"
     block = re.sub(r"\s+", " ", treffer.group(0)).strip()
     assert block == (
-        "if(s.von){ mVon.textContent='Vorgeschlagen von '+s.von; mVon.hidden=false; } "
+        "var teile=[]; if(s.von){ teile.push('Vorgeschlagen von '+s.von); } "
+        "if(s.erg){ teile.push('ergänzt von '+s.erg); } "
+        "if(teile.length){ mVon.textContent=teile.join(' · '); mVon.hidden=false; } "
         "else { mVon.textContent=''; mVon.hidden=true; }"
     )
 
@@ -173,3 +176,26 @@ def test_vorschlagsvorlage_themengruppen_stehen_vor_schon_verwendet():
     erste_themengruppe = vorlage.index("Körper & Bewegung")
     schon_verwendet_literal = vorlage.index("'Schon verwendet'")
     assert erste_themengruppe < schon_verwendet_literal
+
+
+def test_erg_wird_gelesen_wenn_spalte_vorhanden(mappe, monkeypatch):
+    pfad = mappe(SKILLS_HEADER + ["Von", "Ergaenzt"], [SKILLS_ROW + ["Max", "Lea"]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    daten = build.load_data()
+    skill = daten["hoch"]["kategorien"][0]["skills"][0]
+    assert skill["von"] == "Max"
+    assert skill["erg"] == "Lea"
+
+
+def test_erg_ist_leer_wenn_spalte_fehlt(mappe, monkeypatch):
+    pfad = mappe(SKILLS_HEADER, [SKILLS_ROW])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    skill = build.load_data()["hoch"]["kategorien"][0]["skills"][0]
+    assert skill["erg"] == ""
+
+
+def test_vorlage_nennt_beide_beitragenden():
+    vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
+    assert 'id="m-von"' in vorlage
+    assert "s.erg" in vorlage
+    assert "ergänzt von" in vorlage

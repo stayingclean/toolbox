@@ -143,7 +143,7 @@ def load_data():
     skill_rows = read_rows(
         get_sheet(wb, "Skills"),
         ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"],
-        optional_header=["Von"],
+        optional_header=["Von", "Ergaenzt"],
     )
     wb.close()
 
@@ -215,6 +215,7 @@ def load_data():
                 "b": rec["Beschreibung"],
                 "tip": format_tip(rec["Tipp"]),
                 "von": rec["Von"],
+                "erg": rec["Ergaenzt"],
             }
         )
 
