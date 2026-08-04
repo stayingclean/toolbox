@@ -8,6 +8,7 @@ from pathlib import Path
 
 import openpyxl
 import pytest
+from openpyxl.worksheet.datavalidation import DataValidation
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 
@@ -325,3 +326,258 @@ def test_main_verwendet_einzahl_und_mehrzahl_korrekt(monkeypatch, capsys):
     vh.main()
     mehrzahl = capsys.readouterr().out
     assert "2 Vorschläge in" in mehrzahl
+
+
+# ── Ausbaustufe 2: Änderungen an bestehenden Skills ──────────────────────────
+
+AENDERUNG = {
+    "art": "aenderung",
+    "stufe": "Hoch",
+    "kategorie": "Ablenkung",
+    "original": "Musik hören",
+    "emoji": "🎵",
+    "titel": "Musik bewusst hören",
+    "beschreibung": "Ein Lied aussuchen und nur darauf achten.",
+    "tipp": "Kopfhörer bereitlegen",
+    "erg": "Lea",
+}
+
+DATEN_MIT_SKILL = {
+    "hoch": {"kategorien": [{"id": "ablenkung", "label": "Ablenkung", "skills": [
+        {"e": "🎧", "t": "Musik hören", "b": "Ein Lied auflegen.", "tip": "", "von": "Max", "erg": ""}
+    ]}]},
+    "mittel": {"kategorien": []},
+    "tief": {"kategorien": []},
+}
+
+KOPF = ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp", "Von", "Ergaenzt"]
+
+
+def mappe_mit_skill(tmp_path):
+    """Eine Excel mit genau dem Skill, den DATEN_MIT_SKILL beschreibt."""
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "", "Max", ""])
+    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "", "", ""])
+    wb.save(pfad)
+    return pfad
+
+
+def test_aenderung_wird_angenommen():
+    assert vh.pruefe_eintrag(AENDERUNG, DATEN_MIT_SKILL) is None
+
+
+def test_aenderung_ohne_original_wird_abgelehnt():
+    ohne = {k: v for k, v in AENDERUNG.items() if k != "original"}
+    meldung = vh.pruefe_eintrag(ohne, DATEN_MIT_SKILL)
+    assert meldung is not None
+
+
+def test_aenderung_an_verschwundenem_skill_wird_abgelehnt():
+    meldung = vh.pruefe_eintrag(dict(AENDERUNG, original="Gibt es nicht"), DATEN_MIT_SKILL)
+    assert meldung is not None
+    assert "nicht" in meldung.lower()
+
+
+def test_aenderung_ersetzt_die_zeile(tmp_path):
+    pfad = mappe_mit_skill(tmp_path)
+    anzahl = vh.in_excel_aendern(pfad, [AENDERUNG])
+    assert anzahl == 1
+    ws = openpyxl.load_workbook(pfad)["Skills"]
+    assert ws.max_row == 3, "es darf keine Zeile dazugekommen sein"
+    kopf = [c.value for c in ws[1]]
+    zeile = dict(zip(kopf, [c.value for c in ws[2]]))
+    assert zeile["Titel"] == "Musik bewusst hören"
+    assert zeile["Emoji"] == "🎵"
+    assert zeile["Beschreibung"] == "Ein Lied aussuchen und nur darauf achten."
+    assert zeile["Tipp"] == "Kopfhörer bereitlegen"
+    assert zeile["Von"] == "Max", "der urspruengliche Beitragende bleibt stehen"
+    assert zeile["Ergaenzt"] == "Lea"
+
+
+def test_aenderung_ohne_passende_zeile_meldet_es(tmp_path):
+    pfad = mappe_mit_skill(tmp_path)
+    try:
+        vh.in_excel_aendern(pfad, [dict(AENDERUNG, original="Gibt es nicht")])
+    except vh.ZeileNichtGefunden as fehler:
+        assert "Gibt es nicht" in str(fehler)
+    else:
+        raise AssertionError("ZeileNichtGefunden erwartet")
+
+
+def test_aenderung_erhaelt_filter_und_dropdown(tmp_path):
+    # Beim Ersetzen einer Zeile darf weder der Filterbereich noch das
+    # Stufen-Dropdown verlorengehen – beides sieht man der Datei nicht an,
+    # es faellt erst auf, wenn jemand in Excel sortiert.
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "", "Max", ""])
+    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "", "", ""])
+    ws.auto_filter.ref = "A1:H3"
+    pruefung = DataValidation(type="list", formula1='"Hoch,Mittel,Tief"', allow_blank=True)
+    ws.add_data_validation(pruefung)
+    pruefung.add("A2:A3")
+    wb.save(pfad)
+
+    vh.in_excel_aendern(pfad, [AENDERUNG])
+
+    ws2 = openpyxl.load_workbook(pfad)["Skills"]
+    assert ws2.auto_filter.ref == "A1:H3"
+    bereiche = [str(p.sqref) for p in ws2.data_validations.dataValidation]
+    assert bereiche == ["A2:A3"]
+
+
+def test_aenderung_zieht_den_filter_ueber_eine_neu_angelegte_spalte(tmp_path):
+    # Aeltere Mappen haben die Spalte `Ergaenzt` noch nicht. Sie wird angelegt –
+    # dann muss der Filter sie auch abdecken, sonst faellt sie beim Sortieren
+    # heraus und die Werte verrutschen gegenueber den uebrigen Spalten.
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(KOPF[:-1])
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "", "Max"])
+    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "", ""])
+    ws.auto_filter.ref = "A1:G3"
+    pruefung = DataValidation(type="list", formula1='"Hoch,Mittel,Tief"', allow_blank=True)
+    ws.add_data_validation(pruefung)
+    pruefung.add("A2:A3")
+    wb.save(pfad)
+
+    vh.in_excel_aendern(pfad, [AENDERUNG])
+
+    ws2 = openpyxl.load_workbook(pfad)["Skills"]
+    assert [c.value for c in ws2[1]][7] == "Ergaenzt"
+    assert [c.value for c in ws2[2]][7] == "Lea"
+    assert ws2.auto_filter.ref == "A1:H3"
+    assert [str(p.sqref) for p in ws2.data_validations.dataValidation] == ["A2:A3"]
+
+
+def test_aenderung_bei_doppeltem_titel_aendert_nichts(tmp_path):
+    # Stufe + Kategorie + Titel sind der Schluessel. Kommt er zweimal vor, waere
+    # jede Wahl geraten – dann lieber gar nichts schreiben und nachfragen.
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "", "Max", ""])
+    ws.append(["Hoch", "Ablenkung", "🎼", "Musik hören", "Etwas anderes.", "", "Ida", ""])
+    wb.save(pfad)
+
+    with pytest.raises(vh.ZeileMehrdeutig) as ausnahme:
+        vh.in_excel_aendern(pfad, [AENDERUNG])
+    assert "Musik hören" in str(ausnahme.value)
+
+    ws2 = openpyxl.load_workbook(pfad)["Skills"]
+    assert [c.value for c in ws2[2]][2] == "🎧", "keine Zeile darf angefasst worden sein"
+    assert [c.value for c in ws2[3]][2] == "🎼"
+
+
+def test_aenderung_meldet_fehlende_schluesselspalte(tmp_path):
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(["Stufe", "Kategorie", "Emoji", "Beschreibung", "Tipp", "Von"])
+    ws.append(["Hoch", "Ablenkung", "🎧", "Ein Lied auflegen.", "", "Max"])
+    wb.save(pfad)
+
+    with pytest.raises(SystemExit) as ausnahme:
+        vh.in_excel_aendern(pfad, [AENDERUNG])
+    meldung = str(ausnahme.value)
+    assert "Titel" in meldung
+    assert "Kopfzeile" in meldung
+
+
+def test_aenderung_meldet_verstaendlich_wenn_datei_gesperrt(tmp_path):
+    # Gleiche Behandlung wie beim Anhaengen: eine in Excel geoeffnete Datei darf
+    # keinen Absturz erzeugen, sondern muss sagen, was zu tun ist.
+    pfad = mappe_mit_skill(tmp_path)
+    os.chmod(pfad, stat.S_IREAD)
+    try:
+        with pytest.raises(SystemExit) as ausnahme:
+            vh.in_excel_aendern(pfad, [AENDERUNG])
+        meldung = str(ausnahme.value)
+        assert "laesst sich nicht speichern" in meldung
+        assert "Excel" in meldung
+        assert "nichts veraendert" in meldung
+    finally:
+        os.chmod(pfad, stat.S_IWRITE | stat.S_IREAD)
+
+
+NEUER_SKILL = {**BEISPIEL, "titel": "Spazieren gehen", "emoji": "🚶"}
+
+
+def test_main_schreibt_aenderungen_vor_neuen_zeilen(monkeypatch, capsys):
+    # Beide Wege oeffnen und speichern dieselbe Mappe – nacheinander, nie
+    # gleichzeitig. Die Reihenfolge ist bewusst gewaehlt: scheitert eine
+    # Aenderung, ist noch nichts geschrieben (siehe naechster Test).
+    reihenfolge = []
+    monkeypatch.setattr(vh, "hole_issues", lambda: [
+        freigegebenes_issue(1, NEUER_SKILL),
+        freigegebenes_issue(2, AENDERUNG),
+    ])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: DATEN_MIT_SKILL)
+    monkeypatch.setattr(vh, "issue_schliessen", lambda nummer: None)
+    monkeypatch.setattr(
+        vh.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0)
+    )
+
+    def anhaengen(pfad, eintraege):
+        reihenfolge.append(("anhaengen", [e["titel"] for e in eintraege]))
+        return len(eintraege)
+
+    def aendern(pfad, eintraege):
+        reihenfolge.append(("aendern", [e["titel"] for e in eintraege]))
+        return len(eintraege)
+
+    monkeypatch.setattr(vh, "an_excel_anhaengen", anhaengen)
+    monkeypatch.setattr(vh, "in_excel_aendern", aendern)
+
+    vh.main()
+
+    assert reihenfolge == [
+        ("aendern", ["Musik bewusst hören"]),
+        ("anhaengen", ["Spazieren gehen"]),
+    ]
+    ausgabe = capsys.readouterr().out
+    assert "~ Hoch / Ablenkung: Musik bewusst hören" in ausgabe
+    assert "+ Hoch / Ablenkung: Spazieren gehen" in ausgabe
+    assert "2 Vorschläge" in ausgabe
+
+
+def test_main_schreibt_nichts_wenn_eine_aenderung_nicht_zuzuordnen_ist(monkeypatch):
+    # Der gefaehrliche Mischfall: waeren die neuen Zeilen schon angehaengt, ihre
+    # Issues aber noch offen, kaemen sie beim naechsten Lauf ein zweites Mal.
+    monkeypatch.setattr(vh, "hole_issues", lambda: [
+        freigegebenes_issue(1, NEUER_SKILL),
+        freigegebenes_issue(2, AENDERUNG),
+    ])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: DATEN_MIT_SKILL)
+    geschlossen = []
+    monkeypatch.setattr(vh, "issue_schliessen", lambda nummer: geschlossen.append(nummer))
+
+    def darf_nicht_laufen(pfad, eintraege):
+        raise AssertionError("es darf nichts angehaengt worden sein")
+
+    def aendern(pfad, eintraege):
+        raise vh.ZeileNichtGefunden("'Musik hören' in Hoch / Ablenkung")
+
+    monkeypatch.setattr(vh, "an_excel_anhaengen", darf_nicht_laufen)
+    monkeypatch.setattr(vh, "in_excel_aendern", aendern)
+
+    with pytest.raises(SystemExit) as ausnahme:
+        vh.main()
+
+    meldung = str(ausnahme.value)
+    assert "Musik hören" in meldung
+    assert "nichts veraendert" in meldung
+    assert "freigegeben" in meldung
+    assert geschlossen == [], "kein Issue darf geschlossen worden sein"

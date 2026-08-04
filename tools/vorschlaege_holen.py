@@ -7,8 +7,14 @@ Freigegebene Skill-Vorschläge übernehmen
 ========================================
 
 Holt aus dem Vorschlags-Repo alle offenen Issues mit dem Label „freigegeben",
-hängt sie ans Blatt `Skills` von skills_daten.xlsx an, schliesst die Issues und
+überträgt sie ins Blatt `Skills` von skills_daten.xlsx, schliesst die Issues und
 ruft anschliessend build.py auf.
+
+Zwei Arten von Vorschlägen:
+  • `neu`       – wird als neue Zeile angehängt
+  • `aenderung` – ersetzt die Texte der bestehenden Zeile (gefunden über Stufe +
+                  Kategorie + ursprünglicher Titel). `Von` bleibt stehen, die
+                  ergänzende Person kommt in `Ergaenzt` dazu.
 
 Aufruf:  vorschlaege.bat      (oder `uv run tools/vorschlaege_holen.py`)
 
@@ -80,6 +86,29 @@ SPALTEN = [
     ("Von", "von"),
 ]
 
+# Bei einer Aenderung werden NUR diese Spalten ueberschrieben. `Stufe` und
+# `Kategorie` bleiben, weil sie mit dem Titel den Schluessel zur alten Zeile
+# bilden; `Von` bleibt, damit die urspruenglich beitragende Person genannt bleibt.
+SPALTEN_AENDERUNG = [
+    ("Emoji", "emoji"),
+    ("Titel", "titel"),
+    ("Beschreibung", "beschreibung"),
+    ("Tipp", "tipp"),
+    ("Ergaenzt", "erg"),
+]
+
+# Ueber diese drei Spalten wird die zu aendernde Zeile gesucht.
+SCHLUESSEL_SPALTEN = ["Stufe", "Kategorie", "Titel"]
+
+
+class ZeileNichtGefunden(Exception):
+    """Der zu aendernde Skill steht nicht (mehr) in der Excel."""
+
+
+class ZeileMehrdeutig(Exception):
+    """Mehrere Zeilen passen auf denselben Schluessel – hier wird nicht geraten."""
+
+
 BLOCK = re.compile(r"<!--\s*vorschlag\s*(\{.*?\})\s*-->", re.DOTALL)
 
 
@@ -108,6 +137,10 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
     Der Worker prueft dasselbe – hier geht es um Issues, die nicht ueber das
     Formular kamen, und um Vorschlaege, deren Kategorie inzwischen weg ist.
     """
+    art = str(eintrag.get("art") or "neu").strip()
+    if art not in ("neu", "aenderung"):
+        return f"Unbekannte Art: {art!r}."
+
     for schluessel in PFLICHT:
         wert = eintrag.get(schluessel)
         if not isinstance(wert, str) or not wert.strip():
@@ -118,6 +151,12 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
     felder = {s: str(eintrag.get(s) or "").strip() for s in GRENZEN}
     felder["emoji"] = str(eintrag.get("emoji") or "").strip()
     felder.update({s: str(eintrag.get(s) or "").strip() for s in ("stufe", "kategorie")})
+
+    # Bei einer Aenderung traegt `erg` den Namen. Er nimmt hier den Platz von
+    # `von` ein, damit die Laengen-, Link- und Zeichenpruefungen darunter
+    # unveraendert gelten – die Meldung nennt in beiden Faellen „Name".
+    if art == "aenderung":
+        felder["von"] = str(eintrag.get("erg") or "").strip()
 
     # Emoji steht nicht in GRENZEN: eigenstaendige, groebere Pruefung (siehe
     # Kommentar bei EMOJI_CODEPUNKT_GRENZE) an der Stelle, an der zuvor die
@@ -155,6 +194,25 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
             f"gibt es in der Stufe '{stufe}' nicht (mehr)."
         )
 
+    if art == "aenderung":
+        original = str(eintrag.get("original") or "").strip()
+        if not original:
+            return "Pflichtfeld fehlt: urspruenglicher Titel."
+        kat = next(
+            (
+                k
+                for k in stufen_daten.get("kategorien", [])
+                if k.get("label") == felder["kategorie"]
+            ),
+            None,
+        )
+        if not any(s.get("t") == original for s in (kat or {}).get("skills", [])):
+            return (
+                f"Der Skill '{original}' steht nicht mehr in der Stufe "
+                f"'{stufe}', Kategorie '{felder['kategorie']}' – vermutlich "
+                f"inzwischen umbenannt oder entfernt."
+            )
+
     return None
 
 
@@ -167,7 +225,7 @@ def bereinigt(eintrag: dict) -> dict:
     die Pruefung bestehen und trotzdem mit 62 Zeichen in der Excel landen.
     """
     ergebnis = dict(eintrag)
-    for schluessel in (s for _, s in SPALTEN):
+    for schluessel in {s for _, s in SPALTEN} | {s for _, s in SPALTEN_AENDERUNG}:
         ergebnis[schluessel] = str(eintrag.get(schluessel) or "").strip()
     return ergebnis
 
@@ -230,6 +288,25 @@ def hat_label(issue: dict, name: str) -> bool:
     return any(l.get("name") == name for l in issue.get("labels", []))
 
 
+def speichern(wb, pfad: Path):
+    """Speichert die Mappe – oder sagt verstaendlich, warum es nicht geht.
+
+    Beide Schreibwege (anhaengen und aendern) speichern als letzten Schritt.
+    Schlaegt es fehl, ist die Datei auf der Platte unveraendert; darum darf die
+    Meldung in beiden Faellen dasselbe versprechen.
+    """
+    try:
+        wb.save(pfad)
+    except PermissionError:
+        raise SystemExit(
+            f"❌ Die Datei {pfad.name} laesst sich nicht speichern.\n\n"
+            f"   Sie ist vermutlich gerade in Excel geoeffnet. Bitte schliesse\n"
+            f"   Excel und starte vorschlaege.bat noch einmal.\n\n"
+            f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben\n"
+            f"   und werden beim naechsten Lauf uebernommen."
+        )
+
+
 def an_excel_anhaengen(pfad: Path, eintraege: list) -> int:
     """Hängt Vorschläge ans Blatt `Skills` an – spaltenweise nach Kopfzeile."""
     if not eintraege:
@@ -253,17 +330,82 @@ def an_excel_anhaengen(pfad: Path, eintraege: list) -> int:
     for pruefung in ws.data_validations.dataValidation:
         if str(pruefung.sqref).startswith("A2:A"):
             pruefung.sqref = f"A2:A{letzte}"
-    try:
-        wb.save(pfad)
-    except PermissionError:
-        raise SystemExit(
-            f"❌ Die Datei {pfad.name} laesst sich nicht speichern.\n\n"
-            f"   Sie ist vermutlich gerade in Excel geoeffnet. Bitte schliesse\n"
-            f"   Excel und starte vorschlaege.bat noch einmal.\n\n"
-            f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben\n"
-            f"   und werden beim naechsten Lauf uebernommen."
-        )
+    speichern(wb, pfad)
     return len(eintraege)
+
+
+def in_excel_aendern(pfad: Path, eintraege: list) -> int:
+    """Ersetzt bestehende Zeilen im Blatt `Skills`.
+
+    Gefunden wird ueber Stufe + Kategorie + urspruenglicher Titel. Die Spalte
+    `Von` bleibt unangetastet – der urspruengliche Beitragende wird nie durch
+    eine Ergaenzung verdraengt; die ergaenzende Person kommt in `Ergaenzt` dazu.
+
+    Es wird erst gespeichert, wenn ALLE Aenderungen zugeordnet werden konnten.
+    Passt eine nicht, bleibt die Datei unveraendert – sonst waere die Excel halb
+    geschrieben, waehrend die zugehoerigen Issues noch offen sind.
+    """
+    if not eintraege:
+        return 0
+    wb = openpyxl.load_workbook(pfad)
+    ws = wb["Skills"]
+    kopf = [str(c.value).strip() if c.value is not None else "" for c in ws[1]]
+
+    fehlend = [name for name in SCHLUESSEL_SPALTEN if name not in kopf]
+    if fehlend:
+        raise SystemExit(
+            f"❌ Im Blatt 'Skills' von {pfad.name} fehlen die Spalten: "
+            f"{', '.join(fehlend)}.\n\n"
+            f"   Ohne sie laesst sich nicht finden, welche Zeile geaendert werden\n"
+            f"   soll. Bitte die Kopfzeile nicht umbenennen.\n\n"
+            f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben."
+        )
+
+    neue_spalte = False
+    for name, _ in SPALTEN_AENDERUNG:
+        if name not in kopf:
+            ws.cell(row=1, column=len(kopf) + 1, value=name)
+            kopf.append(name)
+            neue_spalte = True
+
+    i_stufe, i_kat, i_titel = (kopf.index(n) + 1 for n in SCHLUESSEL_SPALTEN)
+
+    def zelle(zeile, spalte):
+        wert = ws.cell(row=zeile, column=spalte).value
+        return str(wert).strip() if wert is not None else ""
+
+    geaendert = 0
+    for eintrag in eintraege:
+        e = bereinigt(eintrag)
+        original = str(eintrag.get("original") or "").strip()
+        treffer = [
+            r
+            for r in range(2, ws.max_row + 1)
+            if zelle(r, i_stufe) == e["stufe"]
+            and zelle(r, i_kat) == e["kategorie"]
+            and zelle(r, i_titel) == original
+        ]
+        if not treffer:
+            raise ZeileNichtGefunden(f"'{original}' in {e['stufe']} / {e['kategorie']}")
+        if len(treffer) > 1:
+            # Nicht die erste Zeile nehmen: dann wuerde womoeglich der falsche
+            # Eintrag geaendert, ohne dass es jemand merkt.
+            zeilen = ", ".join(str(r) for r in treffer)
+            raise ZeileMehrdeutig(
+                f"'{original}' in {e['stufe']} / {e['kategorie']} "
+                f"steht in den Zeilen {zeilen}"
+            )
+        for name, schluessel in SPALTEN_AENDERUNG:
+            ws.cell(row=treffer[0], column=kopf.index(name) + 1, value=e.get(schluessel, ""))
+        geaendert += 1
+
+    # Es kommt keine Zeile dazu, also bleibt der Filterbereich, wie er ist –
+    # ausser es ist eine Spalte dazugekommen, dann muss er breiter werden.
+    if neue_spalte and ws.auto_filter.ref:
+        ws.auto_filter.ref = f"A1:{get_column_letter(len(kopf))}{ws.max_row}"
+
+    speichern(wb, pfad)
+    return geaendert
 
 
 def issue_schliessen(nummer: int):
@@ -296,10 +438,10 @@ def main():
             )
             continue
         daten = parse_body(issue.get("body", ""))
-        if daten is None or daten.get("art") != "neu":
+        if daten is None or daten.get("art") not in ("neu", "aenderung"):
             uebersprungen.append(issue)
             continue
-        # Erst pruefen, dann anhaengen: ein Abbruch nach dem Speichern wuerde
+        # Erst pruefen, dann schreiben: ein Abbruch nach dem Speichern wuerde
         # beim naechsten Lauf Dubletten erzeugen (Excel geschrieben, Issue offen).
         grund = pruefe_eintrag(daten, bestand)
         if grund:
@@ -307,10 +449,40 @@ def main():
             continue
         uebernehmen.append((issue, bereinigt(daten)))
 
-    anzahl = an_excel_anhaengen(XLSX, [d for _, d in uebernehmen])
+    aenderungen = [d for _, d in uebernehmen if d.get("art") == "aenderung"]
+    neue = [d for _, d in uebernehmen if d.get("art") != "aenderung"]
+
+    # Erst aendern, dann anhaengen – beide Wege oeffnen und speichern dieselbe
+    # Mappe nacheinander, jeder liest also den Stand des vorherigen. Die
+    # Reihenfolge ist bewusst gewaehlt: in_excel_aendern bricht ab, BEVOR es
+    # speichert. Waeren die neuen Zeilen schon angehaengt, staenden sie in der
+    # Excel, waehrend ihre Issues offen bleiben – beim naechsten Lauf kaemen sie
+    # ein zweites Mal.
+    try:
+        anzahl = in_excel_aendern(XLSX, aenderungen)
+    except ZeileNichtGefunden as fehler:
+        raise SystemExit(
+            f"❌ Eine Aenderung liess sich nicht zuordnen: {fehler}\n\n"
+            f"   Der Skill wurde vermutlich zwischen Einreichung und Freigabe\n"
+            f"   umbenannt oder entfernt. Nimm dem betroffenen Issue das Label\n"
+            f"   `freigegeben` und starte vorschlaege.bat noch einmal.\n\n"
+            f"   Es wurde nichts veraendert – alle Vorschlaege bleiben freigegeben."
+        )
+    except ZeileMehrdeutig as fehler:
+        raise SystemExit(
+            f"❌ Eine Aenderung passt auf mehrere Zeilen: {fehler}\n\n"
+            f"   Derselbe Titel steht in {XLSX.name} mehrfach in derselben Stufe\n"
+            f"   und Kategorie. Welche Zeile gemeint ist, kann das Programm nicht\n"
+            f"   wissen. Bitte oeffne die Datei, entferne oder benenne die\n"
+            f"   doppelte Zeile um und starte vorschlaege.bat noch einmal.\n\n"
+            f"   Es wurde nichts veraendert – alle Vorschlaege bleiben freigegeben."
+        )
+    anzahl += an_excel_anhaengen(XLSX, neue)
+
     nicht_geschlossen = []
     for issue, daten in uebernehmen:
-        print(f"  + {daten['stufe']} / {daten['kategorie']}: {daten['titel']}")
+        kennung = "~" if daten.get("art") == "aenderung" else "+"
+        print(f"  {kennung} {daten['stufe']} / {daten['kategorie']}: {daten['titel']}")
         try:
             issue_schliessen(issue["number"])
         except subprocess.CalledProcessError:
