@@ -50,6 +50,9 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
 `docs/skillsliste.html` wird **generiert** — nicht direkt bearbeiten.
 
 1. Inhalte in **`skills_daten.xlsx`** ändern (Blätter `Skills`, `Stufen`, `Kategorien`).
+   Das Blatt `Skills` hat acht Spalten; `Von` und `Ergaenzt` nennen die beiden
+   Beitragenden und dürfen leer bleiben. `build.py` liest sie **tolerant** —
+   fehlen die Spalten ganz, baut eine ältere Mappe weiter (`optional_header`).
 2. **`build.bat`** doppelklicken (bzw. `uv run build.py`) → erzeugt `docs/skillsliste.html`
    aus `template.html` + Excel.
 3. Das Layout/Design steckt in `template.html` (nur die Datenzeile ist ein Platzhalter).
@@ -58,11 +61,42 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
 
 Details für Nicht-Techniker: `ANLEITUNG.md`.
 
+**Die Stufen-Namen `Hoch`, `Mittel`, `Tief` sind hart verdrahtet** und stehen an
+sechs Stellen, die alle gleich lauten müssen:
+
+- `build.py` → `STUFE_KEY` (Anzeigename → interner Schlüssel `hoch`/`mittel`/`tief`)
+- `worker/validate.js` → `STUFEN`
+- `tools/vorschlaege_holen.py` → `STUFEN`
+- `tools/seed_excel.py` → `STUFE_DISPLAY`
+- `template-vorschlag.html` → `var STUFEN = [["hoch","Hoch"], …]`
+- die Dropdown-Prüfung in `skills_daten.xlsx` selbst — feste Formel
+  `"Hoch,Mittel,Tief"` (gesetzt in `tools/seed_excel.py`, `add_stufe_dropdown`)
+
+Nur `build.py` prüft die Namen und bricht mit einer Meldung ab („erlaubt sind nur
+Hoch, Mittel oder Tief"). Die anderen fünf Stellen haben **keine** solche Sperre:
+Wird eine davon vergessen, laufen Formular, Worker und Übernahme-Skript
+auseinander, ohne dass irgendetwas fehlschlägt.
+
 ## Skill-Vorschläge von aussen
 
 Besucher können über `docs/skill-vorschlagen.html` anonym neue Skills einreichen.
 Der Weg: Formular → Cloudflare Worker (`worker/`) → Issue in
 `stayingclean/skills-suggestions`.
+
+Das Formular hat **zwei Reiter**: „Neuer Skill" und „Bestehenden ergänzen". Eine
+Ergänzung ändert Emoji, Titel, Beschreibung und Tipp eines vorhandenen Skills;
+**Stufe und Kategorie bleiben**, weil sie zusammen mit dem ursprünglichen Titel
+den Schlüssel bilden, über den `vorschlaege.bat` die Zeile in der Excel
+wiederfindet. Der Issue-Titel beginnt dann mit
+`[Änderung]`, der Rumpf zeigt „Bisher" und „Neu" nebeneinander
+(`worker/index.js`, `issueRumpfAenderung`).
+
+Beide Beitragenden werden genannt: die Spalte `Von` bleibt beim ursprünglichen
+Vorschlag stehen, die Spalte `Ergaenzt` nennt die ergänzende Person. Der
+Detail-Dialog der Skillsliste setzt daraus „Vorgeschlagen von A · Ergänzt von B"
+zusammen (`template.html`, `openModal`). Im JSON-Block des Issues heisst das
+Namensfeld bei einer Änderung `erg` statt `von`; im Formular ist es dasselbe
+Eingabefeld.
 
 **Freigeben und übernehmen:**
 
@@ -70,7 +104,35 @@ Der Weg: Formular → Cloudflare Worker (`worker/`) → Issue in
    (oder `abgelehnt` mit einer kurzen Begründung als Kommentar).
 2. **`vorschlaege.bat`** doppelklicken → übernimmt alle freigegebenen Vorschläge
    in `skills_daten.xlsx`, schliesst die Issues und baut die Skillsliste neu.
+   Änderungen ersetzen eine bestehende Zeile, neue Skills werden angehängt.
 3. Ergebnis anschauen, dann committen und pushen. **Nichts geht ohne Push online.**
+
+**Die Reihenfolge im Übernahme-Skript ist Absicht — nicht „aufräumen":** erst
+werden die Änderungen eingearbeitet, dann die neuen Skills angehängt. Eine
+Änderung, die sich nicht zuordnen lässt, bricht ab, **bevor** irgendetwas
+gespeichert ist. Andersherum stünden die neuen Zeilen bei einem Abbruch bereits
+in der Mappe, während ihre Issues noch offen sind — beim nächsten Lauf kämen sie
+ein zweites Mal. Zwei Abbruchgründe gibt es: Der zu ändernde Skill steht nicht
+mehr unter diesem Titel in der Excel, oder derselbe Titel kommt in derselben
+Stufe und Kategorie mehrfach vor (es wird bewusst nicht geraten).
+
+Zugesicherte Eigenschaft, die jeder Umbau erhalten muss: **Bricht der Lauf ab,
+ist nichts in die Excel geschrieben und kein Issue geschlossen** — der Lauf
+lässt sich gefahrlos wiederholen. Genau darauf verweist `ANLEITUNG.md`.
+
+**Eine Änderung an einem Skill, der im selben Lauf erst neu dazukommt, geht
+nicht.** Der ursprüngliche Titel wird gegen `docs/skills-daten.json` geprüft, und
+diese Datei schreibt erst `build.py` am Ende des Laufs neu. Solche Änderungen
+werden abgelehnt, das Issue bleibt offen, nach dem nächsten Lauf klappt es. Kein
+Fehler, aber überraschend — und die Meldung („steht nicht mehr in der Stufe …")
+führt in diesem Fall in die Irre.
+
+**Beobachtung für die Zukunft:** `worker/index.js` entscheidet allein an
+`eingabe.art === "aenderung"`, welche Prüfung läuft. Ginge das Feld verloren,
+liefe eine Änderung durch `pruefeVorschlag` und würde klaglos als **neuer** Skill
+angelegt — die übrigen Felder passen auf beide Formen. Heute unerreichbar: das
+Formular sendet `art` immer mit, und jedes Issue geht durch ein menschliches
+Auge. Relevant, sobald je ein zweiter Client dazukommt.
 
 Die Formularseite ist generiert (`template-vorschlag.html` + `build.py`) — nicht
 direkt bearbeiten. Sie ist die einzige Seite in `docs/`, die Internet braucht

@@ -53,6 +53,13 @@ Jede Zeile ist ein Skill. Spalten:
 | **Titel** | Kurzer Name des Skills. |
 | **Beschreibung** | Der erklärende Text. |
 | **Tipp** | Optionaler Zusatztipp (darf leer sein). Die Glühbirne **💡 wird automatisch** vorangestellt – also **nicht** selbst eintippen, nur den Text. |
+| **Von** | Name der Person, die den Skill vorgeschlagen hat (darf leer sein). |
+| **Ergaenzt** | Name der Person, die den Skill später ergänzt hat (darf leer sein). Die Spalte heisst wirklich so – **ohne Umlaut**. |
+
+> **Zu `Von` und `Ergaenzt`:** Beide Namen erscheinen auf der Webseite, wenn man
+> einen Skill antippt – als Zeile „Vorgeschlagen von … · Ergänzt von …". Sie
+> werden normalerweise automatisch gefüllt, wenn du Vorschläge von anderen
+> übernimmst (siehe unten). Von Hand musst du hier nichts eintragen.
 
 > **Filtern/Sortieren:** In der Kopfzeile gibt es Filter-Pfeile. Damit lässt
 > sich z. B. nur eine Stufe oder Kategorie anzeigen. Das ist nur eine
@@ -67,6 +74,16 @@ Jede Zeile ist ein Skill. Spalten:
 
 Die drei Anspannungs-Stufen mit Überschrift, Bereich, Icon, Einleitungstext und
 Farben. Die drei Zeilen (`Hoch`, `Mittel`, `Tief`) bitte **nicht löschen**.
+
+> ⛔ **Die drei Stufen heissen `Hoch`, `Mittel` und `Tief`. Diese Namen bitte
+> nicht ändern** – sonst funktioniert das Einreichungsformular auf der Website
+> nicht mehr, ohne dass man es merkt. Die Namen sind an mehreren Stellen fest
+> hinterlegt, und nur eine davon meldet sich: `build.bat` bricht dann mit einer
+> Fehlermeldung ab.
+>
+> Was du gefahrlos ändern kannst, ist die **Bezeichnung** in der Spalte daneben
+> (z. B. „Hohe Anspannung") – die steht auf der Webseite. Genauso Bereich, Icon,
+> Einleitungstext und Farben.
 
 ### Das Blatt `Kategorien` (selten ändern)
 
@@ -100,6 +117,7 @@ immer farbig**.
 - ✅ Nur **`skills_daten.xlsx`** bearbeiten.
 - ✅ Immer als **`.xlsx`** speichern (niemals als CSV — das zerstört die Emoji!).
 - ⛔ Blatt-Namen und die **Kopfzeile** (erste Zeile) nicht umbenennen.
+- ⛔ Die Stufen-Namen **`Hoch`, `Mittel`, `Tief`** nicht umbenennen (siehe oben).
 - ⛔ Den Ordner `docs/` sowie `template.html`, `build.py` nicht von Hand ändern.
 
 ## Veröffentlichen
@@ -119,8 +137,21 @@ landet als Eintrag in einer Liste, die nur du freigeben kannst.
    - `freigegeben` → soll in die Skillsliste
    - `abgelehnt` → nicht übernehmen (schreib kurz dazu, warum)
    - `in Prüfung` → du schaust es dir später nochmal an
+
+   **Es gibt zwei Arten von Vorschlägen.** Beginnt der Titel mit `[Änderung]`,
+   will jemand einen **bestehenden** Skill verbessern, statt einen neuen
+   anzulegen. Im Eintrag stehen dann zwei Spalten nebeneinander: links, was heute
+   in der Liste steht, rechts der Vorschlag. Du siehst also auf einen Blick, was
+   sich ändern würde. Entschieden wird gleich wie sonst.
+
+   Bei einer Änderung bleiben Stufe und Kategorie so, wie sie sind – geändert
+   werden nur Emoji, Titel, Beschreibung und Tipp. Der ursprüngliche Name in der
+   Spalte `Von` bleibt ebenfalls stehen; die ergänzende Person kommt zusätzlich
+   in die Spalte `Ergaenzt`. Auf der Webseite steht danach „Vorgeschlagen von …
+   · Ergänzt von …".
 3. **Übernehmen:** Doppelklick auf **`vorschlaege.bat`**. Das Fenster zeigt, was
-   übernommen wurde, und baut die Skillsliste neu.
+   übernommen wurde, und baut die Skillsliste neu. Änderungen ersetzen die
+   bestehende Zeile in der Excel, neue Skills kommen unten dazu.
 4. **Veröffentlichen:** Schau `docs/skillsliste.html` an. Wenn es passt, wie
    gewohnt committen und pushen. Vorher ist online nichts verändert.
 
@@ -138,3 +169,26 @@ Steht im Fenster, ein Vorschlag sei **nicht übernommen** worden (mit einer
 Begründung wie „Unbekannte Kategorie" oder „stammt von …, nicht vom Formular"),
 bleibt das Issue absichtlich offen — da ist nichts zu tun ausser es anzuschauen
 und gegebenenfalls das Label `abgelehnt` zu setzen.
+
+**Wenn im Fenster steht, eine Änderung liesse sich nicht zuordnen:** Der Skill,
+der geändert werden sollte, steht nicht mehr unter diesem Titel in der Excel —
+meistens, weil er zwischendurch umbenannt oder gelöscht wurde. **Es ist nichts
+kaputt:** Es wurde nichts gespeichert und kein Eintrag geschlossen. Nimm dem
+betroffenen Eintrag auf GitHub das Kennzeichen `freigegeben` weg und starte
+`vorschlaege.bat` noch einmal — die übrigen Vorschläge werden dann wie gewohnt
+übernommen.
+
+**Wenn im Fenster steht, eine Änderung passe auf mehrere Zeilen:** Derselbe Titel
+kommt in `skills_daten.xlsx` zweimal in derselben Stufe und Kategorie vor, und
+das Programm rät nicht, welche der beiden gemeint ist. Auch hier wurde nichts
+gespeichert und nichts geschlossen. Öffne die Excel, lösche die doppelte Zeile
+oder gib ihr einen anderen Titel, speichere und starte `vorschlaege.bat` erneut.
+Welcher Titel es ist, steht in der Meldung.
+
+**Eine Änderung an einem gerade erst neu aufgenommenen Skill geht noch nicht.**
+Kam ein Skill im selben Durchlauf frisch dazu und liegt gleichzeitig eine
+Änderung dafür vor, wird die Änderung gemeldet und bleibt offen. Die Meldung sagt
+dann, den Skill gebe es nicht (mehr) — das stimmt hier so nicht, gemeint ist: er
+ist noch nicht in der gebauten Liste. Kein Fehler und nichts zu reparieren:
+Sobald der Durchlauf fertig ist, genügt ein zweiter Doppelklick auf
+`vorschlaege.bat`, dann wird auch die Änderung übernommen.

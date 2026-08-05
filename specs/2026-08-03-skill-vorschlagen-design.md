@@ -301,11 +301,23 @@ Urheber-Credit erweitert. Betroffen sind alle Seiten in `docs/` sowie
 
 Die Umsetzung erfolgt in drei Schritten, jeder für sich lauffähig:
 
-1. **Einreichen** — Formular (nur Reiter „Neuer Skill"), Worker, Vorschlags-Repo,
-   Übernahme-Skript ohne KI, Namensfeld in der ganzen Kette, Statuslink.
-2. **Ändern** — zweiter Reiter, Erweiterung des Übernahme-Skripts um `art`
-   und das Ersetzen bestehender Zeilen.
-3. **Ergänzungen** — Duplikatprüfung mit KI, Kaffeekasse.
+1. **Einreichen** — umgesetzt. Formular (nur Reiter „Neuer Skill"), Worker,
+   Vorschlags-Repo, Übernahme-Skript ohne KI, Namensfeld in der ganzen Kette,
+   Statuslink.
+2. **Ändern** — umgesetzt. Zweiter Reiter, `art` im Worker und im
+   Übernahme-Skript, Ersetzen bestehender Zeilen. Zwei Entscheidungen dabei:
+   Eine Änderung ändert nur die Texte (Emoji, Titel, Beschreibung, Tipp), nicht
+   Stufe oder Kategorie — sonst wäre der Schlüssel zum Wiederfinden der Zeile
+   nicht stabil. Und beide Beitragenden werden genannt, über eine zweite Spalte
+   `Ergaenzt`; eine Ergänzung verdrängt den ursprünglichen Namen nie.
+
+   Dazu eine Reihenfolge-Entscheidung im Übernahme-Skript: erst die Änderungen,
+   dann die neuen Zeilen. Das Ersetzen bricht ab, **bevor** es speichert; wären
+   die neuen Zeilen zuerst angehängt, stünden sie bei einem Abbruch schon in der
+   Mappe, während ihre Issues noch offen sind — und kämen beim nächsten Lauf ein
+   zweites Mal.
+3. **Ergänzungen** — offen. Duplikatprüfung mit KI, Kaffeekasse
+   (`docs/unterstuetzen.html` existiert noch nicht).
 
 Schritt 3 ist unabhängig von 1 und 2 und kann vorgezogen werden.
 
