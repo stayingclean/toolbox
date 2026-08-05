@@ -686,6 +686,74 @@ def test_abbruch_mitten_im_schreiben_laesst_die_datei_heil(tmp_path, monkeypatch
     )
 
 
+def test_abbruch_beim_umlegen_laesst_die_datei_heil(tmp_path, monkeypatch):
+    # Die Nachbardatei wird UMGELEGT, nicht kopiert: os.replace ist ein einziger
+    # Schritt. Ein Kopieren saehe im Erfolgsfall gleich aus, koennte aber
+    # mittendrin abbrechen und wieder eine halbe Zieldatei hinterlassen.
+    pfad = mappe_mit_skill(tmp_path)
+    vorher = pfad.read_bytes()
+
+    def scheitert(quelle, ziel):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(vh.os, "replace", scheitert)
+
+    with pytest.raises(SystemExit) as ausnahme:
+        vh.in_excel_uebernehmen(pfad, [AENDERUNG], [NEUER_SKILL])
+
+    assert "nicht geschrieben werden" in str(ausnahme.value)
+    assert pfad.read_bytes() == vorher
+    assert [p.name for p in tmp_path.iterdir()] == [pfad.name]
+
+
+def test_die_neue_datei_steht_vor_dem_umlegen_auf_der_platte(tmp_path, monkeypatch):
+    # Zwischen „geschrieben" und „auf der Platte" liegt der Schreibpuffer des
+    # Betriebssystems. Ohne fsync koennte ein Stromausfall kurz nach dem Umlegen
+    # eine abgeschnittene Mappe hinterlassen – die Datei ist nicht ersetzbar.
+    pfad = mappe_mit_skill(tmp_path)
+    schritte = []
+    echtes_fsync, echtes_replace = vh.os.fsync, vh.os.replace
+
+    def gemerkt_fsync(nummer):
+        schritte.append("fsync")
+        return echtes_fsync(nummer)
+
+    def gemerkt_replace(quelle, ziel):
+        schritte.append("replace")
+        return echtes_replace(quelle, ziel)
+
+    monkeypatch.setattr(vh.os, "fsync", gemerkt_fsync)
+    monkeypatch.setattr(vh.os, "replace", gemerkt_replace)
+
+    vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
+
+    assert schritte == ["fsync", "replace"]
+
+
+def test_steuerzeichen_werden_still_entfernt(tmp_path):
+    # Aus Word oder einem PDF kopierter Text enthaelt manchmal unsichtbare
+    # Steuerzeichen. Excel kann sie nicht speichern. Sie tragen keine Bedeutung,
+    # darum werden sie entfernt statt den Vorschlag abzulehnen – mit einer
+    # Meldung „Steuerzeichen gefunden" koennte niemand etwas anfangen.
+    eintrag = {**NEUER_SKILL, "beschreibung": "Aus Word\x07 kopiert.\x0b"}
+    assert vh.pruefe_eintrag(eintrag, DATEN_MIT_SKILL) is None
+
+    pfad = mappe_mit_skill(tmp_path)
+    vh.in_excel_uebernehmen(pfad, [], [vh.bereinigt(eintrag)])
+
+    ws = openpyxl.load_workbook(pfad)["Skills"]
+    kopf = [c.value for c in ws[1]]
+    zeile = dict(zip(kopf, [c.value for c in ws[ws.max_row]]))
+    assert zeile["Beschreibung"] == "Aus Word kopiert."
+
+
+def test_zeilenumbruch_und_tabulator_bleiben_erhalten():
+    # Umbruch und Tabulator sind sichtbarer Text, keine Stoerzeichen – Excel
+    # speichert beide anstandslos. Sie duerfen beim Saeubern nicht mitgehen.
+    eintrag = {**NEUER_SKILL, "beschreibung": "eins\nzwei\tdrei"}
+    assert vh.bereinigt(eintrag)["beschreibung"] == "eins\nzwei\tdrei"
+
+
 def test_anhaengen_zieht_filter_und_dropdown_auf_die_neue_zeile(tmp_path):
     # Fallen die neuen Zeilen aus Filterbereich und Dropdown heraus, verrutschen
     # beim Sortieren in Excel die Werte gegeneinander – stille Verfaelschung.

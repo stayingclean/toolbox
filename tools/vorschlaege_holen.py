@@ -114,6 +114,24 @@ class ZeileMehrdeutig(Exception):
 
 BLOCK = re.compile(r"<!--\s*vorschlag\s*(\{.*?\})\s*-->", re.DOTALL)
 
+# Unsichtbare Steuerzeichen, die Excel nicht speichern kann. Tabulator (\x09),
+# Zeilenumbruch (\x0a) und Wagenruecklauf (\x0d) fehlen bewusst in der Liste:
+# sie sind sichtbarer Text und in Excel erlaubt.
+STEUERZEICHEN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def sauber(wert) -> str:
+    """Text ohne unsichtbare Steuerzeichen, aussen getrimmt.
+
+    Wer aus Word oder einem PDF kopiert, schleppt gelegentlich Steuerzeichen
+    mit. Excel kann sie nicht speichern – openpyxl bricht beim Schreiben mit
+    IllegalCharacterError ab, und die einreichende Person saesse fest. Die
+    Zeichen tragen keine Bedeutung, darum werden sie still entfernt statt den
+    Vorschlag abzulehnen: mit einer Meldung „Steuerzeichen gefunden" koennte
+    niemand etwas anfangen, man sieht sie ja nicht.
+    """
+    return STEUERZEICHEN.sub("", str(wert or "")).strip()
+
 
 def parse_body(body: str):
     """Liest den maschinenlesbaren Block aus einem Issue-Rumpf.
@@ -146,20 +164,20 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
 
     for schluessel in PFLICHT:
         wert = eintrag.get(schluessel)
-        if not isinstance(wert, str) or not wert.strip():
+        if not isinstance(wert, str) or not sauber(wert):
             name = FELDNAMEN.get(schluessel, schluessel.capitalize())
             return f"Pflichtfeld fehlt oder ist leer: {name}."
 
     # Tipp und Von duerfen fehlen und gelten dann als leer.
-    felder = {s: str(eintrag.get(s) or "").strip() for s in GRENZEN}
-    felder["emoji"] = str(eintrag.get("emoji") or "").strip()
-    felder.update({s: str(eintrag.get(s) or "").strip() for s in ("stufe", "kategorie")})
+    felder = {s: sauber(eintrag.get(s)) for s in GRENZEN}
+    felder["emoji"] = sauber(eintrag.get("emoji"))
+    felder.update({s: sauber(eintrag.get(s)) for s in ("stufe", "kategorie")})
 
     # Bei einer Aenderung traegt `erg` den Namen. Er nimmt hier den Platz von
     # `von` ein, damit die Laengen-, Link- und Zeichenpruefungen darunter
     # unveraendert gelten – die Meldung nennt in beiden Faellen „Name".
     if art == "aenderung":
-        felder["von"] = str(eintrag.get("erg") or "").strip()
+        felder["von"] = sauber(eintrag.get("erg"))
 
     # Emoji steht nicht in GRENZEN: eigenstaendige, groebere Pruefung (siehe
     # Kommentar bei EMOJI_CODEPUNKT_GRENZE) an der Stelle, an der zuvor die
@@ -198,7 +216,7 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
         )
 
     if art == "aenderung":
-        original = str(eintrag.get("original") or "").strip()
+        original = sauber(eintrag.get("original"))
         if not original:
             return "Pflichtfeld fehlt: urspruenglicher Titel."
         kat = next(
@@ -229,7 +247,7 @@ def bereinigt(eintrag: dict) -> dict:
     """
     ergebnis = dict(eintrag)
     for schluessel in {s for _, s in SPALTEN} | {s for _, s in SPALTEN_AENDERUNG}:
-        ergebnis[schluessel] = str(eintrag.get(schluessel) or "").strip()
+        ergebnis[schluessel] = sauber(eintrag.get(schluessel))
     return ergebnis
 
 
@@ -310,6 +328,12 @@ def speichern(wb, pfad: Path):
     zwischendatei = pfad.with_name(pfad.name + ".neu")
     try:
         wb.save(zwischendatei)
+        # Zwischen „geschrieben" und „steht auf der Platte" liegt der
+        # Schreibpuffer des Betriebssystems. Ohne dieses Erzwingen koennte ein
+        # Stromausfall unmittelbar nach dem Umlegen eine abgeschnittene Mappe
+        # hinterlassen – und die Excel ist nicht ersetzbar.
+        with open(zwischendatei, "rb+") as datei:
+            os.fsync(datei.fileno())
         os.replace(zwischendatei, pfad)
     except PermissionError:
         raise SystemExit(
@@ -358,7 +382,7 @@ def zeile_ersetzen(ws, kopf: list, eintrag: dict):
     eine Ergaenzung verdraengt; die ergaenzende Person kommt in `Ergaenzt` dazu.
     """
     e = bereinigt(eintrag)
-    original = str(eintrag.get("original") or "").strip()
+    original = sauber(eintrag.get("original"))
     if not original:
         # Ohne diese Sperre wuerde ein leerer Titel auf eine Zeile mit leerer
         # Titelzelle passen und die falsche Zeile ueberschreiben. pruefe_eintrag

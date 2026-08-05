@@ -165,6 +165,15 @@ bereits in der Excel — bleibt das Issue offen, wird er beim nächsten Doppelkl
 auf `vorschlaege.bat` ein zweites Mal übernommen und erscheint doppelt in der
 Skillsliste.
 
+**Wenn im Ordner eine Datei `skills_daten.xlsx.neu` liegt:** Das ist der Rest
+eines Durchlaufs, der mittendrin abgebrochen wurde (zum Beispiel bei einem
+Stromausfall). **`skills_daten.xlsx` selbst ist unbeschädigt** — die neue Fassung
+wird immer erst daneben geschrieben und erst am Schluss in einem Zug an die
+Stelle der alten gelegt. Die Datei mit `.neu` am Ende ist womöglich nur halb
+geschrieben: **nicht umbenennen und nicht öffnen — einfach löschen** und
+`vorschlaege.bat` noch einmal starten. Es wurde nichts übernommen und kein
+Eintrag geschlossen.
+
 Steht im Fenster, ein Vorschlag sei **nicht übernommen** worden (mit einer
 Begründung wie „Unbekannte Kategorie" oder „stammt von …, nicht vom Formular"),
 bleibt das Issue absichtlich offen — da ist nichts zu tun ausser es anzuschauen

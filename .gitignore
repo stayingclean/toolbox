@@ -30,3 +30,8 @@ neue_docs/
 
 # Sperrdateien, die Excel beim Oeffnen anlegt
 ~$*
+
+# Halb geschriebene Mappe aus einem abgebrochenen Lauf von vorschlaege.bat.
+# Normalerweise raeumt das Skript sie selbst weg; nach einem Stromausfall kann
+# sie liegen bleiben und wuerde sonst mit `git add -A` mitveroeffentlicht.
+*.xlsx.neu
