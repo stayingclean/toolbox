@@ -614,6 +614,31 @@ def test_uebernahme_schreibt_nichts_wenn_eine_aenderung_nicht_passt(tmp_path):
     assert inhalt(pfad) == vorher, "die Datei muss unveraendert geblieben sein"
 
 
+def test_uebernahme_speichert_genau_einmal(tmp_path, monkeypatch):
+    # Die Zusage „Es wurde nichts veraendert" haelt nur, solange es EINEN
+    # Speichervorgang gibt. Ein zweiter koennte scheitern, nachdem der erste
+    # geschrieben hat – dann waere die Excel halb uebernommen und die Meldung
+    # gelogen.
+    pfad = mappe_mit_skill(tmp_path)
+    echtes_speichern = vh.speichern
+    aufrufe = []
+
+    def gezaehlt(wb, ziel):
+        aufrufe.append(ziel)
+        return echtes_speichern(wb, ziel)
+
+    monkeypatch.setattr(vh, "speichern", gezaehlt)
+
+    vh.in_excel_uebernehmen(pfad, [AENDERUNG, ZWEITE_AENDERUNG], [NEUER_SKILL])
+
+    assert len(aufrufe) == 1, "es darf genau einmal gespeichert werden"
+    ws = openpyxl.load_workbook(pfad)["Skills"]
+    assert ws.max_row == 4
+    assert ws["D2"].value == "Musik bewusst hören"
+    assert ws["D3"].value == "Langsam atmen"
+    assert ws["D4"].value == "Spazieren gehen"
+
+
 def test_uebernahme_schreibt_nichts_wenn_die_datei_gesperrt_ist(tmp_path):
     # Ein einziger Speichervorgang fuer Aenderungen UND neue Zeilen: scheitert
     # er, ist die Zusage „Es wurde nichts veraendert" in jedem Fall wahr.
