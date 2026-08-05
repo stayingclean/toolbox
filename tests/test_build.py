@@ -289,6 +289,19 @@ def test_vorschlagsvorlage_haelt_beide_entwuerfe_getrennt():
     assert "entwuerfe.neu" not in betreten, "die beiden Puffer bleiben getrennt"
 
 
+def test_vorschlagsvorlage_holt_den_namen_auch_beim_rueckfall_zurueck():
+    """Gibt es den gemerkten Skill in der eingestellten Stufe/Kategorie nicht
+    mehr, bleiben die Skillfelder frisch vorausgefüllt — der Name gehört aber der
+    Person und nicht dem Skill. Käme er nur auf dem Normalweg zurück, stünde im
+    Änderungs-Reiter plötzlich der Name aus dem Neu-Reiter, und abgeschickt würde
+    ein Name, den die Person in diesem Reiter nie eingetragen hat."""
+    vorlage = build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+    betreten = ohne_umbrueche(js_funktion(vorlage, "aenderungBetreten"))
+    assert betreten.index("feldSetzen('von', e.von);") < betreten.index(
+        "if(!vorhanden){ return; }"
+    ), "der Name muss zurückkommen, bevor der Rückfall aussteigt"
+
+
 def test_vorschlagsvorlage_reiterleiste_ist_vollstaendig_ausgezeichnet():
     """role=tab ohne zugehörigen tabpanel kündigt einem Screenreader einen
     Bereich an, den es nicht gibt. Und ohne Pfeiltasten samt rollendem tabindex

@@ -442,6 +442,11 @@ function aenderungBetreten(){
   originalAuswahlFuellen();
   var e=entwuerfe.aenderung;
   if(!e){ return; }
+  // Der Name gehoert der Person, nicht dem Skill: er kommt in JEDEM Fall aus
+  // dem Entwurf dieses Reiters zurueck – auch dann, wenn der gemerkte Skill
+  // hier nicht mehr vorkommt und die uebrigen Felder darum frisch
+  // vorausgefuellt bleiben. Sonst stuende hier der Name aus dem Neu-Reiter.
+  feldSetzen('von', e.von);
   var vorhanden=skillsDerKategorie().filter(function(s){ return s.t===e.original; }).length>0;
   if(!vorhanden){ return; }
   el('original').value=e.original;
