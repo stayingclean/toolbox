@@ -171,12 +171,15 @@ bleibt das Issue absichtlich offen — da ist nichts zu tun ausser es anzuschaue
 und gegebenenfalls das Label `abgelehnt` zu setzen.
 
 **Wenn im Fenster steht, eine Änderung liesse sich nicht zuordnen:** Der Skill,
-der geändert werden sollte, steht nicht mehr unter diesem Titel in der Excel —
-meistens, weil er zwischendurch umbenannt oder gelöscht wurde. **Es ist nichts
-kaputt:** Es wurde nichts gespeichert und kein Eintrag geschlossen. Nimm dem
-betroffenen Eintrag auf GitHub das Kennzeichen `freigegeben` weg und starte
-`vorschlaege.bat` noch einmal — die übrigen Vorschläge werden dann wie gewohnt
-übernommen.
+der geändert werden sollte, steht nicht mehr unter diesem Titel in der Excel.
+**Es ist nichts kaputt:** Es wurde nichts gespeichert und kein Eintrag
+geschlossen. Meistens fehlt nur ein Zwischenschritt — wurde die Excel von Hand
+geändert, ohne danach `build.bat` zu starten, sucht das Programm noch nach dem
+alten Titel. Dann zuerst `build.bat` doppelklicken und `vorschlaege.bat` noch
+einmal starten. Steht der Skill wirklich nicht mehr in der Liste (umbenannt oder
+gelöscht), nimm dem betroffenen Eintrag auf GitHub das Kennzeichen `freigegeben`
+weg und starte `vorschlaege.bat` noch einmal — die übrigen Vorschläge werden
+dann wie gewohnt übernommen.
 
 **Wenn im Fenster steht, eine Änderung passe auf mehrere Zeilen:** Derselbe Titel
 kommt in `skills_daten.xlsx` zweimal in derselben Stufe und Kategorie vor, und

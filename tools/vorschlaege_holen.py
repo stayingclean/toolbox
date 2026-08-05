@@ -26,13 +26,16 @@ Voraussetzung: das GitHub-CLI `gh` ist installiert und angemeldet
 """
 
 import json
+import os
 import re
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import openpyxl
 from openpyxl.utils import get_column_letter
+from openpyxl.utils.exceptions import InvalidFileException
 
 sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
 sys.stderr.reconfigure(encoding="utf-8")
@@ -291,13 +294,23 @@ def hat_label(issue: dict, name: str) -> bool:
 def speichern(wb, pfad: Path):
     """Speichert die Mappe – oder sagt verstaendlich, warum es nicht geht.
 
+    Geschrieben wird zuerst in eine Nachbardatei; erst wenn sie vollstaendig
+    dasteht, wird sie an die Stelle der alten gelegt (`os.replace`, unter
+    Windows ein einziger Schritt). Bricht das Schreiben mittendrin ab – volle
+    Festplatte, abgezogener USB-Stick –, bleibt die alte Datei unversehrt.
+    Direkt auf die Zieldatei geschrieben waere sie in diesem Moment auf halber
+    Laenge abgeschnitten und nicht mehr lesbar; die Excel ist aber das
+    Original, aus dem alles andere erzeugt wird, und es gibt keine zweite
+    Quelle.
+
     Es gibt genau EINEN Speichervorgang je Lauf (siehe in_excel_uebernehmen),
-    und er ist der letzte Schritt. Schlaegt er fehl, ist die Datei auf der
-    Platte unveraendert – nur darum darf die Meldung versprechen, dass nichts
-    veraendert wurde.
+    und er ist der letzte Schritt. Nur darum darf die Meldung versprechen, dass
+    nichts veraendert wurde.
     """
+    zwischendatei = pfad.with_name(pfad.name + ".neu")
     try:
-        wb.save(pfad)
+        wb.save(zwischendatei)
+        os.replace(zwischendatei, pfad)
     except PermissionError:
         raise SystemExit(
             f"❌ Die Datei {pfad.name} laesst sich nicht speichern.\n\n"
@@ -306,6 +319,24 @@ def speichern(wb, pfad: Path):
             f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben\n"
             f"   und werden beim naechsten Lauf uebernommen."
         )
+    except OSError as fehler:
+        raise SystemExit(
+            f"❌ Die Datei {pfad.name} konnte nicht geschrieben werden.\n\n"
+            f"   Der Computer meldet: {fehler.strerror or fehler}\n\n"
+            f"   Meist ist die Festplatte voll, oder die Datei liegt auf einem\n"
+            f"   Laufwerk (USB-Stick, Netzlaufwerk), das gerade nicht erreichbar\n"
+            f"   ist. Bitte Platz schaffen bzw. das Laufwerk pruefen und\n"
+            f"   vorschlaege.bat noch einmal starten.\n\n"
+            f"   Die alte Fassung von {pfad.name} ist unveraendert erhalten\n"
+            f"   geblieben – die Vorschlaege bleiben freigegeben."
+        )
+    finally:
+        # Nach dem Umlegen ist die Nachbardatei weg; nach einem Fehlschlag darf
+        # sie nicht liegen bleiben und jemanden verwirren.
+        try:
+            zwischendatei.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def spalten_sichern(ws, kopf: list, spalten: list) -> bool:
@@ -381,7 +412,36 @@ def in_excel_uebernehmen(pfad: Path, aenderungen: list, neue: list) -> int:
     """
     if not aenderungen and not neue:
         return 0
-    wb = openpyxl.load_workbook(pfad)
+    if not pfad.exists():
+        raise SystemExit(
+            f"❌ Die Datei {pfad.name} wurde nicht gefunden.\n\n"
+            f"   Erwartet wird sie hier:\n"
+            f"   {pfad}\n\n"
+            f"   Wurde sie verschoben oder umbenannt? Bitte zuruecklegen und\n"
+            f"   vorschlaege.bat noch einmal starten.\n\n"
+            f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben."
+        )
+    try:
+        wb = openpyxl.load_workbook(pfad)
+    except (OSError, ValueError, zipfile.BadZipFile, InvalidFileException) as fehler:
+        raise SystemExit(
+            f"❌ Die Datei {pfad.name} laesst sich nicht lesen.\n\n"
+            f"   Vermutlich ist sie beschaedigt. Oeffne sie einmal in Excel und\n"
+            f"   speichere sie neu – oder hole die letzte funktionierende Fassung\n"
+            f"   zurueck (in GitHub Desktop: Rechtsklick auf die Datei unter\n"
+            f"   'Changes' und 'Discard changes').\n\n"
+            f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben.\n\n"
+            f"   (Technische Meldung: {fehler})"
+        )
+    if "Skills" not in wb.sheetnames:
+        vorhanden = ", ".join(wb.sheetnames) or "keine"
+        raise SystemExit(
+            f"❌ In {pfad.name} gibt es kein Blatt namens 'Skills'.\n\n"
+            f"   Vorhandene Blaetter: {vorhanden}\n\n"
+            f"   Das Blatt wurde vermutlich umbenannt. Bitte den Namen 'Skills'\n"
+            f"   wiederherstellen und vorschlaege.bat noch einmal starten.\n\n"
+            f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben."
+        )
     ws = wb["Skills"]
     kopf = [str(c.value).strip() if c.value is not None else "" for c in ws[1]]
 
@@ -423,21 +483,26 @@ def in_excel_uebernehmen(pfad: Path, aenderungen: list, neue: list) -> int:
     return len(aenderungen) + len(neue)
 
 
-def an_excel_anhaengen(pfad: Path, eintraege: list) -> int:
-    """Hängt Vorschläge ans Blatt `Skills` an – spaltenweise nach Kopfzeile."""
-    return in_excel_uebernehmen(pfad, [], eintraege)
-
-
-def in_excel_aendern(pfad: Path, eintraege: list) -> int:
-    """Ersetzt bestehende Zeilen im Blatt `Skills` – ohne neue anzuhängen."""
-    return in_excel_uebernehmen(pfad, eintraege, [])
-
-
 def issue_schliessen(nummer: int):
     subprocess.run(
         ["gh", "issue", "close", str(nummer), "--repo", REPO,
          "--comment", "Übernommen – erscheint mit dem nächsten Build in der Skillsliste."],
         check=True, capture_output=True, text=True, encoding="utf-8",
+    )
+
+
+def warne_offene_issues(nummern: list):
+    """Warnt vor Vorschlaegen, die in der Excel stehen, deren Issue aber offen ist."""
+    if not nummern:
+        return
+    liste = ", ".join(f"#{n}" for n in nummern)
+    print(
+        f"\n⚠ ACHTUNG: {liste} konnte(n) nicht geschlossen werden.\n"
+        f"   Die Vorschlaege sind bereits in der Excel. Schliesse diese Issues\n"
+        f"   von Hand auf github.com/{REPO}/issues, sonst versucht der naechste\n"
+        f"   Lauf sie noch einmal zu uebernehmen: ein neuer Skill stuende dann\n"
+        f"   doppelt in der Liste, und eine Aenderung liesse sich nicht mehr\n"
+        f"   zuordnen."
     )
 
 
@@ -505,27 +570,31 @@ def main():
         )
 
     nicht_geschlossen = []
-    for issue, daten in uebernehmen:
-        kennung = "~" if daten.get("art") == "aenderung" else "+"
-        print(f"  {kennung} {daten['stufe']} / {daten['kategorie']}: {daten['titel']}")
-        try:
-            issue_schliessen(issue["number"])
-        except subprocess.CalledProcessError:
-            nicht_geschlossen.append(issue["number"])
+    geschlossen = set()
+    try:
+        for issue, daten in uebernehmen:
+            kennung = "~" if daten.get("art") == "aenderung" else "+"
+            print(f"  {kennung} {daten['stufe']} / {daten['kategorie']}: {daten['titel']}")
+            try:
+                issue_schliessen(issue["number"])
+                geschlossen.add(issue["number"])
+            except subprocess.CalledProcessError:
+                nicht_geschlossen.append(issue["number"])
+    except BaseException:
+        # Ab hier steht die Uebernahme bereits in der Excel. Schlaegt etwas
+        # Unerwartetes durch (oder bricht jemand mit Strg+C ab), muss die
+        # Warnung trotzdem erscheinen – sonst bleibt unbemerkt, dass Issues
+        # offen sind und der naechste Lauf Dubletten erzeugt.
+        warne_offene_issues(
+            [i["number"] for i, _ in uebernehmen if i["number"] not in geschlossen]
+        )
+        raise
 
     if anzahl:
         wort = "Vorschlag" if anzahl == 1 else "Vorschläge"
         print(f"\n✅ {anzahl} {wort} in {XLSX.name} übernommen.")
 
-    if nicht_geschlossen:
-        nummern = ", ".join(f"#{n}" for n in nicht_geschlossen)
-        print(
-            f"\n⚠ ACHTUNG: {nummern} konnte(n) nicht geschlossen werden.\n"
-            f"   Die Vorschlaege sind bereits in der Excel. Schliesse diese Issues\n"
-            f"   von Hand, sonst versucht der naechste Lauf sie noch einmal zu\n"
-            f"   uebernehmen: ein neuer Skill stuende dann doppelt in der Liste,\n"
-            f"   und eine Aenderung liesse sich nicht mehr zuordnen."
-        )
+    warne_offene_issues(nicht_geschlossen)
 
     for issue in uebersprungen:
         print(
@@ -537,6 +606,16 @@ def main():
         print(
             f'⚠ Issue #{issue["number"]} „{issue["title"]}" nicht übernommen: '
             f"{grund} – bleibt offen."
+        )
+
+    if uebersprungen or abgelehnt:
+        print(
+            f"\n   Was tun? Diese Issues auf github.com/{REPO}/issues anschauen.\n"
+            f"   Taugt ein Vorschlag nichts, gib ihm das Label `abgelehnt` mit\n"
+            f"   einer kurzen Begruendung als Kommentar und schliesse ihn. Soll er\n"
+            f"   doch hinein, behebe den oben genannten Punkt (z. B. die Kategorie\n"
+            f"   in der Excel wieder anlegen) und starte vorschlaege.bat noch\n"
+            f"   einmal – das Label `freigegeben` kann stehen bleiben."
         )
 
     if anzahl:

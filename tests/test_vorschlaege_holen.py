@@ -70,7 +70,7 @@ def test_anhaengen_schreibt_in_die_richtigen_spalten(tmp_path):
     ws.append(["Vorhanden", "Hoch", "", "Ablenkung", "Alte Zeile", "🌶️", ""])
     wb.save(pfad)
 
-    anzahl = vh.an_excel_anhaengen(pfad, [BEISPIEL])
+    anzahl = vh.in_excel_uebernehmen(pfad, [], [BEISPIEL])
 
     assert anzahl == 1
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
@@ -196,7 +196,7 @@ def test_anhaengen_meldet_verstaendlich_wenn_datei_gesperrt(tmp_path):
     os.chmod(pfad, stat.S_IREAD)
     try:
         with pytest.raises(SystemExit) as ausnahme:
-            vh.an_excel_anhaengen(pfad, [BEISPIEL])
+            vh.in_excel_uebernehmen(pfad, [], [BEISPIEL])
         meldung = str(ausnahme.value)
         assert "laesst sich nicht speichern" in meldung
         assert "Excel" in meldung
@@ -213,7 +213,7 @@ def test_anhaengen_legt_fehlende_von_spalte_an(tmp_path):
     ws.append(["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"])
     wb.save(pfad)
 
-    vh.an_excel_anhaengen(pfad, [BEISPIEL])
+    vh.in_excel_uebernehmen(pfad, [], [BEISPIEL])
 
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
     assert [c.value for c in ws2[1]][6] == "Von"
@@ -388,7 +388,7 @@ def test_aenderung_an_verschwundenem_skill_wird_abgelehnt():
 
 def test_aenderung_ersetzt_die_zeile(tmp_path):
     pfad = mappe_mit_skill(tmp_path)
-    anzahl = vh.in_excel_aendern(pfad, [AENDERUNG])
+    anzahl = vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
     assert anzahl == 1
     ws = openpyxl.load_workbook(pfad)["Skills"]
     assert ws.max_row == 3, "es darf keine Zeile dazugekommen sein"
@@ -405,7 +405,7 @@ def test_aenderung_ersetzt_die_zeile(tmp_path):
 def test_aenderung_ohne_passende_zeile_meldet_es(tmp_path):
     pfad = mappe_mit_skill(tmp_path)
     try:
-        vh.in_excel_aendern(pfad, [dict(AENDERUNG, original="Gibt es nicht")])
+        vh.in_excel_uebernehmen(pfad, [dict(AENDERUNG, original="Gibt es nicht")], [])
     except vh.ZeileNichtGefunden as fehler:
         assert "Gibt es nicht" in str(fehler)
     else:
@@ -429,7 +429,7 @@ def test_aenderung_erhaelt_filter_und_dropdown(tmp_path):
     pruefung.add("A2:A3")
     wb.save(pfad)
 
-    vh.in_excel_aendern(pfad, [AENDERUNG])
+    vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
 
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
     assert ws2.auto_filter.ref == "A1:H3"
@@ -454,7 +454,7 @@ def test_aenderung_zieht_den_filter_ueber_eine_neu_angelegte_spalte(tmp_path):
     pruefung.add("A2:A3")
     wb.save(pfad)
 
-    vh.in_excel_aendern(pfad, [AENDERUNG])
+    vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
 
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
     assert [c.value for c in ws2[1]][7] == "Ergaenzt"
@@ -476,7 +476,7 @@ def test_aenderung_bei_doppeltem_titel_aendert_nichts(tmp_path):
     wb.save(pfad)
 
     with pytest.raises(vh.ZeileMehrdeutig) as ausnahme:
-        vh.in_excel_aendern(pfad, [AENDERUNG])
+        vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
     assert "Musik hören" in str(ausnahme.value)
 
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
@@ -494,7 +494,7 @@ def test_aenderung_meldet_fehlende_schluesselspalte(tmp_path):
     wb.save(pfad)
 
     with pytest.raises(SystemExit) as ausnahme:
-        vh.in_excel_aendern(pfad, [AENDERUNG])
+        vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
     meldung = str(ausnahme.value)
     assert "Titel" in meldung
     assert "Kopfzeile" in meldung
@@ -507,7 +507,7 @@ def test_aenderung_meldet_verstaendlich_wenn_datei_gesperrt(tmp_path):
     os.chmod(pfad, stat.S_IREAD)
     try:
         with pytest.raises(SystemExit) as ausnahme:
-            vh.in_excel_aendern(pfad, [AENDERUNG])
+            vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
         meldung = str(ausnahme.value)
         assert "laesst sich nicht speichern" in meldung
         assert "Excel" in meldung
@@ -619,15 +619,19 @@ def test_uebernahme_speichert_genau_einmal(tmp_path, monkeypatch):
     # Speichervorgang gibt. Ein zweiter koennte scheitern, nachdem der erste
     # geschrieben hat – dann waere die Excel halb uebernommen und die Meldung
     # gelogen.
+    #
+    # Gezaehlt wird das ECHTE Schreiben (openpyxl) und nicht die Hilfsfunktion
+    # speichern(): ein zusaetzliches wb.save() daneben wuerde diesem Test sonst
+    # entgehen.
     pfad = mappe_mit_skill(tmp_path)
-    echtes_speichern = vh.speichern
+    echtes_speichern = openpyxl.Workbook.save
     aufrufe = []
 
-    def gezaehlt(wb, ziel):
-        aufrufe.append(ziel)
-        return echtes_speichern(wb, ziel)
+    def gezaehlt(self, ziel):
+        aufrufe.append(str(ziel))
+        return echtes_speichern(self, ziel)
 
-    monkeypatch.setattr(vh, "speichern", gezaehlt)
+    monkeypatch.setattr(openpyxl.Workbook, "save", gezaehlt)
 
     vh.in_excel_uebernehmen(pfad, [AENDERUNG, ZWEITE_AENDERUNG], [NEUER_SKILL])
 
@@ -655,6 +659,131 @@ def test_uebernahme_schreibt_nichts_wenn_die_datei_gesperrt_ist(tmp_path):
     assert inhalt(pfad) == vorher, "die Datei muss unveraendert geblieben sein"
 
 
+def test_abbruch_mitten_im_schreiben_laesst_die_datei_heil(tmp_path, monkeypatch):
+    # Der schlimmste Fall: volle Festplatte oder weggebrochenes Laufwerk mitten
+    # im Schreiben. Die Excel ist das Original, aus dem alles andere erzeugt
+    # wird – ein Truemmerstand waere nicht wiederherstellbar. Darum wird in eine
+    # Nachbardatei geschrieben und erst am Ende umgelegt.
+    pfad = mappe_mit_skill(tmp_path)
+    vorher = pfad.read_bytes()
+
+    def bricht_mittendrin_ab(self, ziel):
+        Path(ziel).write_bytes(b"halb geschriebene Truemmer")
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(openpyxl.Workbook, "save", bricht_mittendrin_ab)
+
+    with pytest.raises(SystemExit) as ausnahme:
+        vh.in_excel_uebernehmen(pfad, [AENDERUNG], [NEUER_SKILL])
+
+    meldung = str(ausnahme.value)
+    assert "nicht geschrieben werden" in meldung
+    assert "unveraendert" in meldung
+    assert pfad.read_bytes() == vorher, "die Originaldatei muss unberuehrt sein"
+    openpyxl.load_workbook(pfad)  # muss weiterhin lesbar sein
+    assert [p.name for p in tmp_path.iterdir()] == [pfad.name], (
+        "es darf keine halb geschriebene Nachbardatei liegen bleiben"
+    )
+
+
+def test_anhaengen_zieht_filter_und_dropdown_auf_die_neue_zeile(tmp_path):
+    # Fallen die neuen Zeilen aus Filterbereich und Dropdown heraus, verrutschen
+    # beim Sortieren in Excel die Werte gegeneinander – stille Verfaelschung.
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "", "Max", ""])
+    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "", "", ""])
+    ws.auto_filter.ref = "A1:H3"
+    pruefung = DataValidation(type="list", formula1='"Hoch,Mittel,Tief"', allow_blank=True)
+    ws.add_data_validation(pruefung)
+    pruefung.add("A2:A3")
+    wb.save(pfad)
+
+    vh.in_excel_uebernehmen(pfad, [], [NEUER_SKILL])
+
+    ws2 = openpyxl.load_workbook(pfad)["Skills"]
+    assert ws2.max_row == 4
+    assert ws2.auto_filter.ref == "A1:H4"
+    assert [str(p.sqref) for p in ws2.data_validations.dataValidation] == ["A2:A4"]
+
+
+def test_uebernahme_meldet_fehlende_mappe(tmp_path):
+    with pytest.raises(SystemExit) as ausnahme:
+        vh.in_excel_uebernehmen(tmp_path / "gibt_es_nicht.xlsx", [], [NEUER_SKILL])
+    meldung = str(ausnahme.value)
+    assert "gibt_es_nicht.xlsx" in meldung
+    assert "nicht gefunden" in meldung
+
+
+def test_uebernahme_meldet_umbenanntes_blatt(tmp_path):
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills alt"
+    ws.append(KOPF)
+    wb.save(pfad)
+
+    with pytest.raises(SystemExit) as ausnahme:
+        vh.in_excel_uebernehmen(pfad, [], [NEUER_SKILL])
+    meldung = str(ausnahme.value)
+    assert "Skills" in meldung
+    assert "umbenannt" in meldung or "nicht umbenennen" in meldung
+
+
+def test_uebernahme_meldet_unlesbare_datei(tmp_path):
+    pfad = tmp_path / "skills_daten.xlsx"
+    pfad.write_bytes(b"das ist keine Excel-Datei")
+
+    with pytest.raises(SystemExit) as ausnahme:
+        vh.in_excel_uebernehmen(pfad, [], [NEUER_SKILL])
+    assert "nicht lesen" in str(ausnahme.value)
+
+
+def test_main_warnt_vor_offenen_issues_bevor_ein_fehler_durchschlaegt(monkeypatch, capsys):
+    # Nach dem Schreiben ist die Excel voll, aber die Issues sind noch offen.
+    # Schlaegt hier ein unerwarteter Fehler durch, muss die Warnung trotzdem
+    # erscheinen – sonst weiss niemand, dass beim naechsten Lauf Dubletten
+    # drohen.
+    monkeypatch.setattr(vh, "hole_issues", lambda: [
+        freigegebenes_issue(1, NEUER_SKILL),
+        freigegebenes_issue(2, {**NEUER_SKILL, "titel": "Zweiter"}),
+    ])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: DATEN_MIT_SKILL)
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 2)
+
+    def schlaegt_unerwartet_fehl(nummer):
+        raise RuntimeError("Programmierfehler")
+
+    monkeypatch.setattr(vh, "issue_schliessen", schlaegt_unerwartet_fehl)
+
+    with pytest.raises(RuntimeError):
+        vh.main()
+
+    ausgabe = capsys.readouterr().out
+    assert "#1" in ausgabe and "#2" in ausgabe
+    assert "bereits in der Excel" in ausgabe
+    assert "von Hand" in ausgabe
+
+
+def test_main_sagt_was_mit_offen_gebliebenen_issues_zu_tun_ist(monkeypatch, capsys):
+    monkeypatch.setattr(vh, "hole_issues", lambda: [
+        freigegebenes_issue(1, {**BEISPIEL, "kategorie": "Erfunden"}),
+    ])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
+
+    vh.main()
+
+    ausgabe = capsys.readouterr().out
+    assert "nicht übernommen" in ausgabe
+    # Eine Meldung ohne Handlungsanweisung laesst den Menschen ratlos zurueck.
+    assert "abgelehnt" in ausgabe
+    assert "github.com" in ausgabe
+
+
 def test_aenderung_ohne_urspruenglichen_titel_trifft_keine_leere_zeile(tmp_path):
     # Ein leerer urspruenglicher Titel wuerde sonst auf eine Zeile mit leerer
     # Titelzelle passen und die falsche Zeile ueberschreiben. pruefe_eintrag
@@ -669,7 +798,7 @@ def test_aenderung_ohne_urspruenglichen_titel_trifft_keine_leere_zeile(tmp_path)
     vorher = inhalt(pfad)
 
     with pytest.raises(vh.ZeileNichtGefunden):
-        vh.in_excel_aendern(pfad, [dict(AENDERUNG, original="")])
+        vh.in_excel_uebernehmen(pfad, [dict(AENDERUNG, original="")], [])
 
     assert inhalt(pfad) == vorher
 
