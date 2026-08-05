@@ -88,6 +88,21 @@
     }
     .card .name { font-weight: 600; font-size: 1.05rem; }
     .card .meta { color: var(--muted); font-size: 0.85rem; }
+    /* Die Skills sind der Kern der Seite und stehen darum zuoberst. Der leichte
+       Farbton hebt sie ab, ohne die ruhige Gestaltung der Übersicht zu stören.
+       Beide Klassen im Selektor (a.card.card--skills), damit diese Regeln die
+       allgemeinen von a.card sicher schlagen — sonst entschiede allein die
+       Reihenfolge im Stylesheet, und ein spaeteres Umsortieren kippte sie. */
+    .group--skills h2 { color: var(--accent-dark); }
+    a.card.card--skills {
+      background: var(--accent-tint);
+      border-color: #CDE4E4;
+    }
+    a.card.card--skills:hover {
+      background: var(--card);
+      border-color: var(--accent);
+    }
+    a.card.card--skills .name { color: var(--accent-dark); }
     footer {
       margin-top: 48px;
       padding-top: 20px;
@@ -146,13 +161,23 @@
       <p class="sub">Übersicht der veröffentlichten Seiten.</p>
     </header>
 
-    <section class="group">
-      <h2>Werkzeuge</h2>
+    <section class="group group--skills">
+      <h2>Skills</h2>
       <div class="grid">
-        <a class="card" href="skillsliste.html">
+        <a class="card card--skills" href="skillsliste.html">
           <span class="name">Skillsliste</span>
           <span class="meta">Skills zur Krisenbewältigung</span>
         </a>
+        <a class="card card--skills" href="skill-vorschlagen.html">
+          <span class="name">Skill vorschlagen</span>
+          <span class="meta">Eigenen Skill für die Liste einreichen – ohne Konto</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Werkzeuge</h2>
+      <div class="grid">
         <a class="card" href="budgetvorlage.html">
           <span class="name">Budgetvorlage</span>
           <span class="meta">Einnahmen &amp; Ausgaben erfassen</span>
@@ -160,10 +185,6 @@
         <a class="card" href="flyer-editor.html">
           <span class="name">Flyer-Editor</span>
           <span class="meta">Flyer im Browser gestalten &amp; als HTML, Bild oder PDF speichern</span>
-        </a>
-        <a class="card" href="skill-vorschlagen.html">
-          <span class="name">Skill vorschlagen</span>
-          <span class="meta">Eigenen Skill für die Liste einreichen – ohne Konto</span>
         </a>
       </div>
     </section>
