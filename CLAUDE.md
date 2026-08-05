@@ -107,14 +107,17 @@ Eingabefeld.
    Änderungen ersetzen eine bestehende Zeile, neue Skills werden angehängt.
 3. Ergebnis anschauen, dann committen und pushen. **Nichts geht ohne Push online.**
 
-**Die Reihenfolge im Übernahme-Skript ist Absicht — nicht „aufräumen":** erst
-werden die Änderungen eingearbeitet, dann die neuen Skills angehängt. Eine
-Änderung, die sich nicht zuordnen lässt, bricht ab, **bevor** irgendetwas
-gespeichert ist. Andersherum stünden die neuen Zeilen bei einem Abbruch bereits
-in der Mappe, während ihre Issues noch offen sind — beim nächsten Lauf kämen sie
-ein zweites Mal. Zwei Abbruchgründe gibt es: Der zu ändernde Skill steht nicht
-mehr unter diesem Titel in der Excel, oder derselbe Titel kommt in derselben
-Stufe und Kategorie mehrfach vor (es wird bewusst nicht geraten).
+**Die Reihenfolge im Übernahme-Skript ist Absicht — nicht „aufräumen":** Der
+ganze Lauf schreibt in **einem** Durchgang (laden → ändern → **einmal**
+speichern). Darin werden erst die Änderungen eingearbeitet, dann die neuen
+Skills angehängt, und erst ganz am Ende wird gespeichert. Eine Änderung, die
+sich nicht zuordnen lässt, bricht ab, **bevor** irgendetwas gespeichert ist.
+Zwei getrennte Speichervorgänge hatten den Fehlerfall, dass der zweite
+scheitert, nachdem der erste geschrieben hat: halb übernommene Mappe bei noch
+offenen Issues — beim nächsten Lauf kämen die neuen Zeilen ein zweites Mal.
+Zwei Abbruchgründe gibt es: Der zu ändernde Skill steht nicht mehr unter diesem
+Titel in der Excel, oder derselbe Titel kommt in derselben Stufe und Kategorie
+mehrfach vor (es wird bewusst nicht geraten).
 
 Zugesicherte Eigenschaft, die jeder Umbau erhalten muss: **Bricht der Lauf ab,
 ist nichts in die Excel geschrieben und kein Issue geschlossen** — der Lauf
