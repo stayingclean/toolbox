@@ -291,9 +291,10 @@ def hat_label(issue: dict, name: str) -> bool:
 def speichern(wb, pfad: Path):
     """Speichert die Mappe – oder sagt verstaendlich, warum es nicht geht.
 
-    Beide Schreibwege (anhaengen und aendern) speichern als letzten Schritt.
-    Schlaegt es fehl, ist die Datei auf der Platte unveraendert; darum darf die
-    Meldung in beiden Faellen dasselbe versprechen.
+    Es gibt genau EINEN Speichervorgang je Lauf (siehe in_excel_uebernehmen),
+    und er ist der letzte Schritt. Schlaegt er fehl, ist die Datei auf der
+    Platte unveraendert – nur darum darf die Meldung versprechen, dass nichts
+    veraendert wurde.
     """
     try:
         wb.save(pfad)
@@ -307,66 +308,34 @@ def speichern(wb, pfad: Path):
         )
 
 
-def an_excel_anhaengen(pfad: Path, eintraege: list) -> int:
-    """Hängt Vorschläge ans Blatt `Skills` an – spaltenweise nach Kopfzeile."""
-    if not eintraege:
-        return 0
-    wb = openpyxl.load_workbook(pfad)
-    ws = wb["Skills"]
-    kopf = [str(c.value).strip() if c.value is not None else "" for c in ws[1]]
-    for name, _ in SPALTEN:
+def spalten_sichern(ws, kopf: list, spalten: list) -> bool:
+    """Legt fehlende Spalten rechts an. True, wenn eine dazugekommen ist."""
+    dazugekommen = False
+    for name, _ in spalten:
         if name not in kopf:
             ws.cell(row=1, column=len(kopf) + 1, value=name)
             kopf.append(name)
-    for eintrag in eintraege:
-        zeile = [""] * len(kopf)
-        for name, schluessel in SPALTEN:
-            zeile[kopf.index(name)] = eintrag.get(schluessel, "")
-        ws.append(zeile)
-    # Filterbereich und Stufen-Dropdown auf die neuen Zeilen ausdehnen, sonst
-    # fallen sie heraus und beim Sortieren koennen Werte verrutschen.
-    letzte = ws.max_row
-    ws.auto_filter.ref = f"A1:{get_column_letter(len(kopf))}{letzte}"
-    for pruefung in ws.data_validations.dataValidation:
-        if str(pruefung.sqref).startswith("A2:A"):
-            pruefung.sqref = f"A2:A{letzte}"
-    speichern(wb, pfad)
-    return len(eintraege)
+            dazugekommen = True
+    return dazugekommen
 
 
-def in_excel_aendern(pfad: Path, eintraege: list) -> int:
-    """Ersetzt bestehende Zeilen im Blatt `Skills`.
+def zeile_ersetzen(ws, kopf: list, eintrag: dict):
+    """Sucht die Zeile eines bestehenden Skills und ersetzt ihre Texte.
 
     Gefunden wird ueber Stufe + Kategorie + urspruenglicher Titel. Die Spalte
     `Von` bleibt unangetastet – der urspruengliche Beitragende wird nie durch
     eine Ergaenzung verdraengt; die ergaenzende Person kommt in `Ergaenzt` dazu.
-
-    Es wird erst gespeichert, wenn ALLE Aenderungen zugeordnet werden konnten.
-    Passt eine nicht, bleibt die Datei unveraendert – sonst waere die Excel halb
-    geschrieben, waehrend die zugehoerigen Issues noch offen sind.
     """
-    if not eintraege:
-        return 0
-    wb = openpyxl.load_workbook(pfad)
-    ws = wb["Skills"]
-    kopf = [str(c.value).strip() if c.value is not None else "" for c in ws[1]]
-
-    fehlend = [name for name in SCHLUESSEL_SPALTEN if name not in kopf]
-    if fehlend:
-        raise SystemExit(
-            f"❌ Im Blatt 'Skills' von {pfad.name} fehlen die Spalten: "
-            f"{', '.join(fehlend)}.\n\n"
-            f"   Ohne sie laesst sich nicht finden, welche Zeile geaendert werden\n"
-            f"   soll. Bitte die Kopfzeile nicht umbenennen.\n\n"
-            f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben."
+    e = bereinigt(eintrag)
+    original = str(eintrag.get("original") or "").strip()
+    if not original:
+        # Ohne diese Sperre wuerde ein leerer Titel auf eine Zeile mit leerer
+        # Titelzelle passen und die falsche Zeile ueberschreiben. pruefe_eintrag
+        # faengt den Fall ebenfalls ab – hier steht er noch einmal, direkt vor
+        # dem Schreiben, weil die Excel nicht wiederherstellbar ist.
+        raise ZeileNichtGefunden(
+            f"ohne urspruenglichen Titel ({e['stufe']} / {e['kategorie']})"
         )
-
-    neue_spalte = False
-    for name, _ in SPALTEN_AENDERUNG:
-        if name not in kopf:
-            ws.cell(row=1, column=len(kopf) + 1, value=name)
-            kopf.append(name)
-            neue_spalte = True
 
     i_stufe, i_kat, i_titel = (kopf.index(n) + 1 for n in SCHLUESSEL_SPALTEN)
 
@@ -374,38 +343,94 @@ def in_excel_aendern(pfad: Path, eintraege: list) -> int:
         wert = ws.cell(row=zeile, column=spalte).value
         return str(wert).strip() if wert is not None else ""
 
-    geaendert = 0
-    for eintrag in eintraege:
-        e = bereinigt(eintrag)
-        original = str(eintrag.get("original") or "").strip()
-        treffer = [
-            r
-            for r in range(2, ws.max_row + 1)
-            if zelle(r, i_stufe) == e["stufe"]
-            and zelle(r, i_kat) == e["kategorie"]
-            and zelle(r, i_titel) == original
-        ]
-        if not treffer:
-            raise ZeileNichtGefunden(f"'{original}' in {e['stufe']} / {e['kategorie']}")
-        if len(treffer) > 1:
-            # Nicht die erste Zeile nehmen: dann wuerde womoeglich der falsche
-            # Eintrag geaendert, ohne dass es jemand merkt.
-            zeilen = ", ".join(str(r) for r in treffer)
-            raise ZeileMehrdeutig(
-                f"'{original}' in {e['stufe']} / {e['kategorie']} "
-                f"steht in den Zeilen {zeilen}"
-            )
-        for name, schluessel in SPALTEN_AENDERUNG:
-            ws.cell(row=treffer[0], column=kopf.index(name) + 1, value=e.get(schluessel, ""))
-        geaendert += 1
+    treffer = [
+        r
+        for r in range(2, ws.max_row + 1)
+        if zelle(r, i_stufe) == e["stufe"]
+        and zelle(r, i_kat) == e["kategorie"]
+        and zelle(r, i_titel) == original
+    ]
+    if not treffer:
+        raise ZeileNichtGefunden(f"'{original}' in {e['stufe']} / {e['kategorie']}")
+    if len(treffer) > 1:
+        # Nicht die erste Zeile nehmen: dann wuerde womoeglich der falsche
+        # Eintrag geaendert, ohne dass es jemand merkt.
+        zeilen = ", ".join(str(r) for r in treffer)
+        raise ZeileMehrdeutig(
+            f"'{original}' in {e['stufe']} / {e['kategorie']} "
+            f"steht in den Zeilen {zeilen}"
+        )
+    for name, schluessel in SPALTEN_AENDERUNG:
+        ws.cell(row=treffer[0], column=kopf.index(name) + 1, value=e.get(schluessel, ""))
 
-    # Es kommt keine Zeile dazu, also bleibt der Filterbereich, wie er ist –
-    # ausser es ist eine Spalte dazugekommen, dann muss er breiter werden.
-    if neue_spalte and ws.auto_filter.ref:
+
+def in_excel_uebernehmen(pfad: Path, aenderungen: list, neue: list) -> int:
+    """Traegt Aenderungen und neue Skills ins Blatt `Skills` ein.
+
+    Bewusst EIN Laden-Aendern-Speichern fuer den ganzen Lauf. Mit zwei
+    Durchgaengen koennte der zweite scheitern, nachdem der erste bereits
+    gespeichert hat: dann staende die halbe Uebernahme in der Excel, waehrend
+    alle Issues noch offen sind – und der naechste Lauf faende die schon
+    geaenderte Zeile nicht mehr wieder. So gibt es nur einen Speichervorgang,
+    der gelingt oder scheitert; bei jedem Abbruch bleibt die Datei unberuehrt.
+
+    Erst die Aenderungen, dann die neuen Zeilen: eine Aenderung darf sich nie
+    auf einen Skill beziehen, den derselbe Lauf erst angelegt hat.
+
+    Liefert die Anzahl der geschriebenen Zeilen.
+    """
+    if not aenderungen and not neue:
+        return 0
+    wb = openpyxl.load_workbook(pfad)
+    ws = wb["Skills"]
+    kopf = [str(c.value).strip() if c.value is not None else "" for c in ws[1]]
+
+    neue_spalte = False
+    if aenderungen:
+        fehlend = [name for name in SCHLUESSEL_SPALTEN if name not in kopf]
+        if fehlend:
+            raise SystemExit(
+                f"❌ Im Blatt 'Skills' von {pfad.name} fehlen die Spalten: "
+                f"{', '.join(fehlend)}.\n\n"
+                f"   Ohne sie laesst sich nicht finden, welche Zeile geaendert werden\n"
+                f"   soll. Bitte die Kopfzeile nicht umbenennen.\n\n"
+                f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben."
+            )
+        neue_spalte = spalten_sichern(ws, kopf, SPALTEN_AENDERUNG)
+        for eintrag in aenderungen:
+            zeile_ersetzen(ws, kopf, eintrag)
+
+    if neue:
+        neue_spalte = spalten_sichern(ws, kopf, SPALTEN) or neue_spalte
+        for eintrag in neue:
+            zeile = [""] * len(kopf)
+            for name, schluessel in SPALTEN:
+                zeile[kopf.index(name)] = eintrag.get(schluessel, "")
+            ws.append(zeile)
+        # Filterbereich und Stufen-Dropdown auf die neuen Zeilen ausdehnen, sonst
+        # fallen sie heraus und beim Sortieren koennen Werte verrutschen.
+        letzte = ws.max_row
+        ws.auto_filter.ref = f"A1:{get_column_letter(len(kopf))}{letzte}"
+        for pruefung in ws.data_validations.dataValidation:
+            if str(pruefung.sqref).startswith("A2:A"):
+                pruefung.sqref = f"A2:A{letzte}"
+    elif neue_spalte and ws.auto_filter.ref:
+        # Ohne neue Zeilen bleibt der Filter, wie er ist – ausser es ist eine
+        # Spalte dazugekommen, dann muss er breiter werden.
         ws.auto_filter.ref = f"A1:{get_column_letter(len(kopf))}{ws.max_row}"
 
     speichern(wb, pfad)
-    return geaendert
+    return len(aenderungen) + len(neue)
+
+
+def an_excel_anhaengen(pfad: Path, eintraege: list) -> int:
+    """Hängt Vorschläge ans Blatt `Skills` an – spaltenweise nach Kopfzeile."""
+    return in_excel_uebernehmen(pfad, [], eintraege)
+
+
+def in_excel_aendern(pfad: Path, eintraege: list) -> int:
+    """Ersetzt bestehende Zeilen im Blatt `Skills` – ohne neue anzuhängen."""
+    return in_excel_uebernehmen(pfad, eintraege, [])
 
 
 def issue_schliessen(nummer: int):
@@ -452,20 +477,21 @@ def main():
     aenderungen = [d for _, d in uebernehmen if d.get("art") == "aenderung"]
     neue = [d for _, d in uebernehmen if d.get("art") != "aenderung"]
 
-    # Erst aendern, dann anhaengen – beide Wege oeffnen und speichern dieselbe
-    # Mappe nacheinander, jeder liest also den Stand des vorherigen. Die
-    # Reihenfolge ist bewusst gewaehlt: in_excel_aendern bricht ab, BEVOR es
-    # speichert. Waeren die neuen Zeilen schon angehaengt, staenden sie in der
-    # Excel, waehrend ihre Issues offen bleiben – beim naechsten Lauf kaemen sie
-    # ein zweites Mal.
+    # Ein einziger Schreibvorgang fuer den ganzen Lauf: er gelingt ganz oder gar
+    # nicht. Bricht er ab, ist die Excel unveraendert und kein Issue geschlossen
+    # – der Lauf laesst sich gefahrlos wiederholen.
     try:
-        anzahl = in_excel_aendern(XLSX, aenderungen)
+        anzahl = in_excel_uebernehmen(XLSX, aenderungen, neue)
     except ZeileNichtGefunden as fehler:
         raise SystemExit(
             f"❌ Eine Aenderung liess sich nicht zuordnen: {fehler}\n\n"
-            f"   Der Skill wurde vermutlich zwischen Einreichung und Freigabe\n"
-            f"   umbenannt oder entfernt. Nimm dem betroffenen Issue das Label\n"
-            f"   `freigegeben` und starte vorschlaege.bat noch einmal.\n\n"
+            f"   Meist fehlt nur ein Zwischenschritt: Wurde {XLSX.name} von Hand\n"
+            f"   geaendert, ohne danach build.bat zu starten, sucht das Programm\n"
+            f"   noch nach dem alten Titel. Dann zuerst build.bat doppelklicken\n"
+            f"   und vorschlaege.bat noch einmal starten.\n\n"
+            f"   Steht der Skill gar nicht mehr in der Liste, wurde er inzwischen\n"
+            f"   umbenannt oder entfernt: dann dem betroffenen Issue das Label\n"
+            f"   `freigegeben` wegnehmen.\n\n"
             f"   Es wurde nichts veraendert – alle Vorschlaege bleiben freigegeben."
         )
     except ZeileMehrdeutig as fehler:
@@ -477,7 +503,6 @@ def main():
             f"   doppelte Zeile um und starte vorschlaege.bat noch einmal.\n\n"
             f"   Es wurde nichts veraendert – alle Vorschlaege bleiben freigegeben."
         )
-    anzahl += an_excel_anhaengen(XLSX, neue)
 
     nicht_geschlossen = []
     for issue, daten in uebernehmen:
@@ -497,8 +522,9 @@ def main():
         print(
             f"\n⚠ ACHTUNG: {nummern} konnte(n) nicht geschlossen werden.\n"
             f"   Die Vorschlaege sind bereits in der Excel. Schliesse diese Issues\n"
-            f"   von Hand, sonst werden sie beim naechsten Lauf ein zweites Mal\n"
-            f"   angehaengt."
+            f"   von Hand, sonst versucht der naechste Lauf sie noch einmal zu\n"
+            f"   uebernehmen: ein neuer Skill stuende dann doppelt in der Liste,\n"
+            f"   und eine Aenderung liesse sich nicht mehr zuordnen."
         )
 
     for issue in uebersprungen:

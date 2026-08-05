@@ -255,7 +255,9 @@ def test_main_laesst_unerwartete_fehler_beim_schliessen_durchschlagen(monkeypatc
     # abgefangen werden – alles andere muss durchschlagen.
     monkeypatch.setattr(vh, "hole_issues", lambda: [freigegebenes_issue(1)])
     monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
-    monkeypatch.setattr(vh, "an_excel_anhaengen", lambda pfad, eintraege: 0)
+    # main() schreibt ueber genau eine Funktion – sie muss hier stillgelegt
+    # werden, sonst liefe der Test in die echte skills_daten.xlsx.
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
 
     def schlaegt_unerwartet_fehl(nummer):
         raise RuntimeError("Programmierfehler")
@@ -274,7 +276,7 @@ def test_main_faengt_calledprocesserror_ab_und_zeigt_keine_widerspruechliche_erf
     # 0 zurueckgeben, um in diesem Test den Skillsliste-Neubau (subprocess) nicht
     # auszuloesen – der Fokus liegt hier auf dem Schliessen-Fehler und der
     # Erfolgszeile, nicht auf build.py.
-    monkeypatch.setattr(vh, "an_excel_anhaengen", lambda pfad, eintraege: 0)
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
 
     def schlaegt_wie_gh_fehl(nummer):
         raise subprocess.CalledProcessError(1, ["gh"])
@@ -295,7 +297,7 @@ def test_main_gibt_keine_erfolgszeile_bei_null_uebernahmen_aus(monkeypatch, caps
     abgelehntes_issue = freigegebenes_issue(1, {**BEISPIEL, "kategorie": "Erfunden"})
     monkeypatch.setattr(vh, "hole_issues", lambda: [abgelehntes_issue])
     monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
-    monkeypatch.setattr(vh, "an_excel_anhaengen", lambda pfad, eintraege: 0)
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
 
     vh.main()
 
@@ -314,7 +316,9 @@ def test_main_verwendet_einzahl_und_mehrzahl_korrekt(monkeypatch, capsys):
     )
 
     monkeypatch.setattr(vh, "hole_issues", lambda: [freigegebenes_issue(1)])
-    monkeypatch.setattr(vh, "an_excel_anhaengen", lambda pfad, eintraege: len(eintraege))
+    monkeypatch.setattr(
+        vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: len(aenderungen) + len(neue)
+    )
     vh.main()
     einzahl = capsys.readouterr().out
     assert "1 Vorschlag in" in einzahl
@@ -515,11 +519,10 @@ def test_aenderung_meldet_verstaendlich_wenn_datei_gesperrt(tmp_path):
 NEUER_SKILL = {**BEISPIEL, "titel": "Spazieren gehen", "emoji": "🚶"}
 
 
-def test_main_schreibt_aenderungen_vor_neuen_zeilen(monkeypatch, capsys):
-    # Beide Wege oeffnen und speichern dieselbe Mappe – nacheinander, nie
-    # gleichzeitig. Die Reihenfolge ist bewusst gewaehlt: scheitert eine
-    # Aenderung, ist noch nichts geschrieben (siehe naechster Test).
-    reihenfolge = []
+def test_main_uebergibt_beide_arten_in_einem_schreibvorgang(monkeypatch, capsys):
+    # Ein einziger Schreibvorgang fuer den ganzen Lauf: er gelingt oder er
+    # scheitert – es gibt kein „halb uebernommen".
+    aufrufe = []
     monkeypatch.setattr(vh, "hole_issues", lambda: [
         freigegebenes_issue(1, NEUER_SKILL),
         freigegebenes_issue(2, AENDERUNG),
@@ -530,32 +533,26 @@ def test_main_schreibt_aenderungen_vor_neuen_zeilen(monkeypatch, capsys):
         vh.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0)
     )
 
-    def anhaengen(pfad, eintraege):
-        reihenfolge.append(("anhaengen", [e["titel"] for e in eintraege]))
-        return len(eintraege)
+    def uebernehmen(pfad, aenderungen, neue):
+        aufrufe.append(
+            ([e["titel"] for e in aenderungen], [e["titel"] for e in neue])
+        )
+        return len(aenderungen) + len(neue)
 
-    def aendern(pfad, eintraege):
-        reihenfolge.append(("aendern", [e["titel"] for e in eintraege]))
-        return len(eintraege)
-
-    monkeypatch.setattr(vh, "an_excel_anhaengen", anhaengen)
-    monkeypatch.setattr(vh, "in_excel_aendern", aendern)
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", uebernehmen)
 
     vh.main()
 
-    assert reihenfolge == [
-        ("aendern", ["Musik bewusst hören"]),
-        ("anhaengen", ["Spazieren gehen"]),
-    ]
+    assert aufrufe == [(["Musik bewusst hören"], ["Spazieren gehen"])]
     ausgabe = capsys.readouterr().out
     assert "~ Hoch / Ablenkung: Musik bewusst hören" in ausgabe
     assert "+ Hoch / Ablenkung: Spazieren gehen" in ausgabe
     assert "2 Vorschläge" in ausgabe
 
 
-def test_main_schreibt_nichts_wenn_eine_aenderung_nicht_zuzuordnen_ist(monkeypatch):
-    # Der gefaehrliche Mischfall: waeren die neuen Zeilen schon angehaengt, ihre
-    # Issues aber noch offen, kaemen sie beim naechsten Lauf ein zweites Mal.
+def test_main_schliesst_kein_issue_wenn_eine_aenderung_nicht_zuzuordnen_ist(monkeypatch):
+    # Geschriebene Excel bei offenen Issues waere der Dublettenfall. Bricht der
+    # Schreibvorgang ab, darf deshalb auch kein Issue geschlossen werden.
     monkeypatch.setattr(vh, "hole_issues", lambda: [
         freigegebenes_issue(1, NEUER_SKILL),
         freigegebenes_issue(2, AENDERUNG),
@@ -564,20 +561,103 @@ def test_main_schreibt_nichts_wenn_eine_aenderung_nicht_zuzuordnen_ist(monkeypat
     geschlossen = []
     monkeypatch.setattr(vh, "issue_schliessen", lambda nummer: geschlossen.append(nummer))
 
-    def darf_nicht_laufen(pfad, eintraege):
-        raise AssertionError("es darf nichts angehaengt worden sein")
-
-    def aendern(pfad, eintraege):
+    def uebernehmen(pfad, aenderungen, neue):
         raise vh.ZeileNichtGefunden("'Musik hören' in Hoch / Ablenkung")
 
-    monkeypatch.setattr(vh, "an_excel_anhaengen", darf_nicht_laufen)
-    monkeypatch.setattr(vh, "in_excel_aendern", aendern)
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", uebernehmen)
 
     with pytest.raises(SystemExit) as ausnahme:
         vh.main()
 
     meldung = str(ausnahme.value)
     assert "Musik hören" in meldung
+    assert "build.bat" in meldung, "die haeufigste Ursache muss genannt sein"
     assert "nichts veraendert" in meldung
     assert "freigegeben" in meldung
     assert geschlossen == [], "kein Issue darf geschlossen worden sein"
+
+
+ZWEITE_AENDERUNG = {
+    "art": "aenderung",
+    "stufe": "Tief",
+    "kategorie": "Ruhe",
+    "original": "Atmen",
+    "emoji": "💨",
+    "titel": "Langsam atmen",
+    "beschreibung": "Viermal ein, viermal aus.",
+    "tipp": "",
+    "erg": "Ida",
+}
+
+
+def inhalt(pfad):
+    """Alle Zellen des Blattes `Skills` – zum Vergleich vorher/nachher."""
+    ws = openpyxl.load_workbook(pfad)["Skills"]
+    return [[c.value for c in zeile] for zeile in ws.iter_rows()]
+
+
+def test_uebernahme_schreibt_nichts_wenn_eine_aenderung_nicht_passt(tmp_path):
+    # Die wichtigste Eigenschaft: gespeichert wird erst, wenn ALLES zugeordnet
+    # ist. Zwei zuordenbare Aenderungen, eine nicht zuordenbare und ein neuer
+    # Skill – danach darf in der Datei nichts davon stehen, auch nicht die
+    # beiden Aenderungen, die fuer sich genommen gepasst haetten.
+    pfad = mappe_mit_skill(tmp_path)
+    vorher = inhalt(pfad)
+
+    with pytest.raises(vh.ZeileNichtGefunden):
+        vh.in_excel_uebernehmen(
+            pfad,
+            [AENDERUNG, ZWEITE_AENDERUNG, dict(AENDERUNG, original="Gibt es nicht")],
+            [NEUER_SKILL],
+        )
+
+    assert inhalt(pfad) == vorher, "die Datei muss unveraendert geblieben sein"
+
+
+def test_uebernahme_schreibt_nichts_wenn_die_datei_gesperrt_ist(tmp_path):
+    # Ein einziger Speichervorgang fuer Aenderungen UND neue Zeilen: scheitert
+    # er, ist die Zusage „Es wurde nichts veraendert" in jedem Fall wahr.
+    pfad = mappe_mit_skill(tmp_path)
+    vorher = inhalt(pfad)
+    os.chmod(pfad, stat.S_IREAD)
+    try:
+        with pytest.raises(SystemExit) as ausnahme:
+            vh.in_excel_uebernehmen(pfad, [AENDERUNG], [NEUER_SKILL])
+        assert "nichts veraendert" in str(ausnahme.value)
+    finally:
+        os.chmod(pfad, stat.S_IWRITE | stat.S_IREAD)
+
+    assert inhalt(pfad) == vorher, "die Datei muss unveraendert geblieben sein"
+
+
+def test_aenderung_ohne_urspruenglichen_titel_trifft_keine_leere_zeile(tmp_path):
+    # Ein leerer urspruenglicher Titel wuerde sonst auf eine Zeile mit leerer
+    # Titelzelle passen und die falsche Zeile ueberschreiben. pruefe_eintrag
+    # faengt das ab – die Sperre gehoert trotzdem direkt vor das Schreiben.
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "", "Zeile ohne Titel.", "", "Max", ""])
+    wb.save(pfad)
+    vorher = inhalt(pfad)
+
+    with pytest.raises(vh.ZeileNichtGefunden):
+        vh.in_excel_aendern(pfad, [dict(AENDERUNG, original="")])
+
+    assert inhalt(pfad) == vorher
+
+
+def test_aenderung_greift_nicht_auf_eine_im_selben_lauf_neue_zeile(tmp_path):
+    # Aenderungen werden VOR den neuen Zeilen eingearbeitet: eine Aenderung darf
+    # sich nie auf einen Skill beziehen, den derselbe Lauf erst anlegt.
+    pfad = mappe_mit_skill(tmp_path)
+    vorher = inhalt(pfad)
+
+    with pytest.raises(vh.ZeileNichtGefunden):
+        vh.in_excel_uebernehmen(
+            pfad, [dict(AENDERUNG, original="Spazieren gehen")], [NEUER_SKILL]
+        )
+
+    assert inhalt(pfad) == vorher
