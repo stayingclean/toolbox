@@ -16,6 +16,13 @@ from pathlib import Path
 MODELL = "claude-opus-5"
 VARIABLE = "ANTHROPIC_API_KEY"
 
+PROJEKT = Path(__file__).resolve().parent.parent
+PROMPT_DATEI = "duplikat_prompt.md"
+
+# Anzeige-Name je Stufenschluessel, damit die KI dieselben Woerter sieht wie
+# der Mensch in der Excel.
+STUFEN_NAME = {"hoch": "Hoch", "mittel": "Mittel", "tief": "Tief"}
+
 # Rueckfall-Muster, falls Git nicht befragt werden kann (kein Repo, kein Git
 # installiert). Ohne Git gibt es aber auch kein `git add -A` -- deshalb darf
 # der Rueckfall grosszuegiger sein als eine echte .gitignore-Auswertung.
@@ -116,3 +123,44 @@ def schluessel_finden(projekt: Path) -> str | None:
         )
 
     return _env_datei_lesen(env)
+
+
+def lade_prompt(projekt: Path) -> str:
+    """Liest den Anweisungstext aus tools/duplikat_prompt.md.
+
+    Die Datei enthaelt NUR die Anweisungen, nicht die Daten. Bestand und neue
+    Vorschlaege setzt der Code als eigene Nachricht zusammen. So kann die Datei
+    frei umformuliert werden, ohne dass ein Platzhalter kaputtgeht.
+    """
+    pfad = projekt / "tools" / PROMPT_DATEI
+    if not pfad.exists():
+        raise SystemExit(
+            f"❌ Die Datei tools/{PROMPT_DATEI} fehlt.\n\n"
+            "   In ihr steht, wonach die Duplikatpruefung suchen soll. Ohne sie\n"
+            "   kann nicht geprueft werden. Hol die Datei aus dem Repo zurueck\n"
+            "   (git checkout tools/) oder nimm den Schluessel weg, dann\n"
+            "   entfaellt die Pruefung.\n\n"
+            "   Es wurde nichts veraendert."
+        )
+    text = pfad.read_text(encoding="utf-8").strip()
+    if not text:
+        raise SystemExit(
+            f"❌ Die Datei tools/{PROMPT_DATEI} ist leer.\n\n"
+            "   Ohne Anweisung liefert die Pruefung unbrauchbare Ergebnisse.\n"
+            "   Bitte den Text wiederherstellen (git checkout tools/).\n\n"
+            "   Es wurde nichts veraendert."
+        )
+    return text
+
+
+def bestand_als_text(bestand: dict) -> str:
+    """Der vorhandene Bestand als kompakte Zeilenliste."""
+    zeilen = []
+    for schluessel, stufe in bestand.items():
+        name = STUFEN_NAME.get(schluessel, schluessel)
+        for kategorie in stufe.get("kategorien", []):
+            for skill in kategorie.get("skills", []):
+                zeilen.append(
+                    f"{name} / {kategorie['label']}: {skill['t']} — {skill['b']}"
+                )
+    return "\n".join(zeilen)

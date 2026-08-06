@@ -140,3 +140,52 @@ def test_env_mit_ungueltigem_utf8_haelt_verstaendlich_an(tmp_path, monkeypatch):
     meldung = str(ausnahme.value)
     assert "UTF-8" in meldung
     assert "\\xff" not in meldung
+
+
+BESTAND = {
+    "hoch": {"kategorien": [{"label": "Ablenkung", "skills": [
+        {"e": "🎧", "t": "Musik hören", "b": "Ein Lied auflegen.", "tip": "", "von": "", "erg": ""},
+    ]}]},
+    "mittel": {"kategorien": []},
+    "tief": {"kategorien": [{"label": "Ruhe", "skills": [
+        {"e": "🌊", "t": "Atmen", "b": "Ruhig atmen.", "tip": "", "von": "", "erg": ""},
+    ]}]},
+}
+
+
+def test_prompt_wird_aus_der_datei_gelesen(tmp_path):
+    ordner = tmp_path / "tools"
+    ordner.mkdir()
+    (ordner / "duplikat_prompt.md").write_text("Sei streng.", encoding="utf-8")
+    assert duplikat.lade_prompt(tmp_path) == "Sei streng."
+
+
+def test_fehlende_prompt_datei_meldet_sich_verstaendlich(tmp_path):
+    with pytest.raises(SystemExit) as ausnahme:
+        duplikat.lade_prompt(tmp_path)
+    meldung = str(ausnahme.value)
+    assert "duplikat_prompt.md" in meldung
+    assert "fehlt" in meldung.lower()
+
+
+def test_leere_prompt_datei_meldet_sich(tmp_path):
+    """Eine leere Datei ergaebe eine Pruefung ohne Anweisung – das faellt sonst
+    erst an unbrauchbaren Antworten auf."""
+    ordner = tmp_path / "tools"
+    ordner.mkdir()
+    (ordner / "duplikat_prompt.md").write_text("   \n\n", encoding="utf-8")
+    with pytest.raises(SystemExit):
+        duplikat.lade_prompt(tmp_path)
+
+
+def test_bestand_wird_kompakt_aufbereitet():
+    text = duplikat.bestand_als_text(BESTAND)
+    assert "Hoch / Ablenkung: Musik hören — Ein Lied auflegen." in text
+    assert "Tief / Ruhe: Atmen — Ruhig atmen." in text
+    assert "Mittel" not in text, "leere Stufen erzeugen keine Zeilen"
+
+
+def test_echte_prompt_datei_existiert_und_ist_gefuellt():
+    """Die mitgelieferte Datei muss im Repo liegen, sonst laeuft nichts."""
+    text = duplikat.lade_prompt(duplikat.PROJEKT)
+    assert len(text) > 200
