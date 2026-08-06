@@ -27,10 +27,11 @@ Diese Punkte wurden im Gespräch festgelegt und begrenzen den Umfang bewusst:
 
 ## Ausgangslage: Auflösung
 
-Die vorhandene Datei misst **1054 × 1492 px**. Das Seitenverhältnis passt zum
-A-Format (0,7064 gegenüber 0,7071 — ein Unterschied von 0,1 %), die Auflösung
-reicht aber nur für rund 127 dpi auf A4 und 90 dpi auf A3. Für sauberen Druck bis
-A3 braucht es etwa 3500 × 4960 px.
+Die vorhandene Datei misst **1055 × 1491 px** (8-Bit-RGB, ohne Interlace — also
+genau der Typ, für den Weg A weiter unten gilt). Das Seitenverhältnis passt zum
+A-Format (0,70758 gegenüber 0,70711 — ein Unterschied von 0,07 %), die Auflösung
+reicht aber nur für 180 dpi auf A5, 128 dpi auf A4 und 90 dpi auf A3. Für sauberen
+Druck bis A3 braucht es 3508 × 4961 px.
 
 Die Seite wird deshalb so gebaut, dass sie mit **jeder** Bildgrösse richtig
 arbeitet und dem Benutzer ehrlich sagt, was das aktuelle Bild hergibt. Die
@@ -117,7 +118,7 @@ Nachkommastellen:
 
 **Platzierung.** Das Bild wird **unter Wahrung des Seitenverhältnisses** so gross
 wie möglich auf die Seite gelegt und zentriert. Beim heutigen Bild bleibt dadurch
-ein Rand von 0,1 % — rund 0,2 mm auf A4, mit blossem Auge nicht zu sehen, also
+ein Rand von 0,07 % — rund 0,15 mm auf A4, mit blossem Auge nicht zu sehen, also
 praktisch randlos. Der Verzicht aufs Verzerren ist Absicht: Ein künftiges Plakat
 mit abweichendem Seitenverhältnis wird dann sauber eingepasst statt gestaucht.
 
@@ -209,9 +210,11 @@ auslösen, die drei PDFs ansehen.
 
 ## Offene Punkte
 
-- Die **höher aufgelöste Bilddatei** wird nachgereicht. Bis dahin steht die
-  aktuelle 1054 × 1492 px grosse Fassung in `docs/`, und der Auflösungshinweis
-  sagt ehrlich, wofür sie reicht. Der Austausch ist ein reiner Dateitausch.
+- Die **höher aufgelöste Bilddatei** wird nachgereicht; Zielmass 3508 × 4961 px
+  (300 dpi auf A3). Bis dahin steht die aktuelle 1055 × 1491 px grosse Fassung in
+  `docs/`, und der Auflösungshinweis sagt ehrlich, wofür sie reicht — heute also
+  A5 unmarkiert, A4 und A3 als knapp gekennzeichnet. Der Austausch ist ein reiner
+  Dateitausch; an der Seite ist nichts anzupassen.
 - Mit `docs/plakat-skillsliste.png` wandert erstmals eine Datei aus `neue_docs/`
   ins öffentliche Verzeichnis. Das Plakat ist Eigengestaltung der Organisation und
   enthält keine personen- oder organisationsspezifischen Angaben ausser den beiden
