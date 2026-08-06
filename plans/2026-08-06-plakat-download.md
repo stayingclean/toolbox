@@ -34,8 +34,8 @@ Diese Vorgaben gelten für **jede** Aufgabe, auch wo sie nicht wiederholt werden
 - **Commits** am Ende jeder Aufgabe, mit `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`
   als letzter Zeile. Umlaute in Commit-Nachrichten umschreiben (`ae`, `oe`, `ue`),
   wie im bestehenden Verlauf.
-- **Tests laufen** über `uv run --with pytest --with openpyxl --with pypdf pytest tests -v`.
-  Der Basislauf vor Beginn: 81 bestandene Tests.
+- **Tests laufen** über `uv run --with pytest --with openpyxl --with pypdf pytest tests -v`
+  (ab Task 2 zusätzlich `--with pillow`). Der Basislauf vor Beginn: 81 bestandene Tests.
 - **Papierformate:** genau A5 (148 × 210 mm), A4 (210 × 297 mm), A3 (297 × 420 mm).
 - **Dateiname der Bilddatei:** `docs/plakat-skillsliste.png`, überall gleich.
 - **Download-Namen:** `plakat-skillsliste.png`, `plakat-skillsliste-a5.pdf`,
@@ -47,13 +47,14 @@ Diese Vorgaben gelten für **jede** Aufgabe, auch wo sie nicht wiederholt werden
 
 | Datei | Art | Verantwortung |
 |---|---|---|
-| `docs/plakat-skillsliste.png` | neu | Das Plakat. Austauschbar; nichts im Code hängt an seinen Massen. |
+| `docs/plakat-skillsliste.png` | neu | Das Plakat in voller Auflösung (3508 × 4961 px, 14,9 MB): PNG-Download und Quelle fürs PDF. Austauschbar; nichts im Code hängt an seinen Massen. |
+| `docs/plakat-vorschau.jpg` | neu | Verkleinerte Vorschau (~360 KB) — nur für die Anzeige, damit ein Seitenaufruf nicht 14,9 MB lädt. |
 | `docs/plakat.html` | neu | Die ganze Seite: Gestaltung, PDF-Kern, Bedienung. Eine Datei, weil sie in sich geschlossen sein muss. |
 | `tests/plakat_pdf_treiber.mjs` | neu | Schneidet den PDF-Kern aus der HTML und führt ihn in Node aus. Die einzige Brücke zwischen Testlauf und Browser-Code. |
 | `tests/test_plakat.py` | neu | Prüft den PDF-Kern (Masse, Verlustfreiheit, Einpassung, Lesbarkeit) und die statischen Eigenschaften der Seite. |
 | `docs/index.html` | ändern | Dritte Karte in der Gruppe „Skills". |
-| `CLAUDE.md` | ändern | Die neue Seite in der Aufbau-Liste nennen. |
-| `test.bat` | ändern | `--with pypdf` ergänzen. |
+| `CLAUDE.md` | ändern | Die neue Seite in der Aufbau-Liste nennen, samt Befehl zum Neuerzeugen der Vorschau. |
+| `test.bat` | ändern | `--with pypdf` (Task 1) und `--with pillow` (Task 2) ergänzen. |
 
 Der PDF-Kern steht in `docs/plakat.html` zwischen zwei Marker-Kommentaren:
 
@@ -592,6 +593,7 @@ Jetzt bekommt die Seite Gestalt: Vorschau, vier Download-Knöpfe, ehrlicher
 Auflösungshinweis, saubere Fehlerfälle, Fusszeile.
 
 **Files:**
+- Create: `docs/plakat-vorschau.jpg` (verkleinerte Vorschau)
 - Modify: `docs/plakat.html` (Kopf, `<style>`, Rumpf und Bedienlogik ergänzen; der Kern bleibt unangetastet)
 - Modify: `tests/test_plakat.py` (statische Prüfungen anhängen)
 
@@ -599,9 +601,58 @@ Auflösungshinweis, saubere Fehlerfälle, Fusszeile.
 - Consumes: `pdfAusPng`, `pdfAusJpeg`, `PngNichtTauglich` aus Task 1.
 - Produces: nichts für spätere Tasks.
 
-- [ ] **Schritt 1: Die statischen Tests schreiben (sie müssen erst scheitern)**
+### Zwei Dateien, nicht eine
 
-An `tests/test_plakat.py` anhängen:
+Die Plakatdatei ist **14,9 MB** gross (3508 × 4961 px — 300 dpi auf A3). Als
+Vorschau eingebunden lüde jeder Seitenaufruf diese 14,9 MB herunter, auch wenn
+niemand etwas speichert. Darum liegt daneben eine verkleinerte Vorschau:
+
+| Datei | Grösse | wofür |
+|---|---|---|
+| `docs/plakat-skillsliste.png` | 14,9 MB | PNG-Download **und** Quelle fürs PDF |
+| `docs/plakat-vorschau.jpg` | ~360 KB | nur die Anzeige auf der Seite |
+
+JPEG statt PNG, weil die Aquarell-Illustrationen als PNG selbst verkleinert noch
+2,9 MB wögen — bei gleicher sichtbarer Qualität achtmal so viel.
+
+Daraus folgen zwei Dinge, die man leicht übersieht:
+
+1. **Der Auflösungshinweis darf nicht aus dem Vorschaubild rechnen** — der
+   meldete 1200 px und damit unsinnige dpi-Werte. Die wahren Masse kommen per
+   Teilabruf (HTTP-Range) aus den ersten 34 Bytes der grossen Datei; dort steht
+   der IHDR-Block des PNG. Das kostet ein paar hundert Byte statt 14,9 MB.
+2. **Weg B darf nicht das Vorschaubild ins Canvas zeichnen** — das ergäbe ein
+   PDF mit 1200 px Vorlage. Weg B baut sich sein Bild aus den bereits geholten
+   Bytes der grossen Datei.
+
+- [ ] **Schritt 1: Vorschaubild erzeugen**
+
+```bash
+uv run --with pillow python -c "from PIL import Image; q=Image.open('docs/plakat-skillsliste.png'); q.resize((1200, round(1200*q.height/q.width)), Image.LANCZOS).convert('RGB').save('docs/plakat-vorschau.jpg', quality=80, optimize=True, progressive=True)"
+```
+
+Prüfen:
+
+```bash
+uv run --with pillow python -c "from PIL import Image; import os; im=Image.open('docs/plakat-vorschau.jpg'); print(im.size, round(os.path.getsize('docs/plakat-vorschau.jpg')/1024), 'KB')"
+```
+
+Erwartet: `(1200, 1697) 360 KB` (±40 KB — die genaue Grösse hängt an der
+Pillow-Fassung).
+
+Genau dieser Befehl gehört in Task 3 in die `CLAUDE.md`, damit die Vorschau nach
+einem Austausch des Plakats reproduzierbar neu entsteht.
+
+- [ ] **Schritt 2: Die statischen Tests schreiben (sie müssen erst scheitern)**
+
+Zuerst im Kopf von `tests/test_plakat.py`, direkt nach der `BILD`-Zeile,
+die Vorschau ergänzen:
+
+```python
+VORSCHAU = ROOT / "docs" / "plakat-vorschau.jpg"
+```
+
+Dann anhängen:
 
 ```python
 def test_fusszeile_traegt_credit_und_kaffee_link():
@@ -622,10 +673,31 @@ def test_seite_laedt_nichts_von_aussen_ausser_dem_avatar():
     assert "fonts.gstatic.com" not in text
 
 
-def test_seite_verweist_auf_die_bilddatei():
+def test_seite_verweist_auf_beide_bilddateien():
     text = SEITE.read_text(encoding="utf-8")
-    assert "plakat-skillsliste.png" in text
+    assert "plakat-skillsliste.png" in text, "die grosse Datei fehlt"
+    assert "plakat-vorschau.jpg" in text, "die Vorschau fehlt"
     assert BILD.exists()
+    assert VORSCHAU.exists()
+
+
+def test_vorschau_ist_klein_genug_fuer_einen_seitenaufruf():
+    """Die grosse Datei ist 14,9 MB. Die Vorschau existiert genau darum, dass
+    nicht jeder Seitenaufruf sie herunterlädt."""
+    assert VORSCHAU.stat().st_size < 1_000_000
+    assert VORSCHAU.stat().st_size * 10 < BILD.stat().st_size
+
+
+def test_vorschau_zeigt_dasselbe_wie_die_grosse_datei():
+    """Nach einem Austausch des Plakats muss auch die Vorschau neu erzeugt
+    werden. Ein abweichendes Seitenverhältnis verrät, dass das vergessen ging."""
+    from PIL import Image
+
+    with Image.open(BILD) as gross, Image.open(VORSCHAU) as klein:
+        assert klein.width < gross.width, "Vorschau ist nicht verkleinert"
+        assert klein.width / klein.height == pytest.approx(
+            gross.width / gross.height, rel=0.01
+        )
 
 
 def test_alle_drei_pdf_knoepfe_stehen_auf_der_seite():
@@ -644,12 +716,12 @@ def test_lokaler_aufruf_wird_erklaert():
 Lauf:
 
 ```bash
-uv run --with pytest --with openpyxl --with pypdf pytest tests/test_plakat.py -v
+uv run --with pytest --with openpyxl --with pypdf --with pillow pytest tests/test_plakat.py -v
 ```
 
 Erwartet: die fünf neuen Tests schlagen fehl, die aus Task 1 bestehen weiter.
 
-- [ ] **Schritt 2: Kopf und Gestaltung ergänzen**
+- [ ] **Schritt 3: Kopf und Gestaltung ergänzen**
 
 In `docs/plakat.html` den `<head>` ersetzen. Farben und Aufbau folgen
 `docs/index.html`, damit die Seite dazugehört — aber mit Systemschriften statt
@@ -782,7 +854,7 @@ Google Fonts, damit sie auch ohne Internet gleich aussieht.
 </head>
 ```
 
-- [ ] **Schritt 3: Den Rumpf ergänzen**
+- [ ] **Schritt 4: Den Rumpf ergänzen**
 
 Der `<body>` erhält den Inhalt **vor** dem bestehenden `<script>`-Block:
 
@@ -798,7 +870,7 @@ Der `<body>` erhält den Inhalt **vor** dem bestehenden `<script>`-Block:
     </header>
 
     <figure class="vorschau">
-      <img id="plakat" src="plakat-skillsliste.png"
+      <img id="plakat" src="plakat-vorschau.jpg" width="1200" height="1697"
            alt="Plakat „Gemeinsam Skills stärken“ mit zwei QR-Codes: einer führt zur Skillsliste, einer zum Formular für eigene Vorschläge.">
       <div class="fehlbild" id="fehlbild">
         Das Plakat konnte nicht geladen werden.
@@ -854,7 +926,7 @@ Der `<body>`-Inhalt wird also **vor** den bestehenden `<script>`-Block gesetzt,
 der Block selbst nicht angefasst — der PDF-Kern samt seinen Markern bleibt Wort
 für Wort, wie er ist.
 
-- [ ] **Schritt 4: Die Bedienlogik ergänzen**
+- [ ] **Schritt 5: Die Bedienlogik ergänzen**
 
 Innerhalb der bestehenden `(function(){ … })()`, **nach** `/* == pdf-kern:ende == */`
 und vor dem schliessenden `})();`:
@@ -862,7 +934,7 @@ und vor dem schliessenden `})();`:
 ```js
   /* ---------- Bedienung ---------- */
 
-  var BILD = 'plakat-skillsliste.png';
+  var BILD = 'plakat-skillsliste.png';   // die grosse Datei: Download und PDF
   var FORMATE = { A5: [148, 210], A4: [210, 297], A3: [297, 420] };
   var GUT_DPI = 150;                 // darunter wird der Druck sichtbar weich
 
@@ -879,10 +951,31 @@ und vor dem schliessenden `})();`:
     knoepfe.forEach(function (knopf) { knopf.disabled = true; });
   }
 
-  /* Sagt ehrlich, was die aktuelle Bilddatei hergibt. Rechnet sich beim
-     Austausch der Datei von selbst neu -- keine Zahl von Hand nachpflegen. */
-  function aufloesungZeigen() {
-    var breite = plakat.naturalWidth, hoehe = plakat.naturalHeight;
+  /* Die wahren Masse stehen im IHDR-Block, den ersten 34 Byte der grossen
+     Datei. Ein Teilabruf holt genau die -- aus dem angezeigten Vorschaubild
+     duerfen sie nicht kommen, das ist absichtlich klein und ergaebe unsinnige
+     dpi-Werte. */
+  function masseHolen() {
+    var abbruch = new AbortController();
+    return fetch(BILD, {
+      headers: { Range: 'bytes=0-33' },
+      signal: abbruch.signal
+    }).then(function (antwort) {
+      if (antwort.status !== 206) {
+        // Server beachtet Range nicht: abbrechen, statt 14,9 MB zu laden.
+        abbruch.abort();
+        throw new Error('Teilabruf nicht möglich');
+      }
+      return antwort.arrayBuffer();
+    }).then(function (puffer) {
+      var sicht = new DataView(puffer);
+      return { breite: sicht.getUint32(16), hoehe: sicht.getUint32(20) };
+    });
+  }
+
+  /* Sagt ehrlich, was die Bilddatei hergibt. Rechnet sich beim Austausch der
+     Datei von selbst neu -- keine Zahl von Hand nachpflegen. */
+  function aufloesungZeigen(breite, hoehe) {
     if (!breite || !hoehe) return;
     document.getElementById('masse').textContent =
       breite + ' × ' + hoehe + ' Pixel';
@@ -925,16 +1018,31 @@ und vor dem schliessenden `})();`:
     });
   }
 
-  /* Rueckfallebene: das bereits angezeigte Bild ueber ein Canvas als JPEG
-     ausgeben. Nur noetig, wenn die Datei kein 8-Bit-PNG ohne Interlace ist. */
-  function jpegBytes() {
+  /* Rueckfallebene, nur noetig wenn die Datei kein 8-Bit-PNG ohne Interlace
+     ist: das Bild aus den bereits geholten Bytes aufbauen und ueber ein Canvas
+     als JPEG ausgeben. Ausdruecklich NICHT das angezeigte Vorschaubild -- das
+     ergaebe ein PDF aus einer 1200-px-Vorlage. */
+  function bildAusBytes(bytes) {
+    return new Promise(function (erfuellen, ablehnen) {
+      var url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+      var bild = new Image();
+      bild.onload = function () { erfuellen({ bild: bild, url: url }); };
+      bild.onerror = function () {
+        URL.revokeObjectURL(url);
+        ablehnen(new Error('Bilddatei ist nicht lesbar'));
+      };
+      bild.src = url;
+    });
+  }
+
+  function jpegBytes(bild) {
     var flaeche = document.createElement('canvas');
-    flaeche.width = plakat.naturalWidth;
-    flaeche.height = plakat.naturalHeight;
+    flaeche.width = bild.naturalWidth;
+    flaeche.height = bild.naturalHeight;
     var stift = flaeche.getContext('2d');
     stift.fillStyle = '#ffffff';                 // JPEG kennt keine Transparenz
     stift.fillRect(0, 0, flaeche.width, flaeche.height);
-    stift.drawImage(plakat, 0, 0);
+    stift.drawImage(bild, 0, 0);
     var uri = flaeche.toDataURL('image/jpeg', 0.92);
     var roh = atob(uri.slice(uri.indexOf(',') + 1));
     var bytes = new Uint8Array(roh.length);
@@ -944,17 +1052,23 @@ und vor dem schliessenden `})();`:
 
   function erzeuge(format) {
     var mm = FORMATE[format];
+    var name = 'plakat-skillsliste-' + format.toLowerCase() + '.pdf';
     status.classList.remove('sichtbar');
     bytesHolen().then(function (png) {
-      var pdf;
       try {
-        pdf = pdfAusPng(png, mm[0], mm[1]);
+        speichere(pdfAusPng(png, mm[0], mm[1]), name);
+        return null;
       } catch (fehler) {
         if (fehler.name !== 'PngNichtTauglich') throw fehler;
-        pdf = pdfAusJpeg(jpegBytes(), plakat.naturalWidth, plakat.naturalHeight,
-                         mm[0], mm[1]);
       }
-      speichere(pdf, 'plakat-skillsliste-' + format.toLowerCase() + '.pdf');
+      return bildAusBytes(png).then(function (geladen) {
+        try {
+          speichere(pdfAusJpeg(jpegBytes(geladen.bild), geladen.bild.naturalWidth,
+                               geladen.bild.naturalHeight, mm[0], mm[1]), name);
+        } finally {
+          URL.revokeObjectURL(geladen.url);
+        }
+      });
     }).catch(function (fehler) {
       melde('Das PDF konnte nicht erzeugt werden ('
           + (fehler && (fehler.message || fehler.name) || 'unbekannter Fehler')
@@ -968,16 +1082,10 @@ und vor dem schliessenden `})();`:
     });
   });
 
-  plakat.addEventListener('load', aufloesungZeigen);
   plakat.addEventListener('error', function () {
     plakat.style.display = 'none';
     document.getElementById('fehlbild').style.display = 'block';
-    sperre();
-    melde('Die Bilddatei ' + BILD + ' fehlt oder ist nicht lesbar.');
   });
-  // Aus dem Zwischenspeicher geladene Bilder sind schon fertig, bevor dieses
-  // Skript laeuft -- dann kommt kein load-Ereignis mehr.
-  if (plakat.complete && plakat.naturalWidth) aufloesungZeigen();
 
   /* Als Datei geoeffnet duerfen Browser die Bilddatei nicht per Skript lesen.
      Das gleich sagen, statt den Benutzer in einen Fehlschlag laufen zu lassen. */
@@ -987,33 +1095,65 @@ und vor dem schliessenden `})();`:
         + 'nicht, die Bilddatei per Skript zu lesen — die PDF-Knöpfe ruhen '
         + 'deshalb. Auf stayingclean.github.io/toolbox/ funktionieren sie. '
         + 'Das PNG lässt sich auch hier herunterladen.');
+  } else {
+    masseHolen().then(function (masse) {
+      aufloesungZeigen(masse.breite, masse.hoehe);
+    }).catch(function () {
+      /* Ohne Teilabruf bleiben die Knoepfe bei ihren Millimeterangaben. Lieber
+         keine dpi-Zahl als eine erfundene -- die Knoepfe funktionieren
+         weiterhin, das PDF haengt nicht an dieser Abfrage. */
+    });
   }
 ```
 
-- [ ] **Schritt 5: Tests laufen lassen**
+Der Hinweis „Bilddatei fehlt" hängt jetzt nicht mehr an der Vorschau: Fällt nur
+die Vorschau aus, ist bloss die Anzeige leer, die Downloads gehen weiter. Fällt
+die grosse Datei aus, meldet sich der `catch` in `erzeuge` — dort, wo es zählt.
 
-```bash
+- [ ] **Schritt 6: `test.bat` um `pillow` ergänzen**
+
+Die neuen Tests vergleichen Vorschau und Original, dafür braucht es Pillow. Aus:
+
+```bat
 uv run --with pytest --with openpyxl --with pypdf pytest tests -v
 ```
 
-Erwartet: alles bestanden, auch die fünf neuen statischen Tests.
+wird:
 
-- [ ] **Schritt 6: Commit**
+```bat
+uv run --with pytest --with openpyxl --with pypdf --with pillow pytest tests -v
+```
+
+- [ ] **Schritt 7: Tests laufen lassen**
 
 ```bash
-git add docs/plakat.html tests/test_plakat.py
+uv run --with pytest --with openpyxl --with pypdf --with pillow pytest tests -v
+```
+
+Erwartet: alles bestanden, auch die sieben neuen statischen Tests.
+
+- [ ] **Schritt 8: Commit**
+
+```bash
+git add docs/plakat.html docs/plakat-vorschau.jpg tests/test_plakat.py test.bat
 git commit -m "$(cat <<'EOF'
 Plakat-Seite: Vorschau, vier Downloads, ehrlicher Aufloesungshinweis
 
-Die Seite rechnet die erreichbare Aufloesung zur Laufzeit aus der
-tatsaechlichen Bildgroesse und schreibt sie an jeden Knopf. Unter 150 dpi
-wird der Knopf markiert, aber nicht gesperrt -- wer ein A3 mit 90 dpi
-drucken will, darf das, soll es aber vorher wissen. Nach dem Austausch
-der Bilddatei stimmen die Zahlen von selbst.
+Die grosse Plakatdatei ist 14,9 MB. Als Vorschau eingebunden lude sie
+jeder Seitenaufruf herunter, auch ohne Download -- darum liegt daneben
+eine verkleinerte JPEG-Vorschau von rund 360 KB. PNG als Vorschau waere
+bei gleicher sichtbarer Qualitaet achtmal so gross: Aquarell ist nichts
+fuer verlustfreie Kompression.
 
-Lokal geoeffnet erlauben Browser das Auslesen der Bilddatei nicht. Statt
-den Benutzer in einen Fehlschlag laufen zu lassen, sagt die Seite das
-vorher und laesst den PNG-Link stehen.
+Daraus folgen zwei Dinge, die man leicht uebersieht. Der
+Aufloesungshinweis darf nicht aus der Vorschau rechnen, sonst meldet er
+1200 px; die wahren Masse holt ein Teilabruf aus den ersten 34 Byte der
+grossen Datei, wo der IHDR-Block steht. Und die Canvas-Rueckfallebene
+darf nicht die Vorschau zeichnen, sonst entstuende ein PDF aus einer
+1200-px-Vorlage -- sie baut ihr Bild aus den geholten Bytes.
+
+Unter 150 dpi wird ein Knopf markiert, aber nicht gesperrt: wer so
+drucken will, darf das, soll es aber vorher wissen.
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 EOF
@@ -1054,7 +1194,7 @@ def test_claude_md_nennt_die_neue_seite():
 Lauf:
 
 ```bash
-uv run --with pytest --with openpyxl --with pypdf pytest tests/test_plakat.py -v
+uv run --with pytest --with openpyxl --with pypdf --with pillow pytest tests/test_plakat.py -v
 ```
 
 Erwartet: die zwei neuen Tests schlagen fehl.
@@ -1080,15 +1220,26 @@ Im Abschnitt „Aufbau", nach der Zeile zu `docs/skills-daten.json`:
 ```markdown
 - `docs/plakat.html` = Plakat zur Skillsliste zum Herunterladen (PNG und PDF in
   A5/A4/A3). Das PDF baut die Seite selbst; die Bildpunkte des PNG wandern dabei
-  unverändert ins PDF. Das Plakat liegt als eigene Datei daneben
-  (`docs/plakat-skillsliste.png`) und ist durch blossen Dateitausch ersetzbar —
-  der Auflösungshinweis auf der Seite rechnet sich dann von selbst neu.
+  unverändert ins PDF. Das Plakat liegt in **zwei** Dateien daneben:
+  `docs/plakat-skillsliste.png` in voller Auflösung (3508 × 4961 px, 300 dpi auf
+  A3) für Download und PDF, und `docs/plakat-vorschau.jpg` (~360 KB) nur für die
+  Anzeige — sonst lüde jeder Seitenaufruf 14,9 MB.
+
+  **Beim Austausch des Plakats muss die Vorschau neu erzeugt werden:**
+
+  ```
+  uv run --with pillow python -c "from PIL import Image; q=Image.open('docs/plakat-skillsliste.png'); q.resize((1200, round(1200*q.height/q.width)), Image.LANCZOS).convert('RGB').save('docs/plakat-vorschau.jpg', quality=80, optimize=True, progressive=True)"
+  ```
+
+  Sonst nichts: Der Auflösungshinweis auf der Seite rechnet sich von selbst neu,
+  und `pytest tests` prüft, ob die neue Datei weiterhin verlustfrei ins PDF
+  durchgereicht werden kann und ob die Vorschau zum Original passt.
 ```
 
 - [ ] **Schritt 4: Tests laufen lassen**
 
 ```bash
-uv run --with pytest --with openpyxl --with pypdf pytest tests -v
+uv run --with pytest --with openpyxl --with pypdf --with pillow pytest tests -v
 ```
 
 Erwartet: alles bestanden.
@@ -1127,10 +1278,14 @@ uv run python -m http.server 8765 --directory docs
 
 - [ ] **Schritt 2: `http://localhost:8765/plakat.html` öffnen und prüfen**
 
-- Vorschau erscheint, Bildmasse stehen darunter.
-- Vier Knöpfe; die PDF-Knöpfe zeigen mm **und** dpi.
-- Mit der heutigen Bilddatei: A5 ohne Markierung (180 dpi), A4 und A3
-  gekennzeichnet (128 bzw. 90 dpi).
+- Vorschau erscheint, Bildmasse stehen darunter: `3508 × 4961 Pixel` — nicht
+  `1200 × 1697`. Steht dort die Vorschaugrösse, kommt der Hinweis aus der
+  falschen Datei.
+- Vier Knöpfe; die PDF-Knöpfe zeigen mm **und** dpi: A5 600, A4 424, A3 300.
+- **Kein** Knopf ist als knapp markiert (alle über 150 dpi).
+- Im Netzwerk-Reiter der Entwicklerwerkzeuge: Der Seitenaufruf lädt rund 360 KB,
+  nicht 14,9 MB. Die grosse Datei taucht erst beim Klick auf einen PDF-Knopf auf
+  — davor nur ein winziger Teilabruf (Status 206).
 - Fusszeile mit Avatar und Kaffee-Link.
 - Auf schmalem Fenster (unter 620 px) rutschen die Knöpfe auf zwei Spalten.
 
@@ -1163,11 +1318,10 @@ offensichtlicher Tippfehler.
 
 ## Nach dem Plan
 
-- Die **höher aufgelöste Bilddatei** (Zielmass 3508 × 4961 px für 300 dpi auf A3)
-  wird nachgereicht. Sie ersetzt `docs/plakat-skillsliste.png`; sonst ist nichts
-  zu tun. Danach `uv run --with pytest --with openpyxl --with pypdf pytest tests -v`
-  laufen lassen — `test_bilddatei_passt_zu_weg_a` bestätigt, dass die neue Datei
-  weiterhin verlustfrei durchgereicht wird, und der Auflösungshinweis auf der
-  Seite stimmt von selbst.
+- Die höher aufgelöste Bilddatei ist **während der Umsetzung eingetroffen** und
+  ist bereits die Grundlage: 3508 × 4961 px, 8-Bit-RGB ohne Interlace — 600 dpi
+  auf A5, 424 auf A4, 300 auf A3. Damit ist kein Format mehr knapp. Die
+  `knapp`-Markierung bleibt trotzdem im Code: Sie greift beim nächsten
+  Plakatwechsel wieder, falls die neue Vorlage kleiner ausfällt.
 - Zum Schluss `superpowers:finishing-a-development-branch`, um den Branch
   zusammenzuführen. **Nichts geht ohne Push online.**
