@@ -220,14 +220,44 @@ def test_vorschau_ist_klein_genug_fuer_einen_seitenaufruf():
 
 def test_vorschau_zeigt_dasselbe_wie_die_grosse_datei():
     """Nach einem Austausch des Plakats muss auch die Vorschau neu erzeugt
-    werden. Ein abweichendes Seitenverhältnis verrät, dass das vergessen ging."""
+    werden. Das Seitenverhältnis allein reicht dafür nicht: Ein neues Plakat im
+    A-Format — der Normalfall — hat dasselbe Verhältnis wie das alte, darum
+    zusätzlich ein grober Inhaltsvergleich auf einem 8×8-Graustufenraster."""
     from PIL import Image
+
+    RASTER = 8
+    SCHRANKE = 25  # von 255 -- JPEG und Verkleinerung bleiben klar darunter,
+                   # ein anderes Plakat liegt klar darueber (siehe Rotprobe)
 
     with Image.open(BILD) as gross, Image.open(VORSCHAU) as klein:
         assert klein.width < gross.width, "Vorschau ist nicht verkleinert"
         assert klein.width / klein.height == pytest.approx(
             gross.width / gross.height, rel=0.01
         )
+
+        raster_gross = gross.convert("L").resize((RASTER, RASTER), Image.LANCZOS)
+        raster_klein = klein.convert("L").resize((RASTER, RASTER), Image.LANCZOS)
+        a = raster_gross.tobytes()
+        b = raster_klein.tobytes()
+        abweichung = sum(abs(x - y) for x, y in zip(a, b)) / len(a)
+        assert abweichung < SCHRANKE, (
+            f"Vorschau weicht im Inhalt zu stark vom Original ab "
+            f"(mittlere Abweichung {abweichung:.1f}/255) -- vermutlich zeigt "
+            "sie noch ein aelteres Plakat"
+        )
+
+
+def test_bildattribute_passen_zur_vorschaudatei():
+    """width/height am Vorschaubild reservieren den Platz vor dem Laden. Nach
+    einem Plakatwechsel mit anderem Seitenverhältnis stünden dort veraltete
+    Zahlen — sichtbar nur als kurzer Sprung beim Laden, also praktisch nie."""
+    from PIL import Image
+
+    text = SEITE.read_text(encoding="utf-8")
+    breite = int(re.search(r'id="plakat"[^>]*width="(\d+)"', text).group(1))
+    hoehe = int(re.search(r'id="plakat"[^>]*height="(\d+)"', text).group(1))
+    with Image.open(VORSCHAU) as vorschau:
+        assert (breite, hoehe) == vorschau.size
 
 
 def test_alle_drei_pdf_knoepfe_stehen_auf_der_seite():
@@ -250,6 +280,7 @@ def test_masse_werden_nicht_aus_dem_vorschaubild_gelesen():
     text = SEITE.read_text(encoding="utf-8")
     ab = text.index("function masseHolen")
     bis = text.index("function aufloesungZeigen")
+    assert bis > ab, "Die Funktionen wurden umsortiert"
     masse_holen = text[ab:bis]
     assert "BILD" in masse_holen, "masseHolen() greift nicht auf die grosse Datei zu"
     assert "naturalWidth" not in masse_holen, "masseHolen() liest aus dem Vorschaubild"
@@ -270,3 +301,35 @@ def test_uebersicht_verlinkt_das_plakat_in_der_skills_gruppe():
 def test_claude_md_nennt_die_neue_seite():
     text = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
     assert "docs/plakat.html" in text
+
+
+def test_rueckfallweg_erzeugt_ein_gueltiges_pdf(tmp_path):
+    """Weg B greift, wenn ein künftiges Plakat kein 8-Bit-RGB-PNG ohne
+    Interlace ist. Er ist im Alltag nie gelaufen — ohne diesen Test merkte
+    man einen Fehler darin erst, wenn man ihn braucht."""
+    from PIL import Image
+
+    jpeg = tmp_path / "probe.jpg"
+    Image.new("RGB", (40, 60), (200, 120, 60)).save(jpeg, quality=90)
+    skript = tmp_path / "wegb.mjs"
+    skript.write_text(
+        "import { readFileSync, writeFileSync } from 'node:fs';\n"
+        "const html = readFileSync(process.argv[2], 'utf8');\n"
+        "const ab = html.indexOf('/* == pdf-kern:anfang == */');\n"
+        "const bis = html.indexOf('/* == pdf-kern:ende == */');\n"
+        "const kern = new Function(html.slice(ab, bis) + '\\nreturn { pdfAusJpeg };')();\n"
+        "const jpg = new Uint8Array(readFileSync(process.argv[3]));\n"
+        "writeFileSync(process.argv[4], Buffer.from(kern.pdfAusJpeg(jpg, 40, 60, 210, 297)));\n",
+        encoding="utf-8",
+    )
+    ziel = tmp_path / "wegb.pdf"
+    lauf = subprocess.run(
+        ["node", str(skript), str(SEITE), str(jpeg), str(ziel)],
+        capture_output=True, text=True,
+    )
+    assert lauf.returncode == 0, lauf.stderr
+    pdf = ziel.read_bytes()
+    assert b"/DCTDecode" in pdf, "Weg B bettet kein JPEG ein"
+    assert b"/Width 40" in pdf and b"/Height 60" in pdf
+    treffer = re.search(rb"/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]", pdf)
+    assert float(treffer.group(1)) == pytest.approx(210 * MM_ZU_PT, abs=0.01)
