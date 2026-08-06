@@ -459,7 +459,10 @@ Nur das Gerüst und der Kern; Gestaltung und Bedienung kommen in Task 2.
     bildWb += ' /Length ' + bild.daten.length + ' >>';
 
     schreibe('%PDF-1.4\n');
-    schreibe('%âãÏÓ\n');   // Binaerkennung fuer Uebertragungswege
+    /* Binaerkennung: vier Bytes ueber 127, an denen Werkzeuge die Datei als
+       binaer erkennen. Bewusst als Escape-Folgen -- woertliche Zeichen ergaeben
+       nur dann E2 E3 CF D3, wenn jedes Werkzeug die Quelldatei als UTF-8 liest. */
+    schreibe('%\u00E2\u00E3\u00CF\u00D3\n');
     objekt(1, '<< /Type /Catalog /Pages 2 0 R >>');
     objekt(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
     objekt(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + seiteB + ' ' + seiteH + ']'
