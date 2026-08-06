@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plakat – Toolbox</title>
+  <style>
+    :root {
+      --bg: #FAF8F5;
+      --card: #FFFFFF;
+      --border: #E8E4DF;
+      --text: #1C1C1C;
+      --muted: #7A7268;
+      --accent: #008080;
+      --accent-dark: #006666;
+      --accent-tint: #E6F2F2;
+      --warn: #8A5A2B;
+      --warn-tint: #FBF1E4;
+      --warn-border: #EDD9BF;
+      --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+      --font-display: Georgia, "Times New Roman", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Derselbe dezente Puls wie auf der Übersicht — hält die Seiten zusammen. */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: radial-gradient(ellipse 80% 55% at 50% 0%, var(--accent-tint) 0%, transparent 68%);
+      opacity: 0.3;
+      animation: breathe 7s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { opacity: 0.22; transform: scaleY(1); }
+      50%      { opacity: 0.40; transform: scaleY(1.05); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body::before { animation: none; }
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 48px 20px 64px; }
+    .zurueck { margin: 0 0 18px; }
+    .zurueck a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+    .zurueck a:hover { color: var(--accent); }
+    h1 {
+      font-family: var(--font-display);
+      font-size: 2rem; font-weight: 600; margin: 0 0 8px;
+      letter-spacing: -0.01em; color: var(--accent-dark);
+    }
+    .sub { color: var(--muted); margin: 0; font-size: 1rem; }
+    h2 {
+      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); margin: 0 0 12px;
+    }
+    .vorschau { margin: 32px 0 0; padding: 0; }
+    .vorschau img {
+      display: block; width: 100%; height: auto;
+      border: 1px solid var(--border); border-radius: 14px; background: var(--card);
+    }
+    .vorschau figcaption { margin-top: 8px; color: var(--muted); font-size: 0.82rem; }
+    .fehlbild {
+      display: none; padding: 28px; text-align: center;
+      border: 1px dashed var(--border); border-radius: 14px;
+      background: var(--card); color: var(--muted);
+    }
+    .downloads { margin-top: 32px; }
+    .knoepfe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    @media (max-width: 620px) { .knoepfe { grid-template-columns: repeat(2, 1fr); } }
+    .knopf {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 16px 18px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 14px;
+      text-decoration: none; color: var(--text); font: inherit; text-align: left;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+    }
+    .knopf:hover:not(:disabled) {
+      background: var(--accent-tint); border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .knopf:disabled { opacity: 0.45; cursor: default; }
+    .knopf-name { font-weight: 600; font-size: 1.05rem; color: var(--accent-dark); }
+    .knopf-meta { color: var(--muted); font-size: 0.8rem; }
+    .knopf.knapp .knopf-meta { color: var(--warn); }
+    .status {
+      display: none; margin-top: 14px; padding: 12px 14px;
+      border: 1px solid var(--warn-border); border-radius: 10px;
+      background: var(--warn-tint); color: var(--warn); font-size: 0.88rem;
+    }
+    .status.sichtbar { display: block; }
+    footer {
+      margin-top: 48px; padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 0.82rem;
+    }
+    .footer-links {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 8px 14px; margin-top: 12px;
+    }
+    .footer-credit {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--muted); text-decoration: none; transition: color 0.15s ease;
+    }
+    .footer-credit:hover { color: var(--accent); }
+    .footer-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 1px solid var(--border); object-fit: cover; display: block;
+    }
+    .footer-coffee {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--muted); text-decoration: none; transition: color 0.15s ease;
+    }
+    .footer-coffee:hover { color: var(--accent); }
+    @media (max-width: 480px) { .footer-sep { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="zurueck"><a href="index.html">← Übersicht</a></p>
+
+    <header>
+      <h1>Plakat zur Skillsliste</h1>
+      <p class="sub">Zum Aufhängen — mit QR-Codes zur Skillsliste und zum
+        Vorschlagsformular.</p>
+    </header>
+
+    <figure class="vorschau">
+      <img id="plakat" src="plakat-vorschau.jpg" width="1200" height="1697"
+           alt="Plakat zur Skillsliste mit QR-Codes">
+      <div class="fehlbild" id="fehlbild">
+        Das Plakat konnte nicht geladen werden.
+      </div>
+      <figcaption id="masse"></figcaption>
+    </figure>
+
+    <section class="downloads">
+      <h2>Herunterladen</h2>
+      <div class="knoepfe">
+        <a class="knopf" href="plakat-skillsliste.png"
+           download="plakat-skillsliste.png">
+          <span class="knopf-name">PNG</span>
+          <span class="knopf-meta" id="pngMeta">Bilddatei</span>
+        </a>
+        <button class="knopf" type="button" data-format="A5">
+          <span class="knopf-name">PDF A5</span>
+          <span class="knopf-meta">148 × 210 mm</span>
+        </button>
+        <button class="knopf" type="button" data-format="A4">
+          <span class="knopf-name">PDF A4</span>
+          <span class="knopf-meta">210 × 297 mm</span>
+        </button>
+        <button class="knopf" type="button" data-format="A3">
+          <span class="knopf-name">PDF A3</span>
+          <span class="knopf-meta">297 × 420 mm</span>
+        </button>
+      </div>
+      <p class="status" id="status" role="status"></p>
+    </section>
+
+    <footer>
+      <div>Das Plakat darf frei ausgedruckt und aufgehängt werden.</div>
+      <div class="footer-links">
+        <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+          <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+          <span>Erstellt von stayingclean</span>
+        </a>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+          <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+        </a>
+      </div>
+    </footer>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+/* == pdf-kern:anfang == */
+/* Baut aus einer Bilddatei ein einseitiges PDF im gewuenschten Papierformat.
+
+   Reine Funktionen: kein DOM, kein fetch, kein Canvas. Nur so laesst sich der
+   heikelste Teil ausserhalb des Browsers pruefen (tests/test_plakat.py).
+
+   Weg A (pdfAusPng) reicht die Bildpunkte des PNG unveraendert ins PDF durch:
+   Ein PNG speichert sie als zlib-Strom ueber zeilenweise gefilterte Rohdaten,
+   und PDF liest mit FlateDecode + Predictor 15 genau dasselbe Format. Kein
+   Neukodieren, kein Qualitaetsverlust -- das zaehlt vor allem fuer die beiden
+   QR-Codes, deren harte Schwarz-Weiss-Kanten unter JPEG sichtbar leiden.
+
+   Weg B (pdfAusJpeg) ist die Rueckfallebene fuer PNG-Typen, die Weg A nicht
+   abdeckt; die JPEG-Bytes erzeugt dann die Seite per Canvas. */
+
+  var MM_ZU_PT = 72 / 25.4;
+
+  /* Wird geworfen, wenn die PNG-Datei nicht zu Weg A passt. Die Seite faengt
+     genau diesen Fall ab und weicht auf Weg B aus. */
+  function PngNichtTauglich(grund) {
+    this.name = 'PngNichtTauglich';
+    this.message = grund;
+  }
+  PngNichtTauglich.prototype = Object.create(Error.prototype);
+
+  function latin1(text) {
+    var bytes = new Uint8Array(text.length);
+    for (var i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i) & 0xFF;
+    return bytes;
+  }
+
+  function runde(wert) { return Math.round(wert * 1000) / 1000; }
+
+  /* PNG in seine Chunks zerlegen. Liefert Masse, Typ und den vollstaendigen
+     zlib-Strom: alle IDAT-Bloecke in der vorgefundenen Reihenfolge
+     aneinandergehaengt ergeben genau ihn. */
+  function pngLesen(bytes) {
+    var signatur = [137, 80, 78, 71, 13, 10, 26, 10];
+    if (bytes.length < 8) throw new PngNichtTauglich('Datei zu kurz fuer ein PNG.');
+    for (var i = 0; i < 8; i++) {
+      if (bytes[i] !== signatur[i]) throw new PngNichtTauglich('Keine PNG-Datei.');
+    }
+    var sicht = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var pos = 8, kopf = null, bloecke = [], gesamt = 0;
+    while (pos + 8 <= bytes.length) {
+      var laenge = sicht.getUint32(pos);
+      var art = String.fromCharCode(bytes[pos + 4], bytes[pos + 5],
+                                    bytes[pos + 6], bytes[pos + 7]);
+      var daten = pos + 8;
+      if (art === 'IHDR') {
+        kopf = {
+          breite: sicht.getUint32(daten),
+          hoehe: sicht.getUint32(daten + 4),
+          bittiefe: bytes[daten + 8],
+          farbtyp: bytes[daten + 9],
+          interlace: bytes[daten + 12]
+        };
+      } else if (art === 'IDAT') {
+        bloecke.push(bytes.subarray(daten, daten + laenge));
+        gesamt += laenge;
+      } else if (art === 'IEND') {
+        break;
+      }
+      pos = daten + laenge + 4;            // + 4 Byte CRC
+    }
+    if (!kopf) throw new PngNichtTauglich('PNG ohne IHDR-Block.');
+    if (!bloecke.length) throw new PngNichtTauglich('PNG ohne Bilddaten.');
+    var strom = new Uint8Array(gesamt), k = 0;
+    for (var j = 0; j < bloecke.length; j++) {
+      strom.set(bloecke[j], k);
+      k += bloecke[j].length;
+    }
+    kopf.daten = strom;
+    return kopf;
+  }
+
+  /* Setzt das PDF byteweise zusammen. `bild` beschreibt das eingebettete Bild:
+     { breite, hoehe, daten, filter: 'Flate'|'DCT', farbraum, farben } */
+  function pdfBauen(bild, breiteMm, hoeheMm) {
+    var teile = [], laenge = 0, versatz = [];
+
+    function schreibe(stueck) {
+      var bytes = (typeof stueck === 'string') ? latin1(stueck) : stueck;
+      teile.push(bytes);
+      laenge += bytes.length;
+    }
+    function objekt(nummer, woerterbuch, strom) {
+      versatz[nummer] = laenge;
+      schreibe(nummer + ' 0 obj\n' + woerterbuch + '\n');
+      if (strom) { schreibe('stream\n'); schreibe(strom); schreibe('\nendstream\n'); }
+      schreibe('endobj\n');
+    }
+
+    var seiteB = runde(breiteMm * MM_ZU_PT);
+    var seiteH = runde(hoeheMm * MM_ZU_PT);
+
+    /* Einpassen unter Wahrung des Seitenverhaeltnisses, dann zentrieren. Der
+       Rand haengt am Papierformat, nicht am Bild: A5 (0,349 mm oben und unten)
+       weicht am staerksten vom rechnerischen 1 : Wurzel(2) ab, A4 (0,009 mm)
+       und A3 (0,006 mm) kaum messbar. Der Verzicht aufs Verzerren ist Absicht:
+       ein kuenftiges Plakat mit anderem Seitenverhaeltnis wird sauber
+       eingepasst statt gestaucht. */
+    var skala = Math.min(seiteB / bild.breite, seiteH / bild.hoehe);
+    var bildB = runde(bild.breite * skala);
+    var bildH = runde(bild.hoehe * skala);
+    var x = runde((seiteB - bildB) / 2);
+    var y = runde((seiteH - bildH) / 2);
+
+    var inhalt = 'q\n' + bildB + ' 0 0 ' + bildH + ' ' + x + ' ' + y + ' cm\n/Im0 Do\nQ\n';
+
+    var bildWb = '<< /Type /XObject /Subtype /Image'
+      + ' /Width ' + bild.breite + ' /Height ' + bild.hoehe
+      + ' /ColorSpace /' + bild.farbraum
+      + ' /BitsPerComponent 8';
+    if (bild.filter === 'Flate') {
+      bildWb += ' /Filter /FlateDecode'
+        + ' /DecodeParms << /Predictor 15 /Colors ' + bild.farben
+        + ' /BitsPerComponent 8 /Columns ' + bild.breite + ' >>';
+    } else {
+      bildWb += ' /Filter /DCTDecode';
+    }
+    bildWb += ' /Length ' + bild.daten.length + ' >>';
+
+    schreibe('%PDF-1.4\n');
+    /* Binaerkennung: vier Bytes ueber 127, an denen Werkzeuge die Datei als
+       binaer erkennen. Bewusst als Escape-Folgen -- woertliche Zeichen ergaeben
+       nur dann E2 E3 CF D3, wenn jedes Werkzeug die Quelldatei als UTF-8 liest. */
+    schreibe('%' + String.fromCharCode(0xE2, 0xE3, 0xCF, 0xD3) + '\n');
+    objekt(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    objekt(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    objekt(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + seiteB + ' ' + seiteH + ']'
+            + ' /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
+    objekt(4, bildWb, bild.daten);
+    objekt(5, '<< /Length ' + inhalt.length + ' >>', latin1(inhalt));
+
+    var xrefAb = laenge;
+    var xref = 'xref\n0 6\n0000000000 65535 f \n';
+    for (var n = 1; n <= 5; n++) {
+      var v = String(versatz[n]);
+      while (v.length < 10) v = '0' + v;
+      xref += v + ' 00000 n \n';
+    }
+    schreibe(xref);
+    schreibe('trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xrefAb + '\n%%EOF\n');
+
+    var pdf = new Uint8Array(laenge), p = 0;
+    for (var t = 0; t < teile.length; t++) { pdf.set(teile[t], p); p += teile[t].length; }
+    return pdf;
+  }
+
+  /* Weg A: PNG-Bilddaten unveraendert durchreichen. */
+  function pdfAusPng(pngBytes, breiteMm, hoeheMm) {
+    var kopf = pngLesen(pngBytes);
+    if (kopf.bittiefe !== 8) {
+      throw new PngNichtTauglich('Bittiefe ' + kopf.bittiefe + ' statt 8.');
+    }
+    if (kopf.interlace !== 0) {
+      throw new PngNichtTauglich('PNG ist interlaced.');
+    }
+    if (kopf.farbtyp !== 0 && kopf.farbtyp !== 2) {
+      throw new PngNichtTauglich('Farbtyp ' + kopf.farbtyp + ' (weder Graustufen noch RGB).');
+    }
+    return pdfBauen({
+      breite: kopf.breite,
+      hoehe: kopf.hoehe,
+      daten: kopf.daten,
+      filter: 'Flate',
+      farbraum: kopf.farbtyp === 0 ? 'DeviceGray' : 'DeviceRGB',
+      farben: kopf.farbtyp === 0 ? 1 : 3
+    }, breiteMm, hoeheMm);
+  }
+
+  /* Weg B: fertige JPEG-Bytes einbetten (die Seite erzeugt sie per Canvas). */
+  function pdfAusJpeg(jpegBytes, breitePx, hoehePx, breiteMm, hoeheMm) {
+    return pdfBauen({
+      breite: breitePx,
+      hoehe: hoehePx,
+      daten: jpegBytes,
+      filter: 'DCT',
+      farbraum: 'DeviceRGB',
+      farben: 3
+    }, breiteMm, hoeheMm);
+  }
+/* == pdf-kern:ende == */
+
+  /* ---------- Bedienung ---------- */
+
+  var BILD = 'plakat-skillsliste.png';   // die grosse Datei: Download und PDF
+  var FORMATE = { A5: [148, 210], A4: [210, 297], A3: [297, 420] };
+  var GUT_DPI = 150;                 // darunter wird der Druck sichtbar weich
+
+  var plakat = document.getElementById('plakat');
+  var status = document.getElementById('status');
+  var knoepfe = [].slice.call(document.querySelectorAll('.knopf[data-format]'));
+  var rohdaten = null;               // einmal geholt, dann behalten
+
+  function melde(text) {
+    status.textContent = text;
+    status.classList.add('sichtbar');
+  }
+  function sperre() {
+    knoepfe.forEach(function (knopf) { knopf.disabled = true; });
+  }
+
+  /* Die wahren Masse stehen im IHDR-Block, den ersten 24 Byte der grossen
+     Datei. Der Range-Kopf bittet darum; beantwortet der Server ihn nicht,
+     wird stattdessen der Anfang des Stroms gelesen und der Rest abgebrochen.
+     Beide Wege kosten einen Bruchteil der 14,9 MB. Aus dem angezeigten
+     Vorschaubild duerfen die Masse nicht kommen -- das ist absichtlich klein
+     und ergaebe unsinnige dpi-Werte. */
+  function masseHolen() {
+    return fetch(BILD, { headers: { Range: 'bytes=0-33' } }).then(function (antwort) {
+      if (!antwort.ok) {
+        /* Unterscheidbar vom Fehler weiter unten (IHDR-Block unvollstaendig):
+           Hier fehlt die Bilddatei selbst -- die PDF-Knoepfe waeren ohne sie
+           nutzlos, waehrend ein fehlender Teilabruf nur die dpi-Angabe kostet. */
+        var f = new Error('HTTP ' + antwort.status);
+        f.name = 'BildNichtErreichbar';
+        throw f;
+      }
+      var leser = antwort.body.getReader();
+      var gesammelt = new Uint8Array(0);
+      function weiter() {
+        return leser.read().then(function (stueck) {
+          if (stueck.value) {
+            var neu = new Uint8Array(gesammelt.length + stueck.value.length);
+            neu.set(gesammelt);
+            neu.set(stueck.value, gesammelt.length);
+            gesammelt = neu;
+          }
+          if (gesammelt.length >= 24 || stueck.done) {
+            /* Abbrechen beendet die Uebertragung. Ohne das laedt ein Server
+               ohne Range-Unterstuetzung die ganzen 14,9 MB. */
+            leser.cancel();
+            return gesammelt;
+          }
+          return weiter();
+        });
+      }
+      return weiter();
+    }).then(function (bytes) {
+      if (bytes.length < 24) throw new Error('IHDR-Block unvollständig');
+      var sicht = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      return { breite: sicht.getUint32(16), hoehe: sicht.getUint32(20) };
+    });
+  }
+
+  /* Sagt ehrlich, was die Bilddatei hergibt. Rechnet sich beim Austausch der
+     Datei von selbst neu -- keine Zahl von Hand nachpflegen. */
+  function aufloesungZeigen(breite, hoehe) {
+    if (!breite || !hoehe) return;
+    document.getElementById('masse').textContent =
+      breite + ' × ' + hoehe + ' Pixel';
+    document.getElementById('pngMeta').textContent =
+      'Bilddatei, ' + breite + ' × ' + hoehe + ' px';
+    knoepfe.forEach(function (knopf) {
+      var mm = FORMATE[knopf.getAttribute('data-format')];
+      var dpi = Math.round(Math.min(breite / (mm[0] / 25.4), hoehe / (mm[1] / 25.4)));
+      var knapp = dpi < GUT_DPI;
+      knopf.querySelector('.knopf-meta').textContent =
+        mm[0] + ' × ' + mm[1] + ' mm · ' + dpi + ' dpi' + (knapp ? ' · knapp' : '');
+      knopf.classList.toggle('knapp', knapp);
+      if (dpi < GUT_DPI) {
+        knopf.title = 'Mit ' + dpi + ' dpi wird der Ausdruck in diesem Format '
+                    + 'sichtbar weich. Gedruckt werden kann er trotzdem.';
+      } else {
+        knopf.removeAttribute('title');
+      }
+    });
+  }
+
+  function speichere(bytes, name) {
+    var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+    var verweis = document.createElement('a');
+    verweis.href = url;
+    verweis.download = name;
+    document.body.appendChild(verweis);
+    verweis.click();
+    document.body.removeChild(verweis);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  var abrufLaeuft = null;            // die laufende Zusage, nicht ihr Ergebnis
+
+  function bytesHolen() {
+    if (rohdaten) return Promise.resolve(rohdaten);
+    /* Die Zusage merken, nicht erst ihr Ergebnis: Sonst startet ein zweiter
+       Klick waehrend der Wartezeit einen zweiten Abruf ueber 14,9 MB und legt
+       am Ende zwei Dateien ab. */
+    if (abrufLaeuft) return abrufLaeuft;
+    abrufLaeuft = fetch(BILD).then(function (antwort) {
+      if (!antwort.ok) throw new Error('HTTP ' + antwort.status);
+      return antwort.arrayBuffer();
+    }).then(function (puffer) {
+      rohdaten = new Uint8Array(puffer);
+      abrufLaeuft = null;
+      return rohdaten;
+    }).catch(function (fehler) {
+      abrufLaeuft = null;            // sonst bliebe der Fehler fuer immer haengen
+      throw fehler;
+    });
+    return abrufLaeuft;
+  }
+
+  /* Rueckfallebene, nur noetig wenn die Datei kein 8-Bit-PNG ohne Interlace
+     ist: das Bild aus den bereits geholten Bytes aufbauen und ueber ein Canvas
+     als JPEG ausgeben. Ausdruecklich NICHT das angezeigte Vorschaubild -- das
+     ergaebe ein PDF aus einer 1200-px-Vorlage. */
+  function bildAusBytes(bytes) {
+    return new Promise(function (erfuellen, ablehnen) {
+      var url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+      var bild = new Image();
+      bild.onload = function () { erfuellen({ bild: bild, url: url }); };
+      bild.onerror = function () {
+        URL.revokeObjectURL(url);
+        ablehnen(new Error('Bilddatei ist nicht lesbar'));
+      };
+      bild.src = url;
+    });
+  }
+
+  function jpegBytes(bild) {
+    var flaeche = document.createElement('canvas');
+    flaeche.width = bild.naturalWidth;
+    flaeche.height = bild.naturalHeight;
+    var stift = flaeche.getContext('2d');
+    stift.fillStyle = '#ffffff';                 // JPEG kennt keine Transparenz
+    stift.fillRect(0, 0, flaeche.width, flaeche.height);
+    stift.drawImage(bild, 0, 0);
+    var uri = flaeche.toDataURL('image/jpeg', 0.92);   // hohe Guete, weil gedruckt wird
+    var roh = atob(uri.slice(uri.indexOf(',') + 1));
+    var bytes = new Uint8Array(roh.length);
+    for (var i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
+    return bytes;
+  }
+
+  function erzeuge(format) {
+    var mm = FORMATE[format];
+    var name = 'plakat-skillsliste-' + format.toLowerCase() + '.pdf';
+    /* Der Abruf dauert auf Mobilfunk zehn Sekunden und mehr; ohne Rueckmeldung
+       sieht der Benutzer in der Zwischenzeit nichts und klickt womoeglich
+       nochmals -- bytesHolen() faengt das zwar ab, aber die Wartezeit bleibt. */
+    melde('Das PDF wird erzeugt — das Plakat ist 14,9 MB gross, das dauert einen Moment.');
+    bytesHolen().then(function (png) {
+      try {
+        speichere(pdfAusPng(png, mm[0], mm[1]), name);
+        status.classList.remove('sichtbar');
+        return null;
+      } catch (fehler) {
+        if (fehler.name !== 'PngNichtTauglich') throw fehler;
+      }
+      return bildAusBytes(png).then(function (geladen) {
+        try {
+          speichere(pdfAusJpeg(jpegBytes(geladen.bild), geladen.bild.naturalWidth,
+                               geladen.bild.naturalHeight, mm[0], mm[1]), name);
+          status.classList.remove('sichtbar');
+        } finally {
+          URL.revokeObjectURL(geladen.url);
+        }
+      });
+    }).catch(function (fehler) {
+      melde('Das PDF konnte nicht erzeugt werden ('
+          + (fehler && (fehler.message || fehler.name) || 'unbekannter Fehler')
+          + '). Das PNG lässt sich weiterhin herunterladen.');
+    });
+  }
+
+  knoepfe.forEach(function (knopf) {
+    knopf.addEventListener('click', function () {
+      erzeuge(knopf.getAttribute('data-format'));
+    });
+  });
+
+  plakat.addEventListener('error', function () {
+    plakat.style.display = 'none';
+    document.getElementById('fehlbild').style.display = 'block';
+  });
+
+  /* Als Datei geoeffnet duerfen Browser die Bilddatei nicht per Skript lesen.
+     Das gleich sagen, statt den Benutzer in einen Fehlschlag laufen zu lassen. */
+  if (location.protocol === 'file:') {
+    sperre();
+    melde('Diese Seite wurde als lokale Datei geöffnet. Browser erlauben hier '
+        + 'nicht, die Bilddatei per Skript zu lesen — die PDF-Knöpfe ruhen '
+        + 'deshalb. Auf stayingclean.github.io/toolbox/ funktionieren sie. '
+        + 'Das PNG lässt sich auch hier herunterladen.');
+  } else {
+    masseHolen().then(function (masse) {
+      aufloesungZeigen(masse.breite, masse.hoehe);
+    }).catch(function (fehler) {
+      if (fehler && fehler.name === 'BildNichtErreichbar') {
+        /* Die grosse Datei fehlt oder ist offline nicht erreichbar -- dann
+           scheitert auch jeder PDF-Versuch. Das gleich sagen statt die
+           Knoepfe aktiv zu lassen und den Fehlschlag erst beim Klick zu
+           zeigen. */
+        sperre();
+        melde('Die Bilddatei ist nicht erreichbar. Die PDF-Knöpfe sind deshalb '
+            + 'gesperrt, der PNG-Link bleibt nutzbar.');
+        return;
+      }
+      /* Ohne Teilabruf bleiben die Knoepfe bei ihren Millimeterangaben. Lieber
+         keine dpi-Zahl als eine erfundene -- die Knoepfe funktionieren
+         weiterhin, das PDF haengt nicht an dieser Abfrage. */
+    });
+  }
+
+})();
+</script>
+</body>
+</html>

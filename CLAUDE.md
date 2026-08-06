@@ -18,6 +18,26 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/asrs-v1-1.html` = ASRS v1.1 (ADHS-Selbstbeurteilung, WHO – frei nutzbar).
 - `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
 - `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
+- `docs/plakat.html` = Plakat zur Skillsliste zum Herunterladen (PNG und PDF in
+  A5/A4/A3). Das PDF baut die Seite selbst; die Bildpunkte des PNG wandern dabei
+  unverändert ins PDF. Das Plakat liegt in **zwei** Dateien daneben:
+  `docs/plakat-skillsliste.png` in voller Auflösung (3508 × 4961 px, 300 dpi auf
+  A3) für Download und PDF, und `docs/plakat-vorschau.jpg` (~360 KB) nur für die
+  Anzeige — sonst lüde jeder Seitenaufruf 14,9 MB. Diese drei Zahlen gelten fürs
+  heutige Plakat und sind beim Austausch mit anzupassen.
+
+  **Beim Austausch des Plakats muss die Vorschau neu erzeugt werden:**
+
+  ```
+  uv run --with pillow python -c "from PIL import Image; q=Image.open('docs/plakat-skillsliste.png'); q.resize((1200, round(1200*q.height/q.width)), Image.LANCZOS).convert('RGB').save('docs/plakat-vorschau.jpg', quality=80, optimize=True, progressive=True)"
+  ```
+
+  Der Auflösungshinweis auf der Seite rechnet sich von selbst neu, und
+  `pytest tests` prüft, ob die neue Datei weiterhin verlustfrei ins PDF
+  durchgereicht werden kann und ob die Vorschau zum Original passt. Ausserdem
+  meldet `pytest tests`, falls `width`/`height` am Vorschaubild in
+  `docs/plakat.html` nicht mehr zur neuen Vorschau passen — die beiden Werte
+  müssen dann von Hand nachgezogen werden.
 
 Die Übersicht ist **nach Themen gruppiert** (`<section class="group">` je Thema, z. B.
 „Werkzeuge", „ADHS").
