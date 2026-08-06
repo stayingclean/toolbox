@@ -27,11 +27,42 @@ Diese Punkte wurden im Gespräch festgelegt und begrenzen den Umfang bewusst:
 
 ## Ausgangslage: Auflösung
 
-Die vorhandene Datei misst **1055 × 1491 px** (8-Bit-RGB, ohne Interlace — also
-genau der Typ, für den Weg A weiter unten gilt). Das Seitenverhältnis passt zum
-A-Format (0,70758 gegenüber 0,70711 — ein Unterschied von 0,07 %), die Auflösung
-reicht aber nur für 180 dpi auf A5, 128 dpi auf A4 und 90 dpi auf A3. Für sauberen
-Druck bis A3 braucht es 3508 × 4961 px.
+Die Plakatdatei misst **3508 × 4961 px** (8-Bit-RGB, ohne Interlace — also genau
+der Typ, für den Weg A weiter unten gilt). Das Seitenverhältnis trifft das
+A-Format praktisch exakt (0,70712 gegenüber 0,70711). Die Auflösung reicht für
+**600 dpi auf A5, 424 auf A4 und 300 auf A3** — der ganze gewünschte Bereich ist
+abgedeckt.
+
+Die erste Fassung hatte nur 1055 × 1491 px und damit 90 dpi auf A3. Die Seite ist
+deshalb so gebaut, dass sie mit **jeder** Bildgrösse richtig arbeitet und ehrlich
+anzeigt, was die aktuelle Datei hergibt — der Austausch bleibt ein reiner
+Dateitausch.
+
+### Zwei Dateien, nicht eine
+
+Die volle Auflösung kostet **14,9 MB**. Als Vorschau eingebunden lüde jeder
+Seitenaufruf diese 14,9 MB herunter, auch wenn niemand etwas speichert. Darum
+liegt daneben eine verkleinerte Vorschau:
+
+| Datei | Grösse | wofür |
+|---|---|---|
+| `docs/plakat-skillsliste.png` | 14,9 MB | PNG-Download **und** Quelle fürs PDF |
+| `docs/plakat-vorschau.jpg` | ~360 KB | nur die Anzeige auf der Seite |
+
+JPEG statt PNG für die Vorschau, weil die Aquarell-Illustrationen als PNG selbst
+verkleinert noch 2,9 MB wögen — bei gleicher sichtbarer Qualität achtmal so viel.
+
+Zwei Folgen, die man leicht übersieht:
+
+1. **Der Auflösungshinweis darf nicht aus dem Vorschaubild rechnen** — der meldete
+   1200 px und damit unsinnige dpi-Werte. Die wahren Masse kommen per Teilabruf
+   (HTTP-Range) aus den ersten 34 Byte der grossen Datei, wo der IHDR-Block steht.
+   Das kostet ein paar hundert Byte statt 14,9 MB. Beachtet der Server den
+   Teilabruf nicht, entfällt die dpi-Angabe — eine erfundene Zahl wäre schlimmer
+   als keine.
+2. **Weg B darf nicht das Vorschaubild ins Canvas zeichnen** — das ergäbe ein PDF
+   aus einer 1200-px-Vorlage. Weg B baut sein Bild aus den bereits geholten Bytes
+   der grossen Datei.
 
 Die Seite wird deshalb so gebaut, dass sie mit **jeder** Bildgrösse richtig
 arbeitet und dem Benutzer ehrlich sagt, was das aktuelle Bild hergibt. Die
@@ -41,7 +72,8 @@ höher aufgelöste Datei kommt später und wird nur ausgetauscht.
 
 | Datei | Art | Zweck |
 |---|---|---|
-| `docs/plakat-skillsliste.png` | neu | Das Plakat, aus `neue_docs/` kopiert. Austauschbar. |
+| `docs/plakat-skillsliste.png` | neu | Das Plakat in voller Auflösung, aus `neue_docs/` kopiert. Austauschbar. |
+| `docs/plakat-vorschau.jpg` | neu | Verkleinerte Vorschau, aus der grossen Datei erzeugt. |
 | `docs/plakat.html` | neu | Die Download-Seite. CSS eingebettet, Fusszeile mit Credit und Kaffee-Link. |
 | `docs/index.html` | geändert | Neue Karte in der Gruppe „Skills". |
 | `tests/test_plakat.py` | neu | Prüft Seite und PDF-Erzeugung. |
@@ -52,7 +84,7 @@ höher aufgelöste Datei kommt später und wird nur ausgetauscht.
 Aufbau von oben nach unten:
 
 1. Kurzer Titel und ein, zwei Sätze, worum es geht.
-2. **Vorschau** des Plakats (das Bild selbst, in der Breite begrenzt).
+2. **Vorschau** des Plakats (das verkleinerte Vorschaubild, in der Breite begrenzt).
 3. **Download-Bereich** mit vier Knöpfen: `PNG`, `PDF A5`, `PDF A4`, `PDF A3`.
    Drei getrennte PDF-Knöpfe statt Auswahlfeld plus Knopf — ein Klick statt zwei.
 4. **Auflösungshinweis**, zur Laufzeit aus der tatsächlichen Bildgrösse gerechnet.
@@ -118,19 +150,19 @@ Nachkommastellen:
 
 **Platzierung.** Das Bild wird **unter Wahrung des Seitenverhältnisses** so gross
 wie möglich auf die Seite gelegt und zentriert. Beim heutigen Bild bleibt dadurch
-ein Rand von 0,07 % — rund 0,15 mm auf A4, mit blossem Auge nicht zu sehen, also
-praktisch randlos. Der Verzicht aufs Verzerren ist Absicht: Ein künftiges Plakat
+ein Rand von 0,001 % — Bruchteile eines Hundertstelmillimeters, also randlos. Der Verzicht aufs Verzerren ist Absicht: Ein künftiges Plakat
 mit abweichendem Seitenverhältnis wird dann sauber eingepasst statt gestaucht.
 
 **Dateinamen** der Downloads: `plakat-skillsliste-a5.pdf`, `-a4.pdf`, `-a3.pdf`.
 
 ### Auflösungshinweis
 
-Sobald das Bild geladen ist, rechnet die Seite aus `naturalWidth` die effektive
-Auflösung für jedes Format aus (`Pixel ÷ Zoll`) und zeigt sie beim jeweiligen
-Knopf an, etwa „127 dpi". Formate unter 150 dpi werden zusätzlich sichtbar als
-knapp gekennzeichnet; verboten wird nichts — wer ein A3 mit 90 dpi drucken will,
-darf das, soll es aber vorher wissen.
+Aus den Massen der grossen Datei rechnet die Seite die effektive Auflösung für
+jedes Format aus (`Pixel ÷ Zoll`) und zeigt sie beim jeweiligen Knopf an, etwa
+„300 dpi". Formate unter 150 dpi werden zusätzlich sichtbar als knapp
+gekennzeichnet; verboten wird nichts — wer ein A3 mit 90 dpi drucken will, darf
+das, soll es aber vorher wissen. Mit der heutigen Datei ist kein Format knapp;
+die Markierung bleibt für den nächsten Plakatwechsel im Code.
 
 Der Hinweis rechnet sich beim Austausch der Bilddatei von selbst neu. Es gibt
 keine Zahl, die von Hand nachzupflegen wäre.
@@ -210,11 +242,13 @@ auslösen, die drei PDFs ansehen.
 
 ## Offene Punkte
 
-- Die **höher aufgelöste Bilddatei** wird nachgereicht; Zielmass 3508 × 4961 px
-  (300 dpi auf A3). Bis dahin steht die aktuelle 1055 × 1491 px grosse Fassung in
-  `docs/`, und der Auflösungshinweis sagt ehrlich, wofür sie reicht — heute also
-  A5 unmarkiert, A4 und A3 als knapp gekennzeichnet. Der Austausch ist ein reiner
-  Dateitausch; an der Seite ist nichts anzupassen.
+- Die höher aufgelöste Bilddatei ist eingetroffen und liegt der Umsetzung
+  zugrunde (3508 × 4961 px). Damit ist der ursprüngliche Vorbehalt erledigt.
+- **Beim nächsten Plakatwechsel** muss die Vorschau mit erzeugt werden — der
+  Befehl dafür steht in `CLAUDE.md`. Alles Übrige ist ein reiner Dateitausch:
+  Der Auflösungshinweis rechnet sich neu, und `pytest tests` prüft, ob die neue
+  Datei weiterhin verlustfrei ins PDF durchgereicht werden kann und ob die
+  Vorschau zum Original passt.
 - Mit `docs/plakat-skillsliste.png` wandert erstmals eine Datei aus `neue_docs/`
   ins öffentliche Verzeichnis. Das Plakat ist Eigengestaltung der Organisation und
   enthält keine personen- oder organisationsspezifischen Angaben ausser den beiden
