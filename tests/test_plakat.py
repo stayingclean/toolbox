@@ -241,3 +241,16 @@ def test_lokaler_aufruf_wird_erklaert():
     dastehen, statt still zu scheitern."""
     text = SEITE.read_text(encoding="utf-8")
     assert "file:" in text
+
+
+def test_uebersicht_verlinkt_das_plakat_in_der_skills_gruppe():
+    text = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+    ab = text.index('class="group group--skills"')
+    bis = text.index("</section>", ab)
+    gruppe = text[ab:bis]
+    assert 'href="plakat.html"' in gruppe, "Karte steht nicht in der Skills-Gruppe"
+
+
+def test_claude_md_nennt_die_neue_seite():
+    text = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+    assert "docs/plakat.html" in text
