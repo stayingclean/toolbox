@@ -162,9 +162,23 @@ def test_bilddatei_passt_zu_weg_a():
     assert png[28] == 0, "PNG ist interlaced"
 
 
+def test_pdf_kern_kommt_ohne_zeichen_ueber_127_aus():
+    """Der Binaerkommentar muss aus ASCII-Quelltext entstehen. Staenden die vier
+    Zeichen woertlich da, hienge das Ergebnis daran, dass jedes Werkzeug die
+    Datei als UTF-8 liest. Dieser Test wird rot, sobald jemand dorthin
+    zurueckfaellt — anders als eine Pruefung am fertigen PDF, die beide
+    Schreibweisen gleich aussehen laesst."""
+    text = SEITE.read_text(encoding="utf-8-sig")
+    ab = text.index("/* == pdf-kern:anfang == */")
+    bis = text.index("/* == pdf-kern:ende == */")
+    ausreisser = sorted({z for z in text[ab:bis] if ord(z) > 127})
+    assert not ausreisser, f"Zeichen ueber 127 im PDF-Kern: {ausreisser}"
+
+
 @pytest.mark.parametrize("name", sorted(FORMATE))
 def test_binaerkennung_steht_als_vier_bytes_im_pdf(pdfs, name):
-    """Die vier Bytes hinter %PDF-1.4 weisen die Datei als binär aus. Stehen
-    dort UTF-8-kodierte Zeichen statt E2 E3 CF D3, hat ein Werkzeug die
-    Quelldatei umkodiert — ohne diesen Test fiele das nirgends auf."""
+    """Hinter %PDF-1.4 stehen vier Bytes ueber 127, an denen Werkzeuge die Datei
+    als binaer erkennen. Dieser Test haelt fest, dass sie im Ergebnis ankommen —
+    dass sie aus ASCII-Quelltext stammen, prueft
+    test_pdf_kern_kommt_ohne_zeichen_ueber_127_aus."""
     assert pdfs[name].startswith(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
