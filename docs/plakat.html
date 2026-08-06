@@ -4,8 +4,184 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plakat – Toolbox</title>
+  <style>
+    :root {
+      --bg: #FAF8F5;
+      --card: #FFFFFF;
+      --border: #E8E4DF;
+      --text: #1C1C1C;
+      --muted: #7A7268;
+      --accent: #008080;
+      --accent-dark: #006666;
+      --accent-tint: #E6F2F2;
+      --warn: #8A5A2B;
+      --warn-tint: #FBF1E4;
+      --warn-border: #EDD9BF;
+      --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+      --font-display: Georgia, "Times New Roman", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Derselbe dezente Puls wie auf der Übersicht — hält die Seiten zusammen. */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: radial-gradient(ellipse 80% 55% at 50% 0%, var(--accent-tint) 0%, transparent 68%);
+      opacity: 0.3;
+      animation: breathe 7s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { opacity: 0.22; transform: scaleY(1); }
+      50%      { opacity: 0.40; transform: scaleY(1.05); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body::before { animation: none; }
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 48px 20px 64px; }
+    .zurueck { margin: 0 0 18px; }
+    .zurueck a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+    .zurueck a:hover { color: var(--accent); }
+    h1 {
+      font-family: var(--font-display);
+      font-size: 2rem; font-weight: 600; margin: 0 0 8px;
+      letter-spacing: -0.01em; color: var(--accent-dark);
+    }
+    .sub { color: var(--muted); margin: 0; font-size: 1rem; }
+    h2 {
+      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); margin: 0 0 12px;
+    }
+    .vorschau { margin: 32px 0 0; padding: 0; }
+    .vorschau img {
+      display: block; width: 100%; height: auto;
+      border: 1px solid var(--border); border-radius: 14px; background: var(--card);
+    }
+    .vorschau figcaption { margin-top: 8px; color: var(--muted); font-size: 0.82rem; }
+    .fehlbild {
+      display: none; padding: 28px; text-align: center;
+      border: 1px dashed var(--border); border-radius: 14px;
+      background: var(--card); color: var(--muted);
+    }
+    .downloads { margin-top: 32px; }
+    .knoepfe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    @media (max-width: 620px) { .knoepfe { grid-template-columns: repeat(2, 1fr); } }
+    .knopf {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 16px 18px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 14px;
+      text-decoration: none; color: var(--text); font: inherit; text-align: left;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+    }
+    .knopf:hover:not(:disabled) {
+      background: var(--accent-tint); border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .knopf:disabled { opacity: 0.45; cursor: default; }
+    .knopf-name { font-weight: 600; font-size: 1.05rem; color: var(--accent-dark); }
+    .knopf-meta { color: var(--muted); font-size: 0.8rem; }
+    .knopf.knapp .knopf-meta { color: var(--warn); }
+    .status {
+      display: none; margin-top: 14px; padding: 12px 14px;
+      border: 1px solid var(--warn-border); border-radius: 10px;
+      background: var(--warn-tint); color: var(--warn); font-size: 0.88rem;
+    }
+    .status.sichtbar { display: block; }
+    footer {
+      margin-top: 48px; padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 0.82rem;
+    }
+    .footer-links {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 8px 14px; margin-top: 12px;
+    }
+    .footer-credit {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--muted); text-decoration: none; transition: color 0.15s ease;
+    }
+    .footer-credit:hover { color: var(--accent); }
+    .footer-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 1px solid var(--border); object-fit: cover; display: block;
+    }
+    .footer-coffee {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--muted); text-decoration: none; transition: color 0.15s ease;
+    }
+    .footer-coffee:hover { color: var(--accent); }
+    @media (max-width: 480px) { .footer-sep { display: none; } }
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <p class="zurueck"><a href="index.html">← Übersicht</a></p>
+
+    <header>
+      <h1>Plakat zur Skillsliste</h1>
+      <p class="sub">Zum Aufhängen — mit QR-Codes zur Skillsliste und zum
+        Vorschlagsformular.</p>
+    </header>
+
+    <figure class="vorschau">
+      <img id="plakat" src="plakat-vorschau.jpg" width="1200" height="1697"
+           alt="Plakat „Gemeinsam Skills stärken“ mit zwei QR-Codes: einer führt zur Skillsliste, einer zum Formular für eigene Vorschläge.">
+      <div class="fehlbild" id="fehlbild">
+        Das Plakat konnte nicht geladen werden.
+      </div>
+      <figcaption id="masse"></figcaption>
+    </figure>
+
+    <section class="downloads">
+      <h2>Herunterladen</h2>
+      <div class="knoepfe">
+        <a class="knopf" href="plakat-skillsliste.png"
+           download="plakat-skillsliste.png">
+          <span class="knopf-name">PNG</span>
+          <span class="knopf-meta" id="pngMeta">Bilddatei</span>
+        </a>
+        <button class="knopf" type="button" data-format="A5">
+          <span class="knopf-name">PDF A5</span>
+          <span class="knopf-meta">148 × 210 mm</span>
+        </button>
+        <button class="knopf" type="button" data-format="A4">
+          <span class="knopf-name">PDF A4</span>
+          <span class="knopf-meta">210 × 297 mm</span>
+        </button>
+        <button class="knopf" type="button" data-format="A3">
+          <span class="knopf-name">PDF A3</span>
+          <span class="knopf-meta">297 × 420 mm</span>
+        </button>
+      </div>
+      <p class="status" id="status" role="status"></p>
+    </section>
+
+    <footer>
+      <div>Das Plakat darf frei ausgedruckt und aufgehängt werden.</div>
+      <div class="footer-links">
+        <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+          <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+          <span>Erstellt von stayingclean</span>
+        </a>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+          <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+        </a>
+      </div>
+    </footer>
+  </div>
+
 <script>
 (function(){
   "use strict";
@@ -192,6 +368,179 @@
     }, breiteMm, hoeheMm);
   }
 /* == pdf-kern:ende == */
+
+  /* ---------- Bedienung ---------- */
+
+  var BILD = 'plakat-skillsliste.png';   // die grosse Datei: Download und PDF
+  var FORMATE = { A5: [148, 210], A4: [210, 297], A3: [297, 420] };
+  var GUT_DPI = 150;                 // darunter wird der Druck sichtbar weich
+
+  var plakat = document.getElementById('plakat');
+  var status = document.getElementById('status');
+  var knoepfe = [].slice.call(document.querySelectorAll('.knopf[data-format]'));
+  var rohdaten = null;               // einmal geholt, dann behalten
+
+  function melde(text) {
+    status.textContent = text;
+    status.classList.add('sichtbar');
+  }
+  function sperre() {
+    knoepfe.forEach(function (knopf) { knopf.disabled = true; });
+  }
+
+  /* Die wahren Masse stehen im IHDR-Block, den ersten 34 Byte der grossen
+     Datei. Ein Teilabruf holt genau die -- aus dem angezeigten Vorschaubild
+     duerfen sie nicht kommen, das ist absichtlich klein und ergaebe unsinnige
+     dpi-Werte. */
+  function masseHolen() {
+    var abbruch = new AbortController();
+    return fetch(BILD, {
+      headers: { Range: 'bytes=0-33' },
+      signal: abbruch.signal
+    }).then(function (antwort) {
+      if (antwort.status !== 206) {
+        // Server beachtet Range nicht: abbrechen, statt 14,9 MB zu laden.
+        abbruch.abort();
+        throw new Error('Teilabruf nicht möglich');
+      }
+      return antwort.arrayBuffer();
+    }).then(function (puffer) {
+      var sicht = new DataView(puffer);
+      return { breite: sicht.getUint32(16), hoehe: sicht.getUint32(20) };
+    });
+  }
+
+  /* Sagt ehrlich, was die Bilddatei hergibt. Rechnet sich beim Austausch der
+     Datei von selbst neu -- keine Zahl von Hand nachpflegen. */
+  function aufloesungZeigen(breite, hoehe) {
+    if (!breite || !hoehe) return;
+    document.getElementById('masse').textContent =
+      breite + ' × ' + hoehe + ' Pixel';
+    document.getElementById('pngMeta').textContent =
+      'Bilddatei, ' + breite + ' × ' + hoehe + ' px';
+    knoepfe.forEach(function (knopf) {
+      var mm = FORMATE[knopf.getAttribute('data-format')];
+      var dpi = Math.round(Math.min(breite / (mm[0] / 25.4), hoehe / (mm[1] / 25.4)));
+      knopf.querySelector('.knopf-meta').textContent =
+        mm[0] + ' × ' + mm[1] + ' mm · ' + dpi + ' dpi';
+      knopf.classList.toggle('knapp', dpi < GUT_DPI);
+      if (dpi < GUT_DPI) {
+        knopf.title = 'Mit ' + dpi + ' dpi wird der Ausdruck in diesem Format '
+                    + 'sichtbar weich. Gedruckt werden kann er trotzdem.';
+      } else {
+        knopf.removeAttribute('title');
+      }
+    });
+  }
+
+  function speichere(bytes, name) {
+    var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+    var verweis = document.createElement('a');
+    verweis.href = url;
+    verweis.download = name;
+    document.body.appendChild(verweis);
+    verweis.click();
+    document.body.removeChild(verweis);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function bytesHolen() {
+    if (rohdaten) return Promise.resolve(rohdaten);
+    return fetch(BILD).then(function (antwort) {
+      if (!antwort.ok) throw new Error('HTTP ' + antwort.status);
+      return antwort.arrayBuffer();
+    }).then(function (puffer) {
+      rohdaten = new Uint8Array(puffer);
+      return rohdaten;
+    });
+  }
+
+  /* Rueckfallebene, nur noetig wenn die Datei kein 8-Bit-PNG ohne Interlace
+     ist: das Bild aus den bereits geholten Bytes aufbauen und ueber ein Canvas
+     als JPEG ausgeben. Ausdruecklich NICHT das angezeigte Vorschaubild -- das
+     ergaebe ein PDF aus einer 1200-px-Vorlage. */
+  function bildAusBytes(bytes) {
+    return new Promise(function (erfuellen, ablehnen) {
+      var url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+      var bild = new Image();
+      bild.onload = function () { erfuellen({ bild: bild, url: url }); };
+      bild.onerror = function () {
+        URL.revokeObjectURL(url);
+        ablehnen(new Error('Bilddatei ist nicht lesbar'));
+      };
+      bild.src = url;
+    });
+  }
+
+  function jpegBytes(bild) {
+    var flaeche = document.createElement('canvas');
+    flaeche.width = bild.naturalWidth;
+    flaeche.height = bild.naturalHeight;
+    var stift = flaeche.getContext('2d');
+    stift.fillStyle = '#ffffff';                 // JPEG kennt keine Transparenz
+    stift.fillRect(0, 0, flaeche.width, flaeche.height);
+    stift.drawImage(bild, 0, 0);
+    var uri = flaeche.toDataURL('image/jpeg', 0.92);
+    var roh = atob(uri.slice(uri.indexOf(',') + 1));
+    var bytes = new Uint8Array(roh.length);
+    for (var i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
+    return bytes;
+  }
+
+  function erzeuge(format) {
+    var mm = FORMATE[format];
+    var name = 'plakat-skillsliste-' + format.toLowerCase() + '.pdf';
+    status.classList.remove('sichtbar');
+    bytesHolen().then(function (png) {
+      try {
+        speichere(pdfAusPng(png, mm[0], mm[1]), name);
+        return null;
+      } catch (fehler) {
+        if (fehler.name !== 'PngNichtTauglich') throw fehler;
+      }
+      return bildAusBytes(png).then(function (geladen) {
+        try {
+          speichere(pdfAusJpeg(jpegBytes(geladen.bild), geladen.bild.naturalWidth,
+                               geladen.bild.naturalHeight, mm[0], mm[1]), name);
+        } finally {
+          URL.revokeObjectURL(geladen.url);
+        }
+      });
+    }).catch(function (fehler) {
+      melde('Das PDF konnte nicht erzeugt werden ('
+          + (fehler && (fehler.message || fehler.name) || 'unbekannter Fehler')
+          + '). Das PNG lässt sich weiterhin herunterladen.');
+    });
+  }
+
+  knoepfe.forEach(function (knopf) {
+    knopf.addEventListener('click', function () {
+      erzeuge(knopf.getAttribute('data-format'));
+    });
+  });
+
+  plakat.addEventListener('error', function () {
+    plakat.style.display = 'none';
+    document.getElementById('fehlbild').style.display = 'block';
+  });
+
+  /* Als Datei geoeffnet duerfen Browser die Bilddatei nicht per Skript lesen.
+     Das gleich sagen, statt den Benutzer in einen Fehlschlag laufen zu lassen. */
+  if (location.protocol === 'file:') {
+    sperre();
+    melde('Diese Seite wurde als lokale Datei geöffnet. Browser erlauben hier '
+        + 'nicht, die Bilddatei per Skript zu lesen — die PDF-Knöpfe ruhen '
+        + 'deshalb. Auf stayingclean.github.io/toolbox/ funktionieren sie. '
+        + 'Das PNG lässt sich auch hier herunterladen.');
+  } else {
+    masseHolen().then(function (masse) {
+      aufloesungZeigen(masse.breite, masse.hoehe);
+    }).catch(function () {
+      /* Ohne Teilabruf bleiben die Knoepfe bei ihren Millimeterangaben. Lieber
+         keine dpi-Zahl als eine erfundene -- die Knoepfe funktionieren
+         weiterhin, das PDF haengt nicht an dieser Abfrage. */
+    });
+  }
 
 })();
 </script>

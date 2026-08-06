@@ -16,6 +16,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 SEITE = ROOT / "docs" / "plakat.html"
 BILD = ROOT / "docs" / "plakat-skillsliste.png"
+VORSCHAU = ROOT / "docs" / "plakat-vorschau.jpg"
 TREIBER = ROOT / "tests" / "plakat_pdf_treiber.mjs"
 
 MM_ZU_PT = 72 / 25.4
@@ -182,3 +183,61 @@ def test_binaerkennung_steht_als_vier_bytes_im_pdf(pdfs, name):
     dass sie aus ASCII-Quelltext stammen, prueft
     test_pdf_kern_kommt_ohne_zeichen_ueber_127_aus."""
     assert pdfs[name].startswith(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+
+
+def test_fusszeile_traegt_credit_und_kaffee_link():
+    text = SEITE.read_text(encoding="utf-8")
+    assert "https://github.com/stayingclean" in text
+    assert "Erstellt von stayingclean" in text
+    assert "https://buymeacoffee.com/stayingclean" in text
+    assert "Kaffee spendieren" in text
+
+
+def test_seite_laedt_nichts_von_aussen_ausser_dem_avatar():
+    """CSS eingebettet, keine fremde Schriftquelle — sonst sähe die Seite
+    ohne Internet anders aus. Der Avatar der Fusszeile ist die vereinbarte
+    Ausnahme aus CLAUDE.md."""
+    text = SEITE.read_text(encoding="utf-8")
+    assert 'rel="stylesheet"' not in text
+    assert "fonts.googleapis.com" not in text
+    assert "fonts.gstatic.com" not in text
+
+
+def test_seite_verweist_auf_beide_bilddateien():
+    text = SEITE.read_text(encoding="utf-8")
+    assert "plakat-skillsliste.png" in text, "die grosse Datei fehlt"
+    assert "plakat-vorschau.jpg" in text, "die Vorschau fehlt"
+    assert BILD.exists()
+    assert VORSCHAU.exists()
+
+
+def test_vorschau_ist_klein_genug_fuer_einen_seitenaufruf():
+    """Die grosse Datei ist 14,9 MB. Die Vorschau existiert genau darum, dass
+    nicht jeder Seitenaufruf sie herunterlädt."""
+    assert VORSCHAU.stat().st_size < 1_000_000
+    assert VORSCHAU.stat().st_size * 10 < BILD.stat().st_size
+
+
+def test_vorschau_zeigt_dasselbe_wie_die_grosse_datei():
+    """Nach einem Austausch des Plakats muss auch die Vorschau neu erzeugt
+    werden. Ein abweichendes Seitenverhältnis verrät, dass das vergessen ging."""
+    from PIL import Image
+
+    with Image.open(BILD) as gross, Image.open(VORSCHAU) as klein:
+        assert klein.width < gross.width, "Vorschau ist nicht verkleinert"
+        assert klein.width / klein.height == pytest.approx(
+            gross.width / gross.height, rel=0.01
+        )
+
+
+def test_alle_drei_pdf_knoepfe_stehen_auf_der_seite():
+    text = SEITE.read_text(encoding="utf-8")
+    for format_name in ("A5", "A4", "A3"):
+        assert f'data-format="{format_name}"' in text
+
+
+def test_lokaler_aufruf_wird_erklaert():
+    """Als Datei geöffnet kann die Seite die Bilddatei nicht lesen. Das muss
+    dastehen, statt still zu scheitern."""
+    text = SEITE.read_text(encoding="utf-8")
+    assert "file:" in text
