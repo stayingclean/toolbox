@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plakat – Toolbox</title>
+</head>
+<body>
+<script>
+(function(){
+  "use strict";
+
+/* == pdf-kern:anfang == */
+/* Baut aus einer Bilddatei ein einseitiges PDF im gewuenschten Papierformat.
+
+   Reine Funktionen: kein DOM, kein fetch, kein Canvas. Nur so laesst sich der
+   heikelste Teil ausserhalb des Browsers pruefen (tests/test_plakat.py).
+
+   Weg A (pdfAusPng) reicht die Bildpunkte des PNG unveraendert ins PDF durch:
+   Ein PNG speichert sie als zlib-Strom ueber zeilenweise gefilterte Rohdaten,
+   und PDF liest mit FlateDecode + Predictor 15 genau dasselbe Format. Kein
+   Neukodieren, kein Qualitaetsverlust -- das zaehlt vor allem fuer die beiden
+   QR-Codes, deren harte Schwarz-Weiss-Kanten unter JPEG sichtbar leiden.
+
+   Weg B (pdfAusJpeg) ist die Rueckfallebene fuer PNG-Typen, die Weg A nicht
+   abdeckt; die JPEG-Bytes erzeugt dann die Seite per Canvas. */
+
+  var MM_ZU_PT = 72 / 25.4;
+
+  /* Wird geworfen, wenn die PNG-Datei nicht zu Weg A passt. Die Seite faengt
+     genau diesen Fall ab und weicht auf Weg B aus. */
+  function PngNichtTauglich(grund) {
+    this.name = 'PngNichtTauglich';
+    this.message = grund;
+  }
+  PngNichtTauglich.prototype = Object.create(Error.prototype);
+
+  function latin1(text) {
+    var bytes = new Uint8Array(text.length);
+    for (var i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i) & 0xFF;
+    return bytes;
+  }
+
+  function runde(wert) { return Math.round(wert * 1000) / 1000; }
+
+  /* PNG in seine Chunks zerlegen. Liefert Masse, Typ und den vollstaendigen
+     zlib-Strom: alle IDAT-Bloecke in der vorgefundenen Reihenfolge
+     aneinandergehaengt ergeben genau ihn. */
+  function pngLesen(bytes) {
+    var signatur = [137, 80, 78, 71, 13, 10, 26, 10];
+    if (bytes.length < 8) throw new PngNichtTauglich('Datei zu kurz fuer ein PNG.');
+    for (var i = 0; i < 8; i++) {
+      if (bytes[i] !== signatur[i]) throw new PngNichtTauglich('Keine PNG-Datei.');
+    }
+    var sicht = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var pos = 8, kopf = null, bloecke = [], gesamt = 0;
+    while (pos + 8 <= bytes.length) {
+      var laenge = sicht.getUint32(pos);
+      var art = String.fromCharCode(bytes[pos + 4], bytes[pos + 5],
+                                    bytes[pos + 6], bytes[pos + 7]);
+      var daten = pos + 8;
+      if (art === 'IHDR') {
+        kopf = {
+          breite: sicht.getUint32(daten),
+          hoehe: sicht.getUint32(daten + 4),
+          bittiefe: bytes[daten + 8],
+          farbtyp: bytes[daten + 9],
+          interlace: bytes[daten + 12]
+        };
+      } else if (art === 'IDAT') {
+        bloecke.push(bytes.subarray(daten, daten + laenge));
+        gesamt += laenge;
+      } else if (art === 'IEND') {
+        break;
+      }
+      pos = daten + laenge + 4;            // + 4 Byte CRC
+    }
+    if (!kopf) throw new PngNichtTauglich('PNG ohne IHDR-Block.');
+    if (!bloecke.length) throw new PngNichtTauglich('PNG ohne Bilddaten.');
+    var strom = new Uint8Array(gesamt), k = 0;
+    for (var j = 0; j < bloecke.length; j++) {
+      strom.set(bloecke[j], k);
+      k += bloecke[j].length;
+    }
+    kopf.daten = strom;
+    return kopf;
+  }
+
+  /* Setzt das PDF byteweise zusammen. `bild` beschreibt das eingebettete Bild:
+     { breite, hoehe, daten, filter: 'Flate'|'DCT', farbraum, farben } */
+  function pdfBauen(bild, breiteMm, hoeheMm) {
+    var teile = [], laenge = 0, versatz = [];
+
+    function schreibe(stueck) {
+      var bytes = (typeof stueck === 'string') ? latin1(stueck) : stueck;
+      teile.push(bytes);
+      laenge += bytes.length;
+    }
+    function objekt(nummer, woerterbuch, strom) {
+      versatz[nummer] = laenge;
+      schreibe(nummer + ' 0 obj\n' + woerterbuch + '\n');
+      if (strom) { schreibe('stream\n'); schreibe(strom); schreibe('\nendstream\n'); }
+      schreibe('endobj\n');
+    }
+
+    var seiteB = runde(breiteMm * MM_ZU_PT);
+    var seiteH = runde(hoeheMm * MM_ZU_PT);
+
+    /* Einpassen unter Wahrung des Seitenverhaeltnisses, dann zentrieren. Beim
+       heutigen Plakat bleibt dadurch ein Rand von 0,07 % -- unsichtbar. Der
+       Verzicht aufs Verzerren ist Absicht: ein kuenftiges Plakat mit anderem
+       Seitenverhaeltnis wird sauber eingepasst statt gestaucht. */
+    var skala = Math.min(seiteB / bild.breite, seiteH / bild.hoehe);
+    var bildB = runde(bild.breite * skala);
+    var bildH = runde(bild.hoehe * skala);
+    var x = runde((seiteB - bildB) / 2);
+    var y = runde((seiteH - bildH) / 2);
+
+    var inhalt = 'q\n' + bildB + ' 0 0 ' + bildH + ' ' + x + ' ' + y + ' cm\n/Im0 Do\nQ\n';
+
+    var bildWb = '<< /Type /XObject /Subtype /Image'
+      + ' /Width ' + bild.breite + ' /Height ' + bild.hoehe
+      + ' /ColorSpace /' + bild.farbraum
+      + ' /BitsPerComponent 8';
+    if (bild.filter === 'Flate') {
+      bildWb += ' /Filter /FlateDecode'
+        + ' /DecodeParms << /Predictor 15 /Colors ' + bild.farben
+        + ' /BitsPerComponent 8 /Columns ' + bild.breite + ' >>';
+    } else {
+      bildWb += ' /Filter /DCTDecode';
+    }
+    bildWb += ' /Length ' + bild.daten.length + ' >>';
+
+    schreibe('%PDF-1.4\n');
+    schreibe('%âãÏÓ\n');   // Binaerkennung fuer Uebertragungswege
+    objekt(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    objekt(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    objekt(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + seiteB + ' ' + seiteH + ']'
+            + ' /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
+    objekt(4, bildWb, bild.daten);
+    objekt(5, '<< /Length ' + inhalt.length + ' >>', latin1(inhalt));
+
+    var xrefAb = laenge;
+    var xref = 'xref\n0 6\n0000000000 65535 f \n';
+    for (var n = 1; n <= 5; n++) {
+      var v = String(versatz[n]);
+      while (v.length < 10) v = '0' + v;
+      xref += v + ' 00000 n \n';
+    }
+    schreibe(xref);
+    schreibe('trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xrefAb + '\n%%EOF\n');
+
+    var pdf = new Uint8Array(laenge), p = 0;
+    for (var t = 0; t < teile.length; t++) { pdf.set(teile[t], p); p += teile[t].length; }
+    return pdf;
+  }
+
+  /* Weg A: PNG-Bilddaten unveraendert durchreichen. */
+  function pdfAusPng(pngBytes, breiteMm, hoeheMm) {
+    var kopf = pngLesen(pngBytes);
+    if (kopf.bittiefe !== 8) {
+      throw new PngNichtTauglich('Bittiefe ' + kopf.bittiefe + ' statt 8.');
+    }
+    if (kopf.interlace !== 0) {
+      throw new PngNichtTauglich('PNG ist interlaced.');
+    }
+    if (kopf.farbtyp !== 0 && kopf.farbtyp !== 2) {
+      throw new PngNichtTauglich('Farbtyp ' + kopf.farbtyp + ' (weder Graustufen noch RGB).');
+    }
+    return pdfBauen({
+      breite: kopf.breite,
+      hoehe: kopf.hoehe,
+      daten: kopf.daten,
+      filter: 'Flate',
+      farbraum: kopf.farbtyp === 0 ? 'DeviceGray' : 'DeviceRGB',
+      farben: kopf.farbtyp === 0 ? 1 : 3
+    }, breiteMm, hoeheMm);
+  }
+
+  /* Weg B: fertige JPEG-Bytes einbetten (die Seite erzeugt sie per Canvas). */
+  function pdfAusJpeg(jpegBytes, breitePx, hoehePx, breiteMm, hoeheMm) {
+    return pdfBauen({
+      breite: breitePx,
+      hoehe: hoehePx,
+      daten: jpegBytes,
+      filter: 'DCT',
+      farbraum: 'DeviceRGB',
+      farben: 3
+    }, breiteMm, hoeheMm);
+  }
+/* == pdf-kern:ende == */
+
+})();
+</script>
+</body>
+</html>
