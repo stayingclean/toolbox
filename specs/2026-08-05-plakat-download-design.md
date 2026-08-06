@@ -150,8 +150,24 @@ Nachkommastellen:
 
 **Platzierung.** Das Bild wird **unter Wahrung des Seitenverhältnisses** so gross
 wie möglich auf die Seite gelegt und zentriert. Beim heutigen Bild bleibt dadurch
-ein Rand von 0,001 % — Bruchteile eines Hundertstelmillimeters, also randlos. Der Verzicht aufs Verzerren ist Absicht: Ein künftiges Plakat
+ein kleiner Rand. Der Verzicht aufs Verzerren ist Absicht: Ein künftiges Plakat
 mit abweichendem Seitenverhältnis wird dann sauber eingepasst statt gestaucht.
+
+Wie gross der Rand ausfällt, hängt **nicht** am Bild, sondern daran, dass die
+A-Formate in ganzen Millimetern angegeben sind und ihr Seitenverhältnis dadurch
+leicht vom rechnerischen 1 : √2 abweicht:
+
+| Format | Seitenverhältnis | Rand links/rechts | Rand oben/unten |
+|---|---|---|---|
+| A5 (148 × 210) | 0,704762 | 0 mm | **0,349 mm** |
+| A4 (210 × 297) | 0,707071 | 0 mm | 0,009 mm |
+| A3 (297 × 420) | 0,707143 | 0,006 mm | 0 mm |
+
+Auf A4 und A3 ist das nicht messbar. Auf A5 bleibt oben und unten ein weisser
+Streifen von rund einem Drittelmillimeter — mit blossem Auge kaum zu sehen und
+weit innerhalb des nicht bedruckbaren Randes üblicher Drucker, bei einem Druck
+auf Anschnitt aber vorhanden. Ihn wegzubekommen hiesse, das Bild auf A5 um
+0,33 % zu stauchen; das wäre der schlechtere Handel.
 
 **Dateinamen** der Downloads: `plakat-skillsliste-a5.pdf`, `-a4.pdf`, `-a3.pdf`.
 
