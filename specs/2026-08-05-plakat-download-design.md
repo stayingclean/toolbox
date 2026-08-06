@@ -1,0 +1,272 @@
+# Plakat zur Skillsliste zum Herunterladen
+
+**Datum:** 2026-08-05
+**Branch:** `feature/plakat-download`
+
+## Ziel
+
+Das bestehende Plakat („Gemeinsam Skills stärken", mit QR-Codes zur Skillsliste und
+zum Vorschlagsformular) soll auf der Toolbox öffentlich zum Herunterladen stehen —
+als **PNG** und als **PDF in A5, A4 oder A3**. Der Link gehört in die Gruppe
+**Skills** der Übersicht.
+
+## Entscheidungen
+
+Diese Punkte wurden im Gespräch festgelegt und begrenzen den Umfang bewusst:
+
+- **Kein Editor.** Ursprünglich stand eine abgespeckte Fassung des Flyer-Editors zur
+  Debatte. Verworfen: Der Plakattext steckt im Bild und wäre ohnehin nicht änderbar
+  gewesen; eine schlichte Download-Seite leistet, was gebraucht wird.
+- **Kein HTML-Download.** Nur PNG und PDF.
+- **PDF als echte Datei**, nicht über den Druckdialog. Ein Klick, fertige Datei,
+  exaktes Papierformat — ohne dass Randeinstellungen im Dialog das Ergebnis
+  verderben können.
+- **Das Bild bleibt eine eigene Datei** und wird zur Laufzeit geladen, nicht in die
+  HTML eingebettet. Eine höher aufgelöste Fassung wird nachgereicht und ersetzt
+  einfach die Datei; an der Seite ist dann nichts zu ändern.
+
+## Ausgangslage: Auflösung
+
+Die Plakatdatei misst **3508 × 4961 px** (8-Bit-RGB, ohne Interlace — also genau
+der Typ, für den Weg A weiter unten gilt). Das Seitenverhältnis trifft das
+A-Format praktisch exakt (0,70712 gegenüber 0,70711). Die Auflösung reicht für
+**600 dpi auf A5, 424 auf A4 und 300 auf A3** — der ganze gewünschte Bereich ist
+abgedeckt.
+
+Die erste Fassung hatte nur 1055 × 1491 px und damit 90 dpi auf A3. Die Seite ist
+deshalb so gebaut, dass sie mit **jeder** Bildgrösse richtig arbeitet und ehrlich
+anzeigt, was die aktuelle Datei hergibt — der Austausch bleibt ein reiner
+Dateitausch.
+
+### Zwei Dateien, nicht eine
+
+Die volle Auflösung kostet **14,9 MB**. Als Vorschau eingebunden lüde jeder
+Seitenaufruf diese 14,9 MB herunter, auch wenn niemand etwas speichert. Darum
+liegt daneben eine verkleinerte Vorschau:
+
+| Datei | Grösse | wofür |
+|---|---|---|
+| `docs/plakat-skillsliste.png` | 14,9 MB | PNG-Download **und** Quelle fürs PDF |
+| `docs/plakat-vorschau.jpg` | ~360 KB | nur die Anzeige auf der Seite |
+
+JPEG statt PNG für die Vorschau, weil die Aquarell-Illustrationen als PNG selbst
+verkleinert noch 2,9 MB wögen — bei gleicher sichtbarer Qualität achtmal so viel.
+
+Zwei Folgen, die man leicht übersieht:
+
+1. **Der Auflösungshinweis darf nicht aus dem Vorschaubild rechnen** — der meldete
+   1200 px und damit unsinnige dpi-Werte. Die wahren Masse kommen per Teilabruf
+   (HTTP-Range) aus den ersten 34 Byte der grossen Datei, wo der IHDR-Block steht.
+   Das kostet ein paar hundert Byte statt 14,9 MB. Beachtet der Server den
+   Teilabruf nicht, entfällt die dpi-Angabe — eine erfundene Zahl wäre schlimmer
+   als keine.
+2. **Weg B darf nicht das Vorschaubild ins Canvas zeichnen** — das ergäbe ein PDF
+   aus einer 1200-px-Vorlage. Weg B baut sein Bild aus den bereits geholten Bytes
+   der grossen Datei.
+
+Die Seite wird deshalb so gebaut, dass sie mit **jeder** Bildgrösse richtig
+arbeitet und dem Benutzer ehrlich sagt, was das aktuelle Bild hergibt. Die
+höher aufgelöste Datei kommt später und wird nur ausgetauscht.
+
+## Dateien
+
+| Datei | Art | Zweck |
+|---|---|---|
+| `docs/plakat-skillsliste.png` | neu | Das Plakat in voller Auflösung, aus `neue_docs/` kopiert. Austauschbar. |
+| `docs/plakat-vorschau.jpg` | neu | Verkleinerte Vorschau, aus der grossen Datei erzeugt. |
+| `docs/plakat.html` | neu | Die Download-Seite. CSS eingebettet, Fusszeile mit Credit und Kaffee-Link. |
+| `docs/index.html` | geändert | Neue Karte in der Gruppe „Skills". |
+| `tests/test_plakat.py` | neu | Prüft Seite und PDF-Erzeugung. |
+| `tests/plakat_pdf_treiber.mjs` | neu | Node-Treiber, der den PDF-Kern aus der HTML zum Testen ausführt. |
+
+## Die Seite `docs/plakat.html`
+
+Aufbau von oben nach unten:
+
+1. Kurzer Titel und ein, zwei Sätze, worum es geht.
+2. **Vorschau** des Plakats (das verkleinerte Vorschaubild, in der Breite begrenzt).
+3. **Download-Bereich** mit vier Knöpfen: `PNG`, `PDF A5`, `PDF A4`, `PDF A3`.
+   Drei getrennte PDF-Knöpfe statt Auswahlfeld plus Knopf — ein Klick statt zwei.
+4. **Auflösungshinweis**, zur Laufzeit aus der tatsächlichen Bildgrösse gerechnet.
+5. Fusszeile nach der Konvention aus `CLAUDE.md`.
+
+Gestaltung übernimmt die Farben und Typografie der Übersicht (`docs/index.html`),
+damit die Seite dazugehört. Schriften werden allerdings **nicht** von Google
+geladen — Systemschriften genügen, und die Seite bleibt ohne Internet ansehnlich.
+
+### PNG-Knopf
+
+Ein gewöhnlicher Link mit `download`-Attribut auf `plakat-skillsliste.png`. Kein
+JavaScript, keine Umrechnung: Ein Pixelbild hat kein Papierformat, das entscheidet
+erst der Drucker. Der Benutzer bekommt die Datei so, wie sie ist.
+
+### PDF-Knöpfe
+
+Beim Klick baut die Seite das PDF selbst und legt es als Download ab. Keine fremde
+Bibliothek, alles im Browser.
+
+**Weg A — PNG-Daten unverändert durchreichen (Regelfall).**
+
+Ein PNG speichert seine Bildpunkte als zlib-Strom über zeilenweise gefilterte
+Rohdaten. PDF liest genau dasselbe Format: `FlateDecode` mit
+`DecodeParms << /Predictor 15 /Colors n /BitsPerComponent 8 /Columns Breite >>`.
+Die Bilddaten wandern also Byte für Byte aus dem PNG ins PDF — verlustfrei, ohne
+Neuberechnung. Für die beiden QR-Codes ist das der entscheidende Punkt: harte
+Schwarz-Weiss-Kanten sind genau das, woran eine JPEG-Kompression sichtbar
+knirscht.
+
+Ablauf:
+
+1. `fetch()` holt die PNG-Datei als `ArrayBuffer`.
+2. Die Datei wird in ihre Chunks zerlegt. Aus `IHDR` kommen Breite, Höhe,
+   Bittiefe, Farbtyp und Interlace-Kennzeichen; alle `IDAT`-Blöcke werden in der
+   vorgefundenen Reihenfolge aneinandergehängt und ergeben den vollständigen
+   zlib-Strom.
+3. Weg A gilt für **Bittiefe 8, Farbtyp 0 (Graustufen) oder 2 (RGB), ohne
+   Interlace**. Alles andere fällt auf Weg B.
+4. Das PDF wird aus sechs Objekten zusammengesetzt: Katalog, Seitenbaum, Seite,
+   Bild-XObject, Inhaltsstrom, Querverweistabelle.
+
+Weg A rührt kein Canvas an und kann darum auch nicht an dessen
+Sicherheitsbeschränkungen scheitern.
+
+**Weg B — Rückfallebene.**
+
+Ist die Bilddatei ein Typ, den Weg A nicht abdeckt (Palettenfarben, Transparenz,
+Interlace, 16 Bit), zeichnet die Seite das Bild in ein Canvas und bettet es als
+JPEG mit Qualität 0,92 ein (`/DCTDecode`). Etwas weicher, aber brauchbar — und der
+Benutzer merkt nur, dass es funktioniert. Weg B ist ausdrücklich Rückfall, nicht
+Regelfall: Ein neu eingesetztes Plakat sollte ein 8-Bit-RGB-PNG ohne Interlace
+sein, damit Weg A greift.
+
+**Seitenmasse.** In PDF-Punkten (1 pt = 1/72 Zoll), gerundet auf drei
+Nachkommastellen:
+
+| Format | mm | pt |
+|---|---|---|
+| A5 | 148 × 210 | 419,528 × 595,276 |
+| A4 | 210 × 297 | 595,276 × 841,890 |
+| A3 | 297 × 420 | 841,890 × 1190,551 |
+
+**Platzierung.** Das Bild wird **unter Wahrung des Seitenverhältnisses** so gross
+wie möglich auf die Seite gelegt und zentriert. Beim heutigen Bild bleibt dadurch
+ein kleiner Rand. Der Verzicht aufs Verzerren ist Absicht: Ein künftiges Plakat
+mit abweichendem Seitenverhältnis wird dann sauber eingepasst statt gestaucht.
+
+Wie gross der Rand ausfällt, hängt **nicht** am Bild, sondern daran, dass die
+A-Formate in ganzen Millimetern angegeben sind und ihr Seitenverhältnis dadurch
+leicht vom rechnerischen 1 : √2 abweicht:
+
+| Format | Seitenverhältnis | Rand links/rechts | Rand oben/unten |
+|---|---|---|---|
+| A5 (148 × 210) | 0,704762 | 0 mm | **0,349 mm** |
+| A4 (210 × 297) | 0,707071 | 0 mm | 0,009 mm |
+| A3 (297 × 420) | 0,707143 | 0,006 mm | 0 mm |
+
+Auf A4 und A3 ist das nicht messbar. Auf A5 bleibt oben und unten ein weisser
+Streifen von rund einem Drittelmillimeter — mit blossem Auge kaum zu sehen und
+weit innerhalb des nicht bedruckbaren Randes üblicher Drucker, bei einem Druck
+auf Anschnitt aber vorhanden. Ihn wegzubekommen hiesse, das Bild auf A5 um
+0,33 % zu stauchen; das wäre der schlechtere Handel.
+
+**Dateinamen** der Downloads: `plakat-skillsliste-a5.pdf`, `-a4.pdf`, `-a3.pdf`.
+
+### Auflösungshinweis
+
+Aus den Massen der grossen Datei rechnet die Seite die effektive Auflösung für
+jedes Format aus (`Pixel ÷ Zoll`) und zeigt sie beim jeweiligen Knopf an, etwa
+„300 dpi". Formate unter 150 dpi werden zusätzlich sichtbar als knapp
+gekennzeichnet; verboten wird nichts — wer ein A3 mit 90 dpi drucken will, darf
+das, soll es aber vorher wissen. Mit der heutigen Datei ist kein Format knapp;
+die Markierung bleibt für den nächsten Plakatwechsel im Code.
+
+Der Hinweis rechnet sich beim Austausch der Bilddatei von selbst neu. Es gibt
+keine Zahl, die von Hand nachzupflegen wäre.
+
+## Fehlerfälle
+
+| Fall | Verhalten |
+|---|---|
+| Bild lädt nicht (Datei fehlt, offline) | Vorschau zeigt einen Hinweis statt eines kaputten Bildes, die PDF-Knöpfe werden ausgegraut, der PNG-Link bleibt nutzbar. |
+| Seite lokal per Doppelklick geöffnet (`file://`) | Browser verbieten dort das Auslesen lokaler Dateien per Skript, `fetch()` scheitert. Die Seite sagt das klar an („PDF-Erzeugung braucht die Seite im Web") statt stumm zu scheitern. Online ist das kein Thema. |
+| PNG-Typ passt nicht zu Weg A | Weg B greift; keine Meldung nötig. |
+| Auch Weg B scheitert | Verständliche Meldung im Hinweisbereich, kein stiller Abbruch. |
+
+Die Regel aus `CLAUDE.md` („auch lokal ohne Server/Internet funktionieren")
+bezieht sich auf eingebettetes CSS statt externer Stylesheets. Das hält die Seite
+ein: Sie ist lokal vollständig lesbar, Vorschau und PNG-Link funktionieren, nur
+die PDF-Erzeugung ruht — und sagt warum.
+
+## Änderung an der Übersicht
+
+In `docs/index.html`, Gruppe `group--skills`, eine dritte Karte:
+
+```html
+<a class="card card--skills" href="plakat.html">
+  <span class="name">Plakat</span>
+  <span class="meta">Zum Aufhängen – als PNG oder PDF in A5, A4, A3</span>
+</a>
+```
+
+Die Gruppe verwendet ein zweispaltiges Raster; die dritte Karte rutscht in die
+zweite Zeile. Das ist in Ordnung und braucht keine Sonderbehandlung.
+
+## Prüfung
+
+Der PDF-Kern wird als **reine Funktion** geschrieben —
+`pngZuPdf(pngBytes, breiteMm, hoeheMm) → Uint8Array` — ohne Zugriff auf DOM,
+`fetch` oder Canvas. Nur der Aufrufdrumherum kennt die Seite. Damit ist der
+heikelste Teil ausserhalb des Browsers prüfbar.
+
+In `docs/plakat.html` wird dieser Teil zwischen zwei Marker-Kommentare gesetzt:
+
+```js
+/* == pdf-kern:anfang == */
+…
+/* == pdf-kern:ende == */
+```
+
+`tests/test_plakat.py` schneidet den Abschnitt heraus, lässt ihn über
+`tests/plakat_pdf_treiber.mjs` in Node laufen und prüft das Ergebnis:
+
+- **Seitenmasse:** Die `MediaBox` jedes erzeugten PDFs entspricht dem Format in
+  Punkten (Toleranz 0,01 pt).
+- **Bildmasse:** `/Width` und `/Height` im XObject entsprechen den Pixelmassen der
+  Quelldatei.
+- **Verlustfreiheit:** Der Flate-Strom im PDF ist Byte für Byte gleich den
+  aneinandergehängten `IDAT`-Blöcken der Quelldatei. Das ist die eigentliche
+  Zusicherung von Weg A.
+- **Seitenverhältnis:** Die Skalierung im Inhaltsstrom passt das Bild ein, ohne es
+  zu verzerren, und zentriert es.
+- **Lesbarkeit:** Die Querverweistabelle stimmt (Objekt-Byteversätze), und das PDF
+  lässt sich von einem unabhängigen Leser öffnen.
+
+Dazu ein paar statische Prüfungen der Seite selbst: Fusszeile mit Credit und
+Kaffee-Link vorhanden, kein externes Stylesheet, keine externe Schriftquelle, die
+Karte in `docs/index.html` verweist auf `plakat.html`, und die Bilddatei liegt in
+`docs/`.
+
+Zum Schluss eine Sichtprüfung im echten Browser: Seite öffnen, alle vier Downloads
+auslösen, die drei PDFs ansehen.
+
+## Was bewusst nicht dazugehört
+
+- Kein Editor, keine Textfelder, kein Austausch des Hintergrunds.
+- Keine PNG-Varianten in mehreren Grössen — die Originaldatei genügt.
+- Keine Formate ausser A5, A4, A3.
+- Kein Hochskalieren des Bildes, um Auflösung vorzutäuschen.
+
+## Offene Punkte
+
+- Die höher aufgelöste Bilddatei ist eingetroffen und liegt der Umsetzung
+  zugrunde (3508 × 4961 px). Damit ist der ursprüngliche Vorbehalt erledigt.
+- **Beim nächsten Plakatwechsel** muss die Vorschau mit erzeugt werden — der
+  Befehl dafür steht in `CLAUDE.md`. Alles Übrige ist ein reiner Dateitausch:
+  Der Auflösungshinweis rechnet sich neu, und `pytest tests` prüft, ob die neue
+  Datei weiterhin verlustfrei ins PDF durchgereicht werden kann und ob die
+  Vorschau zum Original passt.
+- Mit `docs/plakat-skillsliste.png` wandert erstmals eine Datei aus `neue_docs/`
+  ins öffentliche Verzeichnis. Das Plakat ist Eigengestaltung der Organisation und
+  enthält keine personen- oder organisationsspezifischen Angaben ausser den beiden
+  QR-Codes, die auf die Toolbox selbst zeigen — die Veröffentlichung ist damit
+  unbedenklich.
