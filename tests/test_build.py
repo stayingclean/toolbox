@@ -320,3 +320,67 @@ def test_vorschlagsvorlage_reiterleiste_ist_vollstaendig_ausgezeichnet():
     # display:flex schlägt das [hidden] des Browsers — ohne diese Regel bliebe
     # die Leiste trotz hidden sichtbar.
     assert ".reiter[hidden]{display:none}" in vorlage
+
+
+def test_skills_werden_innerhalb_der_kategorie_alphabetisch_sortiert(mappe, monkeypatch):
+    """Damit die Liste unabhaengig von der Zeilenfolge in der Excel gleich aussieht."""
+    pfad = mappe(
+        SKILLS_HEADER,
+        [
+            ["Hoch", "Ablenkung", "🎧", "Zitrone", "Sauer.", ""],
+            ["Hoch", "Ablenkung", "🎵", "Ammoniak", "Scharf.", ""],
+            ["Hoch", "Ablenkung", "🌶️", "Musik hören", "Laut.", ""],
+        ],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    daten = build.load_data()
+    titel = [s["t"] for s in daten["hoch"]["kategorien"][0]["skills"]]
+    assert titel == ["Ammoniak", "Musik hören", "Zitrone"]
+
+
+def test_umlaute_sortieren_wie_im_woerterbuch(mappe, monkeypatch):
+    """Ohne Sonderbehandlung stuende 'Duftoele' hinter 'Duftzone' – das oe liegt
+    im Zeichensatz hinter dem z."""
+    pfad = mappe(
+        SKILLS_HEADER,
+        [
+            ["Hoch", "Ablenkung", "🎧", "Duftzone", "Text.", ""],
+            ["Hoch", "Ablenkung", "🎵", "Duftöle", "Text.", ""],
+            ["Hoch", "Ablenkung", "🌶️", "Duftbaum", "Text.", ""],
+        ],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    daten = build.load_data()
+    titel = [s["t"] for s in daten["hoch"]["kategorien"][0]["skills"]]
+    assert titel == ["Duftbaum", "Duftöle", "Duftzone"]
+
+
+def test_sortierung_haengt_nicht_an_der_zeilenfolge(mappe, monkeypatch):
+    """Dieselben Skills in umgekehrter Zeilenfolge ergeben dieselbe Liste."""
+    zeilen = [
+        ["Hoch", "Ablenkung", "🎧", "Aal", "Text.", ""],
+        ["Hoch", "Ablenkung", "🎵", "Ärger", "Text.", ""],
+        ["Hoch", "Ablenkung", "🌶️", "Aber", "Text.", ""],
+    ]
+    monkeypatch.setattr(build, "XLSX", mappe(SKILLS_HEADER, zeilen))
+    vorwaerts = [s["t"] for s in build.load_data()["hoch"]["kategorien"][0]["skills"]]
+    monkeypatch.setattr(build, "XLSX", mappe(SKILLS_HEADER, list(reversed(zeilen))))
+    rueckwaerts = [s["t"] for s in build.load_data()["hoch"]["kategorien"][0]["skills"]]
+    assert vorwaerts == rueckwaerts
+    assert vorwaerts == ["Aal", "Aber", "Ärger"]
+
+
+def test_kategorien_behalten_ihre_reihenfolge(mappe, monkeypatch):
+    """Sortiert wird NUR innerhalb einer Kategorie – die Gruppierung bleibt."""
+    pfad = mappe(
+        SKILLS_HEADER,
+        [
+            ["Hoch", "Ablenkung", "🎧", "Zitrone", "Text.", ""],
+            ["Hoch", "Anti-Craving", "🎵", "Ammoniak", "Text.", ""],
+        ],
+        kategorien_rows=[["Hoch", "Ablenkung", "🎧"], ["Hoch", "Anti-Craving", "🌶️"]],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    kategorien = build.load_data()["hoch"]["kategorien"]
+    assert [k["label"] for k in kategorien] == ["Ablenkung", "Anti-Craving"]
+    assert [s["t"] for s in kategorien[0]["skills"]] == ["Zitrone"]

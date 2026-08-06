@@ -59,6 +59,15 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
 4. `tools/seed_excel.py` erzeugt die Excel reproduzierbar neu aus `docs/skillsliste.html`
    (nur Erst-Einrichtung/Reset).
 
+**Die Zeilenfolge in der Excel bestimmt die Anzeige NICHT (mehr):** `build.py`
+sortiert die Skills innerhalb jeder Kategorie alphabetisch nach Titel
+(`sortier_schluessel`, Umlaute nach DIN 5007-1 — sonst stünde „Duftöle" hinter
+„Duftzone"). Zweite Sortierstufe ist der unveränderte Titel, damit das Ergebnis
+nicht von der Zeilenfolge abhängt. Die Reihenfolge der **Kategorien** kommt
+weiterhin aus dem Blatt `Kategorien`, die der **Stufen** aus `STUFE_ORDER`.
+Hintergrund: Ein gespeichertes Sortieren in Excel veränderte sonst die Website,
+und übernommene Vorschläge landeten am Ende ihrer Kategorie.
+
 Details für Nicht-Techniker: `ANLEITUNG.md`.
 
 **Die Stufen-Namen `Hoch`, `Mittel`, `Tief` sind hart verdrahtet** und stehen an

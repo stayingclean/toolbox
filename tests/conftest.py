@@ -24,7 +24,7 @@ KATEGORIEN_ROWS = [["Hoch", "Ablenkung", "🎧"]]
 def mappe(tmp_path):
     """Erzeugt eine gültige skills_daten.xlsx mit frei wählbarem Skills-Blatt."""
 
-    def bauen(skills_header, skills_rows):
+    def bauen(skills_header, skills_rows, kategorien_rows=None):
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Skills"
@@ -37,7 +37,9 @@ def mappe(tmp_path):
             ws2.append(zeile)
         ws3 = wb.create_sheet("Kategorien")
         ws3.append(KATEGORIEN_HEADER)
-        for zeile in KATEGORIEN_ROWS:
+        # Ohne Angabe die eine Standard-Kategorie, damit bestehende Tests
+        # unveraendert weiterlaufen.
+        for zeile in kategorien_rows or KATEGORIEN_ROWS:
             ws3.append(zeile)
         pfad = tmp_path / "skills_daten.xlsx"
         wb.save(pfad)

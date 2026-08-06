@@ -43,6 +43,23 @@ PLACEHOLDER_VORSCHLAG = "var DATEN = /*__BUILD_DATA__*/{};"
 STUFE_KEY = {"Hoch": "hoch", "Mittel": "mittel", "Tief": "tief"}
 STUFE_ORDER = ["hoch", "mittel", "tief"]
 
+# Umlaute einsortieren wie im Wörterbuch (DIN 5007-1): ä zwischen a und b,
+# nicht hinter z. Ohne diese Tabelle stünde „Duftöle" hinter „Duftzone", weil
+# das ö im Zeichensatz nach dem z liegt. Das ß erledigt bereits casefold().
+UMLAUTE = str.maketrans({"ä": "a", "ö": "o", "ü": "u"})
+
+
+def sortier_schluessel(titel):
+    """Wonach innerhalb einer Kategorie sortiert wird.
+
+    Der zweite Teil ist der unveränderte Titel: Er entscheidet, wenn zwei
+    Titel sich nur in Gross-/Kleinschreibung oder Umlauten unterscheiden.
+    Damit hängt die Reihenfolge NICHT an der Zeilenfolge in der Excel — die
+    Liste sieht nach einem Umsortieren der Mappe gleich aus wie vorher.
+    """
+    text = str(titel or "")
+    return (text.casefold().translate(UMLAUTE), text)
+
 
 class BuildError(Exception):
     """Sammelt eine oder mehrere verständliche Fehlermeldungen."""
@@ -189,7 +206,7 @@ def load_data():
         kat_icon[(key, label)] = rec["Icon"]
         kat_order[key].append((label, rec["Icon"]))
 
-    # Skills den Kategorien zuordnen (Reihenfolge bleibt erhalten)
+    # Skills den Kategorien zuordnen (sortiert wird weiter unten)
     skills_by = {}  # (key, label) -> [skill-dict]
     for rec in skill_rows:
         key = check_stufe(rec, "Skills")
@@ -221,6 +238,15 @@ def load_data():
 
     if errors:
         raise BuildError(errors)
+
+    # Innerhalb jeder Kategorie alphabetisch nach Titel. Die Gruppierung nach
+    # Stufe und Kategorie bleibt unberührt — die Reihenfolge der Kategorien
+    # kommt weiterhin aus dem Blatt 'Kategorien'.
+    # Zweck: Die Liste sieht immer gleich aus, egal in welcher Zeilenfolge die
+    # Skills in der Excel stehen. Übernommene Vorschläge werden ans Ende der
+    # Mappe angehängt und landeten sonst am Ende ihrer Kategorie.
+    for liste in skills_by.values():
+        liste.sort(key=lambda s: sortier_schluessel(s["t"]))
 
     # DATA-Struktur im erwarteten Schema bauen
     data = {}

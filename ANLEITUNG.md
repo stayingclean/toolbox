@@ -65,10 +65,15 @@ Jede Zeile ist ein Skill. Spalten:
 > sich z. B. nur eine Stufe oder Kategorie anzeigen. Das ist nur eine
 > Ansichtshilfe und ändert die Daten nicht.
 
-- **Neue Skill hinzufügen:** einfach eine neue Zeile ausfüllen.
+- **Neue Skill hinzufügen:** einfach eine neue Zeile ausfüllen. Wo in der Tabelle
+  sie steht, spielt keine Rolle.
 - **Skill entfernen:** die ganze Zeile löschen.
-- **Reihenfolge ändern:** Zeilen verschieben — die Reihenfolge in Excel ist die
-  Reihenfolge auf der Webseite (innerhalb derselben Stufe und Kategorie).
+- **Reihenfolge:** Auf der Webseite stehen die Skills innerhalb einer Kategorie
+  **alphabetisch nach Titel** — unabhängig davon, in welcher Zeile sie in der
+  Excel stehen. Du kannst die Tabelle also gefahrlos sortieren oder Zeilen
+  verschieben, die Webseite sieht danach gleich aus. Umlaute werden wie im
+  Wörterbuch einsortiert (ä bei a, ö bei o, ü bei u).
+  Die Reihenfolge der **Kategorien** kommt weiterhin aus dem Blatt `Kategorien`.
 
 ### Das Blatt `Stufen` (selten ändern)
 
