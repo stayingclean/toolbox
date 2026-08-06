@@ -243,6 +243,22 @@ def test_lokaler_aufruf_wird_erklaert():
     assert "file:" in text
 
 
+def test_masse_werden_nicht_aus_dem_vorschaubild_gelesen():
+    """Die dpi-Angaben müssen aus der grossen Datei stammen. Läse die Seite
+    `naturalWidth` des angezeigten Bildes, stünde dort die Vorschaugrösse und
+    damit ein falscher Wert."""
+    text = SEITE.read_text(encoding="utf-8")
+    ab = text.index("function masseHolen")
+    bis = text.index("function aufloesungZeigen")
+    masse_holen = text[ab:bis]
+    assert "BILD" in masse_holen, "masseHolen() greift nicht auf die grosse Datei zu"
+    assert "naturalWidth" not in masse_holen, "masseHolen() liest aus dem Vorschaubild"
+    assert "getReader" in masse_holen, (
+        "masseHolen() liest den Strom nicht — ohne das hängt der dpi-Hinweis "
+        "daran, dass der Server Teilabrufe beantwortet"
+    )
+
+
 def test_uebersicht_verlinkt_das_plakat_in_der_skills_gruppe():
     text = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
     ab = text.index('class="group group--skills"')

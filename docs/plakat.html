@@ -388,24 +388,38 @@
     knoepfe.forEach(function (knopf) { knopf.disabled = true; });
   }
 
-  /* Die wahren Masse stehen im IHDR-Block, den ersten 34 Byte der grossen
-     Datei. Ein Teilabruf holt genau die -- aus dem angezeigten Vorschaubild
-     duerfen sie nicht kommen, das ist absichtlich klein und ergaebe unsinnige
-     dpi-Werte. */
+  /* Die wahren Masse stehen im IHDR-Block, den ersten 24 Byte der grossen
+     Datei. Der Range-Kopf bittet darum; beantwortet der Server ihn nicht,
+     wird stattdessen der Anfang des Stroms gelesen und der Rest abgebrochen.
+     Beide Wege kosten einen Bruchteil der 14,9 MB. Aus dem angezeigten
+     Vorschaubild duerfen die Masse nicht kommen -- das ist absichtlich klein
+     und ergaebe unsinnige dpi-Werte. */
   function masseHolen() {
-    var abbruch = new AbortController();
-    return fetch(BILD, {
-      headers: { Range: 'bytes=0-33' },
-      signal: abbruch.signal
-    }).then(function (antwort) {
-      if (antwort.status !== 206) {
-        // Server beachtet Range nicht: abbrechen, statt 14,9 MB zu laden.
-        abbruch.abort();
-        throw new Error('Teilabruf nicht möglich');
+    return fetch(BILD, { headers: { Range: 'bytes=0-33' } }).then(function (antwort) {
+      if (!antwort.ok && antwort.status !== 206) throw new Error('HTTP ' + antwort.status);
+      var leser = antwort.body.getReader();
+      var gesammelt = new Uint8Array(0);
+      function weiter() {
+        return leser.read().then(function (stueck) {
+          if (stueck.value) {
+            var neu = new Uint8Array(gesammelt.length + stueck.value.length);
+            neu.set(gesammelt);
+            neu.set(stueck.value, gesammelt.length);
+            gesammelt = neu;
+          }
+          if (gesammelt.length >= 24 || stueck.done) {
+            /* Abbrechen beendet die Uebertragung. Ohne das laedt ein Server
+               ohne Range-Unterstuetzung die ganzen 14,9 MB. */
+            leser.cancel();
+            return gesammelt;
+          }
+          return weiter();
+        });
       }
-      return antwort.arrayBuffer();
-    }).then(function (puffer) {
-      var sicht = new DataView(puffer);
+      return weiter();
+    }).then(function (bytes) {
+      if (bytes.length < 24) throw new Error('IHDR-Block unvollständig');
+      var sicht = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
       return { breite: sicht.getUint32(16), hoehe: sicht.getUint32(20) };
     });
   }
