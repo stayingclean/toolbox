@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
@@ -132,7 +132,10 @@
     bildWb += ' /Length ' + bild.daten.length + ' >>';
 
     schreibe('%PDF-1.4\n');
-    schreibe('%âãÏÓ\n');   // Binaerkennung fuer Uebertragungswege
+    /* Binaerkennung: vier Bytes ueber 127, an denen Werkzeuge die Datei als
+       binaer erkennen. Bewusst als Escape-Folgen -- woertliche Zeichen ergaeben
+       nur dann E2 E3 CF D3, wenn jedes Werkzeug die Quelldatei als UTF-8 liest. */
+    schreibe('%' + String.fromCharCode(0xE2, 0xE3, 0xCF, 0xD3) + '\n');
     objekt(1, '<< /Type /Catalog /Pages 2 0 R >>');
     objekt(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
     objekt(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + seiteB + ' ' + seiteH + ']'

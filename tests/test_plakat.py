@@ -160,3 +160,11 @@ def test_bilddatei_passt_zu_weg_a():
     assert png[24] == 8, "Bittiefe ist nicht 8"
     assert png[25] in (0, 2), "Farbtyp ist weder Graustufen noch RGB"
     assert png[28] == 0, "PNG ist interlaced"
+
+
+@pytest.mark.parametrize("name", sorted(FORMATE))
+def test_binaerkennung_steht_als_vier_bytes_im_pdf(pdfs, name):
+    """Die vier Bytes hinter %PDF-1.4 weisen die Datei als binär aus. Stehen
+    dort UTF-8-kodierte Zeichen statt E2 E3 CF D3, hat ein Werkzeug die
+    Quelldatei umkodiert — ohne diesen Test fiele das nirgends auf."""
+    assert pdfs[name].startswith(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
