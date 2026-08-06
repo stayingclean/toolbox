@@ -60,6 +60,15 @@ def _env_datei_lesen(pfad: Path) -> str | None:
         ) from None
     for zeile in inhalt.splitlines():
         zeile = zeile.strip()
+        # `zeile.startswith("#")` ist mit der heutigen Vergleichslogik durch
+        # keinen Test einzeln nachweisbar: Nach partition("=") enthaelt der
+        # Namensteil einer auskommentierten Zeile das "#" immer noch
+        # ("# ANTHROPIC_API_KEY" != "ANTHROPIC_API_KEY"), also kann eine
+        # auskommentierte Zuweisung sowieso nie treffen -- mit oder ohne
+        # diese Bedingung. Sie bleibt trotzdem stehen: Sie ist die zweite
+        # Schutzebene, falls die Vergleichslogik hier spaeter mal
+        # nachsichtiger wird (z. B. Gross-/Kleinschreibung ignoriert). Das
+        # ist bewusst so und keine Testluecke.
         if not zeile or zeile.startswith("#") or "=" not in zeile:
             continue
         name, _, wert = zeile.partition("=")

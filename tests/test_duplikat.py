@@ -14,13 +14,16 @@ def test_umgebungsvariable_wird_gefunden(tmp_path, monkeypatch):
     assert duplikat.schluessel_finden(tmp_path) == "sk-test-aus-der-umgebung"
 
 
-def test_env_datei_wird_gelesen_wenn_variable_fehlt(tmp_path, monkeypatch):
+def test_auskommentierte_zuweisung_gewinnt_nicht(tmp_path, monkeypatch):
+    """Eine auskommentierte Zuweisung darf die echte Zeile nicht verdraengen.
+
+    Prueft NICHT den `startswith("#")`-Zweig einzeln -- das kann kein
+    ausgabebasierter Test, siehe Kommentar in `_env_datei_lesen`. Geprueft
+    wird nur das Ergebnis: Steht vor der echten Zuweisung eine Zeile, die wie
+    eine auskommentierte Zuweisung aussieht, gewinnt trotzdem der echte Wert.
+    """
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     (tmp_path / ".gitignore").write_text(".env*\n", encoding="utf-8")
-    # Die Kommentarzeile sieht wie eine echte Zuweisung aus (inkl. "="),
-    # damit der Test tatsaechlich beweist, dass Kommentare uebersprungen
-    # werden -- ein blosses "# Kommentar" ohne "=" wuerde schon von der
-    # vorherigen Bedingung aussortiert und den Kommentar-Zweig nie pruefen.
     (tmp_path / ".env").write_text(
         "# ANTHROPIC_API_KEY=sk-auskommentiert\n"
         "ANTHROPIC_API_KEY=sk-test-aus-der-datei\n",
@@ -91,6 +94,35 @@ def test_env_in_echtem_git_repo_wird_erkannt(tmp_path, monkeypatch):
     (tmp_path / ".gitignore").write_text(".env*\n", encoding="utf-8")
     (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-aus-git-repo\n", encoding="utf-8")
     assert duplikat.schluessel_finden(tmp_path) == "sk-aus-git-repo"
+
+
+def test_ohne_git_greift_der_rueckfallweg(tmp_path, monkeypatch):
+    """Ist Git nicht aufrufbar (z. B. nicht installiert), greift der
+    Zeichenkettenvergleich als Rueckfall -- ohne echten Eingriff ins System.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    def kein_git(*args, **kwargs):
+        raise FileNotFoundError("git nicht gefunden")
+
+    monkeypatch.setattr(duplikat.subprocess, "run", kein_git)
+    (tmp_path / ".gitignore").write_text(".env*\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-ohne-git\n", encoding="utf-8")
+    assert duplikat.schluessel_finden(tmp_path) == "sk-ohne-git"
+
+
+def test_ohne_git_und_ohne_schutz_haelt_der_rueckfallweg_ebenfalls_an(tmp_path, monkeypatch):
+    """Derselbe Rueckfallweg muss auch den ungeschuetzten Fall erkennen."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    def kein_git(*args, **kwargs):
+        raise FileNotFoundError("git nicht gefunden")
+
+    monkeypatch.setattr(duplikat.subprocess, "run", kein_git)
+    (tmp_path / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-ungeschuetzt\n", encoding="utf-8")
+    with pytest.raises(SystemExit):
+        duplikat.schluessel_finden(tmp_path)
 
 
 def test_env_mit_ungueltigem_utf8_haelt_verstaendlich_an(tmp_path, monkeypatch):
