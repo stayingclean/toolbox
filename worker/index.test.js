@@ -5,7 +5,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { issueRumpf, issueRumpfAenderung, zelle } from "./index.js";
+import { issueRumpf, issueRumpfAenderung, zelle, quellen } from "./index.js";
 
 const WERT = {
   art: "neu",
@@ -72,8 +72,8 @@ test("die Tabelle maskiert senkrechte Striche und Zeilenumbrüche", () => {
   const tabelle = rumpf.split("\n\n<!-- vorschlag")[0];
   assert.ok(tabelle.includes("eins \\| zwei<br>drei"));
   // Die Tabelle bleibt eine Zeile je Feld – sonst zerreisst sie.
-  // Kopfzeile + Trennzeile + 7 Felder = 9 Zeilen.
-  assert.equal(tabelle.split("\n").length, 9);
+  // Kopfzeile + Trennzeile + 8 Felder = 10 Zeilen.
+  assert.equal(tabelle.split("\n").length, 10);
 });
 
 test("der JSON-Block trägt die unveränderten Werte", () => {
@@ -133,4 +133,37 @@ test("maskiert Trennstriche und Zeilenumbrüche in beiden Spalten", () => {
   assert.ok(!/[^\\]\| b/.test(tabelle), "Trennstrich im neuen Wert nicht maskiert");
   assert.ok(!/[^\\]\| y/.test(tabelle), "Trennstrich im alten Wert nicht maskiert");
   assert.ok(!tabelle.includes("b\nc"), "Zeilenumbruch nicht maskiert");
+});
+
+test("Bezugsquellen stehen in der Tabelle eines neuen Skills", () => {
+  const rumpf = issueRumpf({
+    stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧",
+    titel: "Musik", beschreibung: "Ein Lied", tipp: "", von: "",
+    links: ["https://a.ch/x", "https://b.ch/y"],
+  });
+  assert.match(rumpf, /\| Bezugsquellen \| https:\/\/a\.ch\/x<br>https:\/\/b\.ch\/y \|/);
+});
+
+test("ohne Bezugsquellen steht ein Strich", () => {
+  const rumpf = issueRumpf({
+    stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧",
+    titel: "Musik", beschreibung: "Ein Lied", tipp: "", von: "", links: [],
+  });
+  assert.match(rumpf, /\| Bezugsquellen \| — \|/);
+});
+
+test("die Aenderung stellt alte und neue Quellen nebeneinander", () => {
+  const rumpf = issueRumpfAenderung(
+    { stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧", titel: "Musik",
+      beschreibung: "Neu", tipp: "", erg: "", original: "Musik",
+      links: ["https://neu.ch/x"] },
+    { e: "🎧", t: "Musik", b: "Alt", tip: "", links: ["https://alt.ch/x"] }
+  );
+  assert.match(rumpf, /\| Bezugsquellen \| https:\/\/alt\.ch\/x \| https:\/\/neu\.ch\/x \|/);
+});
+
+test("ein alter Datenstand ohne links bricht nicht", () => {
+  // docs/skills-daten.json wird zwischengespeichert; eine Fassung von vor
+  // dieser Neuerung darf den Worker nicht umwerfen.
+  assert.equal(quellen(undefined), "—");
 });

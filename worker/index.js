@@ -74,6 +74,14 @@ export function zelle(wert) {
   return String(wert).replace(/\|/g, "\\|").replace(/\r?\n/g, "<br>");
 }
 
+/**
+ * Bezugsquellen fuer eine Tabellenzelle. Undefiniert kommt vor: ein
+ * zwischengespeicherter Datenstand von vor dieser Neuerung kennt das Feld nicht.
+ */
+export function quellen(liste) {
+  return liste && liste.length ? liste.map(zelle).join("<br>") : "—";
+}
+
 export function issueRumpf(w) {
   const zeilen = [
     "| Feld | Wert |",
@@ -85,6 +93,7 @@ export function issueRumpf(w) {
     `| Beschreibung | ${zelle(w.beschreibung)} |`,
     `| Tipp | ${w.tipp ? zelle(w.tipp) : "—"} |`,
     `| Name | ${w.von ? zelle(w.von) : "— (anonym)"} |`,
+    `| Bezugsquellen | ${quellen(w.links)} |`,
   ];
   // Der JSON-Block bleibt unveraendert – er traegt die Wahrheit.
   return (
@@ -108,6 +117,7 @@ export function issueRumpfAenderung(w, alt) {
     `| Titel | ${zelle(alt.t)} | ${zelle(w.titel)} |`,
     `| Beschreibung | ${zelle(alt.b)} | ${zelle(w.beschreibung)} |`,
     `| Tipp | ${alt.tip ? zelle(alt.tip) : "—"} | ${w.tipp ? zelle(w.tipp) : "—"} |`,
+    `| Bezugsquellen | ${quellen(alt.links)} | ${quellen(w.links)} |`,
   ];
   const kopf =
     `**Stufe:** ${zelle(w.stufe)} · **Kategorie:** ${zelle(w.kategorie)}` +
