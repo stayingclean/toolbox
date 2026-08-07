@@ -229,12 +229,22 @@ def _anfrage_text(neue: list, bestand: dict) -> str:
 def pruefe_duplikate(neue: list, bestand: dict, client) -> list:
     """Fragt die KI, welche neuen Vorschlaege es schon gibt.
 
-    Liefert IMMER eine Liste. Geht etwas schief, ist sie leer und der Lauf geht
-    ohne Pruefung weiter — die Pruefung ist eine Zutat, keine Voraussetzung.
+    Liefert IMMER eine Liste. Geht beim Aufruf ODER beim Auswerten der Antwort
+    etwas schief, ist sie leer und der Lauf geht ohne Pruefung weiter — die
+    Pruefung ist eine Zutat, keine Voraussetzung. Deshalb steckt die gesamte
+    Auswertung mit im selben try-Block wie der Aufruf: eine leere/fehlende
+    `content`-Liste oder ein unlesbarer Block sind genauso ein
+    Schnittstellenfehler wie ein abgebrochenes Netz.
     """
     if not neue:
         return []
 
+    # lade_prompt() kann SystemExit ausloesen (fehlende/leere Prompt-Datei).
+    # SystemExit erbt nicht von Exception -- es landet also nie im
+    # except-Zweig unten, sondern schlaegt von selbst durch. Ein eigener
+    # "except SystemExit: raise" waere deshalb reine Attrappe (wurde in
+    # einer frueheren Fassung entfernt, nachdem eine Pruefung genau das
+    # gezeigt hat).
     try:
         antwort = client.messages.create(
             model=MODELL,
@@ -243,35 +253,41 @@ def pruefe_duplikate(neue: list, bestand: dict, client) -> list:
             messages=[{"role": "user", "content": _anfrage_text(neue, bestand)}],
             output_config={"format": {"type": "json_schema", "schema": SCHEMA}},
         )
-    except SystemExit:
-        raise  # fehlende/leere Prompt-Datei: die Meldung soll durchschlagen
+
+        # `messages.create()` liefert TextBlock-Inhalte, KEINE ParsedTextBlock
+        # -- ein `parsed_output`-Feld existiert auf diesem Weg nicht (geprueft
+        # gegen anthropic 0.120.2). Nur `messages.parse()` erzeugt
+        # ParsedTextBlock mit echtem `parsed_output`, verlangt dafuer aber
+        # einen Python-Typ als `output_format` statt eines rohen
+        # JSON-Schemas -- ein groesserer Umbau, der hier nicht ansteht.
+        # Ausgewertet wird deshalb ausschliesslich der Text.
+        block = antwort.content[0]
+        nutzlast = json.loads(block.text)
+
+        roh = nutzlast.get("treffer") if isinstance(nutzlast, dict) else None
+        if not isinstance(roh, list):
+            return []
+
+        # Nur vollstaendige Treffer: ein halber Treffer wuerde beim
+        # Nachfragen eine luecken hafte Zeile ergeben, die niemand einordnen
+        # kann. Ist ein Eintrag gar kein Objekt (z. B. eine Zeichenkette
+        # statt eines Treffer-dicts), faellt er hier ebenfalls raus, ohne
+        # dass `.get(...)` je aufgerufen wird.
+        return [
+            t for t in roh
+            if isinstance(t, dict) and all(str(t.get(f, "")).strip() for f in PFLICHTFELDER)
+        ]
     except Exception as fehler:
         # Nur der Typname, nie die Ausnahme selbst oder ihre Argumente in der
         # Meldung: eine Schluessel- oder Netzwerkbibliothek koennte den
         # Schluessel in einer Fehlermeldung mitfuehren (z. B. im Header einer
         # HTTP-Anfrage). str(fehler) wird deshalb bewusst nicht ausgegeben.
+        # Dieselbe Meldung deckt jetzt auch eine unerwartete Antwortform ab
+        # (leerer/fehlender content, unlesbares JSON) -- fuer den Aufrufer
+        # ist beides gleich: die Pruefung fiel aus, der Lauf geht weiter.
         print(
             f"\n⚠ Die Duplikatpruefung wurde uebersprungen: {type(fehler).__name__}.\n"
             "   Die Uebernahme laeuft normal weiter – sie haengt nicht daran.\n"
             "   Meist ist das Internet weg oder der Schluessel nicht mehr gueltig."
         )
         return []
-
-    block = antwort.content[0]
-    nutzlast = getattr(block, "parsed_output", None)
-    if nutzlast is None:
-        try:
-            nutzlast = json.loads(block.text)
-        except (AttributeError, ValueError):
-            return []
-
-    roh = nutzlast.get("treffer") if isinstance(nutzlast, dict) else None
-    if not isinstance(roh, list):
-        return []
-
-    # Nur vollstaendige Treffer: ein halber Treffer wuerde beim Nachfragen eine
-    # luecken hafte Zeile ergeben, die niemand einordnen kann.
-    return [
-        t for t in roh
-        if isinstance(t, dict) and all(str(t.get(f, "")).strip() for f in PFLICHTFELDER)
-    ]

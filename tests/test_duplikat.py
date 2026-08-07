@@ -275,6 +275,7 @@ def test_anfrage_enthaelt_prompt_bestand_und_neue():
     client = FakeClient()
     duplikat.pruefe_duplikate(NEUE, BESTAND, client)
     assert client.gesehen["model"] == duplikat.MODELL
+    assert client.gesehen["max_tokens"] == 2000
     assert "Dublette" in client.gesehen["system"]
     inhalt = client.gesehen["messages"][0]["content"]
     assert "Musik hören" in inhalt, "der Bestand fehlt in der Anfrage"
@@ -301,3 +302,90 @@ def test_unerwartete_antwort_haelt_den_lauf_nicht_an():
 def test_treffer_ohne_pflichtfelder_werden_verworfen():
     client = FakeClient({"treffer": [{"titel": "Lieblingslied auflegen"}]})
     assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+class FakeClientMitRohAntwort:
+    """Reicht eine vorgegebene (ggf. absichtlich kaputte) Antwort unveraendert
+    durch.
+
+    Anders als FakeClient baut diese Attrappe keine passende Antwort selbst
+    zusammen -- sie gibt zurueck, was der Test vorgibt. So lassen sich
+    Antwortformen nachstellen, die FakeAntwort gar nicht abbilden kann (z. B.
+    eine Antwort ganz ohne `content`-Attribut).
+    """
+
+    def __init__(self, antwort):
+        self._antwort = antwort
+        self.gesehen = {}
+        aussen = self
+
+        class Messages:
+            def create(self, **kwargs):
+                aussen.gesehen = kwargs
+                return aussen._antwort
+
+        self.messages = Messages()
+
+
+class _AntwortOhneContent:
+    """Hat gar kein `content`-Attribut -- z. B. eine unerwartete Antwortform."""
+
+
+class _AntwortMitLeeremContent:
+    content = []
+
+
+class _BlockOhneText:
+    """Ein Content-Block ohne `text`-Attribut."""
+
+
+class _AntwortMitTextlosemBlock:
+    content = [_BlockOhneText()]
+
+
+class _BlockMitAbgeschnittenemJson:
+    text = '{"treffer": [{"titel": "Lieblingslied auf'  # absichtlich kaputt
+
+
+class _AntwortMitAbgeschnittenemJson:
+    content = [_BlockMitAbgeschnittenemJson()]
+
+
+def test_leere_content_liste_haelt_den_lauf_nicht_an(capsys):
+    """`antwort.content[0]` auf einer leeren Liste ist ein IndexError --
+    das ist genauso ein Schnittstellenfehler wie ein Netzwerkfehler."""
+    client = FakeClientMitRohAntwort(_AntwortMitLeeremContent())
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+    assert "Duplikatpruefung" in capsys.readouterr().out
+
+
+def test_antwort_ohne_content_haelt_den_lauf_nicht_an():
+    """Fehlt `content` ganz, waere `antwort.content` ein AttributeError."""
+    client = FakeClientMitRohAntwort(_AntwortOhneContent())
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_block_ohne_parsed_output_und_ohne_text_haelt_den_lauf_nicht_an():
+    """Ohne `text`-Attribut waere `block.text` ein AttributeError."""
+    client = FakeClientMitRohAntwort(_AntwortMitTextlosemBlock())
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_antwort_als_liste_statt_objekt_ergibt_leere_liste():
+    """Text/`parsed_output` als JSON-Liste statt eines Objekts mit "treffer"."""
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient([1, 2, 3])) == []
+
+
+def test_treffer_mit_zeichenketten_statt_objekten_werden_verworfen():
+    """Ein Treffer-Eintrag, der selbst kein Objekt ist, fliegt beim Filtern
+    raus, statt beim `.get(...)`-Aufruf abzustuerzen."""
+    client = FakeClient({"treffer": ["Lieblingslied auflegen"]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_abgeschnittenes_json_haelt_den_lauf_nicht_an(capsys):
+    """Abgebrochenes JSON (z. B. weil max_tokens erreicht wurde) darf den
+    Lauf nicht zum Absturz bringen."""
+    client = FakeClientMitRohAntwort(_AntwortMitAbgeschnittenemJson())
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+    assert "Duplikatpruefung" in capsys.readouterr().out
