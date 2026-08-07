@@ -247,7 +247,7 @@ def test_vorschlagsvorlage_sendet_die_aenderungsart():
     neuer_zweig = vorlage.split("} : {", 1)[1].split("})", 1)[0]
     assert re.findall(r"^\s*(\w+):", neuer_zweig, re.M) == [
         "stufe", "kategorie", "emoji", "titel", "beschreibung", "tipp",
-        "von", "falle", "turnstile",
+        "von", "links", "falle", "turnstile",
     ]
 
 
@@ -487,3 +487,44 @@ def test_gastgeber_kuerzt_www():
     assert "new URL(u).hostname.replace(/^www\\./,'')" in rumpf
     # Fällt das Zerlegen aus, darf der Dialog nicht leer bleiben.
     assert "catch" in rumpf
+
+
+def vorschlagsvorlage():
+    return build.TEMPLATE_VORSCHLAG.read_bytes().decode("utf-8-sig")
+
+
+def test_formular_hat_dynamische_linkliste():
+    vorlage = vorschlagsvorlage()
+    assert 'id="links-liste"' in vorlage
+    assert 'id="link-plus"' in vorlage
+    assert "var MAX_LINKS = 3;" in vorlage
+    # type=url braucht dieselbe Gestaltung wie die uebrigen Felder, sonst
+    # steht ein nacktes Eingabefeld mitten im Formular.
+    assert "input[type=text],input[type=url],textarea,select{" in vorlage
+
+
+def test_letzte_linkzeile_wird_geleert_statt_entfernt():
+    vorlage = vorschlagsvorlage()
+    rumpf = ohne_umbrueche(js_funktion(vorlage, "linkZeileBauen"))
+    assert "if(el('links-liste').children.length>1){ zeile.remove(); }" in rumpf
+    assert "else { feld.value=''; }" in rumpf
+
+
+def test_entwurf_traegt_die_links_mit():
+    vorlage = vorschlagsvorlage()
+    # Ohne diese beiden Zeilen verlieren die Links beim Reiterwechsel ihren
+    # Inhalt – genau der Fehler, gegen den es die Entwuerfe ueberhaupt gibt.
+    assert "e.links=linksLesen();" in ohne_umbrueche(js_funktion(vorlage, "entwurfSichern"))
+    assert "linksSetzen(e?e.links:[]);" in ohne_umbrueche(js_funktion(vorlage, "felderSetzen"))
+
+
+def test_ergaenzen_fuellt_die_bestehenden_links_vor():
+    vorlage = vorschlagsvorlage()
+    rumpf = ohne_umbrueche(js_funktion(vorlage, "originalUebernehmen"))
+    # Traegt das Vorausfuellen die Links nicht mit, wuerde eine Ergaenzung sie
+    # loeschen: das Uebernahme-Skript ersetzt die Spalten vollstaendig.
+    assert "linksSetzen(s.links||[]);" in rumpf
+
+
+def test_beide_absende_ruempfe_schicken_links():
+    assert vorschlagsvorlage().count("links:linksLesen(),") == 2
