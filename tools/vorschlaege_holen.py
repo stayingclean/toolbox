@@ -49,7 +49,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # (Die JavaScript-Fassung in worker/validate.js haelt niemand; dort ist beim
 # Aendern Handarbeit gefragt.)
 sys.path.insert(0, str(ROOT))
-from build import LINK_MAX_LAENGE, LINK_SPALTEN, VERKUERZER, pruefe_link  # noqa: E402
+from build import LINK_SPALTEN, pruefe_link  # noqa: E402
 
 MAX_LINKS = len(LINK_SPALTEN)
 

@@ -422,14 +422,21 @@ def test_aenderung_erhaelt_filter_und_dropdown(tmp_path):
     # Beim Ersetzen einer Zeile darf weder der Filterbereich noch das
     # Stufen-Dropdown verlorengehen – beides sieht man der Datei nicht an,
     # es faellt erst auf, wenn jemand in Excel sortiert.
+    #
+    # Die Mappe hier hat die Link-Spalten bereits (LINK_KOPF), damit
+    # spalten_sichern nichts anlegen muss: nur so prueft dieser Test den
+    # Erhalt-Pfad. Mit dem alten KOPF (ohne Link-Spalten) legt spalten_sichern
+    # sie automatisch an, und der Filter wird zwangslaeufig breiter – das
+    # deckt dann den WEITEN-Pfad ab, nicht den ERHALT-Pfad, fuer den dieser
+    # Test benannt ist.
     pfad = tmp_path / "skills_daten.xlsx"
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Skills"
-    ws.append(KOPF)
-    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "", "Max", ""])
-    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "", "", ""])
-    ws.auto_filter.ref = "A1:H3"
+    ws.append(LINK_KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "", "Max", "", "", "", ""])
+    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "", "", "", "", "", ""])
+    ws.auto_filter.ref = "A1:K3"
     pruefung = DataValidation(type="list", formula1='"Hoch,Mittel,Tief"', allow_blank=True)
     ws.add_data_validation(pruefung)
     pruefung.add("A2:A3")
@@ -438,8 +445,7 @@ def test_aenderung_erhaelt_filter_und_dropdown(tmp_path):
     vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
 
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
-    # KOPF kennt die Link-Spalten nicht - sie werden automatisch angelegt
-    # (spalten_sichern), darum wird der Filter breiter statt gleich zu bleiben.
+    # Die Link-Spalten waren schon da – der Filter muss unveraendert bleiben.
     assert ws2.auto_filter.ref == "A1:K3"
     bereiche = [str(p.sqref) for p in ws2.data_validations.dataValidation]
     assert bereiche == ["A2:A3"]

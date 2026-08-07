@@ -94,6 +94,16 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    **Die `http`-Sperre im Worker gilt weiterhin für Titel, Beschreibung, Tipp und
    Name.** Nur das Link-Feld ist ausgenommen. Diese Sperre ist die Spam-Abwehr des
    Formulars — sie darf nicht „vereinheitlicht" werden.
+
+   **Die Höchstzahl drei steht an vier Stellen**, wie schon bei den Stufen-Namen
+   oben:
+
+   - `build.py` → `LINK_SPALTEN` (drei Einträge)
+   - `worker/validate.js` → `MAX_LINKS`
+   - `template-vorschlag.html` → `var MAX_LINKS = 3;`
+   - der sichtbare Hinweis „(freiwillig, höchstens 3)" in derselben Datei
+
+   Auch hier gibt es keine Sperre, die ein Auseinanderlaufen meldet.
 2. **`build.bat`** doppelklicken (bzw. `uv run build.py`) → erzeugt `docs/skillsliste.html`
    aus `template.html` + Excel.
 3. Das Layout/Design steckt in `template.html` (nur die Datenzeile ist ein Platzhalter).

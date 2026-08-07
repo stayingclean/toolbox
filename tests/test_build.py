@@ -490,9 +490,15 @@ def test_vorlage_zeigt_bezugsquellen():
 def test_gastgeber_kuerzt_www():
     vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
     rumpf = ohne_umbrueche(js_funktion(vorlage, "gastgeber"))
-    assert "new URL(u).hostname.replace(/^www\\./,'')" in rumpf
-    # Fällt das Zerlegen aus, darf der Dialog nicht leer bleiben.
-    assert "catch" in rumpf
+    # Exakte Fassung statt nur "catch" in rumpf: sonst koennte der catch-Rumpf
+    # klanglos leer werden (z. B. "return '';") und der Dialog zeigte leere
+    # Knöpfe, ohne dass dieser Test es merkt.
+    assert rumpf == (
+        "function gastgeber(u){ "
+        "try{ return new URL(u).hostname.replace(/^www\\./,''); } "
+        "catch(e){ return u; } "
+        "}"
+    )
 
 
 def vorschlagsvorlage():
