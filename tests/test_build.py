@@ -1,3 +1,4 @@
+import base64
 import json
 import re
 import sys
@@ -127,7 +128,7 @@ def test_script_block_kann_nicht_verlassen_werden(mappe, monkeypatch, tmp_path):
     monkeypatch.setattr(build, "XLSX", pfad)
     monkeypatch.setattr(build, "OUTPUT", ziel)
 
-    build.render(build.load_data())
+    build.render(build.load_data(), {})
 
     html = ziel.read_bytes().decode("utf-8-sig")
     assert gift not in html, "die Zeichenfolge darf nicht wörtlich im Erzeugnis stehen"
@@ -685,3 +686,42 @@ def test_beschriftungen_folgen_ihrem_link_beim_zusammenschieben(mappe, monkeypat
         {"u": "https://b.ch/y", "t": "Massage"},
         {"u": "https://c.ch/z", "t": "Kette"},
     ]
+
+
+def test_favicon_wird_eingebettet(mappe, monkeypatch, tmp_path):
+    ordner = tmp_path / "favicons"
+    ordner.mkdir()
+    # Kleinstes gueltiges PNG (1x1, transparent) - als base64, damit man es
+    # nicht Byte fuer Byte pruefen muss.
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+        "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    )
+    (ordner / "a.ch.png").write_bytes(png)
+    monkeypatch.setattr(build, "FAVICON_DIR", ordner)
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    icons = build.lade_favicons(build.load_data())
+    assert list(icons) == ["a.ch"]
+    assert icons["a.ch"].startswith("data:image/png;base64,")
+
+
+def test_fehlendes_favicon_bricht_den_build_nicht(mappe, monkeypatch, tmp_path):
+    """Wer eine Bezugsquelle bei einem neuen Haendler eintraegt, darf damit
+    nicht die ganze Website blockieren."""
+    leer = tmp_path / "leer"
+    leer.mkdir()
+    monkeypatch.setattr(build, "FAVICON_DIR", leer)
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert build.lade_favicons(build.load_data()) == {}
+
+
+def test_gastgeber_entfernt_www():
+    assert build.gastgeber("https://www.skills-box.ch/products/x") == "skills-box.ch"
+    assert build.gastgeber("kein link") == ""
+
+
+def test_vorlage_hat_den_icons_platzhalter():
+    vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
+    assert build.PLACEHOLDER_ICONS in vorlage

@@ -16,6 +16,7 @@ Emoji) werden aus der Excel-Datei eingesetzt. Das Layout/Design steckt
 unverändert in template.html.
 """
 
+import base64
 import ipaddress
 import json
 import re
@@ -36,6 +37,8 @@ TEMPLATE = ROOT / "template.html"
 OUTPUT = ROOT / "docs" / "skillsliste.html"   # generierte Skillsliste-Seite
 DATEN_JSON = ROOT / "docs" / "skills-daten.json"   # Datenstand für Formular + Worker
 PLACEHOLDER = "var DATA = /*__BUILD_DATA__*/{};"
+FAVICON_DIR = ROOT / "assets" / "favicons"
+PLACEHOLDER_ICONS = "var ICONS = /*__BUILD_ICONS__*/{};"
 
 TEMPLATE_VORSCHLAG = ROOT / "template-vorschlag.html"
 OUTPUT_VORSCHLAG = ROOT / "docs" / "skill-vorschlagen.html"
@@ -147,6 +150,40 @@ def pruefe_text(roh) -> tuple[str | None, str | None]:
     if "http" in text.lower():
         return None, "Beschriftung darf keine Adresse enthalten"
     return text, None
+
+
+def gastgeber(url: str) -> str:
+    """Hostname ohne führendes www. — der Schlüssel der Symboltabelle."""
+    try:
+        return (urlsplit(url).hostname or "").removeprefix("www.")
+    except ValueError:
+        return ""
+
+
+def lade_favicons(data: dict) -> dict:
+    """Symbol je Hostname als data:-URI.
+
+    Fehlt eine Datei, kommt der Hostname schlicht nicht vor und der Knopf zeigt
+    später den Hostnamen statt eines Bildes. Der Build darf daran NICHT
+    scheitern: sonst legte eine neue Bezugsquelle bei einem unbekannten Händler
+    die ganze Website lahm.
+    """
+    hosts = {
+        gastgeber(link["u"])
+        for stufe in data.values()
+        for kat in stufe["kategorien"]
+        for skill in kat["skills"]
+        for link in skill["links"]
+    }
+    icons = {}
+    for host in sorted(h for h in hosts if h):
+        pfad = FAVICON_DIR / f"{host}.png"
+        if not pfad.exists():
+            continue
+        icons[host] = "data:image/png;base64," + base64.b64encode(
+            pfad.read_bytes()
+        ).decode("ascii")
+    return icons
 
 
 class BuildError(Exception):
@@ -396,35 +433,49 @@ def load_data():
 
 
 # ── HTML schreiben ───────────────────────────────────────────
-def _render(template_path, output_path, placeholder, ersatz, data: dict):
+def _render(template_path, output_path, ersetzungen):
+    """Setzt mehrere Platzhalter in eine Vorlage ein.
+
+    `ersetzungen` ist eine Liste von (Platzhalter, Muster, Daten).
+    """
     if not template_path.exists():
         raise BuildError(f"Vorlage nicht gefunden: {template_path.name}")
-    template = template_path.read_bytes().decode("utf-8-sig")  # evtl. BOM entfernen
-    if placeholder not in template:
-        raise BuildError(
-            f"Platzhalter nicht in {template_path.name} gefunden. "
-            f"Die Vorlage muss '{placeholder}' enthalten."
+    html = template_path.read_bytes().decode("utf-8-sig")  # evtl. BOM entfernen
+    for platzhalter, muster, daten in ersetzungen:
+        if platzhalter not in html:
+            raise BuildError(
+                f"Platzhalter nicht in {template_path.name} gefunden. "
+                f"Die Vorlage muss '{platzhalter}' enthalten."
+            )
+        payload = json.dumps(daten, ensure_ascii=False, separators=(", ", ": "))
+        # Ausgabecodierung fuer den <script>-Block: sonst beendet ein </script>
+        # im Freitext das Skriptelement und der Rest wird als Markup ausgefuehrt.
+        payload = (
+            payload.replace("<", "\\u003c")
+            .replace(">", "\\u003e")
+            .replace("&", "\\u0026")
         )
-    payload = json.dumps(data, ensure_ascii=False, separators=(", ", ": "))
-    # Ausgabecodierung fuer den <script>-Block: sonst beendet ein </script> im
-    # Freitext das Skriptelement und der Rest wird als Markup ausgefuehrt.
-    payload = payload.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
-    html = template.replace(placeholder, ersatz % payload, 1)
+        html = html.replace(platzhalter, muster % payload, 1)
     # gleiche Datei-Konvention wie das Original: UTF-8 mit BOM
     output_path.write_bytes(b"\xef\xbb\xbf" + html.encode("utf-8"))
 
 
-def render(data: dict):
-    _render(TEMPLATE, OUTPUT, PLACEHOLDER, "var DATA = %s;", data)
+def render(data: dict, icons: dict):
+    _render(
+        TEMPLATE,
+        OUTPUT,
+        [
+            (PLACEHOLDER, "var DATA = %s;", data),
+            (PLACEHOLDER_ICONS, "var ICONS = %s;", icons),
+        ],
+    )
 
 
 def render_vorschlag(data: dict):
     _render(
         TEMPLATE_VORSCHLAG,
         OUTPUT_VORSCHLAG,
-        PLACEHOLDER_VORSCHLAG,
-        "var DATEN = %s;",
-        data,
+        [(PLACEHOLDER_VORSCHLAG, "var DATEN = %s;", data)],
     )
 
 
@@ -446,7 +497,7 @@ def write_daten_json(data: dict):
 def main():
     try:
         data = load_data()
-        render(data)
+        render(data, lade_favicons(data))
         render_vorschlag(data)
         write_daten_json(data)
     except BuildError as exc:
