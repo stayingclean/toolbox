@@ -1107,8 +1107,15 @@ git commit -m "Bezugsquellen: dynamische Linkliste im Vorschlagsformular"
 - Test: `tests/test_vorschlaege_holen.py`
 
 **Interfaces:**
-- Consumes: `links` aus dem JSON-Block des Issues (Task 3/4); `build.VERKUERZER`, `build.LINK_MAX_LAENGE`, `build.pruefe_link` (Task 1) — nur im Gleichstands-Test.
-- Produces: Spalten `Link1..Link3` im Blatt `Skills`; `vh.LINK_SPALTEN`, `vh.pruefe_link`.
+- Consumes: `links` aus dem JSON-Block des Issues (Task 3/4); `build.pruefe_link`, `build.LINK_SPALTEN`, `build.LINK_MAX_LAENGE`, `build.VERKUERZER` (Task 1) — **per Import**, nicht als Kopie.
+- Produces: Spalten `Link1..Link3` im Blatt `Skills`.
+
+**Entscheidung des Auftraggebers (weicht vom ursprünglichen Entwurf ab):** Die
+URL-Regeln werden **importiert, nicht kopiert**. `GRENZEN` steht in diesem
+Projekt zwar doppelt, aber das sind vier Zeilen Daten — `pruefe_link` sind
+vierzig Zeilen Logik mit sieben Regeln, und `vorschlaege_holen.py` ruft
+`build.py` ohnehin bereits auf. Eine Kopie könnte auseinanderlaufen; ein Import
+kann es nicht.
 
 - [ ] **Step 1: Die fehlschlagenden Tests schreiben**
 
@@ -1128,15 +1135,14 @@ def mappe_mit_kopf(tmp_path, kopf):
     return pfad
 
 
-def test_regeln_stimmen_mit_build_ueberein():
-    """Die Regeln stehen zweimal in Python. Laufen sie auseinander, laesst der
-    Worker etwas durch, das der Build spaeter ablehnt – der Vorschlag steckt
-    dann in der Excel fest."""
+def test_die_regeln_kommen_aus_build():
+    """Eine Quelle, nicht zwei. Eine Kopie koennte auseinanderlaufen: der
+    Worker liesse dann etwas durch, das der Build spaeter ablehnt – und der
+    Vorschlag steckte in der Excel fest."""
     import build
 
-    assert vh.VERKUERZER == build.VERKUERZER
-    assert vh.LINK_MAX_LAENGE == build.LINK_MAX_LAENGE
-    assert vh.LINK_SPALTEN == build.LINK_SPALTEN
+    assert vh.pruefe_link is build.pruefe_link
+    assert vh.LINK_SPALTEN is build.LINK_SPALTEN
 
 
 def test_neue_zeile_traegt_die_links(tmp_path):
@@ -1213,18 +1219,29 @@ def test_beschreibung_darf_weiterhin_keinen_link_tragen():
 Run: `uv run --with pytest --with openpyxl python -m pytest tests/test_vorschlaege_holen.py -q -k link`
 Expected: FAIL — `AttributeError: module 'vorschlaege_holen' has no attribute 'VERKUERZER'`
 
-- [ ] **Step 3: Konstanten und Prüfung übernehmen**
+- [ ] **Step 3: Regeln aus `build.py` importieren**
 
-In `tools/vorschlaege_holen.py` bei den Importen `import ipaddress` und `from urllib.parse import urlsplit` ergänzen.
-
-Nach `GRENZEN` (nach Zeile 60) die **wortgleiche** Fassung aus `build.py` einfügen — `LINK_SPALTEN`, `LINK_MAX_LAENGE`, `VERKUERZER`, `_ist_ip`, `pruefe_link` — mit dem Kommentar:
+In `tools/vorschlaege_holen.py` nach der Zeile `ROOT = Path(__file__).resolve().parent.parent` (Zeile 43) einfügen:
 
 ```python
-# Muessen zu build.py passen; ein Test in tests/test_vorschlaege_holen.py haelt
-# die beiden Fassungen zusammen. Die JavaScript-Fassung in worker/validate.js
-# haelt niemand – dort ist Handarbeit gefragt.
-MAX_LINKS = 3
+# Die URL-Regeln kommen aus build.py – EINE Quelle. Eine Kopie koennte
+# auseinanderlaufen: der Worker liesse dann etwas durch, das der Build spaeter
+# ablehnt, und der Vorschlag steckte in der Excel fest. build.py liegt im
+# Wurzelverzeichnis, dieses Skript in tools/ – daher der Pfad-Eintrag.
+# (Die JavaScript-Fassung in worker/validate.js haelt niemand; dort ist beim
+# Aendern Handarbeit gefragt.)
+sys.path.insert(0, str(ROOT))
+from build import LINK_MAX_LAENGE, LINK_SPALTEN, VERKUERZER, pruefe_link  # noqa: E402
+
+MAX_LINKS = len(LINK_SPALTEN)
 ```
+
+`VERKUERZER` und `LINK_MAX_LAENGE` werden hier nicht direkt gebraucht, sondern
+über `pruefe_link` — sie stehen im Import, damit der Test sie greifen kann und
+damit beim Lesen sichtbar ist, woher die Regeln stammen.
+
+> `sys` ist bereits importiert (Zeile 32); `ROOT` ist bereits definiert. Der
+> Import muss **nach** `ROOT` stehen, darum das `# noqa: E402`.
 
 `SPALTEN` und `SPALTEN_AENDERUNG` je um drei Einträge erweitern:
 
@@ -1353,16 +1370,17 @@ reine `https`-Adressen, jede darf leer bleiben, Lücken werden beim Bauen
 zusammengeschoben. Im Detail-Dialog werden daraus Knöpfe, deren Aufschrift der
 Hostname ist (`skillsbox.ch`); ohne Link erscheint der Bereich gar nicht.
 
-**Die URL-Regeln stehen an drei Stellen und müssen gleich lauten:**
+**Die URL-Regeln stehen an zwei Stellen:**
 
-- `build.py` → `pruefe_link`, `VERKUERZER`, `LINK_MAX_LAENGE`
-- `tools/vorschlaege_holen.py` → dieselben Namen
-- `worker/validate.js` → `pruefeLinks`, `VERKUERZER`, `LINK_MAX_LAENGE`, `MAX_LINKS`
+- `build.py` → `pruefe_link`, `VERKUERZER`, `LINK_MAX_LAENGE`, `LINK_SPALTEN`.
+  `tools/vorschlaege_holen.py` **importiert** sie von dort — bewusst keine
+  Kopie, anders als bei `GRENZEN` (das sind vier Zeilen Daten, dies ist Logik).
+- `worker/validate.js` → `pruefeLinks`, `VERKUERZER`, `LINK_MAX_LAENGE`,
+  `MAX_LINKS`.
 
-Die beiden Python-Fassungen hält ein Test zusammen
-(`test_regeln_stimmen_mit_build_ueberein`). Die JavaScript-Fassung hält
-**niemand** — wird sie vergessen, lässt der Worker etwas durch, das der Build
-später ablehnt, und der Vorschlag steckt in der Excel fest.
+Die JavaScript-Fassung hält **niemand** mit der Python-Seite zusammen — wird
+sie beim Ändern vergessen, lässt der Worker etwas durch, das der Build später
+ablehnt, und der Vorschlag steckt in der Excel fest.
 
 **Die `http`-Sperre im Worker gilt weiterhin für Titel, Beschreibung, Tipp und
 Name.** Nur das Link-Feld ist ausgenommen. Diese Sperre ist die Spam-Abwehr des
