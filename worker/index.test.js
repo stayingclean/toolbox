@@ -5,7 +5,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { issueRumpf, issueRumpfAenderung, zelle, quellen } from "./index.js";
+import { issueRumpf, issueRumpfAenderung, zelle, quellen, linkBefund, mitBefunden } from "./index.js";
 
 const WERT = {
   art: "neu",
@@ -166,4 +166,75 @@ test("ein alter Datenstand ohne links bricht nicht", () => {
   // docs/skills-daten.json wird zwischengespeichert; eine Fassung von vor
   // dieser Neuerung darf den Worker nicht umwerfen.
   assert.equal(quellen(undefined), "—");
+});
+
+// `await lauf()` statt `return lauf()`: sonst liefe das finally schon, waehrend
+// linkBefund noch auf die Antwort wartet, und das echte fetch staende wieder
+// da. Heute ginge es zufaellig gut (der Aufruf faellt vor das erste await),
+// aber der Test haette diesen Zufall zur Voraussetzung.
+async function mitStubFetch(antwort, lauf) {
+  const echt = globalThis.fetch;
+  globalThis.fetch = async () => {
+    if (antwort instanceof Error) throw antwort;
+    return antwort;
+  };
+  try {
+    return await lauf();
+  } finally {
+    globalThis.fetch = echt;
+  }
+}
+
+test("200 gilt als erreichbar", async () => {
+  const befund = await mitStubFetch({ ok: true, status: 200 }, () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^✓ https:\/\/a\.ch\/x — 200 OK$/);
+});
+
+test("404 wird als toter Link gemeldet", async () => {
+  const befund = await mitStubFetch({ ok: false, status: 404 }, () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^⚠ /);
+  assert.match(befund, /404/);
+});
+
+test("410 wird als toter Link gemeldet", async () => {
+  const befund = await mitStubFetch({ ok: false, status: 410 }, () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^⚠ /);
+});
+
+test("403 ist keine Aussage – Shops sperren Bots aus", async () => {
+  const befund = await mitStubFetch({ ok: false, status: 403 }, () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^· /);
+  assert.match(befund, /keine Aussage/);
+});
+
+test("ein Netzwerkfehler ist keine Aussage", async () => {
+  const befund = await mitStubFetch(new Error("weg"), () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^· /);
+  assert.match(befund, /keine Aussage/);
+});
+
+test("ohne Befunde bleibt der Rumpf unveraendert", () => {
+  assert.equal(mitBefunden("RUMPF", []), "RUMPF");
+});
+
+test("Befunde stehen NACH dem Kommentarblock", () => {
+  // Der Block muss der einzige bleiben: parse_body in vorschlaege_holen.py
+  // verwirft ein Issue mit mehr als einem Block.
+  const rumpf = issueRumpf({
+    stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧",
+    titel: "Musik", beschreibung: "Ein Lied", tipp: "", von: "", links: [],
+  });
+  const ganz = mitBefunden(rumpf, ["✓ https://a.ch/x — 200 OK"]);
+  assert.equal(ganz.match(/<!-- vorschlag/g).length, 1);
+  assert.ok(ganz.indexOf("Erreichbarkeit") > ganz.indexOf("<!-- vorschlag"));
 });

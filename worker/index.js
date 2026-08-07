@@ -82,6 +82,57 @@ export function quellen(liste) {
   return liste && liste.length ? liste.map(zelle).join("<br>") : "—";
 }
 
+/**
+ * Ruft eine Bezugsquelle einmal ab und fasst das Ergebnis in einer Zeile.
+ *
+ * Lehnt NIE ab: ein Shop, der Cloudflare-Adressen aussperrt, darf keine
+ * ehrliche Einreichung blockieren – der Link funktioniert im Browser tadellos,
+ * und die einreichende Person haette keine Chance zu verstehen, was von ihr
+ * verlangt wird. Die Zeile ist Entscheidungshilfe fuer die Freigabe, nicht mehr.
+ *
+ * Darum gilt nur 404/410 als Befund; 403, 429 und 5xx heissen "keine Aussage".
+ *
+ * Der Abruf ist ungefaehrlich, weil pruefeLinks vorher nur https ohne Port und
+ * ohne IP-Adresse durchgelassen hat – auf interne Adressen laesst sich der
+ * Worker damit nicht richten.
+ */
+export async function linkBefund(url) {
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: { "user-agent": "toolbox-linkpruefung" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.status === 404 || res.status === 410) {
+      return `⚠ ${url} — ${res.status}, Link zeigt ins Leere`;
+    }
+    if (res.ok) {
+      return `✓ ${url} — ${res.status} OK`;
+    }
+    return `· ${url} — ${res.status}, keine Aussage`;
+  } catch {
+    return `· ${url} — nicht erreichbar, keine Aussage`;
+  }
+}
+
+/**
+ * Haengt die Befunde an den Rumpf – hinter den Kommentarblock, damit dieser
+ * der einzige bleibt (parse_body in vorschlaege_holen.py verwirft ein Issue
+ * mit mehr als einem Block).
+ */
+export function mitBefunden(rumpf, befunde) {
+  if (!befunde.length) {
+    return rumpf;
+  }
+  return (
+    rumpf +
+    "\n**Erreichbarkeit beim Einreichen**\n\n```\n" +
+    befunde.join("\n") +
+    "\n```\n"
+  );
+}
+
 export function issueRumpf(w) {
   const zeilen = [
     "| Feld | Wert |",
@@ -216,6 +267,11 @@ export default {
       return antwort({ fehler: geprueft.fehler }, 400);
     }
 
+    const quellenListe = geprueft.wert.links || [];
+    const befunde = quellenListe.length
+      ? await Promise.all(quellenListe.map(linkBefund))
+      : [];
+
     const issueRes = await fetch(
       `https://api.github.com/repos/${umgebung.REPO}/issues`,
       {
@@ -230,9 +286,12 @@ export default {
           title: istAenderung
             ? `[Änderung] ${geprueft.wert.original}`
             : geprueft.wert.titel,
-          body: istAenderung
-            ? issueRumpfAenderung(geprueft.wert, altenSkillFinden(daten, geprueft.wert))
-            : issueRumpf(geprueft.wert),
+          body: mitBefunden(
+            istAenderung
+              ? issueRumpfAenderung(geprueft.wert, altenSkillFinden(daten, geprueft.wert))
+              : issueRumpf(geprueft.wert),
+            befunde
+          ),
         }),
       }
     );
