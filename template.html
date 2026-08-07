@@ -143,6 +143,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .modal-links-titel{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
 .modal-links-liste{display:flex;flex-wrap:wrap;gap:.5rem}
 .modal-links-liste a{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .7rem;border:1px solid var(--border);border-radius:var(--r-xs);font-size:.82rem;color:var(--text);text-decoration:none;transition:border-color var(--tr),background var(--tr)}
+.modal-links-icon{width:16px;height:16px;border-radius:3px;flex-shrink:0;object-fit:contain}
 .modal-links-liste a:hover{border-color:var(--active);background:var(--active-h)}
 .modal-links-fuss{margin-top:.55rem;font-size:.72rem;color:var(--muted)}
 /* Auf Desktop zentrieren */
@@ -437,6 +438,14 @@ function gastgeber(u){
   catch(e){ return u; }
 }
 
+/* Das Symbol kommt aus der beim Bauen eingebetteten Tabelle, nie vom Haendler:
+   ein Bild von coop.ch wuerde beim Oeffnen dieses Dialogs an Coop melden, dass
+   jemand genau diesen Skill angeschaut hat. */
+function symbol(u){
+  try{ return ICONS[new URL(u).hostname.replace(/^www\./,'')]||''; }
+  catch(e){ return ''; }
+}
+
 function openModal(s){
   mEmoji.textContent = s.e||'💡';
   mCat.textContent   = DATA[S.level].kategorien.find(function(k){ return k.id===s.kid; }).label;
@@ -450,12 +459,25 @@ function openModal(s){
   else { mVon.textContent=''; mVon.hidden=true; }
 
   mLinksListe.textContent='';
-  (s.links||[]).forEach(function(u){
+  (s.links||[]).forEach(function(l){
     var a=document.createElement('a');
-    a.href=u;
+    a.href=l.u;
     a.target='_blank';
     a.rel='noopener noreferrer nofollow ugc';
-    a.textContent='↗ '+gastgeber(u);
+    /* Die Domain steht nicht mehr im Text – der title haelt die Zusicherung
+       aufrecht, dass man vor dem Klick sieht, wo man landet. */
+    a.title=l.u;
+    var bild=symbol(l.u);
+    if(bild){
+      var img=document.createElement('img');
+      img.src=bild;
+      img.alt='';
+      img.className='modal-links-icon';
+      a.appendChild(img);
+    } else {
+      a.appendChild(document.createTextNode('↗ '));
+    }
+    a.appendChild(document.createTextNode(l.t||gastgeber(l.u)));
     mLinksListe.appendChild(a);
   });
   mLinks.hidden = !(s.links && s.links.length);
