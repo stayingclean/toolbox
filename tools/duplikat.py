@@ -154,13 +154,21 @@ def lade_prompt(projekt: Path) -> str:
 
 
 def bestand_als_text(bestand: dict) -> str:
-    """Der vorhandene Bestand als kompakte Zeilenliste."""
+    """Der vorhandene Bestand als kompakte Zeilenliste.
+
+    Trennzeichen zwischen Titel und Beschreibung ist `|`, nicht der
+    Gedankenstrich: 21 von 100 echten Beschreibungen (Feld `b`) enthalten
+    selbst einen Gedankenstrich (docs/skills-daten.json), ein Gedankenstrich
+    waere also keine eindeutige Grenze. `|` kommt in keinem der Felder
+    e/t/b/tip/von/erg im echten Bestand vor -- geprueft gegen
+    docs/skills-daten.json (100 Skills, Stand dieser Aenderung).
+    """
     zeilen = []
     for schluessel, stufe in bestand.items():
         name = STUFEN_NAME.get(schluessel, schluessel)
         for kategorie in stufe.get("kategorien", []):
             for skill in kategorie.get("skills", []):
                 zeilen.append(
-                    f"{name} / {kategorie['label']}: {skill['t']} — {skill['b']}"
+                    f"{name} / {kategorie['label']}: {skill['t']} | {skill['b']}"
                 )
     return "\n".join(zeilen)

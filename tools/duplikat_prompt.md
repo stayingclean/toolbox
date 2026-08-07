@@ -19,6 +19,9 @@ dieselbe Handlung.
   „Wasabi essen" — beides scharf, aber verschiedene Mittel),
 - eine deutlich andere Ausfuehrung derselben Idee („kalt duschen" gegen
   „Eiswuerfel in die Hand nehmen"),
+- dasselbe Mittel, aber ein anderer Zweck („Gefuehlslage notieren" gegen
+  „Tagebuch fuehren" — beides Schreiben, aber unterschiedlich in Ziel und
+  Dauer),
 - derselbe Skill in einer anderen Stufe oder Kategorie — das kann bewusst so
   sein.
 

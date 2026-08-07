@@ -180,9 +180,36 @@ def test_leere_prompt_datei_meldet_sich(tmp_path):
 
 def test_bestand_wird_kompakt_aufbereitet():
     text = duplikat.bestand_als_text(BESTAND)
-    assert "Hoch / Ablenkung: Musik hören — Ein Lied auflegen." in text
-    assert "Tief / Ruhe: Atmen — Ruhig atmen." in text
+    assert "Hoch / Ablenkung: Musik hören | Ein Lied auflegen." in text
+    assert "Tief / Ruhe: Atmen | Ruhig atmen." in text
     assert "Mittel" not in text, "leere Stufen erzeugen keine Zeilen"
+
+
+def test_bestand_zeile_bleibt_eindeutig_bei_gedankenstrich_in_beschreibung():
+    """21 von 100 echten Beschreibungen enthalten selbst einen Gedankenstrich.
+
+    Ein Gedankenstrich als Trenner zwischen Titel und Beschreibung waere dann
+    nicht mehr eindeutig. Das Trennzeichen `|` kommt in keinem der echten
+    Felder vor (siehe docs/skills-daten.json)."""
+    bestand = {
+        "hoch": {"kategorien": [{"label": "Achtsamkeit", "skills": [
+            {
+                "e": "🍽️",
+                "t": "Achtsames Essen üben",
+                "b": "Bewusst essen — jeden Bissen schmecken.",
+                "tip": "",
+                "von": "",
+                "erg": "",
+            },
+        ]}]},
+        "mittel": {"kategorien": []},
+        "tief": {"kategorien": []},
+    }
+    text = duplikat.bestand_als_text(bestand)
+    assert (
+        "Hoch / Achtsamkeit: Achtsames Essen üben | Bewusst essen — jeden Bissen schmecken."
+        in text
+    )
 
 
 def test_echte_prompt_datei_existiert_und_ist_gefuellt():
