@@ -484,7 +484,7 @@ function originalUebernehmen(){
   // Der Tipp traegt in den Daten eine fuehrende Gluehbirne; im Formular gehoert
   // sie nicht hinein, sie wird beim Bauen wieder ergaenzt (build.py, format_tip).
   feldSetzen('tipp', (s.tip||'').replace(/^💡\s*/,''));
-  linksSetzen(s.links||[]);
+  linksSetzen((s.links||[]).map(function(l){ return l.u||l; }));
 }
 
 /* Was jemand schon getippt hat, darf ein Blick in den anderen Reiter nicht

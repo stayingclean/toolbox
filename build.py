@@ -71,6 +71,11 @@ def sortier_schluessel(titel):
 # später ablehnt, und der Vorschlag steckt in der Excel fest.
 LINK_SPALTEN = ["Link1", "Link2", "Link3"]
 LINK_MAX_LAENGE = 300
+TEXT_SPALTEN = ["Text1", "Text2", "Text3"]
+# Adresse und Beschriftung gehoeren zusammen: sie werden gemeinsam gelesen,
+# gemeinsam geprueft und rutschen beim Zusammenschieben gemeinsam auf.
+LINK_PAARE = list(zip(LINK_SPALTEN, TEXT_SPALTEN))
+TEXT_MAX_LAENGE = 30
 
 # Linkverkürzer verbergen das Ziel vor der Freigabe – die Prüfung im Issue
 # wäre wertlos – und ergeben als Knopfaufschrift nur "bit.ly" statt eines
@@ -125,6 +130,23 @@ def pruefe_link(roh: str) -> tuple[str | None, str | None]:
     if host.removeprefix("www.") in VERKUERZER:
         return None, "Linkverkürzer sind nicht erlaubt"
     return url, None
+
+
+def pruefe_text(roh) -> tuple[str | None, str | None]:
+    """Prüft die Beschriftung einer Bezugsquelle.
+
+    Liefert (text, None) oder (None, Meldung). Kein `http`: die Domain steht
+    nicht mehr im Knopf, darum fiele eine Beschriftung, die eine Adresse
+    vortäuscht, kaum auf.
+    """
+    text = str(roh or "").strip()
+    if len(text) > TEXT_MAX_LAENGE:
+        return None, f"Beschriftung ist zu lang (höchstens {TEXT_MAX_LAENGE} Zeichen)"
+    if "<" in text or ">" in text:
+        return None, "Beschriftung darf keine spitzen Klammern enthalten"
+    if "http" in text.lower():
+        return None, "Beschriftung darf keine Adresse enthalten"
+    return text, None
 
 
 class BuildError(Exception):
@@ -226,7 +248,7 @@ def load_data():
     skill_rows = read_rows(
         get_sheet(wb, "Skills"),
         ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"],
-        optional_header=["Von", "Ergaenzt"] + LINK_SPALTEN,
+        optional_header=["Von", "Ergaenzt"] + LINK_SPALTEN + TEXT_SPALTEN,
     )
     wb.close()
 
@@ -292,20 +314,36 @@ def load_data():
             )
             continue
         # Luecken werden zusammengeschoben: wer den ersten von zwei Links
-        # entfernt, soll die uebrigen nicht von Hand aufruecken muessen.
+        # entfernt, soll die uebrigen nicht von Hand aufruecken muessen. Die
+        # Beschriftung wandert dabei mit ihrer Adresse mit.
         links = []
-        for spalte in LINK_SPALTEN:
-            if not rec[spalte]:
+        for spalte, textspalte in LINK_PAARE:
+            roh_url, roh_text = rec[spalte], rec[textspalte]
+            if not roh_url:
+                if roh_text:
+                    errors.append(
+                        f"Blatt 'Skills', Zeile {rec['_row']}, Spalte "
+                        f"'{textspalte}': Beschriftung ohne Adresse in "
+                        f"'{spalte}'."
+                    )
                 continue
-            url, meldung = pruefe_link(rec[spalte])
+            url, meldung = pruefe_link(roh_url)
             if meldung:
                 errors.append(
                     f"Blatt 'Skills', Zeile {rec['_row']}, Spalte '{spalte}': "
                     f"{meldung}."
                 )
                 continue
-            if url not in links:
-                links.append(url)
+            beschriftung, meldung = pruefe_text(roh_text)
+            if meldung:
+                errors.append(
+                    f"Blatt 'Skills', Zeile {rec['_row']}, Spalte "
+                    f"'{textspalte}': {meldung}."
+                )
+                continue
+            if any(vorhanden["u"] == url for vorhanden in links):
+                continue
+            links.append({"u": url, "t": beschriftung})
         skills_by.setdefault((key, label), []).append(
             {
                 "e": rec["Emoji"],

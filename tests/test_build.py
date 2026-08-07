@@ -404,7 +404,9 @@ def erste_skills(daten):
 def test_links_werden_gelesen(mappe, monkeypatch):
     pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://www.skillsbox.ch/p/1", "", ""]])
     monkeypatch.setattr(build, "XLSX", pfad)
-    assert erste_skills(build.load_data())["links"] == ["https://www.skillsbox.ch/p/1"]
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://www.skillsbox.ch/p/1", "t": ""}
+    ]
 
 
 def test_links_sind_leer_wenn_spalten_fehlen(mappe, monkeypatch):
@@ -418,13 +420,16 @@ def test_luecke_wird_zusammengeschoben(mappe, monkeypatch):
     von Hand aufruecken muessen."""
     pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["", "https://a.ch/x", "https://b.ch/y"]])
     monkeypatch.setattr(build, "XLSX", pfad)
-    assert erste_skills(build.load_data())["links"] == ["https://a.ch/x", "https://b.ch/y"]
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://a.ch/x", "t": ""},
+        {"u": "https://b.ch/y", "t": ""},
+    ]
 
 
 def test_doppelte_url_faellt_weg(mappe, monkeypatch):
     pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "https://a.ch/x", ""]])
     monkeypatch.setattr(build, "XLSX", pfad)
-    assert erste_skills(build.load_data())["links"] == ["https://a.ch/x"]
+    assert erste_skills(build.load_data())["links"] == [{"u": "https://a.ch/x", "t": ""}]
 
 
 @pytest.mark.parametrize(
@@ -468,7 +473,9 @@ def test_links_stehen_in_der_json(mappe, monkeypatch, tmp_path):
     monkeypatch.setattr(build, "DATEN_JSON", ziel)
     build.write_daten_json(build.load_data())
     daten = json.loads(ziel.read_text(encoding="utf-8"))
-    assert daten["hoch"]["kategorien"][0]["skills"][0]["links"] == ["https://a.ch/x"]
+    assert daten["hoch"]["kategorien"][0]["skills"][0]["links"] == [
+        {"u": "https://a.ch/x", "t": ""}
+    ]
 
 
 def test_vorlage_zeigt_bezugsquellen():
@@ -534,8 +541,10 @@ def test_ergaenzen_fuellt_die_bestehenden_links_vor():
     vorlage = vorschlagsvorlage()
     rumpf = ohne_umbrueche(js_funktion(vorlage, "originalUebernehmen"))
     # Traegt das Vorausfuellen die Links nicht mit, wuerde eine Ergaenzung sie
-    # loeschen: das Uebernahme-Skript ersetzt die Spalten vollstaendig.
-    assert "linksSetzen(s.links||[]);" in rumpf
+    # loeschen: das Uebernahme-Skript ersetzt die Spalten vollstaendig. Das
+    # Formular schickt weiterhin nur Adressen (l.u), die Beschriftung pflegt
+    # allein die betreuende Person in der Excel.
+    assert "linksSetzen((s.links||[]).map(function(l){ return l.u||l; }));" in rumpf
 
 
 def test_beide_absende_ruempfe_schicken_links():
@@ -611,3 +620,68 @@ def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
     assert links_spalten("Ein Link") == ["https://a.ch", None, None]
     assert links_spalten("Zwei Links") == ["https://a.ch", "https://b.ch", None]
     assert links_spalten("Drei Links") == ["https://a.ch", "https://b.ch", "https://c.ch"]
+
+
+TEXT_HEADER = SKILLS_HEADER + ["Link1", "Text1", "Link2", "Text2", "Link3", "Text3"]
+
+
+def test_beschriftung_wird_gelesen(mappe, monkeypatch):
+    pfad = mappe(TEXT_HEADER, [SKILLS_ROW + ["https://a.ch/x", "Igelball", "", "", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://a.ch/x", "t": "Igelball"}
+    ]
+
+
+def test_ohne_beschriftung_bleibt_t_leer(mappe, monkeypatch):
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == [{"u": "https://a.ch/x", "t": ""}]
+
+
+def test_beschriftung_ohne_adresse_bricht_ab(mappe, monkeypatch):
+    """Sonst staende eine Beschriftung ohne Ziel in der Mappe und niemand saehe es."""
+    pfad = mappe(TEXT_HEADER, [SKILLS_ROW + ["", "Igelball", "", "", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    with pytest.raises(build.BuildError) as fehler:
+        build.load_data()
+    meldung = str(fehler.value)
+    assert "Text1" in meldung and "Link1" in meldung
+    assert "Zeile 2" in meldung
+
+
+@pytest.mark.parametrize(
+    "text, teil",
+    [
+        ("x" * 31, "zu lang"),
+        ("<b>Igelball", "Klammern"),
+        ("Siehe http://a.ch", "Adresse"),
+    ],
+)
+def test_ungueltige_beschriftung_bricht_ab(mappe, monkeypatch, text, teil):
+    pfad = mappe(TEXT_HEADER, [SKILLS_ROW + ["https://a.ch/x", text, "", "", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    with pytest.raises(build.BuildError) as fehler:
+        build.load_data()
+    assert teil in str(fehler.value)
+    assert "Text1" in str(fehler.value)
+
+
+def test_genau_dreissig_zeichen_sind_erlaubt(mappe, monkeypatch):
+    pfad = mappe(TEXT_HEADER, [SKILLS_ROW + ["https://a.ch/x", "x" * 30, "", "", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"][0]["t"] == "x" * 30
+
+
+def test_beschriftungen_folgen_ihrem_link_beim_zusammenschieben(mappe, monkeypatch):
+    """Luecke in Link1: Link2/Text2 ruecken gemeinsam auf, das Paar darf nicht
+    auseinanderfallen."""
+    pfad = mappe(
+        TEXT_HEADER,
+        [SKILLS_ROW + ["", "", "https://b.ch/y", "Massage", "https://c.ch/z", "Kette"]],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://b.ch/y", "t": "Massage"},
+        {"u": "https://c.ch/z", "t": "Kette"},
+    ]

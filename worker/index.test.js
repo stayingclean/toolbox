@@ -139,7 +139,10 @@ test("Bezugsquellen stehen in der Tabelle eines neuen Skills", () => {
   const rumpf = issueRumpf({
     stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧",
     titel: "Musik", beschreibung: "Ein Lied", tipp: "", von: "",
-    links: ["https://a.ch/x", "https://b.ch/y"],
+    links: [
+      { u: "https://a.ch/x", t: "" },
+      { u: "https://b.ch/y", t: "" },
+    ],
   });
   assert.match(rumpf, /\| Bezugsquellen \| `https:\/\/a\.ch\/x`<br>`https:\/\/b\.ch\/y` \|/);
 });
@@ -156,8 +159,8 @@ test("die Aenderung stellt alte und neue Quellen nebeneinander", () => {
   const rumpf = issueRumpfAenderung(
     { stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧", titel: "Musik",
       beschreibung: "Neu", tipp: "", erg: "", original: "Musik",
-      links: ["https://neu.ch/x"] },
-    { e: "🎧", t: "Musik", b: "Alt", tip: "", links: ["https://alt.ch/x"] }
+      links: [{ u: "https://neu.ch/x", t: "" }] },
+    { e: "🎧", t: "Musik", b: "Alt", tip: "", links: [{ u: "https://alt.ch/x", t: "" }] }
   );
   assert.match(rumpf, /\| Bezugsquellen \| `https:\/\/alt\.ch\/x` \| `https:\/\/neu\.ch\/x` \|/);
 });
@@ -237,4 +240,19 @@ test("Befunde stehen NACH dem Kommentarblock", () => {
   const ganz = mitBefunden(rumpf, ["✓ https://a.ch/x — 200 OK"]);
   assert.equal(ganz.match(/<!-- vorschlag/g).length, 1);
   assert.ok(ganz.indexOf("Erreichbarkeit") > ganz.indexOf("<!-- vorschlag"));
+});
+
+test("Bezugsquellen nutzen die Beschriftung, wenn es eine gibt", () => {
+  const zelleInhalt = quellen([
+    { u: "https://a.ch/x", t: "Igelball" },
+    { u: "https://b.ch/y", t: "" },
+  ]);
+  assert.match(zelleInhalt, /Igelball/);
+  assert.match(zelleInhalt, /https:\/\/b\.ch\/y/);
+});
+
+test("ein zwischengespeicherter Datenstand mit Zeichenketten bricht nicht", () => {
+  // Der Worker holt docs/skills-daten.json mit 300 Sekunden Zwischenspeicher.
+  // Direkt nach einer Veroeffentlichung kann er noch die alte Form sehen.
+  assert.match(quellen(["https://a.ch/x"]), /https:\/\/a\.ch\/x/);
 });

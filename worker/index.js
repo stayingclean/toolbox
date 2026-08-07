@@ -86,9 +86,19 @@ export function zelle(wert) {
  * damit aus dem Inline-Code ausbrechen.
  */
 export function quellen(liste) {
-  return liste && liste.length
-    ? liste.map((url) => "`" + zelle(url) + "`").join("<br>")
-    : "—";
+  if (!liste || !liste.length) {
+    return "—";
+  }
+  // Der Datenstand wird 300 Sekunden zwischengespeichert: direkt nach einer
+  // Veroeffentlichung kann hier noch die alte Form (blosse Zeichenketten)
+  // ankommen. Darum beide Formen lesen.
+  return liste
+    .map((eintrag) => {
+      const url = typeof eintrag === "string" ? eintrag : eintrag.u;
+      const text = typeof eintrag === "string" ? "" : eintrag.t;
+      return "`" + zelle(url) + "`" + (text ? " " + zelle(text) : "");
+    })
+    .join("<br>");
 }
 
 /**
