@@ -739,14 +739,18 @@ git commit -m "Bezugsquellen: im Issue-Rumpf sichtbar, alt neben neu"
 An `worker/index.test.js` anhängen (Import um `linkBefund, mitBefunden` erweitern):
 
 ```js
-function mitStubFetch(antwort, lauf) {
+// `await lauf()` statt `return lauf()`: sonst liefe das finally schon, waehrend
+// linkBefund noch auf die Antwort wartet, und das echte fetch staende wieder
+// da. Heute ginge es zufaellig gut (der Aufruf faellt vor das erste await),
+// aber der Test haette diesen Zufall zur Voraussetzung.
+async function mitStubFetch(antwort, lauf) {
   const echt = globalThis.fetch;
   globalThis.fetch = async () => {
     if (antwort instanceof Error) throw antwort;
     return antwort;
   };
   try {
-    return lauf();
+    return await lauf();
   } finally {
     globalThis.fetch = echt;
   }
