@@ -44,7 +44,7 @@
     body.modus-aenderung .nur-aenderung{display:block}
     body.modus-aenderung .nur-neu{display:none}
     .feld{margin-bottom:18px}
-    label{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
+    label,#links-label{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
     .hinweis{color:var(--muted);font-size:.8rem;margin:0 0 6px}
     input[type=text],input[type=url],textarea,select{
       width:100%;padding:10px 12px;font-family:inherit;font-size:1rem;color:var(--text);
@@ -162,7 +162,7 @@
       </div>
 
       <div class="feld">
-        <label id="links-label">Bezugsquellen <span class="hinweis" style="display:inline">(freiwillig, höchstens 3)</span></label>
+        <span id="links-label">Bezugsquellen <span class="hinweis" style="display:inline">(freiwillig, höchstens 3)</span></span>
         <p class="hinweis">Wo bekommt man das Nötige? Vollständige Adresse mit <strong>https://</strong> — keine Kurzlinks (bit.ly und ähnliche).</p>
         <div id="links-liste" role="group" aria-labelledby="links-label"></div>
         <button type="button" class="link-plus" id="link-plus">+ Bezugsquelle hinzufügen</button>
@@ -407,6 +407,7 @@ function linkZeileBauen(wert){
   feld.type='url';
   feld.inputMode='url';
   feld.placeholder='https://';
+  feld.maxLength=300; /* muss zu LINK_MAX_LAENGE in worker/validate.js passen */
   feld.setAttribute('aria-label','Bezugsquelle');
   feld.value=wert||'';
   var weg=document.createElement('button');
