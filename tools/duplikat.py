@@ -203,8 +203,9 @@ SCHEMA = {
                     "stufe": {"type": "string"},
                     "kategorie": {"type": "string"},
                     "begruendung": {"type": "string"},
+                    "sicherheit": {"type": "string", "enum": ["sicher", "unsicher"]},
                 },
-                "required": ["titel", "aehnlich_zu", "stufe", "kategorie", "begruendung"],
+                "required": ["titel", "aehnlich_zu", "stufe", "kategorie", "begruendung", "sicherheit"],
                 "additionalProperties": False,
             },
         }
@@ -213,7 +214,12 @@ SCHEMA = {
     "additionalProperties": False,
 }
 
-PFLICHTFELDER = ("titel", "aehnlich_zu", "stufe", "kategorie", "begruendung")
+PFLICHTFELDER = ("titel", "aehnlich_zu", "stufe", "kategorie", "begruendung", "sicherheit")
+
+# Das Schema verlangt diese beiden Werte bereits. Der Filter prueft sie trotzdem
+# noch einmal: Das Schema bindet die KI, nicht die Antwort, die bei uns ankommt —
+# ein erfundener dritter Wert wuerde sonst wie "sicher" behandelt.
+SICHERHEITSSTUFEN = ("sicher", "unsicher")
 
 
 def client_bauen(schluessel: str):
@@ -300,6 +306,7 @@ def pruefe_duplikate(neue: list, bestand: dict, client) -> list:
             t for t in roh
             if isinstance(t, dict)
             and all(isinstance(t.get(f), str) and t[f].strip() for f in PFLICHTFELDER)
+            and t.get("sicherheit") in SICHERHEITSSTUFEN
         ]
     except Exception as fehler:
         # Nur der Typname, nie die Ausnahme selbst oder ihre Argumente in der

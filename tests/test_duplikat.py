@@ -292,6 +292,7 @@ def test_treffer_wird_durchgereicht():
         "titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
         "stufe": "Hoch", "kategorie": "Ablenkung",
         "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+        "sicherheit": "sicher",
     }]})
     treffer = duplikat.pruefe_duplikate(NEUE, BESTAND, client)
     assert len(treffer) == 1
@@ -482,3 +483,46 @@ def test_leere_prompt_datei_schlaegt_bei_der_pruefung_ebenfalls_durch(tmp_path, 
     monkeypatch.setattr(duplikat, "PROJEKT", tmp_path)
     with pytest.raises(SystemExit):
         duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient())
+
+
+def treffer(**abweichung):
+    grund = {
+        "titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
+        "stufe": "Hoch", "kategorie": "Ablenkung",
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+        "sicherheit": "sicher",
+    }
+    grund.update(abweichung)
+    return grund
+
+
+def test_sicherheit_wird_durchgereicht():
+    client = FakeClient({"treffer": [treffer(sicherheit="unsicher")]})
+    ergebnis = duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    assert ergebnis[0]["sicherheit"] == "unsicher"
+
+
+def test_treffer_ohne_sicherheit_wird_verworfen():
+    ohne = {k: v for k, v in treffer().items() if k != "sicherheit"}
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient({"treffer": [ohne]})) == []
+
+
+def test_treffer_mit_unbekannter_sicherheit_wird_verworfen():
+    """Ein erfundener Wert darf nicht als 'sicher' durchgehen."""
+    client = FakeClient({"treffer": [treffer(sicherheit="vielleicht")]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_schema_verlangt_die_sicherheit():
+    client = FakeClient()
+    duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    eigenschaften = client.gesehen["output_config"]["format"]["schema"]
+    felder = eigenschaften["properties"]["treffer"]["items"]
+    assert "sicherheit" in felder["required"]
+    assert felder["properties"]["sicherheit"]["enum"] == ["sicher", "unsicher"]
+
+
+def test_prompt_verlangt_auch_verdachtsfaelle():
+    text = duplikat.lade_prompt(duplikat.PROJEKT)
+    assert "unsicher" in text
+    assert "Im Zweifel: kein Treffer" not in text, "die alte Regel muss weg sein"

@@ -25,9 +25,22 @@ dieselbe Handlung.
 - derselbe Skill in einer anderen Stufe oder Kategorie — das kann bewusst so
   sein.
 
-Melde nur Faelle, bei denen du dir sicher bist. Ein uebersehener Doppeleintrag
-ist leicht zu korrigieren; ein faelschlich zurueckgehaltener Vorschlag kostet
-eine Person ihren Beitrag. **Im Zweifel: kein Treffer.**
+Melde **jeden** Verdacht — auch den, bei dem du dir nicht sicher bist. Entschieden
+wird nicht von dir, sondern von einem Menschen, der beide Eintraege nebeneinander
+sieht. Sag ihm dafuer, wie sicher du bist:
+
+- `sicher` — dieselbe Handlung, nur anders formuliert. Du wuerdest die beiden
+  Eintraege zusammenlegen.
+- `unsicher` — es koennte dasselbe sein, aber es gibt einen erkennbaren
+  Unterschied, oder die Beschreibungen sind zu knapp fuer ein klares Urteil.
+
+Nutze `unsicher` grosszuegig. Ein Verdacht, den ein Mensch in zwei Sekunden
+verwirft, kostet fast nichts. Ein verschwiegener Doppeleintrag steht dauerhaft in
+der Liste — und ein faelschlich als `sicher` gemeldeter Vorschlag kostet einer
+Person ihren Beitrag.
+
+Was **keine** Dublette ist, bleibt auch kein Verdachtsfall: Die Ausnahmen oben
+gelten unveraendert. Melde nichts, nur um etwas zu melden.
 
 Begruende jeden Treffer in einem kurzen Satz, der die gemeinsame Handlung nennt.
 
