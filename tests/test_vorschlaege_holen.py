@@ -298,6 +298,9 @@ def test_main_gibt_keine_erfolgszeile_bei_null_uebernahmen_aus(monkeypatch, caps
     monkeypatch.setattr(vh, "hole_issues", lambda: [abgelehntes_issue])
     monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
     monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
+    # Ohne diese Attrappe wuerde main() fuer den automatisch abgelehnten
+    # Vorschlag echtes input() aufrufen – hier nicht das Testziel.
+    monkeypatch.setattr(vh, "automatische_ablehnungen_melden", lambda faelle: [])
 
     vh.main()
 
@@ -842,6 +845,9 @@ def test_main_sagt_was_mit_offen_gebliebenen_issues_zu_tun_ist(monkeypatch, caps
     ])
     monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
     monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
+    # Ohne diese Attrappe wuerde main() fuer den automatisch abgelehnten
+    # Vorschlag echtes input() aufrufen – hier nicht das Testziel.
+    monkeypatch.setattr(vh, "automatische_ablehnungen_melden", lambda faelle: [])
 
     vh.main()
 
@@ -1434,3 +1440,125 @@ def test_abbruch_mitten_in_der_begruendung_lehnt_nicht_ab():
                                       eingabe=dann_schluss)
     assert ablehnungen == []
     assert raus == [7]
+
+
+# ── Task 4: Ablehnungen ausfuehren, automatische Faelle nach Rueckfrage ─────
+
+
+def test_issue_ablehnen_kommentiert_labelt_und_schliesst(monkeypatch):
+    aufrufe = []
+    monkeypatch.setattr(vh.subprocess, "run",
+                        lambda befehl, **k: aufrufe.append(befehl) or types.SimpleNamespace(returncode=0))
+    vh.issue_ablehnen(7, "Steht schon drin.")
+    flach = [" ".join(b) for b in aufrufe]
+    assert any("comment" in b and "Steht schon drin." in b for b in flach)
+    assert any("abgelehnt" in b for b in flach), "das Label fehlt"
+    assert any("close" in b for b in flach)
+
+
+def test_automatische_ablehnung_wird_nur_nach_zustimmung_kommentiert():
+    faelle = [({"number": 9, "title": "Test"}, "Kategorie existiert nicht")]
+    assert vh.automatische_ablehnungen_melden(faelle, eingabe=lambda _: "n") == []
+    zu_schreiben = vh.automatische_ablehnungen_melden(faelle, eingabe=lambda _: "j")
+    assert len(zu_schreiben) == 1
+    assert zu_schreiben[0][0] == 9
+    assert "Kategorie existiert nicht" in zu_schreiben[0][1]
+
+
+def test_automatische_ablehnung_ohne_tastatur_schreibt_nichts():
+    def keine_tastatur(_):
+        raise EOFError
+
+    faelle = [({"number": 9, "title": "Test"}, "Kategorie existiert nicht")]
+    assert vh.automatische_ablehnungen_melden(faelle, eingabe=keine_tastatur) == []
+
+
+def test_main_lehnt_erst_nach_dem_schreiben_ab(tmp_path, monkeypatch):
+    """Die Reihenfolge ist die Zusicherung: erst die Mappe, dann GitHub."""
+    reihenfolge = []
+    aufrufe = []
+    antworten = iter(["a", "Steht schon drin."])
+    # Genau ein Treffer, der Mensch lehnt ihn beim Nachfragen explizit ab
+    # (mit Begruendung) – das fuellt vh.main()s `ablehnungen`-Liste mit genau
+    # einem Eintrag, der danach ueber issue_ablehnen() geschrieben wird.
+    _duplikat_lauf(
+        monkeypatch, [freigegebenes_issue(1, NEUER_SKILL)],
+        lambda neue, bestand, client: [{
+            "titel": "Spazieren gehen", "aehnlich_zu": "Musik hören",
+            "stufe": "Hoch", "kategorie": "Ablenkung",
+            "begruendung": "Dieselbe Handlung.", "sicherheit": "unsicher",
+        }],
+        aufrufe,
+        eingabe=lambda _: next(antworten),
+    )
+    # Die drei entscheidenden Schreibvorgaenge werden erst hier ueberschrieben
+    # (nach _duplikat_lauf, das issue_schliessen/in_excel_uebernehmen bereits
+    # setzt) – nur so landen ihre Aufrufe in derselben Reihenfolge-Liste.
+    monkeypatch.setattr(vh, "in_excel_uebernehmen",
+                        lambda *a, **k: reihenfolge.append("excel") or 1)
+    monkeypatch.setattr(vh, "issue_ablehnen",
+                        lambda *a, **k: reihenfolge.append("ablehnen"))
+    monkeypatch.setattr(vh, "issue_schliessen",
+                        lambda *a, **k: reihenfolge.append("schliessen"))
+
+    vh.main()
+
+    assert reihenfolge.index("excel") < reihenfolge.index("ablehnen")
+
+
+def test_fehler_beim_ablehnen_bricht_den_lauf_nicht_ab(capsys, monkeypatch):
+    """Die Uebernahme steht hier schon in der Mappe – ein Abbruch waere fatal."""
+    aufrufe = []
+    antworten = iter(["a", "Steht schon drin."])
+    _duplikat_lauf(
+        monkeypatch, [freigegebenes_issue(1, NEUER_SKILL)],
+        lambda neue, bestand, client: [{
+            "titel": "Spazieren gehen", "aehnlich_zu": "Musik hören",
+            "stufe": "Hoch", "kategorie": "Ablenkung",
+            "begruendung": "Dieselbe Handlung.", "sicherheit": "unsicher",
+        }],
+        aufrufe,
+        eingabe=lambda _: next(antworten),
+    )
+
+    def schlaegt_wie_gh_fehl(nummer, grund):
+        raise subprocess.CalledProcessError(1, ["gh"])
+
+    monkeypatch.setattr(vh, "issue_ablehnen", schlaegt_wie_gh_fehl)
+
+    vh.main()  # darf NICHT platzen
+
+    ausgabe = capsys.readouterr().out
+    assert "von Hand" in ausgabe
+
+
+def test_automatischer_fall_wird_nicht_ein_zweites_mal_erfragt(monkeypatch):
+    """`abgelehnt` enthaelt auch die bei der Duplikat-Rueckfrage uebersprungenen
+    Issues (ueber `raus`). Wuerde main() die ganze Liste an
+    automatische_ablehnungen_melden() weiterreichen, bekaeme der Mensch fuer
+    genau das Issue, das er soeben mit „weiter" beantwortet hat, eine zweite
+    Rueckfrage."""
+    aufrufe = []
+    gefragt = []
+    _duplikat_lauf(
+        monkeypatch, [freigegebenes_issue(1, NEUER_SKILL)],
+        lambda neue, bestand, client: [{
+            "titel": "Spazieren gehen", "aehnlich_zu": "Musik hören",
+            "stufe": "Hoch", "kategorie": "Ablenkung",
+            "begruendung": "Dieselbe Handlung.", "sicherheit": "unsicher",
+        }],
+        aufrufe,
+        eingabe=lambda _: "w",
+    )
+
+    echte = vh.automatische_ablehnungen_melden
+
+    def aufgezeichnet(faelle, eingabe=input):
+        gefragt.append([i["number"] for i, _ in faelle])
+        return echte(faelle, eingabe=eingabe)
+
+    monkeypatch.setattr(vh, "automatische_ablehnungen_melden", aufgezeichnet)
+
+    vh.main()
+
+    assert gefragt == [[]], "Issue #1 wurde beim Nachfragen schon beantwortet"

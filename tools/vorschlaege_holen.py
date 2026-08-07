@@ -518,6 +518,32 @@ def issue_schliessen(nummer: int):
     )
 
 
+def issue_kommentieren(nummer: int, text: str):
+    subprocess.run(
+        ["gh", "issue", "comment", str(nummer), "--repo", REPO, "--body", text],
+        check=True, capture_output=True, text=True, encoding="utf-8",
+    )
+
+
+def issue_ablehnen(nummer: int, grund: str):
+    """Begruendung als Kommentar, Label `abgelehnt`, Issue schliessen.
+
+    Reihenfolge mit Absicht: Erst der Kommentar. Scheitert das Schliessen
+    danach, steht die Begruendung wenigstens schon da – umgekehrt waere das
+    Issue zu, ohne dass jemand erfaehrt, warum.
+    """
+    issue_kommentieren(nummer, grund)
+    subprocess.run(
+        ["gh", "issue", "edit", str(nummer), "--repo", REPO,
+         "--add-label", "abgelehnt", "--remove-label", LABEL],
+        check=True, capture_output=True, text=True, encoding="utf-8",
+    )
+    subprocess.run(
+        ["gh", "issue", "close", str(nummer), "--repo", REPO],
+        check=True, capture_output=True, text=True, encoding="utf-8",
+    )
+
+
 def warne_offene_issues(nummern: list):
     """Warnt vor Vorschlaegen, die in der Excel stehen, deren Issue aber offen ist."""
     if not nummern:
@@ -723,6 +749,34 @@ def begruendung_erfragen(eingabe=input):
         print("   Bitte eine kurze Begruendung eingeben (oder Strg+C zum Abbrechen).")
 
 
+def automatische_ablehnungen_melden(faelle: list, eingabe=input) -> list:
+    """Fragt je Fall, ob der Grund als Kommentar ins Issue soll.
+
+    Der Text ist fuer die einreichende Person ueber ihren Statuslink sichtbar.
+    Darum wird er vorher gezeigt und nichts ohne Zustimmung geschrieben.
+    Diese Faelle werden NICHT geschlossen: Sie sind oft behebbar (etwa die
+    Kategorie zuerst anlegen), und dann soll der naechste Lauf sie wieder
+    anbieten.
+    """
+    zu_schreiben = []
+    if not faelle:
+        return zu_schreiben
+    print("\nZu den nicht uebernommenen Vorschlaegen kannst du eine Rueckmeldung")
+    print("ins Issue schreiben. Sie ist fuer die einreichende Person sichtbar.")
+    for issue, grund in faelle:
+        text = f"Nicht uebernommen: {grund}"
+        print(f'\n   Issue #{issue["number"]} „{issue["title"]}"')
+        print(f"   Vorgeschlagener Kommentar: {text}")
+        try:
+            wahl = eingabe("   Schreiben? [j]a  [n]ein  ? ")
+        except EOFError:
+            print("   Keine Eingabe moeglich – es wird nichts geschrieben.")
+            return zu_schreiben
+        if wahl.strip().lower() in ("j", "ja"):
+            zu_schreiben.append((issue["number"], text))
+    return zu_schreiben
+
+
 def main():
     alle_offenen = hole_issues()
     issues = [i for i in alle_offenen if hat_label(i, LABEL)]
@@ -764,17 +818,22 @@ def main():
     # nur neue Skills – eine Aenderung zeigt schon ueber Stufe/Kategorie/Titel
     # auf einen bestimmten vorhandenen Skill, "aehnelt einem vorhandenen Skill"
     # ist dort keine sinnvolle Frage.
+    #
+    # `raus` und `ablehnungen` werden HIER (ausserhalb des folgenden if) auf
+    # leer gesetzt, nicht erst darin: weiter unten, nach dem Schreiben in die
+    # Excel, wird `raus` gebraucht, um die automatischen Ablehnungen von den
+    # gerade erst beim Nachfragen beantworteten zu trennen. Ohne diese Faelle
+    # gaebe es unten ein NameError, sobald kein Schluessel hinterlegt ist oder
+    # kein neuer Skill dabei ist – also im ganz gewoehnlichen Fall ohne
+    # Duplikatpruefung.
+    raus, gruende, ablehnungen = [], {}, []
     schluessel = duplikat.schluessel_finden(ROOT)
     if schluessel and neue:
         print("\nPruefe die neuen Vorschlaege auf Dubletten …")
         # Vor dem try festgelegt: Platzt es mitten im Block, gilt das, was bis
         # dahin feststand. `raus` wird deshalb ZUERST gefuellt (die Antwort des
         # Menschen darf eine spaetere Panne nicht wieder aufheben), die
-        # Begruendungen danach. `ablehnungen` bleibt in dieser Aufgabe noch
-        # ungenutzt – nachfragen() schreibt nichts auf GitHub, das Schreiben
-        # kommt erst mit dem naechsten Ausbauschritt nach dem erfolgreichen
-        # Speichern in die Excel.
-        raus, gruende, ablehnungen = [], {}, []
+        # Begruendungen danach.
         try:
             client = duplikat.client_bauen(schluessel)
             treffer = duplikat.pruefe_duplikate(neue, bestand, client)
@@ -878,6 +937,42 @@ def main():
             [i["number"] for i, _ in uebernehmen if i["number"] not in geschlossen]
         )
         raise
+
+    # Ab hier weitere GitHub-Schreibvorgaenge – wie das Schliessen oben duerfen
+    # auch sie erst NACH dem erfolgreichen Schreiben in die Excel passieren.
+    # Ein Fehlschlag hier bricht den Lauf nicht ab: die Uebernahme steht schon
+    # in der Mappe, ein Absturz hinterliesse nur einen halben Zustand auf
+    # GitHub, den niemand einordnen koennte. Stattdessen wird gemeldet, was von
+    # Hand nachzuholen ist – genau wie beim Schliessen oben.
+    for nummer, grund in ablehnungen:
+        try:
+            issue_ablehnen(nummer, grund)
+            print(f"  ✗ Issue #{nummer} abgelehnt und geschlossen.")
+        except subprocess.CalledProcessError:
+            print(
+                f"\n⚠ Issue #{nummer} konnte nicht abgelehnt werden.\n"
+                f"   Bitte von Hand auf github.com/{REPO}/issues/{nummer}\n"
+                f"   das Label `abgelehnt` setzen und schliessen. Begruendung:\n"
+                f"   {grund}"
+            )
+
+    # `abgelehnt` enthaelt NICHT nur die automatisch aussortierten Vorschlaege
+    # (falscher Absender, gescheiterte Pruefung): weiter oben landen dort auch
+    # die beim Nachfragen zur Duplikatpruefung uebersprungenen Issues – sowohl
+    # das „weiter, spaeter entscheiden" als auch das „ablehnen" (Letzteres ist
+    # gerade eben ueber die Schleife oben abgearbeitet worden). Fuer all diese
+    # Faelle hat der Mensch die Frage schon beantwortet. Wuerde die ganze Liste
+    # an automatische_ablehnungen_melden() gehen, bekaeme er fuer genau diese
+    # Issues eine ZWEITE Rueckfrage. `raus` traegt exakt die Issue-Nummern, die
+    # aus der Rueckfrage stammen – deshalb hier NICHT vereinfachen zu "ganz
+    # abgelehnt uebergeben".
+    aus_rueckfrage = {n for n in raus}
+    automatisch = [(i, g) for i, g in abgelehnt if i["number"] not in aus_rueckfrage]
+    for nummer, text in automatische_ablehnungen_melden(automatisch):
+        try:
+            issue_kommentieren(nummer, text)
+        except subprocess.CalledProcessError:
+            print(f"⚠ Der Kommentar zu Issue #{nummer} konnte nicht geschrieben werden.")
 
     if anzahl:
         wort = "Vorschlag" if anzahl == 1 else "Vorschläge"
