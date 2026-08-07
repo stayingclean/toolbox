@@ -30,7 +30,7 @@ wird nicht von dir, sondern von einem Menschen, der beide Eintraege nebeneinande
 sieht. Sag ihm dafuer, wie sicher du bist:
 
 - `sicher` — dieselbe Handlung, nur anders formuliert. Du wuerdest die beiden
-  Eintraege zusammenlegen.
+  Eintraege zusammenlegen — sofern nicht eine der Ausnahmen oben zutrifft.
 - `unsicher` — es koennte dasselbe sein, aber es gibt einen erkennbaren
   Unterschied, oder die Beschreibungen sind zu knapp fuer ein klares Urteil.
 
