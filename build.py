@@ -65,15 +65,15 @@ def sortier_schluessel(titel):
 
 # ── Bezugsquellen ────────────────────────────────────────────
 # Dieselben Regeln stehen in worker/validate.js (pruefeLinks) und in
-# tools/vorschlaege_holen.py. Wer hier etwas aendert, muss dort nachziehen —
-# so wie bei GRENZEN. Ein Test in tests/test_vorschlaege_holen.py haelt die
-# beiden Python-Fassungen zusammen; die JavaScript-Fassung haelt niemand.
+# tools/vorschlaege_holen.py. Wer hier etwas ändert, muss dort nachziehen —
+# so wie bei GRENZEN. Ein Test in tests/test_vorschlaege_holen.py hält die
+# beiden Python-Fassungen zusammen; die JavaScript-Fassung hält niemand.
 LINK_SPALTEN = ["Link1", "Link2", "Link3"]
 LINK_MAX_LAENGE = 300
 
-# Linkverkuerzer verbergen das Ziel vor der Freigabe – die Pruefung im Issue
-# waere wertlos – und ergaeben als Knopfaufschrift nur "bit.ly" statt eines
-# erkennbaren Haendlers.
+# Linkverkürzer verbergen das Ziel vor der Freigabe – die Prüfung im Issue
+# wäre wertlos – und ergeben als Knopfaufschrift nur "bit.ly" statt eines
+# erkennbaren Händlers.
 VERKUERZER = frozenset({
     "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd",
     "buff.ly", "rb.gy", "cutt.ly", "shorturl.at", "s.id", "lnkd.in",
@@ -88,25 +88,25 @@ def _ist_ip(host: str) -> bool:
         return False
 
 
-def pruefe_link(roh):
-    """Prueft eine Bezugsquelle aus der Excel.
+def pruefe_link(roh: str) -> tuple[str | None, str | None]:
+    """Prüft eine Bezugsquelle aus der Excel.
 
-    Liefert (url, None) bei gueltigem Link, sonst (None, Meldung). Der Build ist
+    Liefert (url, None) bei gültigem Link, sonst (None, Meldung). Der Build ist
     die letzte Schranke vor der Website: eine kaputte Adresse soll hier
-    auffallen, nicht spaeter einem Besucher beim Klicken.
+    auffallen, nicht später einem Besucher beim Klicken.
     """
     url = str(roh or "").strip()
     if len(url) > LINK_MAX_LAENGE:
-        return None, f"Link ist zu lang (hoechstens {LINK_MAX_LAENGE} Zeichen)"
-    # Spitze Klammern koennten in der erzeugten Skillsliste das <script>-Element
-    # beenden. Die Ausgabecodierung in _render faengt das ab; dies ist die
+        return None, f"Link ist zu lang (höchstens {LINK_MAX_LAENGE} Zeichen)"
+    # Spitze Klammern könnten in der erzeugten Skillsliste das <script>-Element
+    # beenden. Die Ausgabecodierung in _render fängt das ab; dies ist die
     # zweite Schicht, wie schon bei den Textfeldern im Worker.
     if "<" in url or ">" in url:
         return None, "Link darf keine spitzen Klammern enthalten"
     try:
         teile = urlsplit(url)
     except ValueError:
-        return None, "Link ist keine gueltige Adresse"
+        return None, "Link ist keine gültige Adresse"
     if teile.scheme != "https":
         return None, "Link muss mit https:// beginnen"
     if teile.username or teile.password:
@@ -115,14 +115,14 @@ def pruefe_link(roh):
         if teile.port is not None:
             return None, "Link darf keine Portnummer enthalten"
     except ValueError:
-        return None, "Link hat eine ungueltige Portnummer"
+        return None, "Link hat eine ungültige Portnummer"
     host = (teile.hostname or "").strip(".")
     if _ist_ip(host):
         return None, "Link darf keine IP-Adresse sein"
     if "." not in host:
-        return None, "Link hat keinen gueltigen Hostnamen"
+        return None, "Link hat keinen gültigen Hostnamen"
     if host.removeprefix("www.") in VERKUERZER:
-        return None, "Linkverkuerzer sind nicht erlaubt"
+        return None, "Linkverkürzer sind nicht erlaubt"
     return url, None
 
 

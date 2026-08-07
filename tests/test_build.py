@@ -425,7 +425,7 @@ def test_doppelte_url_faellt_weg(mappe, monkeypatch):
     "url, teil",
     [
         ("http://a.ch/x", "https://"),
-        ("https://bit.ly/abc", "Linkverkuerzer"),
+        ("https://bit.ly/abc", "Linkverkürzer"),
         ("https://192.168.0.1/x", "IP-Adresse"),
         ("https://a.ch:8080/x", "Portnummer"),
         ("https://wer:was@a.ch/x", "Benutzerangabe"),
