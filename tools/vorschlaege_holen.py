@@ -41,6 +41,18 @@ sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
 sys.stderr.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# Die URL-Regeln kommen aus build.py – EINE Quelle. Eine Kopie koennte
+# auseinanderlaufen: der Worker liesse dann etwas durch, das der Build spaeter
+# ablehnt, und der Vorschlag steckte in der Excel fest. build.py liegt im
+# Wurzelverzeichnis, dieses Skript in tools/ – daher der Pfad-Eintrag.
+# (Die JavaScript-Fassung in worker/validate.js haelt niemand; dort ist beim
+# Aendern Handarbeit gefragt.)
+sys.path.insert(0, str(ROOT))
+from build import LINK_MAX_LAENGE, LINK_SPALTEN, VERKUERZER, pruefe_link  # noqa: E402
+
+MAX_LINKS = len(LINK_SPALTEN)
+
 XLSX = ROOT / "skills_daten.xlsx"
 BUILD = ROOT / "build.py"
 DATEN_JSON = ROOT / "docs" / "skills-daten.json"
@@ -87,6 +99,9 @@ SPALTEN = [
     ("Beschreibung", "beschreibung"),
     ("Tipp", "tipp"),
     ("Von", "von"),
+    ("Link1", "link1"),
+    ("Link2", "link2"),
+    ("Link3", "link3"),
 ]
 
 # Bei einer Aenderung werden NUR diese Spalten ueberschrieben. `Stufe` und
@@ -98,6 +113,9 @@ SPALTEN_AENDERUNG = [
     ("Beschreibung", "beschreibung"),
     ("Tipp", "tipp"),
     ("Ergaenzt", "erg"),
+    ("Link1", "link1"),
+    ("Link2", "link2"),
+    ("Link3", "link3"),
 ]
 
 # Ueber diese drei Spalten wird die zu aendernde Zeile gesucht.
@@ -234,6 +252,21 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
                 f"inzwischen umbenannt oder entfernt."
             )
 
+    rohe = eintrag.get("links")
+    rohe = rohe if isinstance(rohe, list) else []
+    gesehen = []
+    for roh in rohe:
+        url = sauber(roh)
+        if not url:
+            continue
+        geprueft, meldung = pruefe_link(url)
+        if meldung:
+            return f"Bezugsquelle abgelehnt: {meldung}."
+        if geprueft not in gesehen:
+            gesehen.append(geprueft)
+    if len(gesehen) > MAX_LINKS:
+        return f"Hoechstens {MAX_LINKS} Bezugsquellen je Skill."
+
     return None
 
 
@@ -248,6 +281,19 @@ def bereinigt(eintrag: dict) -> dict:
     ergebnis = dict(eintrag)
     for schluessel in {s for _, s in SPALTEN} | {s for _, s in SPALTEN_AENDERUNG}:
         ergebnis[schluessel] = sauber(eintrag.get(schluessel))
+
+    # Die Liste aus dem Issue auf die drei Excel-Spalten verteilen. Luecken
+    # entstehen dabei nicht: leere Eintraege fallen weg, der Rest rueckt auf.
+    rohe = eintrag.get("links")
+    rohe = rohe if isinstance(rohe, list) else []
+    liste = []
+    for roh in rohe:
+        url = sauber(roh)
+        if url and url not in liste:
+            liste.append(url)
+    for i in range(len(LINK_SPALTEN)):
+        ergebnis[f"link{i + 1}"] = liste[i] if i < len(liste) else ""
+
     return ergebnis
 
 
@@ -487,9 +533,13 @@ def in_excel_uebernehmen(pfad: Path, aenderungen: list, neue: list) -> int:
     if neue:
         neue_spalte = spalten_sichern(ws, kopf, SPALTEN) or neue_spalte
         for eintrag in neue:
+            # bereinigt() liefert u. a. Link1..Link3 aus der Liste "links" –
+            # aufrufsicher, auch wenn main() den Eintrag schon bereinigt hat
+            # (sauber() ist idempotent, dasselbe gilt fuer die Linkverteilung).
+            e = bereinigt(eintrag)
             zeile = [""] * len(kopf)
             for name, schluessel in SPALTEN:
-                zeile[kopf.index(name)] = eintrag.get(schluessel, "")
+                zeile[kopf.index(name)] = e.get(schluessel, "")
             ws.append(zeile)
         # Filterbereich und Stufen-Dropdown auf die neuen Zeilen ausdehnen, sonst
         # fallen sie heraus und beim Sortieren koennen Werte verrutschen.
