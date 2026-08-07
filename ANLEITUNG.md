@@ -160,6 +160,30 @@ landet als Eintrag in einer Liste, die nur du freigeben kannst.
 4. **Veröffentlichen:** Schau `docs/skillsliste.html` an. Wenn es passt, wie
    gewohnt committen und pushen. Vorher ist online nichts verändert.
 
+### Dubletten-Warnung (nur wenn eingerichtet)
+
+Wenn ein Anthropic-Schlüssel hinterlegt ist, schaut das Programm vor dem
+Übernehmen nach, ob ein neuer Vorschlag einen Skill wiederholt, den es schon
+gibt. Ist das der Fall, fragt es nach:
+
+```
+⚠ „Lieblingslied auflegen" aehnelt „Musik hören" (Hoch / Ablenkung)
+   Begruendung: Beide beschreiben gezieltes Musikhoeren.
+   [ü]bernehmen  [w]eiter (ueberspringen)  ?
+```
+
+- **ü** — trotzdem eintragen. Die Einschätzung war daneben.
+- **w** — nicht eintragen. Der Vorschlag bleibt offen und kommt beim nächsten
+  Lauf wieder. Es geht nichts verloren.
+
+**Ohne Schlüssel entfällt dieser Schritt komplett**, und das Programm läuft wie
+gewohnt. Du musst nichts einrichten, wenn du das nicht möchtest.
+
+**Einrichten:** Einen Schlüssel auf console.anthropic.com erstellen und dann
+entweder einmalig im Terminal `setx ANTHROPIC_API_KEY "sk-ant-..."` ausführen
+(danach ein neues Fenster öffnen), oder die Datei `.env.example` zu `.env`
+kopieren und den Schlüssel dort eintragen. Ein Durchgang kostet einige Rappen.
+
 Wenn im Fenster steht „Keine freigegebenen Vorschläge offen", hast du gerade
 nichts freigegeben — dann ist alles in Ordnung.
 

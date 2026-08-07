@@ -166,6 +166,22 @@ angelegt — die übrigen Felder passen auf beide Formen. Heute unerreichbar: da
 Formular sendet `art` immer mit, und jedes Issue geht durch ein menschliches
 Auge. Relevant, sobald je ein zweiter Client dazukommt.
 
+**Duplikatprüfung (optional, `tools/duplikat.py`):** Läuft nur, wenn ein
+Schlüssel gefunden wird — erst `ANTHROPIC_API_KEY`, sonst eine `.env` im
+Projektordner. Geprüft werden **nur neue** Skills, nicht Änderungen (eine
+Änderung zeigt bereits auf einen bestimmten Skill). Der Anweisungstext steht in
+`tools/duplikat_prompt.md` und enthält **nur Anweisungen, keine Daten** — die
+setzt der Code zusammen, damit kein Platzhalter kaputtgehen kann.
+
+Zwei Eigenschaften, die jeder Umbau erhalten muss:
+
+1. **Die Prüfung ist eine Zutat, keine Voraussetzung.** Ohne Schlüssel, ohne
+   Netz oder bei einer unerwarteten Antwort läuft die Übernahme unverändert
+   weiter. Sie darf den Hauptweg nie blockieren.
+2. **Liegt eine `.env` im Ordner, die `.gitignore` nicht abdeckt, hält das
+   Programm an.** Das Skript schlägt am Ende `git add -A` vor; ohne diese
+   Sperre wäre der Schlüssel mit einem Befehl öffentlich.
+
 Die Formularseite ist generiert (`template-vorschlag.html` + `build.py`) — nicht
 direkt bearbeiten. Sie ist die einzige Seite in `docs/`, die Internet braucht
 (Spam-Schutz und Absenden); das CSS bleibt trotzdem eingebettet.
