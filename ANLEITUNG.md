@@ -55,6 +55,7 @@ Jede Zeile ist ein Skill. Spalten:
 | **Tipp** | Optionaler Zusatztipp (darf leer sein). Die Glühbirne **💡 wird automatisch** vorangestellt – also **nicht** selbst eintippen, nur den Text. |
 | **Von** | Name der Person, die den Skill vorgeschlagen hat (darf leer sein). |
 | **Ergaenzt** | Name der Person, die den Skill später ergänzt hat (darf leer sein). Die Spalte heisst wirklich so – **ohne Umlaut**. |
+| **Link1**, **Link2**, **Link3** | Bis zu drei Bezugsquellen (wo man das Nötige bekommt), alle drei dürfen leer bleiben. Details weiter unten im Abschnitt „Bezugsquellen". |
 
 > **Zu `Von` und `Ergaenzt`:** Beide Namen erscheinen auf der Webseite, wenn man
 > einen Skill antippt – als Zeile „Vorgeschlagen von … · Ergänzt von …". Sie
