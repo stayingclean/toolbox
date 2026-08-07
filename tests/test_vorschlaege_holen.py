@@ -955,7 +955,7 @@ def test_fehlende_linkspalten_werden_angelegt(tmp_path):
     vh.in_excel_uebernehmen(pfad, [], [{**BEISPIEL, "links": ["https://a.ch/x"]}])
 
     kopf = [c.value for c in openpyxl.load_workbook(pfad)["Skills"][1]]
-    assert kopf[-6:] == ["Link1", "Link2", "Link3", "Text1", "Text2", "Text3"]
+    assert kopf[-6:] == ["Link1", "Text1", "Link2", "Text2", "Link3", "Text3"]
 
 
 def test_aenderung_ersetzt_die_links_vollstaendig(tmp_path):
@@ -1045,9 +1045,3 @@ def test_aenderung_behaelt_die_beschriftung_bei_gleichem_link(tmp_path):
     assert zeile["Text1"] == "Igelball"
 
 
-def test_fehlende_textspalten_werden_angelegt(tmp_path):
-    pfad = mappe_mit_kopf(tmp_path, KOPF)
-    vh.in_excel_uebernehmen(pfad, [], [{**BEISPIEL, "links": ["https://a.ch/x"]}])
-    kopf = [c.value for c in openpyxl.load_workbook(pfad)["Skills"][1]]
-    for name in ("Link1", "Text1", "Link2", "Text2", "Link3", "Text3"):
-        assert name in kopf

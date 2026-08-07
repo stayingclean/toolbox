@@ -99,11 +99,14 @@ SPALTEN = [
     ("Beschreibung", "beschreibung"),
     ("Tipp", "tipp"),
     ("Von", "von"),
+    # Adresse und Beschriftung interleaved (wie tools/seed_excel.py sie
+    # schreibt): sonst landen neu angelegte Spalten gruppiert am Ende, drei
+    # Spalten von ihrer Adresse entfernt.
     ("Link1", "link1"),
-    ("Link2", "link2"),
-    ("Link3", "link3"),
     ("Text1", "text1"),
+    ("Link2", "link2"),
     ("Text2", "text2"),
+    ("Link3", "link3"),
     ("Text3", "text3"),
 ]
 
