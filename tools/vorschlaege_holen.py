@@ -654,28 +654,31 @@ def gegenueberstellung(neu: dict, alt, t: dict, nummer=None) -> str:
     return "\n".join(zeilen)
 
 
-def nachfragen(treffer: list, uebernehmen: list, bestand: dict | None = None, eingabe=input) -> list:
-    """Fragt je Treffer nach und liefert die Nummern der Issues, die
-    uebersprungen werden sollen.
+def nachfragen(treffer: list, uebernehmen: list, bestand: dict, eingabe=input):
+    """Legt jeden Verdacht vor und sammelt die Entscheidungen.
 
-    Uebersprungen heisst: nicht eintragen, Issue bleibt offen. Es geht dabei
-    nichts verloren – der naechste Lauf bietet den Vorschlag wieder an.
+    Liefert `(ueberspringen, ablehnungen)`:
+      ueberspringen — Issue-Nummern, die NICHT eingetragen werden
+      ablehnungen   — Liste von (Nummer, Begruendung)
 
-    `bestand` ist optional (Default: kein Bestand), damit bestehende Aufrufe
-    ohne diesen Parameter weiterhin funktionieren – dann wird der vorhandene
-    Skill nicht gefunden und die Anzeige sagt das dazu.
+    Diese Funktion schreibt NICHTS auf GitHub. Sie sammelt nur. Ausgefuehrt wird
+    erst nach dem erfolgreichen Schreiben in die Excel – sonst hinterliesse ein
+    Abbruch geschlossene Issues bei ungeschriebener Mappe.
     """
-    daten_je_issue = {i["number"]: d for i, d in uebernehmen}
-    ueberspringen = []
+    nach_nummer = {i["number"]: d for i, d in uebernehmen}
+    ueberspringen, ablehnungen = [], []
     for nummer, t in treffer_je_issue(treffer, uebernehmen).items():
-        neu = daten_je_issue.get(nummer, {})
-        alt = skill_im_bestand(bestand or {}, t.get("aehnlich_zu"))
+        neu = nach_nummer[nummer]
+        alt = skill_im_bestand(bestand, t.get("aehnlich_zu"))
         print(gegenueberstellung(neu, alt, t, nummer))
         while True:
             try:
-                wahl = eingabe("   [ü]bernehmen  [w]eiter (ueberspringen)  ? ")
+                wahl = eingabe(
+                    "   [ü]bernehmen  [w]eiter (spaeter entscheiden)  "
+                    "[a]blehnen (mit Begruendung)  ? "
+                )
             except EOFError:
-                # Kein Mensch am Bildschirm: nicht raten, lieber offen lassen.
+                # Kein Mensch am Bildschirm: nicht raten und nichts schreiben.
                 print("   Keine Eingabe moeglich – wird uebersprungen.")
                 ueberspringen.append(nummer)
                 break
@@ -685,8 +688,39 @@ def nachfragen(treffer: list, uebernehmen: list, bestand: dict | None = None, ei
             if wahl == "w":
                 ueberspringen.append(nummer)
                 break
-            print("   Bitte ü oder w eingeben.")
-    return ueberspringen
+            if wahl == "a":
+                grund = begruendung_erfragen(eingabe)
+                if grund is None:
+                    # Abbruch waehrend der Begruendung: nicht ablehnen, nur
+                    # ueberspringen. Eine Ablehnung ohne Begruendung waere fuer
+                    # die einreichende Person wertlos.
+                    ueberspringen.append(nummer)
+                    break
+                ueberspringen.append(nummer)
+                ablehnungen.append((nummer, grund))
+                break
+            print("   Bitte ü, w oder a eingeben.")
+    return ueberspringen, ablehnungen
+
+
+def begruendung_erfragen(eingabe=input):
+    """Fragt nach einer Begruendung. Liefert None, wenn keine kommt.
+
+    Der Text wird als Kommentar im Issue veroeffentlicht und ist fuer die
+    einreichende Person ueber ihren Statuslink sichtbar. Deshalb wird nicht
+    stillschweigend eine leere Begruendung akzeptiert.
+    """
+    print("   Die Begruendung erscheint im Issue und ist fuer die einreichende")
+    print("   Person sichtbar. Bitte kurz und freundlich.")
+    while True:
+        try:
+            grund = eingabe("   Begruendung: ")
+        except EOFError:
+            return None
+        grund = grund.strip()
+        if grund:
+            return grund
+        print("   Bitte eine kurze Begruendung eingeben (oder Strg+C zum Abbrechen).")
 
 
 def main():
@@ -736,8 +770,11 @@ def main():
         # Vor dem try festgelegt: Platzt es mitten im Block, gilt das, was bis
         # dahin feststand. `raus` wird deshalb ZUERST gefuellt (die Antwort des
         # Menschen darf eine spaetere Panne nicht wieder aufheben), die
-        # Begruendungen danach.
-        raus, gruende = [], {}
+        # Begruendungen danach. `ablehnungen` bleibt in dieser Aufgabe noch
+        # ungenutzt – nachfragen() schreibt nichts auf GitHub, das Schreiben
+        # kommt erst mit dem naechsten Ausbauschritt nach dem erfolgreichen
+        # Speichern in die Excel.
+        raus, gruende, ablehnungen = [], {}, []
         try:
             client = duplikat.client_bauen(schluessel)
             treffer = duplikat.pruefe_duplikate(neue, bestand, client)
@@ -747,7 +784,7 @@ def main():
             # unbrauchbarer Treffer riss mit `TypeError: unhashable type` den
             # ganzen Uebernahmelauf mit. Die Pruefung ist eine Zutat, keine
             # Voraussetzung – aus diesem Block darf nichts entkommen.
-            raus = nachfragen(treffer, uebernehmen, bestand)
+            raus, ablehnungen = nachfragen(treffer, uebernehmen, bestand)
             gruende = {
                 nummer: (
                     f'aehnelt vorhandenem Skill „{t["aehnlich_zu"]}" – beim '

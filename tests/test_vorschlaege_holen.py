@@ -903,25 +903,29 @@ def uebernehmen_liste():
 
 
 def test_nachfrage_uebernehmen_laesst_den_vorschlag_drin(capsys):
-    offen = vh.nachfragen(TREFFER, uebernehmen_liste(), eingabe=lambda _: "ü")
+    offen, ablehnungen = vh.nachfragen(TREFFER, uebernehmen_liste(), {}, eingabe=lambda _: "ü")
     assert offen == []
+    assert ablehnungen == []
     ausgabe = capsys.readouterr().out
     assert "Musik hören" in ausgabe
     assert "Beide beschreiben" in ausgabe, "die Begruendung muss sichtbar sein"
 
 
 def test_nachfrage_weiter_nimmt_den_vorschlag_heraus():
-    assert vh.nachfragen(TREFFER, uebernehmen_liste(), eingabe=lambda _: "w") == [7]
+    raus, _ = vh.nachfragen(TREFFER, uebernehmen_liste(), {}, eingabe=lambda _: "w")
+    assert raus == [7]
 
 
 def test_nachfrage_akzeptiert_grossschreibung_und_leerzeichen():
-    assert vh.nachfragen(TREFFER, uebernehmen_liste(), eingabe=lambda _: " W ") == [7]
+    raus, _ = vh.nachfragen(TREFFER, uebernehmen_liste(), {}, eingabe=lambda _: " W ")
+    assert raus == [7]
 
 
 def test_nachfrage_fragt_erneut_bei_unsinniger_eingabe():
     antworten = iter(["x", "", "w"])
-    assert vh.nachfragen(TREFFER, uebernehmen_liste(),
-                         eingabe=lambda _: next(antworten)) == [7]
+    raus, _ = vh.nachfragen(TREFFER, uebernehmen_liste(), {},
+                            eingabe=lambda _: next(antworten))
+    assert raus == [7]
 
 
 def test_nachfrage_ohne_tastatur_ueberspringt_sicherheitshalber():
@@ -930,13 +934,16 @@ def test_nachfrage_ohne_tastatur_ueberspringt_sicherheitshalber():
     def keine_tastatur(_):
         raise EOFError
 
-    assert vh.nachfragen(TREFFER, uebernehmen_liste(), eingabe=keine_tastatur) == [7]
+    raus, ablehnungen = vh.nachfragen(TREFFER, uebernehmen_liste(), {}, eingabe=keine_tastatur)
+    assert raus == [7]
+    assert ablehnungen == []
 
 
 def test_treffer_ohne_passendes_issue_wird_ignoriert():
     """Nennt die KI einen Titel, den es hier gar nicht gibt, darf nichts passieren."""
     fremd = [dict(TREFFER[0], titel="Gibt es nicht")]
-    assert vh.nachfragen(fremd, uebernehmen_liste(), eingabe=lambda _: "w") == []
+    raus, _ = vh.nachfragen(fremd, uebernehmen_liste(), {}, eingabe=lambda _: "w")
+    assert raus == []
 
 
 # ── Abschlusspruefung I-1: Rueckzuordnung eines Treffers zum richtigen Issue ──
@@ -969,16 +976,17 @@ def test_nachfrage_trifft_nie_eine_aenderung():
     Skills – eine Aenderung darf durch eine Rueckfrage NIEMALS herausfallen.
     """
     uebernehmen = [_neu(101, "Ammoniak riechen"), _aenderung(102, "Ammoniak riechen")]
-    raus = vh.nachfragen(_treffer("Ammoniak riechen"), uebernehmen,
-                         eingabe=lambda _: "w")
+    raus, _ = vh.nachfragen(_treffer("Ammoniak riechen"), uebernehmen, {},
+                            eingabe=lambda _: "w")
     assert raus == [101], "der neue Skill muss raus, die Aenderung bleibt"
 
 
 def test_nachfrage_zu_einer_aenderung_allein_fragt_gar_nicht():
     """Ohne einen passenden NEUEN Vorschlag gibt es nichts zu fragen."""
     uebernehmen = [_aenderung(102, "Ammoniak riechen")]
-    assert vh.nachfragen(_treffer("Ammoniak riechen"), uebernehmen,
-                         eingabe=lambda _: "w") == []
+    raus, _ = vh.nachfragen(_treffer("Ammoniak riechen"), uebernehmen, {},
+                            eingabe=lambda _: "w")
+    assert raus == []
 
 
 def test_nachfrage_unterscheidet_zwei_neue_mit_gleichem_titel():
@@ -988,8 +996,9 @@ def test_nachfrage_unterscheidet_zwei_neue_mit_gleichem_titel():
         _neu(1, "Kaltes Wasser", "Hoch", "Ablenkung"),
         _neu(2, "Kaltes Wasser", "Tief", "Ruhe"),
     ]
-    assert vh.nachfragen(_treffer("Kaltes Wasser", "Tief", "Ruhe"), uebernehmen,
-                         eingabe=lambda _: "w") == [2]
+    raus, _ = vh.nachfragen(_treffer("Kaltes Wasser", "Tief", "Ruhe"), uebernehmen, {},
+                            eingabe=lambda _: "w")
+    assert raus == [2]
 
 
 def test_nachfrage_findet_den_vorschlag_auch_bei_abweichender_stufe_im_treffer():
@@ -1001,8 +1010,9 @@ def test_nachfrage_findet_den_vorschlag_auch_bei_abweichender_stufe_im_treffer()
     Titel unter den neuen Vorschlaegen eindeutig ist, greift deshalb er.
     """
     uebernehmen = [_neu(5, "Kaltes Wasser", "Hoch", "Ablenkung")]
-    assert vh.nachfragen(_treffer("Kaltes Wasser", "Tief", "Ruhe"), uebernehmen,
-                         eingabe=lambda _: "w") == [5]
+    raus, _ = vh.nachfragen(_treffer("Kaltes Wasser", "Tief", "Ruhe"), uebernehmen, {},
+                            eingabe=lambda _: "w")
+    assert raus == [5]
 
 
 def test_nachfrage_ueberspringt_einen_unbrauchbaren_treffer_und_fragt_zum_naechsten():
@@ -1013,7 +1023,8 @@ def test_nachfrage_ueberspringt_einen_unbrauchbaren_treffer_und_fragt_zum_naechs
     uebernehmen = [_neu(1, "Kaltes Wasser"), _neu(2, "Warme Dusche")]
     treffer = _treffer("Warme Dusche")
     treffer.insert(0, dict(treffer[0], titel=["Kaltes Wasser"]))
-    assert vh.nachfragen(treffer, uebernehmen, eingabe=lambda _: "w") == [2]
+    raus, _ = vh.nachfragen(treffer, uebernehmen, {}, eingabe=lambda _: "w")
+    assert raus == [2]
 
 
 # ── Ausbaustufe 3 Nachbesserung: Verdrahtung in main() ───────────────────────
@@ -1353,3 +1364,73 @@ def test_gegenueberstellung_ohne_alten_eintrag_sagt_es():
     text = vh.gegenueberstellung(neu, None, t)
     assert "Verschwunden" in text
     assert "nicht gefunden" in text.lower()
+
+
+# ── Task 3: Drei Antworten und die Begruendung ───────────────────────────────
+
+
+def uebernehmen_neu():
+    return [({"number": 7}, {"art": "neu", "stufe": "Hoch", "kategorie": "Ablenkung",
+              "titel": "Lieblingslied auflegen", "emoji": "🎵",
+              "beschreibung": "Ein Lied aussuchen.", "tipp": ""})]
+
+
+TREFFER_NEU = [{"titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
+                "stufe": "Hoch", "kategorie": "Ablenkung",
+                "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+                "sicherheit": "sicher"}]
+
+
+def test_ablehnen_sammelt_nummer_und_grund():
+    antworten = iter(["a", "Steht schon drin als Musik hören."])
+    raus, ablehnungen = vh.nachfragen(TREFFER_NEU, uebernehmen_neu(), BESTAND_ANZEIGE,
+                                      eingabe=lambda _: next(antworten))
+    assert raus == [7], "abgelehnt heisst auch: nicht eintragen"
+    assert ablehnungen == [(7, "Steht schon drin als Musik hören.")]
+
+
+def test_ablehnen_verlangt_eine_begruendung():
+    """Eine leere Begruendung waere fuer die einreichende Person wertlos."""
+    antworten = iter(["a", "   ", "", "Doppelt."])
+    raus, ablehnungen = vh.nachfragen(TREFFER_NEU, uebernehmen_neu(), BESTAND_ANZEIGE,
+                                      eingabe=lambda _: next(antworten))
+    assert ablehnungen == [(7, "Doppelt.")]
+
+
+def test_uebernehmen_sammelt_keine_ablehnung():
+    raus, ablehnungen = vh.nachfragen(TREFFER_NEU, uebernehmen_neu(), BESTAND_ANZEIGE,
+                                      eingabe=lambda _: "ü")
+    assert (raus, ablehnungen) == ([], [])
+
+
+def test_weiter_sammelt_keine_ablehnung():
+    raus, ablehnungen = vh.nachfragen(TREFFER_NEU, uebernehmen_neu(), BESTAND_ANZEIGE,
+                                      eingabe=lambda _: "w")
+    assert (raus, ablehnungen) == ([7], [])
+
+
+def test_ohne_tastatur_wird_nicht_abgelehnt():
+    """Ohne Eingabemoeglichkeit darf NICHTS auf GitHub geschrieben werden."""
+    def keine_tastatur(_):
+        raise EOFError
+
+    raus, ablehnungen = vh.nachfragen(TREFFER_NEU, uebernehmen_neu(), BESTAND_ANZEIGE,
+                                      eingabe=keine_tastatur)
+    assert raus == [7]
+    assert ablehnungen == [], "ohne Rueckfrage keine Ablehnung"
+
+
+def test_abbruch_mitten_in_der_begruendung_lehnt_nicht_ab():
+    """Strg+C waehrend der Begruendung darf keine halbe Ablehnung hinterlassen."""
+    antworten = iter(["a"])
+
+    def dann_schluss(_):
+        try:
+            return next(antworten)
+        except StopIteration:
+            raise EOFError
+
+    raus, ablehnungen = vh.nachfragen(TREFFER_NEU, uebernehmen_neu(), BESTAND_ANZEIGE,
+                                      eingabe=dann_schluss)
+    assert ablehnungen == []
+    assert raus == [7]
