@@ -431,7 +431,7 @@ var mEmoji=el('m-emoji'), mCat=el('m-cat'), mTitle=el('m-title'), mDesc=el('m-de
 var mLinks=el('m-links'), mLinksListe=el('m-links-liste');
 
 /* Aufschrift des Knopfes ist der Hostname, nicht ein frei getippter Name:
-   so sieht man vor dem Klick, wo man landet. Faellt das Zerlegen aus, steht
+   so sieht man vor dem Klick, wo man landet. Fällt das Zerlegen aus, steht
    die ganze Adresse da – besser als ein leerer Knopf. */
 function gastgeber(u){
   try{ return new URL(u).hostname.replace(/^www\./,''); }
