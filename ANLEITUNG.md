@@ -98,6 +98,25 @@ mit welchem **Icon**.
 - **Neue Kategorie:** zuerst hier eine Zeile anlegen (Stufe + Name + Icon),
   danach kann sie im Blatt `Skills` verwendet werden.
 
+## Bezugsquellen (wo man etwas bestellen kann)
+
+Ganz rechts im Blatt `Skills` stehen drei Spalten: **Link1**, **Link2**,
+**Link3**. Dort kommt hinein, wo man das Nötige bekommt — zum Beispiel die
+Adresse eines Shops für einen Zauberwürfel. Auf der Website werden daraus
+Knöpfe im Fenster, das aufgeht, wenn man einen Skill antippt.
+
+- **Alle drei dürfen leer bleiben.** Dann erscheinen gar keine Knöpfe.
+- **Auch Lücken sind in Ordnung.** Steht nur in `Link2` etwas, ist das richtig
+  so — beim Bauen rückt es von selbst auf.
+- Die Adresse muss **mit `https://` anfangen** und vollständig sein. Am
+  einfachsten: die Seite im Browser öffnen und die Adresse oben kopieren.
+- **Kurzlinks werden nicht angenommen** (`bit.ly`, `tinyurl.com` und ähnliche).
+  Man sieht ihnen nicht an, wohin sie führen.
+
+Stimmt eine Adresse nicht, hält `build.bat` an und sagt, in welcher **Zeile**
+und welcher **Spalte** — also genau, wo in der Excel nachzuschauen ist. Es
+wird dann nichts erzeugt; nach dem Korrigieren einfach nochmals starten.
+
 ## Wenn etwas nicht stimmt
 
 `build.bat` prüft die Daten und sagt **genau**, was zu korrigieren ist — z. B.:

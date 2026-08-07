@@ -528,3 +528,10 @@ def test_ergaenzen_fuellt_die_bestehenden_links_vor():
 
 def test_beide_absende_ruempfe_schicken_links():
     assert vorschlagsvorlage().count("links:linksLesen(),") == 2
+
+
+def test_seed_excel_kennt_die_linkspalten():
+    """Ein Zurücksetzen der Mappe darf die Bezugsquellen nicht verlieren."""
+    quelle = (build.ROOT / "tools" / "seed_excel.py").read_text(encoding="utf-8")
+    assert '"Link1", "Link2", "Link3"' in quelle
+    assert 's.get("links"' in quelle

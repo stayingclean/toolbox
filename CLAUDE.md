@@ -73,6 +73,27 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    Das Blatt `Skills` hat acht Spalten; `Von` und `Ergaenzt` nennen die beiden
    Beitragenden und dürfen leer bleiben. `build.py` liest sie **tolerant** —
    fehlen die Spalten ganz, baut eine ältere Mappe weiter (`optional_header`).
+
+   Drei weitere Spalten `Link1`, `Link2`, `Link3` nehmen **Bezugsquellen** auf —
+   reine `https`-Adressen, jede darf leer bleiben, Lücken werden beim Bauen
+   zusammengeschoben. Im Detail-Dialog werden daraus Knöpfe, deren Aufschrift der
+   Hostname ist (`skillsbox.ch`); ohne Link erscheint der Bereich gar nicht.
+
+   **Die URL-Regeln stehen an zwei Stellen:**
+
+   - `build.py` → `pruefe_link`, `VERKUERZER`, `LINK_MAX_LAENGE`, `LINK_SPALTEN`.
+     `tools/vorschlaege_holen.py` **importiert** sie von dort — bewusst keine
+     Kopie, anders als bei `GRENZEN` (das sind vier Zeilen Daten, dies ist Logik).
+   - `worker/validate.js` → `pruefeLinks`, `VERKUERZER`, `LINK_MAX_LAENGE`,
+     `MAX_LINKS`.
+
+   Die JavaScript-Fassung hält **niemand** mit der Python-Seite zusammen — wird
+   sie beim Ändern vergessen, lässt der Worker etwas durch, das der Build später
+   ablehnt, und der Vorschlag steckt in der Excel fest.
+
+   **Die `http`-Sperre im Worker gilt weiterhin für Titel, Beschreibung, Tipp und
+   Name.** Nur das Link-Feld ist ausgenommen. Diese Sperre ist die Spam-Abwehr des
+   Formulars — sie darf nicht „vereinheitlicht" werden.
 2. **`build.bat`** doppelklicken (bzw. `uv run build.py`) → erzeugt `docs/skillsliste.html`
    aus `template.html` + Excel.
 3. Das Layout/Design steckt in `template.html` (nur die Datenzeile ist ein Platzhalter).
