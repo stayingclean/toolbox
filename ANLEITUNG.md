@@ -124,12 +124,16 @@ wird dann nichts erzeugt; nach dem Korrigieren einfach nochmals starten.
 Neben jeder Link-Spalte steht eine **Text-Spalte** (`Text1` zu `Link1` und so
 weiter). Was du dort einträgst, steht auf dem Knopf:
 
-| Link1 | Text1 | Knopf zeigt |
+| Link1 | Text1 | Auf dem Knopf steht |
 |---|---|---|
-| `https://www.skills-box.ch/products/igelball` | `Igelball` | 🟧 Igelball |
-| `https://www.skills-box.ch/products/igelball` | *(leer)* | ↗ skills-box.ch |
+| `https://www.skills-box.ch/products/igelball` | `Igelball` | Igelball |
+| `https://www.skills-box.ch/products/igelball` | *(leer)* | skills-box.ch |
 
 Höchstens **30 Zeichen**, und keine Internetadresse hineinschreiben.
+
+Manche Knöpfe zeigen zusätzlich ein kleines Shop-Symbol vor dem Text — das
+hat mit dieser Spalte nichts zu tun, es hängt allein davon ab, ob für die
+Adresse schon ein Symbol hinterlegt ist.
 
 Das lohnt sich vor allem, wenn ein Skill **mehrere Links zum selben Shop** hat —
 sonst stehen dort zweimal dieselben Wörter, und niemand weiss, welcher Knopf

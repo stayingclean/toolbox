@@ -87,7 +87,7 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    Adressen — ohne Domain im Knopftext fiele eine irreführende Beschriftung kaum auf.
 
    **Wechselt bei einer Übernahme die Adresse, wird ihre Beschriftung geleert**
-   (`vorschlaege_holen.py`, `zeile_ersetzen`). Sonst beschriebe sie ein anderes
+   (`tools/vorschlaege_holen.py`, `zeile_ersetzen`). Sonst beschriebe sie ein anderes
    Produkt, und das sähe niemand. Die Text-Spalten fehlen bewusst in
    `SPALTEN_AENDERUNG`: die Liste schreibt bei jeder Übernahme jede ihrer Spalten
    neu — stünden `Text1`–`Text3` dort, würde jede Übernahme die Beschriftung mit
