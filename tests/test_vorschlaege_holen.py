@@ -1562,3 +1562,101 @@ def test_automatischer_fall_wird_nicht_ein_zweites_mal_erfragt(monkeypatch):
     vh.main()
 
     assert gefragt == [[]], "Issue #1 wurde beim Nachfragen schon beantwortet"
+
+
+# ── Fix-Runde nach Pruefung: automatischer Pfad, Widerspruch, Meldungstext ──
+
+
+def test_automatischer_pfad_schliesst_und_labelt_niemals(monkeypatch):
+    """Der Docstring von automatische_ablehnungen_melden verspricht: diese
+    Faelle werden NICHT geschlossen – sie sind oft behebbar (Kategorie zuerst
+    anlegen) und sollen beim naechsten Lauf wieder angeboten werden. Der
+    automatische Pfad in main() darf deshalb NUR kommentieren, niemals
+    schliessen oder labeln."""
+    monkeypatch.setattr(vh, "hole_issues", lambda: [
+        freigegebenes_issue(1, {**BEISPIEL, "kategorie": "Erfunden"}),
+    ])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
+    monkeypatch.setattr(
+        vh, "automatische_ablehnungen_melden",
+        lambda faelle: [(i, f"Nicht uebernommen: {g}") for i, g in [(1, "x")]],
+    )
+    aufrufe = []
+    monkeypatch.setattr(vh.subprocess, "run",
+                        lambda befehl, **k: aufrufe.append(befehl) or types.SimpleNamespace(returncode=0))
+
+    vh.main()
+
+    flach = [" ".join(b) for b in aufrufe]
+    assert any("comment" in b for b in flach), "der Kommentar muss geschrieben werden"
+    assert not any("close" in b for b in flach), (
+        "der automatische Pfad darf das Issue nicht schliessen"
+    )
+    assert not any("--add-label" in b for b in flach), (
+        "der automatische Pfad darf kein Label setzen"
+    )
+
+
+def test_erfolgreich_abgelehntes_issue_erscheint_nicht_als_bleibt_offen(monkeypatch, capsys):
+    """Ein per `a` abgelehntes und erfolgreich geschlossenes Issue darf nicht
+    zusaetzlich als "bleibt offen" auftauchen – das waere eine falsche Aussage
+    ueber einen Vorgang, den das Programm selbst gerade ausgefuehrt hat."""
+    aufrufe = []
+    antworten = iter(["a", "Steht schon drin."])
+    _duplikat_lauf(
+        monkeypatch, [freigegebenes_issue(1, NEUER_SKILL)],
+        lambda neue, bestand, client: [{
+            "titel": "Spazieren gehen", "aehnlich_zu": "Musik hören",
+            "stufe": "Hoch", "kategorie": "Ablenkung",
+            "begruendung": "Dieselbe Handlung.", "sicherheit": "unsicher",
+        }],
+        aufrufe,
+        eingabe=lambda _: next(antworten),
+    )
+    # issue_ablehnen NICHT gemockt: die echte Funktion laeuft ueber das in
+    # _duplikat_lauf gemockte, immer erfolgreiche subprocess.run durch.
+
+    vh.main()
+
+    ausgabe = capsys.readouterr().out
+    assert "abgelehnt und geschlossen" in ausgabe
+    assert "bleibt offen" not in ausgabe
+
+
+def test_bleibt_offen_erscheint_nur_fuer_tatsaechlich_offene_issues(monkeypatch, capsys):
+    """Zwei Faelle im selben Lauf: Issue #1 wird per `a` abgelehnt und
+    erfolgreich geschlossen, Issue #2 scheitert automatisch an der Pruefung
+    und bleibt tatsaechlich offen. Nur #2 darf als "bleibt offen" auftauchen,
+    und der Schlusstext ("Was tun?") muss weiterhin erscheinen, weil #2 noch
+    offen ist."""
+    aufrufe = []
+    antworten = iter(["a", "Steht schon drin."])
+    _duplikat_lauf(
+        monkeypatch, [
+            freigegebenes_issue(1, NEUER_SKILL),
+            freigegebenes_issue(2, {**BEISPIEL, "kategorie": "Erfunden"}),
+        ],
+        lambda neue, bestand, client: [{
+            "titel": "Spazieren gehen", "aehnlich_zu": "Musik hören",
+            "stufe": "Hoch", "kategorie": "Ablenkung",
+            "begruendung": "Dieselbe Handlung.", "sicherheit": "unsicher",
+        }],
+        aufrufe,
+        eingabe=lambda _: next(antworten),
+    )
+    monkeypatch.setattr(vh, "automatische_ablehnungen_melden", lambda faelle: [])
+
+    vh.main()
+
+    ausgabe = capsys.readouterr().out
+    assert "abgelehnt und geschlossen" in ausgabe
+    zeilen_mit_1 = [z for z in ausgabe.splitlines() if "#1" in z]
+    assert not any("bleibt offen" in z for z in zeilen_mit_1), (
+        "Issue #1 wurde gerade geschlossen, darf nicht als offen erscheinen"
+    )
+    zeilen_mit_2 = [z for z in ausgabe.splitlines() if "#2" in z]
+    assert any("bleibt offen" in z for z in zeilen_mit_2), (
+        "Issue #2 ist tatsaechlich noch offen und muss das auch sagen"
+    )
+    assert "Was tun?" in ausgabe, "Issue #2 ist noch offen, der Schlusstext muss erscheinen"

@@ -823,9 +823,12 @@ def main():
     # leer gesetzt, nicht erst darin: weiter unten, nach dem Schreiben in die
     # Excel, wird `raus` gebraucht, um die automatischen Ablehnungen von den
     # gerade erst beim Nachfragen beantworteten zu trennen. Ohne diese Faelle
-    # gaebe es unten ein NameError, sobald kein Schluessel hinterlegt ist oder
-    # kein neuer Skill dabei ist – also im ganz gewoehnlichen Fall ohne
-    # Duplikatpruefung.
+    # gaebe es unten ein UnboundLocalError, sobald kein Schluessel hinterlegt
+    # ist oder kein neuer Skill dabei ist – also im ganz gewoehnlichen Fall
+    # ohne Duplikatpruefung. (UnboundLocalError, nicht NameError: die
+    # Zuweisung im `if`-Block macht den Namen fuer den ganzen Funktionskoerper
+    # lokal – ohne diese Vorbelegung waere er bekannt, aber noch nicht
+    # gesetzt.)
     raus, gruende, ablehnungen = [], {}, []
     schluessel = duplikat.schluessel_finden(ROOT)
     if schluessel and neue:
@@ -944,9 +947,16 @@ def main():
     # in der Mappe, ein Absturz hinterliesse nur einen halben Zustand auf
     # GitHub, den niemand einordnen koennte. Stattdessen wird gemeldet, was von
     # Hand nachzuholen ist – genau wie beim Schliessen oben.
+    # `erledigt_durch_ablehnen` merkt sich, welche Issues hier tatsaechlich
+    # geschlossen wurden: die spaetere "bleibt offen"-Ausgabe (weiter unten,
+    # `for issue, grund in abgelehnt_offen`) darf fuer genau diese Nummern
+    # nicht mehr erscheinen – sonst behauptet das Programm im selben Lauf
+    # zweimal etwas Gegenteiliges ueber denselben Vorgang.
+    erledigt_durch_ablehnen = set()
     for nummer, grund in ablehnungen:
         try:
             issue_ablehnen(nummer, grund)
+            erledigt_durch_ablehnen.add(nummer)
             print(f"  ✗ Issue #{nummer} abgelehnt und geschlossen.")
         except subprocess.CalledProcessError:
             print(
@@ -972,7 +982,12 @@ def main():
         try:
             issue_kommentieren(nummer, text)
         except subprocess.CalledProcessError:
-            print(f"⚠ Der Kommentar zu Issue #{nummer} konnte nicht geschrieben werden.")
+            print(
+                f"⚠ Der Kommentar zu Issue #{nummer} konnte nicht geschrieben werden.\n"
+                f"   Nicht weiter schlimm: das Issue bleibt ohnehin offen und wird\n"
+                f"   beim naechsten Lauf erneut angeboten – dann kannst du es noch\n"
+                f"   einmal versuchen."
+            )
 
     if anzahl:
         wort = "Vorschlag" if anzahl == 1 else "Vorschläge"
@@ -986,13 +1001,21 @@ def main():
             f'(kein lesbarer Vorschlagsblock oder andere Art) – bleibt offen.'
         )
 
-    for issue, grund in abgelehnt:
+    # Wer gerade eben ueber issue_ablehnen() erfolgreich geschlossen wurde,
+    # darf hier nicht nochmal als "bleibt offen" auftauchen – das waere eine
+    # falsche Aussage ueber einen Vorgang, den der Lauf selbst schon erledigt
+    # hat (siehe erledigt_durch_ablehnen oben). Alle anderen Faelle in
+    # `abgelehnt` (automatisch aussortiert, oder beim Nachfragen mit „weiter"
+    # zurueckgestellt) sind tatsaechlich noch offen.
+    abgelehnt_offen = [(i, g) for i, g in abgelehnt if i["number"] not in erledigt_durch_ablehnen]
+
+    for issue, grund in abgelehnt_offen:
         print(
             f'⚠ Issue #{issue["number"]} „{issue["title"]}" nicht übernommen: '
             f"{grund} – bleibt offen."
         )
 
-    if uebersprungen or abgelehnt:
+    if uebersprungen or abgelehnt_offen:
         print(
             f"\n   Was tun? Diese Issues auf github.com/{REPO}/issues anschauen.\n"
             f"   Taugt ein Vorschlag nichts, gib ihm das Label `abgelehnt` mit\n"
