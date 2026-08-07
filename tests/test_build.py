@@ -1,6 +1,8 @@
 import json
 import re
 
+import pytest
+
 import build
 
 SKILLS_HEADER = ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"]
@@ -384,3 +386,80 @@ def test_kategorien_behalten_ihre_reihenfolge(mappe, monkeypatch):
     kategorien = build.load_data()["hoch"]["kategorien"]
     assert [k["label"] for k in kategorien] == ["Ablenkung", "Anti-Craving"]
     assert [s["t"] for s in kategorien[0]["skills"]] == ["Zitrone"]
+
+
+LINK_HEADER = SKILLS_HEADER + ["Link1", "Link2", "Link3"]
+
+
+def erste_skills(daten):
+    return daten["hoch"]["kategorien"][0]["skills"][0]
+
+
+def test_links_werden_gelesen(mappe, monkeypatch):
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://www.skillsbox.ch/p/1", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == ["https://www.skillsbox.ch/p/1"]
+
+
+def test_links_sind_leer_wenn_spalten_fehlen(mappe, monkeypatch):
+    pfad = mappe(SKILLS_HEADER, [SKILLS_ROW])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == []
+
+
+def test_luecke_wird_zusammengeschoben(mappe, monkeypatch):
+    """Wer den ersten von zwei Links entfernt, soll die uebrigen nicht
+    von Hand aufruecken muessen."""
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["", "https://a.ch/x", "https://b.ch/y"]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == ["https://a.ch/x", "https://b.ch/y"]
+
+
+def test_doppelte_url_faellt_weg(mappe, monkeypatch):
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "https://a.ch/x", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == ["https://a.ch/x"]
+
+
+@pytest.mark.parametrize(
+    "url, teil",
+    [
+        ("http://a.ch/x", "https://"),
+        ("https://bit.ly/abc", "Linkverkuerzer"),
+        ("https://192.168.0.1/x", "IP-Adresse"),
+        ("https://a.ch:8080/x", "Portnummer"),
+        ("https://wer:was@a.ch/x", "Benutzerangabe"),
+        ("https://ohnepunkt/x", "Hostnamen"),
+        ("https://a.ch/<script>", "Klammern"),
+        ("ftp://a.ch/x", "https://"),
+    ],
+)
+def test_ungueltiger_link_bricht_ab(mappe, monkeypatch, url, teil):
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + [url, "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    with pytest.raises(build.BuildError) as fehler:
+        build.load_data()
+    meldung = str(fehler.value)
+    assert teil in meldung
+    # Die Meldung muss Zeile UND Spalte nennen, sonst sucht man in der Excel.
+    assert "Zeile 2" in meldung
+    assert "Link1" in meldung
+
+
+def test_zu_langer_link_bricht_ab(mappe, monkeypatch):
+    lang = "https://a.ch/" + "x" * 300
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + [lang, "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    with pytest.raises(build.BuildError) as fehler:
+        build.load_data()
+    assert "zu lang" in str(fehler.value).lower()
+
+
+def test_links_stehen_in_der_json(mappe, monkeypatch, tmp_path):
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    ziel = tmp_path / "skills-daten.json"
+    monkeypatch.setattr(build, "DATEN_JSON", ziel)
+    build.write_daten_json(build.load_data())
+    daten = json.loads(ziel.read_text(encoding="utf-8"))
+    assert daten["hoch"]["kategorien"][0]["skills"][0]["links"] == ["https://a.ch/x"]

@@ -16,11 +16,13 @@ Emoji) werden aus der Excel-Datei eingesetzt. Das Layout/Design steckt
 unverändert in template.html.
 """
 
+import ipaddress
 import json
 import re
 import sys
 import unicodedata
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import openpyxl
 
@@ -59,6 +61,69 @@ def sortier_schluessel(titel):
     """
     text = str(titel or "")
     return (text.casefold().translate(UMLAUTE), text)
+
+
+# ── Bezugsquellen ────────────────────────────────────────────
+# Dieselben Regeln stehen in worker/validate.js (pruefeLinks) und in
+# tools/vorschlaege_holen.py. Wer hier etwas aendert, muss dort nachziehen —
+# so wie bei GRENZEN. Ein Test in tests/test_vorschlaege_holen.py haelt die
+# beiden Python-Fassungen zusammen; die JavaScript-Fassung haelt niemand.
+LINK_SPALTEN = ["Link1", "Link2", "Link3"]
+LINK_MAX_LAENGE = 300
+
+# Linkverkuerzer verbergen das Ziel vor der Freigabe – die Pruefung im Issue
+# waere wertlos – und ergaeben als Knopfaufschrift nur "bit.ly" statt eines
+# erkennbaren Haendlers.
+VERKUERZER = frozenset({
+    "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd",
+    "buff.ly", "rb.gy", "cutt.ly", "shorturl.at", "s.id", "lnkd.in",
+})
+
+
+def _ist_ip(host: str) -> bool:
+    try:
+        ipaddress.ip_address(host)
+        return True
+    except ValueError:
+        return False
+
+
+def pruefe_link(roh):
+    """Prueft eine Bezugsquelle aus der Excel.
+
+    Liefert (url, None) bei gueltigem Link, sonst (None, Meldung). Der Build ist
+    die letzte Schranke vor der Website: eine kaputte Adresse soll hier
+    auffallen, nicht spaeter einem Besucher beim Klicken.
+    """
+    url = str(roh or "").strip()
+    if len(url) > LINK_MAX_LAENGE:
+        return None, f"Link ist zu lang (hoechstens {LINK_MAX_LAENGE} Zeichen)"
+    # Spitze Klammern koennten in der erzeugten Skillsliste das <script>-Element
+    # beenden. Die Ausgabecodierung in _render faengt das ab; dies ist die
+    # zweite Schicht, wie schon bei den Textfeldern im Worker.
+    if "<" in url or ">" in url:
+        return None, "Link darf keine spitzen Klammern enthalten"
+    try:
+        teile = urlsplit(url)
+    except ValueError:
+        return None, "Link ist keine gueltige Adresse"
+    if teile.scheme != "https":
+        return None, "Link muss mit https:// beginnen"
+    if teile.username or teile.password:
+        return None, "Link darf keine Benutzerangabe (@) enthalten"
+    try:
+        if teile.port is not None:
+            return None, "Link darf keine Portnummer enthalten"
+    except ValueError:
+        return None, "Link hat eine ungueltige Portnummer"
+    host = (teile.hostname or "").strip(".")
+    if _ist_ip(host):
+        return None, "Link darf keine IP-Adresse sein"
+    if "." not in host:
+        return None, "Link hat keinen gueltigen Hostnamen"
+    if host.removeprefix("www.") in VERKUERZER:
+        return None, "Linkverkuerzer sind nicht erlaubt"
+    return url, None
 
 
 class BuildError(Exception):
@@ -160,7 +225,7 @@ def load_data():
     skill_rows = read_rows(
         get_sheet(wb, "Skills"),
         ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"],
-        optional_header=["Von", "Ergaenzt"],
+        optional_header=["Von", "Ergaenzt"] + LINK_SPALTEN,
     )
     wb.close()
 
@@ -225,6 +290,21 @@ def load_data():
                 f"(bitte zuerst im Blatt 'Kategorien' anlegen)."
             )
             continue
+        # Luecken werden zusammengeschoben: wer den ersten von zwei Links
+        # entfernt, soll die uebrigen nicht von Hand aufruecken muessen.
+        links = []
+        for spalte in LINK_SPALTEN:
+            if not rec[spalte]:
+                continue
+            url, meldung = pruefe_link(rec[spalte])
+            if meldung:
+                errors.append(
+                    f"Blatt 'Skills', Zeile {rec['_row']}, Spalte '{spalte}': "
+                    f"{meldung}."
+                )
+                continue
+            if url not in links:
+                links.append(url)
         skills_by.setdefault((key, label), []).append(
             {
                 "e": rec["Emoji"],
@@ -233,6 +313,7 @@ def load_data():
                 "tip": format_tip(rec["Tipp"]),
                 "von": rec["Von"],
                 "erg": rec["Ergaenzt"],
+                "links": links,
             }
         )
 
