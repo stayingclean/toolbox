@@ -172,3 +172,106 @@ def bestand_als_text(bestand: dict) -> str:
                     f"{name} / {kategorie['label']}: {skill['t']} | {skill['b']}"
                 )
     return "\n".join(zeilen)
+
+
+# Festes Antwortschema: So kann die Antwort nicht als Fliesstext zurueckkommen,
+# den wir dann raten muessten.
+SCHEMA = {
+    "type": "object",
+    "properties": {
+        "treffer": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "titel": {"type": "string"},
+                    "aehnlich_zu": {"type": "string"},
+                    "stufe": {"type": "string"},
+                    "kategorie": {"type": "string"},
+                    "begruendung": {"type": "string"},
+                },
+                "required": ["titel", "aehnlich_zu", "stufe", "kategorie", "begruendung"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["treffer"],
+    "additionalProperties": False,
+}
+
+PFLICHTFELDER = ("titel", "aehnlich_zu", "stufe", "kategorie", "begruendung")
+
+
+def client_bauen(schluessel: str):
+    """Baut den Anthropic-Client. Der Import steht absichtlich hier drin:
+
+    Ohne Schluessel wird die Funktion nie gerufen, und dann muss das Paket
+    `anthropic` auch nicht installiert sein.
+    """
+    import anthropic
+
+    return anthropic.Anthropic(api_key=schluessel)
+
+
+def _anfrage_text(neue: list, bestand: dict) -> str:
+    # Gleiches Trennzeichen wie bestand_als_text (`|` statt Gedankenstrich):
+    # sonst staenden in derselben Anfrage zwei verschiedene Zeilenformate, und
+    # der Gedankenstrich kommt in echten Beschreibungen selbst vor (siehe
+    # Kommentar dort).
+    zeilen = ["## Vorhanden", bestand_als_text(bestand), "", "## Neu"]
+    for v in neue:
+        zeilen.append(
+            f"{v['stufe']} / {v['kategorie']}: {v['titel']} | {v['beschreibung']}"
+        )
+    return "\n".join(zeilen)
+
+
+def pruefe_duplikate(neue: list, bestand: dict, client) -> list:
+    """Fragt die KI, welche neuen Vorschlaege es schon gibt.
+
+    Liefert IMMER eine Liste. Geht etwas schief, ist sie leer und der Lauf geht
+    ohne Pruefung weiter — die Pruefung ist eine Zutat, keine Voraussetzung.
+    """
+    if not neue:
+        return []
+
+    try:
+        antwort = client.messages.create(
+            model=MODELL,
+            max_tokens=2000,
+            system=lade_prompt(PROJEKT),
+            messages=[{"role": "user", "content": _anfrage_text(neue, bestand)}],
+            output_config={"format": {"type": "json_schema", "schema": SCHEMA}},
+        )
+    except SystemExit:
+        raise  # fehlende/leere Prompt-Datei: die Meldung soll durchschlagen
+    except Exception as fehler:
+        # Nur der Typname, nie die Ausnahme selbst oder ihre Argumente in der
+        # Meldung: eine Schluessel- oder Netzwerkbibliothek koennte den
+        # Schluessel in einer Fehlermeldung mitfuehren (z. B. im Header einer
+        # HTTP-Anfrage). str(fehler) wird deshalb bewusst nicht ausgegeben.
+        print(
+            f"\n⚠ Die Duplikatpruefung wurde uebersprungen: {type(fehler).__name__}.\n"
+            "   Die Uebernahme laeuft normal weiter – sie haengt nicht daran.\n"
+            "   Meist ist das Internet weg oder der Schluessel nicht mehr gueltig."
+        )
+        return []
+
+    block = antwort.content[0]
+    nutzlast = getattr(block, "parsed_output", None)
+    if nutzlast is None:
+        try:
+            nutzlast = json.loads(block.text)
+        except (AttributeError, ValueError):
+            return []
+
+    roh = nutzlast.get("treffer") if isinstance(nutzlast, dict) else None
+    if not isinstance(roh, list):
+        return []
+
+    # Nur vollstaendige Treffer: ein halber Treffer wuerde beim Nachfragen eine
+    # luecken hafte Zeile ergeben, die niemand einordnen kann.
+    return [
+        t for t in roh
+        if isinstance(t, dict) and all(str(t.get(f, "")).strip() for f in PFLICHTFELDER)
+    ]

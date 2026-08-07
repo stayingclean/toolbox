@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -216,3 +217,87 @@ def test_echte_prompt_datei_existiert_und_ist_gefuellt():
     """Die mitgelieferte Datei muss im Repo liegen, sonst laeuft nichts."""
     text = duplikat.lade_prompt(duplikat.PROJEKT)
     assert len(text) > 200
+
+
+NEUE = [
+    {"stufe": "Hoch", "kategorie": "Ablenkung", "titel": "Lieblingslied auflegen",
+     "beschreibung": "Ein Lied aussuchen und hoeren."},
+]
+
+
+class FakeAntwort:
+    def __init__(self, nutzlast):
+        block = type("Block", (), {"parsed_output": nutzlast, "text": json.dumps(nutzlast)})
+        self.content = [block()]
+
+
+class FakeClient:
+    """Ersetzt den echten Client – die Tests duerfen nie ins Netz."""
+
+    def __init__(self, nutzlast=None, fehler=None):
+        self.nutzlast = nutzlast if nutzlast is not None else {"treffer": []}
+        self.fehler = fehler
+        self.gesehen = {}
+        aussen = self
+
+        class Messages:
+            def create(self, **kwargs):
+                aussen.gesehen = kwargs
+                if aussen.fehler:
+                    raise aussen.fehler
+                return FakeAntwort(aussen.nutzlast)
+
+        self.messages = Messages()
+
+
+def test_treffer_wird_durchgereicht():
+    client = FakeClient({"treffer": [{
+        "titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
+        "stufe": "Hoch", "kategorie": "Ablenkung",
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+    }]})
+    treffer = duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    assert len(treffer) == 1
+    assert treffer[0]["aehnlich_zu"] == "Musik hören"
+
+
+def test_ohne_treffer_leere_liste():
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient()) == []
+
+
+def test_ohne_neue_vorschlaege_wird_gar_nicht_gefragt():
+    client = FakeClient()
+    assert duplikat.pruefe_duplikate([], BESTAND, client) == []
+    assert client.gesehen == {}, "ohne Vorschlaege darf kein Aufruf erfolgen"
+
+
+def test_anfrage_enthaelt_prompt_bestand_und_neue():
+    client = FakeClient()
+    duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    assert client.gesehen["model"] == duplikat.MODELL
+    assert "Dublette" in client.gesehen["system"]
+    inhalt = client.gesehen["messages"][0]["content"]
+    assert "Musik hören" in inhalt, "der Bestand fehlt in der Anfrage"
+    assert "Lieblingslied auflegen" in inhalt, "der neue Vorschlag fehlt"
+    schema = client.gesehen["output_config"]["format"]
+    assert schema["type"] == "json_schema"
+    assert "treffer" in schema["schema"]["properties"]
+
+
+def test_fehler_der_schnittstelle_haelt_den_lauf_nicht_an(capsys):
+    """Eine optionale Zutat darf den Hauptweg niemals blockieren."""
+    client = FakeClient(fehler=RuntimeError("Netz weg"))
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+    ausgabe = capsys.readouterr().out
+    assert "Duplikatpruefung" in ausgabe
+    assert "uebersprungen" in ausgabe.lower() or "übersprungen" in ausgabe.lower()
+
+
+def test_unerwartete_antwort_haelt_den_lauf_nicht_an():
+    """Kommt etwas anderes zurueck als erwartet, wird nicht geraten."""
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient({"quatsch": 1})) == []
+
+
+def test_treffer_ohne_pflichtfelder_werden_verworfen():
+    client = FakeClient({"treffer": [{"titel": "Lieblingslied auflegen"}]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
