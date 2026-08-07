@@ -1427,7 +1427,14 @@ def test_ohne_tastatur_wird_nicht_abgelehnt():
 
 
 def test_abbruch_mitten_in_der_begruendung_lehnt_nicht_ab():
-    """Strg+C waehrend der Begruendung darf keine halbe Ablehnung hinterlassen."""
+    """Endet die Eingabe mitten in der Begruendung (EOF – kein Mensch am
+    Bildschirm, geschlossene Eingabe, Strg+Z), darf keine halbe Ablehnung
+    zurueckbleiben: uebersprungen ja, abgelehnt nein.
+
+    Bewusst EOF und nicht Strg+C: Ein KeyboardInterrupt nimmt einen anderen
+    Weg – er wird hier nirgends gefangen und beendet den ganzen Lauf, und zwar
+    noch vor `in_excel_uebernehmen`. Auch das ist sicher (nichts geschrieben,
+    kein Issue veraendert), aber es ist ein anderer Fall als dieser."""
     antworten = iter(["a"])
 
     def dann_schluss(_):
@@ -1660,3 +1667,128 @@ def test_bleibt_offen_erscheint_nur_fuer_tatsaechlich_offene_issues(monkeypatch,
         "Issue #2 ist tatsaechlich noch offen und muss das auch sagen"
     )
     assert "Was tun?" in ausgabe, "Issue #2 ist noch offen, der Schlusstext muss erscheinen"
+
+
+# ── Abschlusspruefung B-1: der Wachposten fuer den Fall NACH dem Schreiben ──
+#
+# Zwischen der Schliess-Schleife (mit `except BaseException` abgesichert) und
+# der abschliessenden Warnung stehen seit diesem Zweig zwei neue Bloecke: die
+# `ablehnungen`-Schleife und `automatische_ablehnungen_melden` – Letztere mit
+# einem interaktiven `input()`. Bricht dort etwas ab, steht die Uebernahme
+# bereits in der Mappe. Ohne Warnung bleibt unbemerkt, dass Issues offen sind,
+# und der naechste Lauf traegt dieselben Skills ein zweites Mal ein.
+
+
+def test_abbruch_bei_der_zweiten_rueckfrage_warnt_vor_offenen_issues(monkeypatch, capsys):
+    """Strg+C an der Rueckfrage zu den aussortierten Vorschlaegen: die Mappe ist
+    geschrieben, Issue #1 liess sich nicht schliessen. Die Warnung MUSS
+    erscheinen, sonst erzeugt der naechste Lauf eine Dublette."""
+    monkeypatch.setattr(vh, "hole_issues", lambda: [
+        freigegebenes_issue(1, BEISPIEL),
+        freigegebenes_issue(2, {**BEISPIEL, "kategorie": "Erfunden"}),
+    ])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 1)
+    # Die Duplikatpruefung ist hier nicht das Thema – und ohne diese Attrappe
+    # haenge das Ergebnis davon ab, ob auf dem Rechner ein Schluessel liegt.
+    monkeypatch.setattr(vh.duplikat, "schluessel_finden", lambda projekt: None)
+
+    def schlaegt_wie_gh_fehl(nummer):
+        raise subprocess.CalledProcessError(1, ["gh"])
+
+    monkeypatch.setattr(vh, "issue_schliessen", schlaegt_wie_gh_fehl)
+
+    def strg_c(_):
+        raise KeyboardInterrupt
+
+    echte = vh.automatische_ablehnungen_melden
+    monkeypatch.setattr(
+        vh, "automatische_ablehnungen_melden",
+        lambda faelle: echte(faelle, eingabe=strg_c),
+    )
+
+    with pytest.raises(KeyboardInterrupt):
+        vh.main()
+
+    ausgabe = capsys.readouterr().out
+    assert "konnte(n) nicht geschlossen werden" in ausgabe
+    assert "#1" in ausgabe
+    assert "bereits in der Excel" in ausgabe
+    # Ohne diese Zeile weiss niemand, dass ueberhaupt etwas geschrieben wurde –
+    # der Lauf endet sonst im rohen Traceback.
+    assert "✅" in ausgabe
+
+
+def test_unerwarteter_fehler_beim_ablehnen_warnt_vor_offenen_issues(monkeypatch, capsys):
+    """Dieselbe Luecke eine Stufe frueher: ein Programmierfehler in der
+    `ablehnungen`-Schleife (kein CalledProcessError) schlaegt durch. Auch dann
+    steht die Uebernahme schon in der Mappe."""
+    aufrufe = []
+    antworten = iter(["a", "Steht schon drin."])
+    _duplikat_lauf(
+        monkeypatch, [
+            freigegebenes_issue(1, NEUER_SKILL),
+            freigegebenes_issue(2, {**NEUER_SKILL, "titel": "Zweiter Skill"}),
+        ],
+        lambda neue, bestand, client: [{
+            "titel": "Zweiter Skill", "aehnlich_zu": "Musik hören",
+            "stufe": "Hoch", "kategorie": "Ablenkung",
+            "begruendung": "Dieselbe Handlung.", "sicherheit": "unsicher",
+        }],
+        aufrufe,
+        eingabe=lambda _: next(antworten),
+    )
+
+    def schliessen_scheitert(nummer):
+        raise subprocess.CalledProcessError(1, ["gh"])
+
+    monkeypatch.setattr(vh, "issue_schliessen", schliessen_scheitert)
+
+    def schlaegt_unerwartet_fehl(nummer, grund):
+        raise RuntimeError("Programmierfehler")
+
+    monkeypatch.setattr(vh, "issue_ablehnen", schlaegt_unerwartet_fehl)
+
+    with pytest.raises(RuntimeError):
+        vh.main()
+
+    ausgabe = capsys.readouterr().out
+    assert "konnte(n) nicht geschlossen werden" in ausgabe
+    assert "#1" in ausgabe
+
+
+def test_meldung_nach_gescheitertem_ablehnen_nennt_den_schon_geschriebenen_kommentar(
+    monkeypatch, capsys
+):
+    """`issue_ablehnen` kommentiert zuerst und labelt danach. Scheitert es erst
+    dort, steht die Begruendung bereits oeffentlich im Issue. Die Meldung darf
+    den Menschen dann nicht dazu auffordern, sie ein zweites Mal zu schreiben."""
+    aufrufe = []
+    antworten = iter(["a", "Steht schon drin."])
+    _duplikat_lauf(
+        monkeypatch, [freigegebenes_issue(1, NEUER_SKILL)],
+        lambda neue, bestand, client: [{
+            "titel": "Spazieren gehen", "aehnlich_zu": "Musik hören",
+            "stufe": "Hoch", "kategorie": "Ablenkung",
+            "begruendung": "Dieselbe Handlung.", "sicherheit": "unsicher",
+        }],
+        aufrufe,
+        eingabe=lambda _: next(antworten),
+    )
+
+    def schlaegt_wie_gh_fehl(nummer, grund):
+        raise subprocess.CalledProcessError(1, ["gh"])
+
+    monkeypatch.setattr(vh, "issue_ablehnen", schlaegt_wie_gh_fehl)
+
+    vh.main()
+
+    ausgabe = capsys.readouterr().out
+    assert "konnte nicht abgelehnt werden" in ausgabe
+    # Nur die Meldung selbst betrachten: der Schlusstext („Was tun?") spricht
+    # ebenfalls von Kommentaren und wuerde eine unscharfe Pruefung bestehen.
+    meldung = ausgabe.split("konnte nicht abgelehnt werden")[1].split("⚠")[0]
+    assert "von Hand" in meldung
+    assert "moeglicherweise schon" in meldung, (
+        "die Meldung muss sagen, dass der Kommentar moeglicherweise schon steht"
+    )

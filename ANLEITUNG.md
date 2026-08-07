@@ -180,7 +180,7 @@ sieht das dann aus:
    VORHANDEN bereits:
      🌶️ Chilischote
      Das intensive Brennen der Chilischote aktiviert starke Schmerzrezeptoren und überlagert den Suchtdruck vollständig.
-     💡 Einfach ein kleines Stück abbeissen und kurz im Mund lassen. 15 – 30 Sekunden genügen.
+     💡 Einfach ein kleines Stück abbeissen und kurz im Mund lassen. 15 – 30 Sekunden genügen.
 
    [ü]bernehmen  [w]eiter (spaeter entscheiden)  [a]blehnen (mit Begruendung)  ?
 ```
@@ -200,6 +200,18 @@ Drei Antworten stehen zur Wahl:
   und freundlich formulieren. Das Issue wird danach automatisch mit dem Label
   `abgelehnt` versehen und geschlossen — das musst du nicht mehr von Hand tun.
 
+**Ohne Schlüssel entfällt die Dubletten-Warnung komplett**, und das Programm
+läuft wie gewohnt. Du musst nichts einrichten, wenn du das nicht möchtest. Die
+Rückfrage im nächsten Abschnitt kommt trotzdem — sie hat mit dem Schlüssel
+nichts zu tun.
+
+**Einrichten:** Einen Schlüssel auf console.anthropic.com erstellen und dann
+entweder einmalig im Terminal `setx ANTHROPIC_API_KEY "sk-ant-..."` ausführen
+(danach ein neues Fenster öffnen), oder die Datei `.env.example` zu `.env`
+kopieren und den Schlüssel dort eintragen. Ein Durchgang kostet einige Rappen.
+
+### Rückmeldung zu aussortierten Vorschlägen (immer, auch ohne Schlüssel)
+
 **Zu Vorschlägen, die das Programm ohnehin schon aussortiert** (z. B. falscher
 Absender oder eine unbekannte Kategorie), fragt es am Ende zusätzlich, ob der
 Grund als Kommentar ins jeweilige Issue soll — ebenfalls sichtbar für die
@@ -207,13 +219,23 @@ einreichende Person, ebenfalls nur nach deiner Zustimmung. Diese Issues bleiben
 dabei **offen**, weil solche Fälle oft behebbar sind (etwa: erst die Kategorie
 anlegen) und beim nächsten Lauf erneut geprüft werden sollen.
 
-**Ohne Schlüssel entfällt dieser Schritt komplett**, und das Programm läuft wie
-gewohnt. Du musst nichts einrichten, wenn du das nicht möchtest.
+**Das passiert unabhängig vom Schlüssel — also auch dann, wenn du keinen
+eingerichtet hast.** War mindestens ein Vorschlag dabei, den das Programm
+aussortiert hat, hält es an dieser Stelle an und wartet auf deine Antwort:
 
-**Einrichten:** Einen Schlüssel auf console.anthropic.com erstellen und dann
-entweder einmalig im Terminal `setx ANTHROPIC_API_KEY "sk-ant-..."` ausführen
-(danach ein neues Fenster öffnen), oder die Datei `.env.example` zu `.env`
-kopieren und den Schlüssel dort eintragen. Ein Durchgang kostet einige Rappen.
+```
+Zu den nicht uebernommenen Vorschlaegen kannst du eine Rueckmeldung
+ins Issue schreiben. Sie ist fuer die einreichende Person sichtbar.
+
+   Issue #102 „Frische Luft"
+   Vorgeschlagener Kommentar: Nicht uebernommen: Unbekannte Kategorie: 'Draussen' gibt es in der Stufe 'Hoch' nicht (mehr).
+   Schreiben? [j]a  [n]ein  ?
+```
+
+**n** (oder Enter) schreibt nichts. Waren alle Vorschläge in Ordnung, kommt die
+Frage gar nicht, und `vorschlaege.bat` läuft wie früher ohne Halt durch.
+
+### Wenn im Fenster etwas steht
 
 Wenn im Fenster steht „Keine freigegebenen Vorschläge offen", hast du gerade
 nichts freigegeben — dann ist alles in Ordnung.

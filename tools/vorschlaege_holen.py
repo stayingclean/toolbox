@@ -922,6 +922,25 @@ def main():
 
     nicht_geschlossen = []
     geschlossen = set()
+
+    def erfolg_melden():
+        """Die Erfolgszeile – gebraucht auf zwei Wegen (regulaerer Abschluss und
+        Abbruch nach dem Schreiben), darum nur einmal formuliert."""
+        if anzahl:
+            wort = "Vorschlag" if anzahl == 1 else "Vorschläge"
+            print(f"\n✅ {anzahl} {wort} in {XLSX.name} übernommen.")
+
+    # Ab hier steht die Uebernahme in der Excel. ALLES, was danach kommt und
+    # abbrechen kann, gehoert in diesen einen try-Block: das Schliessen, die
+    # Ablehnungen und die Rueckfrage zu den automatisch aussortierten Faellen
+    # (die ein interaktives input() enthaelt – Strg+C ist dort jederzeit
+    # moeglich, und die Begruendungs-Rueckfrage bringt es dem Menschen sogar
+    # ausdruecklich bei). Schlaegt hier irgendetwas durch, muessen Erfolgszeile
+    # und Warnung trotzdem erscheinen: sonst endet der Lauf im rohen Traceback,
+    # niemand erfaehrt, dass die Mappe bereits geschrieben ist und Issues offen
+    # sind – und der naechste Lauf traegt dieselben Skills ein zweites Mal ein.
+    # Bewusst EIN gemeinsamer Block statt zweier gleichlautender Wachposten:
+    # ein zweiter waere eine Kopie, die beim naechsten Umbau auseinanderlaeuft.
     try:
         for issue, daten in uebernehmen:
             kennung = "~" if daten.get("art") == "aenderung" else "+"
@@ -931,68 +950,71 @@ def main():
                 geschlossen.add(issue["number"])
             except subprocess.CalledProcessError:
                 nicht_geschlossen.append(issue["number"])
+
+        # Ab hier weitere GitHub-Schreibvorgaenge – wie das Schliessen oben
+        # duerfen auch sie erst NACH dem erfolgreichen Schreiben in die Excel
+        # passieren. Ein einzelner Fehlschlag bricht den Lauf nicht ab: die
+        # Uebernahme steht schon in der Mappe, ein Absturz hinterliesse nur
+        # einen halben Zustand auf GitHub, den niemand einordnen koennte.
+        # Stattdessen wird gemeldet, was von Hand nachzuholen ist – genau wie
+        # beim Schliessen oben.
+        # `erledigt_durch_ablehnen` merkt sich, welche Issues hier tatsaechlich
+        # geschlossen wurden: die spaetere "bleibt offen"-Ausgabe (weiter unten,
+        # `for issue, grund in abgelehnt_offen`) darf fuer genau diese Nummern
+        # nicht mehr erscheinen – sonst behauptet das Programm im selben Lauf
+        # zweimal etwas Gegenteiliges ueber denselben Vorgang.
+        erledigt_durch_ablehnen = set()
+        for nummer, grund in ablehnungen:
+            try:
+                issue_ablehnen(nummer, grund)
+                erledigt_durch_ablehnen.add(nummer)
+                print(f"  ✗ Issue #{nummer} abgelehnt und geschlossen.")
+            except subprocess.CalledProcessError:
+                # issue_ablehnen() kommentiert ZUERST und labelt danach: bei
+                # einem Fehlschlag steht die Begruendung womoeglich schon
+                # oeffentlich im Issue. Wer sie hier blind noch einmal
+                # hineinschreibt, postet denselben Text zweimal.
+                print(
+                    f"\n⚠ Issue #{nummer} konnte nicht abgelehnt werden.\n"
+                    f"   Bitte von Hand auf github.com/{REPO}/issues/{nummer}\n"
+                    f"   das Label `abgelehnt` setzen und schliessen.\n"
+                    f"   Die Begruendung wird als Erstes geschrieben – sie steht\n"
+                    f"   dort moeglicherweise schon als Kommentar. Bitte zuerst\n"
+                    f"   nachschauen und nur nachtragen, falls sie fehlt:\n"
+                    f"   {grund}"
+                )
+
+        # `abgelehnt` enthaelt NICHT nur die automatisch aussortierten
+        # Vorschlaege (falscher Absender, gescheiterte Pruefung): weiter oben
+        # landen dort auch die beim Nachfragen zur Duplikatpruefung
+        # uebersprungenen Issues – sowohl das „weiter, spaeter entscheiden" als
+        # auch das „ablehnen" (Letzteres ist gerade eben ueber die Schleife oben
+        # abgearbeitet worden). Fuer all diese Faelle hat der Mensch die Frage
+        # schon beantwortet. Wuerde die ganze Liste an
+        # automatische_ablehnungen_melden() gehen, bekaeme er fuer genau diese
+        # Issues eine ZWEITE Rueckfrage. `raus` traegt exakt die Issue-Nummern,
+        # die aus der Rueckfrage stammen – deshalb hier NICHT vereinfachen zu
+        # "ganz abgelehnt uebergeben".
+        aus_rueckfrage = {n for n in raus}
+        automatisch = [(i, g) for i, g in abgelehnt if i["number"] not in aus_rueckfrage]
+        for nummer, text in automatische_ablehnungen_melden(automatisch):
+            try:
+                issue_kommentieren(nummer, text)
+            except subprocess.CalledProcessError:
+                print(
+                    f"⚠ Der Kommentar zu Issue #{nummer} konnte nicht geschrieben werden.\n"
+                    f"   Nicht weiter schlimm: das Issue bleibt ohnehin offen und wird\n"
+                    f"   beim naechsten Lauf erneut angeboten – dann kannst du es noch\n"
+                    f"   einmal versuchen."
+                )
     except BaseException:
-        # Ab hier steht die Uebernahme bereits in der Excel. Schlaegt etwas
-        # Unerwartetes durch (oder bricht jemand mit Strg+C ab), muss die
-        # Warnung trotzdem erscheinen – sonst bleibt unbemerkt, dass Issues
-        # offen sind und der naechste Lauf Dubletten erzeugt.
+        erfolg_melden()
         warne_offene_issues(
             [i["number"] for i, _ in uebernehmen if i["number"] not in geschlossen]
         )
         raise
 
-    # Ab hier weitere GitHub-Schreibvorgaenge – wie das Schliessen oben duerfen
-    # auch sie erst NACH dem erfolgreichen Schreiben in die Excel passieren.
-    # Ein Fehlschlag hier bricht den Lauf nicht ab: die Uebernahme steht schon
-    # in der Mappe, ein Absturz hinterliesse nur einen halben Zustand auf
-    # GitHub, den niemand einordnen koennte. Stattdessen wird gemeldet, was von
-    # Hand nachzuholen ist – genau wie beim Schliessen oben.
-    # `erledigt_durch_ablehnen` merkt sich, welche Issues hier tatsaechlich
-    # geschlossen wurden: die spaetere "bleibt offen"-Ausgabe (weiter unten,
-    # `for issue, grund in abgelehnt_offen`) darf fuer genau diese Nummern
-    # nicht mehr erscheinen – sonst behauptet das Programm im selben Lauf
-    # zweimal etwas Gegenteiliges ueber denselben Vorgang.
-    erledigt_durch_ablehnen = set()
-    for nummer, grund in ablehnungen:
-        try:
-            issue_ablehnen(nummer, grund)
-            erledigt_durch_ablehnen.add(nummer)
-            print(f"  ✗ Issue #{nummer} abgelehnt und geschlossen.")
-        except subprocess.CalledProcessError:
-            print(
-                f"\n⚠ Issue #{nummer} konnte nicht abgelehnt werden.\n"
-                f"   Bitte von Hand auf github.com/{REPO}/issues/{nummer}\n"
-                f"   das Label `abgelehnt` setzen und schliessen. Begruendung:\n"
-                f"   {grund}"
-            )
-
-    # `abgelehnt` enthaelt NICHT nur die automatisch aussortierten Vorschlaege
-    # (falscher Absender, gescheiterte Pruefung): weiter oben landen dort auch
-    # die beim Nachfragen zur Duplikatpruefung uebersprungenen Issues – sowohl
-    # das „weiter, spaeter entscheiden" als auch das „ablehnen" (Letzteres ist
-    # gerade eben ueber die Schleife oben abgearbeitet worden). Fuer all diese
-    # Faelle hat der Mensch die Frage schon beantwortet. Wuerde die ganze Liste
-    # an automatische_ablehnungen_melden() gehen, bekaeme er fuer genau diese
-    # Issues eine ZWEITE Rueckfrage. `raus` traegt exakt die Issue-Nummern, die
-    # aus der Rueckfrage stammen – deshalb hier NICHT vereinfachen zu "ganz
-    # abgelehnt uebergeben".
-    aus_rueckfrage = {n for n in raus}
-    automatisch = [(i, g) for i, g in abgelehnt if i["number"] not in aus_rueckfrage]
-    for nummer, text in automatische_ablehnungen_melden(automatisch):
-        try:
-            issue_kommentieren(nummer, text)
-        except subprocess.CalledProcessError:
-            print(
-                f"⚠ Der Kommentar zu Issue #{nummer} konnte nicht geschrieben werden.\n"
-                f"   Nicht weiter schlimm: das Issue bleibt ohnehin offen und wird\n"
-                f"   beim naechsten Lauf erneut angeboten – dann kannst du es noch\n"
-                f"   einmal versuchen."
-            )
-
-    if anzahl:
-        wort = "Vorschlag" if anzahl == 1 else "Vorschläge"
-        print(f"\n✅ {anzahl} {wort} in {XLSX.name} übernommen.")
-
+    erfolg_melden()
     warne_offene_issues(nicht_geschlossen)
 
     for issue in uebersprungen:

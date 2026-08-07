@@ -152,6 +152,16 @@ Zugesicherte Eigenschaft, die jeder Umbau erhalten muss: **Bricht der Lauf ab,
 ist nichts in die Excel geschrieben und kein Issue geschlossen** — der Lauf
 lässt sich gefahrlos wiederholen. Genau darauf verweist `ANLEITUNG.md`.
 
+**Ihr Gegenstück gilt für alles NACH dem Schreiben:** Sobald
+`in_excel_uebernehmen` durch ist, liegt jeder weitere Schritt (Schliessen,
+Ablehnen, die Rückfrage zu den aussortierten Vorschlägen) in **einem**
+gemeinsamen `try … except BaseException` in `main()`. Bricht dort etwas ab —
+auch ein Strg+C an einer der Rückfragen —, erscheinen erst die Erfolgszeile und
+`warne_offene_issues`, dann erst fliegt der Fehler weiter. Ohne diesen
+Wachposten endete der Lauf im rohen Traceback: die Mappe geschrieben, Issues
+offen, und der nächste Lauf trüge dieselben Skills ein zweites Mal ein. Neue
+Schritte gehören deshalb **in** diesen Block, nicht dahinter.
+
 **Eine Änderung an einem Skill, der im selben Lauf erst neu dazukommt, geht
 nicht.** Der ursprüngliche Titel wird gegen `docs/skills-daten.json` geprüft, und
 diese Datei schreibt erst `build.py` am Ende des Laufs neu. Solche Änderungen
@@ -220,6 +230,13 @@ nur, ob eine Begründung als Kommentar ins Issue soll
 (`automatische_ablehnungen_melden`) — und lässt dabei genau die Issue-Nummern
 aus, die schon bei der Duplikat-Rückfrage übersprungen wurden (`raus`), sonst
 würde derselbe Fall zweimal gefragt.
+
+**Diese Rückfrage hängt an keinem Schlüssel.** Sie läuft auch dann, wenn keine
+Duplikatprüfung eingerichtet ist — und ist damit für die meisten Benutzer der
+einzige sichtbare Unterschied zur Fassung davor: War mindestens ein Vorschlag
+aussortiert, hält `vorschlaege.bat` an und wartet auf eine Eingabe, wo es
+vorher durchlief. `ANLEITUNG.md` sagt das unter einer eigenen Überschrift; wer
+hier etwas umbaut, muss es dort nachziehen.
 
 Die Formularseite ist generiert (`template-vorschlag.html` + `build.py`) — nicht
 direkt bearbeiten. Sie ist die einzige Seite in `docs/`, die Internet braucht
