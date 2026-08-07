@@ -214,11 +214,18 @@ SCHEMA = {
     "additionalProperties": False,
 }
 
-PFLICHTFELDER = ("titel", "aehnlich_zu", "stufe", "kategorie", "begruendung", "sicherheit")
+PFLICHTFELDER = ("titel", "aehnlich_zu", "stufe", "kategorie", "begruendung")
 
 # Das Schema verlangt diese beiden Werte bereits. Der Filter prueft sie trotzdem
 # noch einmal: Das Schema bindet die KI, nicht die Antwort, die bei uns ankommt —
 # ein erfundener dritter Wert wuerde sonst wie "sicher" behandelt.
+#
+# "sicherheit" steht absichtlich NICHT in PFLICHTFELDER: Dort wuerde nur auf
+# Anwesenheit als nichtleere Zeichenkette geprueft. Die Zeile unten prueft
+# strenger -- auf einen der beiden erlaubten Werte --, und deckt die
+# Anwesenheitspruefung damit vollstaendig mit ab. Eine zusaetzliche Nennung in
+# PFLICHTFELDER waere eine Pruefung, die nie greifen kann, solange die
+# strengere daneben steht -- keine echte zweite Schutzebene, nur ihr Anschein.
 SICHERHEITSSTUFEN = ("sicher", "unsicher")
 
 
