@@ -16,6 +16,20 @@ export const GRENZEN = {
 // Codepunkten zufaellig als eine Handvoll Grapheme durchgeht.
 const EMOJI_CODEPUNKT_GRENZE = 16;
 
+export const MAX_LINKS = 3;
+export const LINK_MAX_LAENGE = 300;
+
+// Linkverkuerzer verbergen das Ziel vor der Freigabe – die Pruefung im Issue
+// waere wertlos – und ergaeben als Knopfaufschrift nur "bit.ly" statt eines
+// erkennbaren Haendlers. Dieselbe Liste steht in build.py und in
+// tools/vorschlaege_holen.py.
+const VERKUERZER = new Set([
+  "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd",
+  "buff.ly", "rb.gy", "cutt.ly", "shorturl.at", "s.id", "lnkd.in",
+]);
+
+const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
+
 // Anzeigename (Formular) -> Schlüssel in skills-daten.json
 export const STUFEN = { Hoch: "hoch", Mittel: "mittel", Tief: "tief" };
 
@@ -105,6 +119,72 @@ function feldregeln(wert, namensfeld) {
   return null;
 }
 
+/**
+ * Prueft die eingereichten Bezugsquellen.
+ *
+ * Das ist das EINZIGE Feld, das eine Adresse tragen darf – feldregeln() weist
+ * fuer alle Textfelder weiterhin jedes "http" ab. Gespeichert wird die von
+ * URL normalisierte Fassung: das codiert nebenbei spitze Klammern, die sonst
+ * den Kommentarblock im Issue beenden koennten.
+ *
+ * Liefert {ok:true, links} oder {ok:false, fehler}.
+ */
+export function pruefeLinks(rohe) {
+  if (rohe === undefined || rohe === null) {
+    return { ok: true, links: [] };
+  }
+  if (!Array.isArray(rohe)) {
+    return { ok: false, fehler: "Bezugsquellen sind unlesbar." };
+  }
+  const links = [];
+  for (const eintrag of rohe) {
+    const url = text(eintrag);
+    if (!url) continue;
+    if (url.length > LINK_MAX_LAENGE) {
+      return {
+        ok: false,
+        fehler: `Zu lang: Bezugsquelle (max. ${LINK_MAX_LAENGE} Zeichen).`,
+      };
+    }
+    let zerlegt;
+    try {
+      zerlegt = new URL(url);
+    } catch {
+      return { ok: false, fehler: "Bezugsquelle ist keine gültige Adresse." };
+    }
+    if (zerlegt.protocol !== "https:") {
+      return { ok: false, fehler: "Bezugsquelle muss mit https:// beginnen." };
+    }
+    if (zerlegt.username || zerlegt.password) {
+      return {
+        ok: false,
+        fehler: "Bezugsquelle darf keine Benutzerangabe (@) enthalten.",
+      };
+    }
+    if (zerlegt.port) {
+      return { ok: false, fehler: "Bezugsquelle darf keine Portnummer enthalten." };
+    }
+    const host = zerlegt.hostname.replace(/\.+$/, "");
+    // Eckige Klammer: so schreibt URL eine IPv6-Adresse.
+    if (host.startsWith("[") || IPV4.test(host)) {
+      return { ok: false, fehler: "Bezugsquelle darf keine IP-Adresse sein." };
+    }
+    if (!host.includes(".")) {
+      return { ok: false, fehler: "Bezugsquelle hat keinen gültigen Hostnamen." };
+    }
+    if (VERKUERZER.has(host.replace(/^www\./, ""))) {
+      return { ok: false, fehler: "Linkverkürzer sind nicht erlaubt." };
+    }
+    if (!links.includes(zerlegt.href)) {
+      links.push(zerlegt.href);
+    }
+    if (links.length > MAX_LINKS) {
+      return { ok: false, fehler: `Höchstens ${MAX_LINKS} Bezugsquellen.` };
+    }
+  }
+  return { ok: true, links };
+}
+
 export function pruefeVorschlag(eingabe, daten) {
   const roh = eingabe && typeof eingabe === "object" ? eingabe : {};
 
@@ -127,6 +207,11 @@ export function pruefeVorschlag(eingabe, daten) {
     return { ok: false, fehler: "Unbekannte Kategorie." };
   }
 
+  const quellen = pruefeLinks(roh.links);
+  if (!quellen.ok) {
+    return { ok: false, fehler: quellen.fehler };
+  }
+
   const wert = {
     art: "neu",
     stufe,
@@ -136,6 +221,7 @@ export function pruefeVorschlag(eingabe, daten) {
     beschreibung: text(roh.beschreibung),
     tipp: text(roh.tipp),
     von: text(roh.von),
+    links: quellen.links,
   };
 
   const fehler = feldregeln(wert, "von");
@@ -182,6 +268,11 @@ export function pruefeAenderung(eingabe, daten) {
     };
   }
 
+  const quellen = pruefeLinks(roh.links);
+  if (!quellen.ok) {
+    return { ok: false, fehler: quellen.fehler };
+  }
+
   const wert = {
     art: "aenderung",
     stufe,
@@ -192,6 +283,7 @@ export function pruefeAenderung(eingabe, daten) {
     beschreibung: text(roh.beschreibung),
     tipp: text(roh.tipp),
     erg: text(roh.erg),
+    links: quellen.links,
   };
 
   const fehler = feldregeln(wert, "erg");
