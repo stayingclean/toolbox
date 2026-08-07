@@ -31,6 +31,7 @@ import re
 import subprocess
 import sys
 import zipfile
+from collections import Counter
 from pathlib import Path
 
 import openpyxl
@@ -532,6 +533,72 @@ def warne_offene_issues(nummern: list):
     )
 
 
+def treffer_je_issue(treffer: list, uebernehmen: list) -> dict:
+    """Ordnet die Treffer der Duplikatpruefung den Issues zu, aus denen sie
+    stammen: `{Issue-Nummer: Treffer}`. Treffer ohne passenden Vorschlag
+    fallen weg.
+
+    Zwei Dinge sind dabei tragend:
+
+    1. **Nur neue Skills kommen ueberhaupt in Frage.** Geprueft werden ohnehin
+       nur neue Skills (eine Aenderung zeigt schon ueber Stufe/Kategorie/Titel
+       auf einen bestimmten vorhandenen Skill). Eine Aenderung darf durch eine
+       Rueckfrage deshalb NIEMALS herausfallen. Frueher lief die Zuordnung
+       ueber ganz `uebernehmen` und allein ueber den Titel – und der Titel
+       einer Aenderung bleibt im Regelfall unveraendert. Trafen ein neuer
+       Skill und eine Aenderung auf denselben Titel, gewann im dict der
+       letzte: eingetragen wurde die Dublette, herausgeworfen die Aenderung.
+       Das Gegenteil dessen, was der Mensch angewiesen hatte.
+    2. **Der Titel allein ist kein Schluessel.** Zwei neue Vorschlaege koennen
+       denselben Titel tragen. Stufe und Kategorie stehen im Treffer und
+       machen die Zuordnung eindeutig.
+
+    Rueckfallweg ueber den Titel allein: Laut `tools/duplikat_prompt.md`
+    beziehen sich `stufe`/`kategorie` im Treffer auf den EINGEREICHTEN
+    Vorschlag. Erzwingen laesst sich das nicht – das Antwortschema kennt nur
+    „Zeichenkette". Nennt das Modell stattdessen die Werte des aehnlichen
+    Bestandsskills, faende der Dreier-Schluessel nichts und die Rueckfrage
+    entfiele lautlos (fail-open: die Dublette liefe durch). Deshalb greift
+    dann der Titel – aber nur, wenn er unter den neuen Vorschlaegen genau
+    einmal vorkommt, sonst waere er wieder mehrdeutig.
+    """
+    kandidaten = [(i, d) for i, d in uebernehmen if d.get("art") != "aenderung"]
+    # Bei zwei voellig gleichen neuen Vorschlaegen (gleiche Stufe, Kategorie
+    # UND Titel) bleibt der Schluessel mehrdeutig; dann gewinnt der letzte.
+    # Das ist hier vertretbar: Solche Vorschlaege sind Dubletten voneinander,
+    # der Mensch wird einmal gefragt, und der uebrige bleibt sichtbar in der
+    # Liste stehen.
+    nach_schluessel = {
+        (d.get("stufe"), d.get("kategorie"), d.get("titel")): i["number"]
+        for i, d in kandidaten
+    }
+    haeufigkeit = Counter(d.get("titel") for _, d in kandidaten)
+    nach_titel = {
+        d.get("titel"): i["number"]
+        for i, d in kandidaten
+        if haeufigkeit[d.get("titel")] == 1
+    }
+
+    zuordnung = {}
+    for t in treffer:
+        if not isinstance(t, dict):
+            continue
+        schluessel = (t.get("stufe"), t.get("kategorie"), t.get("titel"))
+        # Bei falsch getypten Feldern kaeme es hier zu `TypeError: unhashable
+        # type`. duplikat.pruefe_duplikate filtert sie bereits weg; das hier
+        # ist die zweite Schutzebene, damit ein einzelner unbrauchbarer
+        # Treffer nicht die Rueckfrage zu den uebrigen mitreisst.
+        if not all(isinstance(w, str) for w in schluessel):
+            continue
+        nummer = nach_schluessel.get(schluessel)
+        if nummer is None:
+            nummer = nach_titel.get(t.get("titel"))
+        if nummer is None:
+            continue  # kein passender Vorschlag – nichts zu fragen
+        zuordnung.setdefault(nummer, t)
+    return zuordnung
+
+
 def nachfragen(treffer: list, uebernehmen: list, eingabe=input) -> list:
     """Fragt je Treffer nach und liefert die Nummern der Issues, die
     uebersprungen werden sollen.
@@ -539,12 +606,8 @@ def nachfragen(treffer: list, uebernehmen: list, eingabe=input) -> list:
     Uebersprungen heisst: nicht eintragen, Issue bleibt offen. Es geht dabei
     nichts verloren – der naechste Lauf bietet den Vorschlag wieder an.
     """
-    nach_titel = {d["titel"]: i["number"] for i, d in uebernehmen}
     ueberspringen = []
-    for t in treffer:
-        nummer = nach_titel.get(t["titel"])
-        if nummer is None:
-            continue  # kein passender Vorschlag – nichts zu fragen
+    for nummer, t in treffer_je_issue(treffer, uebernehmen).items():
         print(
             f'\n⚠ „{t["titel"]}" aehnelt „{t["aehnlich_zu"]}" '
             f'({t["stufe"]} / {t["kategorie"]})\n'
@@ -612,9 +675,28 @@ def main():
     schluessel = duplikat.schluessel_finden(ROOT)
     if schluessel and neue:
         print("\nPruefe die neuen Vorschlaege auf Dubletten …")
+        # Vor dem try festgelegt: Platzt es mitten im Block, gilt das, was bis
+        # dahin feststand. `raus` wird deshalb ZUERST gefuellt (die Antwort des
+        # Menschen darf eine spaetere Panne nicht wieder aufheben), die
+        # Begruendungen danach.
+        raus, gruende = [], {}
         try:
             client = duplikat.client_bauen(schluessel)
             treffer = duplikat.pruefe_duplikate(neue, bestand, client)
+            # Das VERARBEITEN der Antwort steht mit im try, nicht nur ihr
+            # Beschaffen. Genau das war die dritte Bruchstelle derselben
+            # Fehlerklasse: `nachfragen()` lag dahinter im Freien, und ein
+            # unbrauchbarer Treffer riss mit `TypeError: unhashable type` den
+            # ganzen Uebernahmelauf mit. Die Pruefung ist eine Zutat, keine
+            # Voraussetzung – aus diesem Block darf nichts entkommen.
+            raus = nachfragen(treffer, uebernehmen)
+            gruende = {
+                nummer: (
+                    f'aehnelt vorhandenem Skill „{t["aehnlich_zu"]}" – beim '
+                    f"Nachfragen uebersprungen"
+                )
+                for nummer, t in treffer_je_issue(treffer, uebernehmen).items()
+            }
         except Exception as fehler:
             # client_bauen() wird HIER aufgerufen, nicht als Argument innerhalb
             # des Aufrufs von pruefe_duplikate() (das war der Fehler): dessen
@@ -632,8 +714,8 @@ def main():
                 f"\n⚠ Die Duplikatpruefung wurde uebersprungen: {type(fehler).__name__}.\n"
                 "   Die Uebernahme laeuft normal weiter – sie haengt nicht daran."
             )
-            treffer = []
-        raus = nachfragen(treffer, uebernehmen)
+        # Ab hier nur noch Umsortieren – reine Listenarbeit, die nicht platzen
+        # kann. Alles Fehleranfaellige liegt oben im try.
         if raus:
             # In `abgelehnt` statt in `uebersprungen` einsortiert: `uebersprungen`
             # druckt weiter unten woertlich "kein lesbarer Vorschlagsblock oder
@@ -641,17 +723,15 @@ def main():
             # mitgegebenen Grund und den ohnehin passenden Hinweis, dass das Label
             # `freigegeben` stehen bleiben kann und der naechste Lauf es erneut
             # anbietet.
-            nach_titel = {t["titel"]: t for t in treffer}
-            for issue, daten in uebernehmen:
+            for issue, _ in uebernehmen:
                 if issue["number"] not in raus:
                     continue
-                t = nach_titel.get(daten["titel"])
-                grund = (
-                    f'aehnelt vorhandenem Skill „{t["aehnlich_zu"]}" – beim '
-                    f"Nachfragen uebersprungen"
-                    if t else "beim Nachfragen zur Duplikatpruefung uebersprungen"
-                )
-                abgelehnt.append((issue, grund))
+                # Der Rueckfall greift, wenn die Begruendungen oben nicht mehr
+                # zustande kamen: Die Antwort des Menschen gilt trotzdem.
+                abgelehnt.append((issue, gruende.get(
+                    issue["number"],
+                    "beim Nachfragen zur Duplikatpruefung uebersprungen",
+                )))
             uebernehmen = [(i, d) for i, d in uebernehmen if i["number"] not in raus]
             aenderungen = [d for _, d in uebernehmen if d.get("art") == "aenderung"]
             neue = [d for _, d in uebernehmen if d.get("art") != "aenderung"]

@@ -30,3 +30,9 @@ ist leicht zu korrigieren; ein faelschlich zurueckgehaltener Vorschlag kostet
 eine Person ihren Beitrag. **Im Zweifel: kein Treffer.**
 
 Begruende jeden Treffer in einem kurzen Satz, der die gemeinsame Handlung nennt.
+
+Zu jedem Treffer: `titel` ist der Titel des neuen Vorschlags aus der Liste
+**Neu**, `aehnlich_zu` der Titel des vorhandenen Skills aus der Liste
+**Vorhanden**. `stufe` und `kategorie` gehoeren zum **neuen Vorschlag** — also
+genau die Werte, die in seiner Zeile unter **Neu** stehen, nicht die des
+vorhandenen Skills.

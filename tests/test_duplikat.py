@@ -126,6 +126,43 @@ def test_ohne_git_und_ohne_schutz_haelt_der_rueckfallweg_ebenfalls_an(tmp_path, 
         duplikat.schluessel_finden(tmp_path)
 
 
+def test_notbremse_behauptet_keinen_schluessel_den_sie_nie_gelesen_hat(tmp_path, monkeypatch):
+    """Die Notbremse haengt allein daran, DASS eine .env daliegt -- gelesen wird
+    sie erst danach. Eine leere .env oder eine mit ganz anderen Eintraegen
+    loest die Meldung genauso aus. Sie darf deshalb nicht behaupten, die Datei
+    enthalte einen Schluessel: Fuer die Zielgruppe („was fuer ein Schluessel?
+    ich habe gar keinen") macht das unnoetig Angst.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    (tmp_path / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("IRGENDWAS_ANDERES=1\n", encoding="utf-8")
+    with pytest.raises(SystemExit) as ausnahme:
+        duplikat.schluessel_finden(tmp_path)
+    meldung = str(ausnahme.value)
+    assert "enthaelt einen Schluessel" not in meldung, (
+        "gelesen wurde die Datei an dieser Stelle noch gar nicht"
+    )
+    assert "koennte" in meldung, "die Meldung muss den Vorbehalt benennen"
+    assert ".gitignore" in meldung
+
+
+def test_kaputte_gitignore_stuerzt_den_rueckfallweg_nicht_ab(tmp_path, monkeypatch):
+    """Ohne Git wird die .gitignore selbst gelesen. Ist sie kein gueltiges
+    UTF-8, gab das einen rohen UnicodeDecodeError -- waehrend dasselbe Problem
+    an der .env sauber abgefangen wird. Fuer die Notbremse zaehlt nur, ob eine
+    der Schutzzeilen dasteht; unlesbare Stellen duerfen ersetzt werden.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    def kein_git(*args, **kwargs):
+        raise FileNotFoundError("git nicht gefunden")
+
+    monkeypatch.setattr(duplikat.subprocess, "run", kein_git)
+    (tmp_path / ".gitignore").write_bytes(b"# \xff\xfe kaputte Zeile\n.env*\n")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-trotzdem\n", encoding="utf-8")
+    assert duplikat.schluessel_finden(tmp_path) == "sk-trotzdem"
+
+
 def test_env_mit_ungueltigem_utf8_haelt_verstaendlich_an(tmp_path, monkeypatch):
     """Kaputte/binaere .env: verstaendliche Meldung statt rohem Traceback.
 
@@ -380,6 +417,41 @@ def test_treffer_mit_zeichenketten_statt_objekten_werden_verworfen():
     """Ein Treffer-Eintrag, der selbst kein Objekt ist, fliegt beim Filtern
     raus, statt beim `.get(...)`-Aufruf abzustuerzen."""
     client = FakeClient({"treffer": ["Lieblingslied auflegen"]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_treffer_mit_liste_statt_titel_wird_verworfen():
+    """Ein Filter, der nur auf VORHANDENSEIN prueft, laesst falsche Typen durch:
+    `str(["x"])` ergibt "['x']" und ist damit wahrheitswert-wahr. Der Titel wird
+    weiter oben als dict-Schluessel benutzt (`vorschlaege_holen.nachfragen`) --
+    eine Liste ist dort `TypeError: unhashable type`. Geprueft wird deshalb der
+    TYP, nicht nur das Vorhandensein."""
+    client = FakeClient({"treffer": [{
+        "titel": ["Lieblingslied auflegen"], "aehnlich_zu": "Musik hören",
+        "stufe": "Hoch", "kategorie": "Ablenkung",
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+    }]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_treffer_mit_zahl_oder_objekt_statt_text_wird_verworfen():
+    """Dieselbe Luecke in den uebrigen Pflichtfeldern: eine Zahl oder ein
+    verschachteltes Objekt liefe frueher durch den Filter und stuende dann in
+    der Rueckfrage an den Menschen."""
+    client = FakeClient({"treffer": [{
+        "titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
+        "stufe": 1, "kategorie": {"label": "Ablenkung"},
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+    }]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_treffer_mit_null_als_pflichtfeld_wird_verworfen():
+    client = FakeClient({"treffer": [{
+        "titel": "Lieblingslied auflegen", "aehnlich_zu": None,
+        "stufe": "Hoch", "kategorie": "Ablenkung",
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+    }]})
     assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
 
 

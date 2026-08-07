@@ -936,6 +936,81 @@ def test_treffer_ohne_passendes_issue_wird_ignoriert():
     assert vh.nachfragen(fremd, uebernehmen_liste(), eingabe=lambda _: "w") == []
 
 
+# ── Abschlusspruefung I-1: Rueckzuordnung eines Treffers zum richtigen Issue ──
+
+
+def _neu(nummer, titel, stufe="Hoch", kategorie="Ablenkung"):
+    return ({"number": nummer},
+            {"art": "neu", "stufe": stufe, "kategorie": kategorie, "titel": titel})
+
+
+def _aenderung(nummer, titel, stufe="Hoch", kategorie="Ablenkung"):
+    return ({"number": nummer},
+            {"art": "aenderung", "stufe": stufe, "kategorie": kategorie,
+             "titel": titel, "original": titel})
+
+
+def _treffer(titel, stufe="Hoch", kategorie="Ablenkung"):
+    return [{"titel": titel, "aehnlich_zu": "Musik hören", "stufe": stufe,
+             "kategorie": kategorie, "begruendung": "Dieselbe Handlung."}]
+
+
+def test_nachfrage_trifft_nie_eine_aenderung():
+    """Eine Aenderung behaelt im Regelfall ihren Titel – ein neuer Skill kann
+    denselben tragen. Zugeordnet wurde frueher allein ueber den Titel, ueber
+    ganz `uebernehmen`; im dict gewann der letzte Eintrag. Ergebnis: die
+    Dublette wurde eingetragen und stattdessen die Aenderung herausgeworfen,
+    die laut CLAUDE.md gar nicht geprueft wird. Geprueft werden nur neue
+    Skills – eine Aenderung darf durch eine Rueckfrage NIEMALS herausfallen.
+    """
+    uebernehmen = [_neu(101, "Ammoniak riechen"), _aenderung(102, "Ammoniak riechen")]
+    raus = vh.nachfragen(_treffer("Ammoniak riechen"), uebernehmen,
+                         eingabe=lambda _: "w")
+    assert raus == [101], "der neue Skill muss raus, die Aenderung bleibt"
+
+
+def test_nachfrage_zu_einer_aenderung_allein_fragt_gar_nicht():
+    """Ohne einen passenden NEUEN Vorschlag gibt es nichts zu fragen."""
+    uebernehmen = [_aenderung(102, "Ammoniak riechen")]
+    assert vh.nachfragen(_treffer("Ammoniak riechen"), uebernehmen,
+                         eingabe=lambda _: "w") == []
+
+
+def test_nachfrage_unterscheidet_zwei_neue_mit_gleichem_titel():
+    """Zwei neue Vorschlaege mit demselben Titel in verschiedenen Stufen:
+    Stufe und Kategorie stehen im Treffer und machen die Zuordnung eindeutig."""
+    uebernehmen = [
+        _neu(1, "Kaltes Wasser", "Hoch", "Ablenkung"),
+        _neu(2, "Kaltes Wasser", "Tief", "Ruhe"),
+    ]
+    assert vh.nachfragen(_treffer("Kaltes Wasser", "Tief", "Ruhe"), uebernehmen,
+                         eingabe=lambda _: "w") == [2]
+
+
+def test_nachfrage_findet_den_vorschlag_auch_bei_abweichender_stufe_im_treffer():
+    """Rueckfallweg: Das Antwortschema kennt nur „Zeichenkette" – ob das Modell
+    in `stufe`/`kategorie` den Vorschlag oder den aehnlichen Bestandsskill
+    meint, laesst sich nicht erzwingen (der Prompt sagt es, mehr geht nicht).
+    Nennt es die Werte des Bestandsskills, faende ein reiner
+    Dreier-Schluessel nichts und die Rueckfrage entfiele lautlos. Solange der
+    Titel unter den neuen Vorschlaegen eindeutig ist, greift deshalb er.
+    """
+    uebernehmen = [_neu(5, "Kaltes Wasser", "Hoch", "Ablenkung")]
+    assert vh.nachfragen(_treffer("Kaltes Wasser", "Tief", "Ruhe"), uebernehmen,
+                         eingabe=lambda _: "w") == [5]
+
+
+def test_nachfrage_ueberspringt_einen_unbrauchbaren_treffer_und_fragt_zum_naechsten():
+    """Zweite Schutzebene hinter dem Typfilter in `duplikat.pruefe_duplikate`:
+    Ein Treffer mit falsch getyptem Titel waere als dict-Schluessel ein
+    `TypeError: unhashable type`. Er faellt weg, ohne die Rueckfrage zu den
+    uebrigen Treffern mitzureissen."""
+    uebernehmen = [_neu(1, "Kaltes Wasser"), _neu(2, "Warme Dusche")]
+    treffer = _treffer("Warme Dusche")
+    treffer.insert(0, dict(treffer[0], titel=["Kaltes Wasser"]))
+    assert vh.nachfragen(treffer, uebernehmen, eingabe=lambda _: "w") == [2]
+
+
 # ── Ausbaustufe 3 Nachbesserung: Verdrahtung in main() ───────────────────────
 #
 # nachfragen() allein zu testen deckt NICHT ab, dass main() die Pruefung
@@ -1108,3 +1183,121 @@ def test_main_faengt_einen_werfenden_client_bauen_ab(monkeypatch, capsys):
     assert aufrufe == [["Spazieren gehen"]], (
         "die Uebernahme muss trotzdem normal weiterlaufen und den Skill schreiben"
     )
+
+
+# ── Abschlusspruefung C-1: auch das VERARBEITEN der Antwort ist abgesichert ──
+#
+# Die beiden bereits behobenen Stellen betrafen das BESCHAFFEN der Antwort
+# (`antwort.content[0]`, `client_bauen`). Die dritte lag eine Ebene hoeher:
+# alles, was NACH `pruefe_duplikate()` mit dem Ergebnis geschieht, stand
+# ausserhalb jeder Absicherung.
+
+
+def _duplikat_lauf(monkeypatch, issues, pruefe, aufrufe, eingabe=None):
+    """Stellt main() so, dass nur die Duplikatpruefung interessant ist.
+
+    `aufrufe` sammelt, was in_excel_uebernehmen zu sehen bekaeme – daran
+    haengt die Zusicherung „die Uebernahme laeuft weiter".
+    """
+    monkeypatch.setattr(vh, "hole_issues", lambda: issues)
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: DATEN_MIT_SKILL)
+    monkeypatch.setattr(vh, "issue_schliessen", lambda nummer: None)
+    monkeypatch.setattr(
+        vh.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0)
+    )
+
+    def uebernehmen(pfad, aenderungen, neue):
+        aufrufe.append(([d["titel"] for d in aenderungen], [d["titel"] for d in neue]))
+        return len(aenderungen) + len(neue)
+
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", uebernehmen)
+    monkeypatch.setattr(vh.duplikat, "schluessel_finden", lambda projekt: "fake-schluessel")
+    monkeypatch.setattr(vh.duplikat, "client_bauen", lambda schluessel: object())
+    monkeypatch.setattr(vh.duplikat, "pruefe_duplikate", pruefe)
+    if eingabe is not None:
+        echte = vh.nachfragen
+        monkeypatch.setattr(
+            vh, "nachfragen", lambda t, u: echte(t, u, eingabe=eingabe)
+        )
+
+
+def test_main_ueberlebt_treffer_mit_unbrauchbaren_feldern(monkeypatch, capsys):
+    """Ein Treffer, dessen `titel` keine Zeichenkette ist, wurde als
+    dict-Schluessel benutzt: `TypeError: unhashable type: 'list'`, roher
+    Traceback, ganzer Uebernahmelauf tot. Hier bewusst an `pruefe_duplikate`
+    vorbei eingespeist – der Filter dort ist die erste Abwehrlinie, diese
+    Zusicherung muss aber auch ohne ihn halten."""
+    aufrufe = []
+    kaputt = [{
+        "titel": ["Spazieren gehen"], "aehnlich_zu": "Musik hören",
+        "stufe": "Hoch", "kategorie": "Ablenkung", "begruendung": "…",
+    }]
+    _duplikat_lauf(
+        monkeypatch, [freigegebenes_issue(1, NEUER_SKILL)],
+        lambda neue, bestand, client: kaputt, aufrufe,
+    )
+
+    vh.main()  # darf NICHT platzen
+
+    assert aufrufe == [([], ["Spazieren gehen"])], (
+        "die Uebernahme muss den Skill trotzdem schreiben"
+    )
+
+
+def test_main_ueberlebt_einen_fehler_beim_verarbeiten_der_treffer(monkeypatch, capsys):
+    """Der try-Block umschloss nur das Beschaffen der Antwort. Alles, was
+    danach mit ihr geschieht – die Rueckfrage und das Umsortieren – muss
+    ebenfalls darin liegen, sonst reisst ein Fehler dort den ganzen Lauf mit.
+    """
+    aufrufe = []
+    _duplikat_lauf(
+        monkeypatch, [freigegebenes_issue(1, NEUER_SKILL)],
+        lambda neue, bestand, client: TREFFER, aufrufe,
+    )
+
+    def platzt(treffer, uebernehmen):
+        raise RuntimeError("beim Verarbeiten geplatzt")
+
+    monkeypatch.setattr(vh, "nachfragen", platzt)
+
+    vh.main()  # darf NICHT platzen
+
+    ausgabe = capsys.readouterr().out
+    assert "uebersprungen" in ausgabe
+    assert "RuntimeError" in ausgabe
+    assert aufrufe == [([], ["Spazieren gehen"])], (
+        "die Uebernahme muss trotzdem normal weiterlaufen"
+    )
+
+
+# ── Abschlusspruefung I-1: die Rueckfrage trifft den richtigen Vorschlag ─────
+
+AENDERUNG_GLEICHER_TITEL = {**AENDERUNG, "titel": "Musik hören"}
+
+
+def test_main_wirft_bei_gleichem_titel_die_aenderung_nicht_heraus(monkeypatch, capsys):
+    """Ein neuer Skill und eine Aenderung mit demselben Titel: Die KI meldet
+    den NEUEN Skill, der Mensch waehlt „weiter". Frueher wurde der neue Skill
+    trotzdem eingetragen und stattdessen die Aenderung verworfen – das
+    Gegenteil der Anweisung, und die Dublette landete in der Mappe."""
+    aufrufe = []
+    _duplikat_lauf(
+        monkeypatch,
+        [freigegebenes_issue(1, BEISPIEL), freigegebenes_issue(2, AENDERUNG_GLEICHER_TITEL)],
+        lambda neue, bestand, client: [{
+            "titel": "Musik hören", "aehnlich_zu": "Musik hören",
+            "stufe": "Hoch", "kategorie": "Ablenkung",
+            "begruendung": "Dieselbe Handlung.",
+        }],
+        aufrufe,
+        eingabe=lambda _: "w",
+    )
+
+    vh.main()
+
+    assert aufrufe == [(["Musik hören"], [])], (
+        "die Aenderung muss bleiben, nur der neue Skill faellt heraus"
+    )
+    ausgabe = capsys.readouterr().out
+    assert "#1" in ausgabe, "das Issue des neuen Skills muss als abgelehnt erscheinen"
+    assert "#2" not in ausgabe, "die Aenderung darf nicht abgelehnt werden"

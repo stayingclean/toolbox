@@ -177,7 +177,16 @@ Zwei Eigenschaften, die jeder Umbau erhalten muss:
 
 1. **Die Prüfung ist eine Zutat, keine Voraussetzung.** Ohne Schlüssel, ohne
    Netz oder bei einer unerwarteten Antwort läuft die Übernahme unverändert
-   weiter. Sie darf den Hauptweg nie blockieren.
+   weiter — auch die Rückfrage an den Menschen und alles, was danach mit den
+   Treffern geschieht, liegt innerhalb dieser Absicherung. Sie darf den
+   Hauptweg nie blockieren.
+
+   **Eine gewollte Ausnahme:** Fehlt `tools/duplikat_prompt.md` oder ist sie
+   leer, hält der Lauf an (`lade_prompt` wirft `SystemExit`, das erbt nicht
+   von `Exception` und durchschlägt die Absicherung darum absichtlich). Das
+   ist kein Ausfall der Schnittstelle, sondern ein Aufbaufehler, den jemand
+   beheben muss — ohne Anweisungstext läge nur Raten nahe. Auch dann ist
+   nichts in die Excel geschrieben und kein Issue geschlossen.
 2. **Liegt eine `.env` im Ordner, die `.gitignore` nicht abdeckt, hält das
    Programm an.** Das Skript schlägt am Ende `git add -A` vor; ohne diese
    Sperre wäre der Schlüssel mit einem Befehl öffentlich.

@@ -108,14 +108,28 @@ def schluessel_finden(projekt: Path) -> str | None:
         geschuetzt = git_ergebnis
     else:
         gitignore = projekt / ".gitignore"
+        # `errors="replace"` statt eines Absturzes: Fuer die Notbremse zaehlt
+        # nur, ob eine der Schutzzeilen dasteht. Eine .gitignore mit einer
+        # kaputten Stelle (BOM-Reste, ANSI-Zeichen aus einem alten Editor)
+        # warf hier sonst einen rohen UnicodeDecodeError durch -- waehrend
+        # dasselbe Problem an der .env sauber abgefangen wird. Eine ersetzte
+        # Stelle kann eine Schutzzeile hoechstens unkenntlich machen, und dann
+        # wird angehalten statt durchgewinkt.
         geschuetzt = gitignore.exists() and any(
             zeile.strip() in _RUECKFALL_MUSTER
-            for zeile in gitignore.read_text(encoding="utf-8").splitlines()
+            for zeile in gitignore.read_text(
+                encoding="utf-8", errors="replace"
+            ).splitlines()
         )
     if not geschuetzt:
+        # Bewusst im Konjunktiv: Geprueft wurde nur, DASS eine .env daliegt --
+        # gelesen wird sie erst danach (_env_datei_lesen). Eine leere .env
+        # oder eine mit ganz anderen Eintraegen loest dieselbe Meldung aus.
+        # „enthaelt einen Schluessel" waere dort schlicht falsch und macht der
+        # Zielgruppe unnoetig Angst („was fuer ein Schluessel?").
         raise SystemExit(
-            "❌ Die Datei .env enthaelt einen Schluessel, ist aber nicht vor Git\n"
-            "   geschuetzt.\n\n"
+            "❌ Im Projektordner liegt eine Datei .env, die nicht vor Git\n"
+            "   geschuetzt ist. Sie koennte einen Schluessel enthalten.\n\n"
             "   Trage in .gitignore eine Zeile `.env*` ein und starte noch\n"
             "   einmal. Ohne diesen Schutz koennte der Schluessel mit dem\n"
             "   naechsten Commit oeffentlich werden.\n\n"
@@ -273,9 +287,19 @@ def pruefe_duplikate(neue: list, bestand: dict, client) -> list:
         # kann. Ist ein Eintrag gar kein Objekt (z. B. eine Zeichenkette
         # statt eines Treffer-dicts), faellt er hier ebenfalls raus, ohne
         # dass `.get(...)` je aufgerufen wird.
+        #
+        # Geprueft wird der TYP, nicht nur das Vorhandensein: `str(...)` machte
+        # aus JEDEM Wert eine nichtleere Zeichenkette -- `str(["x"])` ist
+        # "['x']", `str(None)` ist "None", beides wahrheitswert-wahr. Ein
+        # `titel`, der keine Zeichenkette ist, ueberlebte so den Filter und
+        # wurde beim Nachfragen als dict-Schluessel benutzt: `TypeError:
+        # unhashable type: 'list'`, roher Traceback, ganzer Uebernahmelauf tot.
+        # Das Schema verlangt zwar ueberall "string", erzwingen laesst sich das
+        # aber nicht -- deshalb hier.
         return [
             t for t in roh
-            if isinstance(t, dict) and all(str(t.get(f, "")).strip() for f in PFLICHTFELDER)
+            if isinstance(t, dict)
+            and all(isinstance(t.get(f), str) and t[f].strip() for f in PFLICHTFELDER)
         ]
     except Exception as fehler:
         # Nur der Typname, nie die Ausnahme selbst oder ihre Argumente in der

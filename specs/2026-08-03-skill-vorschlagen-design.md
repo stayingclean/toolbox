@@ -348,6 +348,8 @@ Schritt 3 ist unabhängig von 1 und 2 und kann vorgezogen werden.
 | `template-vorschlag.html` | neu — Vorlage der Formularseite, CSS eingebettet |
 | `worker/` | neu — Quelltext des Workers, versioniert, nicht veröffentlicht |
 | `tools/vorschlaege_holen.py`, `vorschlaege.bat` | neu — Freigegebene in die Excel übernehmen |
+| `tools/duplikat.py` | neu — optionale Duplikatprüfung per KI (Schlüssel finden, Bestand aufbereiten, Antwort auswerten) |
+| `tools/duplikat_prompt.md` | neu — Anweisungstext der Duplikatprüfung, nur Anweisungen, keine Daten |
 | `docs/unterstuetzen.html` | neu — Kaffeekasse |
 | `build.py` | erzeugt zusätzlich `docs/skill-vorschlagen.html` und `docs/skills-daten.json`; liest Spalte `Von` |
 | `template.html` | Detail-Dialog zeigt „Vorgeschlagen von …"; Fusszeile mit Unterstützungs-Link |
