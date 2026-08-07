@@ -78,12 +78,15 @@ export function zelle(wert) {
  * Bezugsquellen fuer eine Tabellenzelle. Undefiniert kommt vor: ein
  * zwischengespeicherter Datenstand von vor dieser Neuerung kennt das Feld nicht.
  *
- * Jeder Link steht in Inline-Code (Backticks): die Bezugsquelle ist die
- * einzige Spalte, die Markdown-Metazeichen wie `[`, `]`, `(` oder `)` tragen
- * kann (jedes andere Feld sperrt bereits "http"), und Inline-Code verhindert,
+ * Jeder Link steht in Inline-Code (Backticks): die Adresse kann Markdown-
+ * Metazeichen wie `[`, `]`, `(` oder `)` tragen, und Inline-Code verhindert,
  * dass Markdown sie als Link oder Formatierung interpretiert. pruefeLinks
  * weist einen Backtick im Link selbst bereits zurueck, sonst liesse sich
- * damit aus dem Inline-Code ausbrechen.
+ * damit aus dem Inline-Code ausbrechen. Seit der Beschriftung ist die Adresse
+ * nicht mehr die einzige Spalte mit moeglichen Markdown-Metazeichen: das
+ * Label (eintrag.t) kann sie ebenfalls tragen (die Excel-Pruefung sperrt dort
+ * nur Laenge, spitze Klammern und "http") und steht bewusst NICHT in
+ * Inline-Code – nur zelle() maskiert dort `|` und Zeilenumbrueche.
  */
 export function quellen(liste) {
   if (!liste || !liste.length) {

@@ -430,9 +430,10 @@ var mb=el('mb'), modal=el('modal');
 var mEmoji=el('m-emoji'), mCat=el('m-cat'), mTitle=el('m-title'), mDesc=el('m-desc'), mTip=el('m-tip'), mVon=el('m-von');
 var mLinks=el('m-links'), mLinksListe=el('m-links-liste');
 
-/* Aufschrift des Knopfes ist der Hostname, nicht ein frei getippter Name:
-   so sieht man vor dem Klick, wo man landet. Fällt das Zerlegen aus, steht
-   die ganze Adresse da – besser als ein leerer Knopf. */
+/* Fallback-Aufschrift des Knopfes, wenn keine Beschriftung gepflegt ist: der
+   Hostname statt eines frei getippten Namens, damit man vor dem Klick sieht,
+   wo man landet. Fällt das Zerlegen aus, steht die ganze Adresse da – besser
+   als ein leerer Knopf. */
 function gastgeber(u){
   try{ return new URL(u).hostname.replace(/^www\./,''); }
   catch(e){ return u; }
