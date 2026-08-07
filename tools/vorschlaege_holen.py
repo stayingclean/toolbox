@@ -612,9 +612,27 @@ def main():
     schluessel = duplikat.schluessel_finden(ROOT)
     if schluessel and neue:
         print("\nPruefe die neuen Vorschlaege auf Dubletten …")
-        treffer = duplikat.pruefe_duplikate(
-            neue, bestand, duplikat.client_bauen(schluessel)
-        )
+        try:
+            client = duplikat.client_bauen(schluessel)
+            treffer = duplikat.pruefe_duplikate(neue, bestand, client)
+        except Exception as fehler:
+            # client_bauen() wird HIER aufgerufen, nicht als Argument innerhalb
+            # des Aufrufs von pruefe_duplikate() (das war der Fehler): dessen
+            # eigene Absicherung (siehe duplikat.py) greift nur INNERHALB ihres
+            # eigenen try-Blocks, also erst NACHDEM der Client schon fertig
+            # gebaut ist. Scheitert schon der Bau (ungueltiger Schluessel,
+            # fehlendes Paket `anthropic`, …), liegt das ausserhalb dieser
+            # Absicherung. Ohne dieses eigene Sicherheitsnetz wuerde main()
+            # abstuerzen, obwohl die Pruefung nur eine Zutat ist und der Rest
+            # der Uebernahme normal weiterlaufen soll. Nur der Typname erscheint
+            # in der Meldung, nie str(fehler) – dieselbe Begruendung wie in
+            # duplikat.pruefe_duplikate: eine Fehlermeldung koennte den
+            # Schluessel mitfuehren.
+            print(
+                f"\n⚠ Die Duplikatpruefung wurde uebersprungen: {type(fehler).__name__}.\n"
+                "   Die Uebernahme laeuft normal weiter – sie haengt nicht daran."
+            )
+            treffer = []
         raus = nachfragen(treffer, uebernehmen)
         if raus:
             # In `abgelehnt` statt in `uebersprungen` einsortiert: `uebersprungen`
@@ -709,9 +727,12 @@ def main():
             f"\n   Was tun? Diese Issues auf github.com/{REPO}/issues anschauen.\n"
             f"   Taugt ein Vorschlag nichts, gib ihm das Label `abgelehnt` mit\n"
             f"   einer kurzen Begruendung als Kommentar und schliesse ihn. Soll er\n"
-            f"   doch hinein, behebe den oben genannten Punkt (z. B. die Kategorie\n"
-            f"   in der Excel wieder anlegen) und starte vorschlaege.bat noch\n"
-            f"   einmal – das Label `freigegeben` kann stehen bleiben."
+            f"   doch hinein: Meist genuegt es, den oben genannten Punkt zu beheben\n"
+            f"   (z. B. die Kategorie in der Excel wieder anlegen) und\n"
+            f"   vorschlaege.bat noch einmal zu starten – bei einer wegen einer\n"
+            f"   moeglichen Dublette uebersprungenen Zeile genuegt es, beim\n"
+            f"   naechsten Lauf einfach anders zu antworten. Das Label\n"
+            f"   `freigegeben` kann in jedem Fall stehen bleiben."
         )
 
     if anzahl:

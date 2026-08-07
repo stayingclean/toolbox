@@ -934,3 +934,177 @@ def test_treffer_ohne_passendes_issue_wird_ignoriert():
     """Nennt die KI einen Titel, den es hier gar nicht gibt, darf nichts passieren."""
     fremd = [dict(TREFFER[0], titel="Gibt es nicht")]
     assert vh.nachfragen(fremd, uebernehmen_liste(), eingabe=lambda _: "w") == []
+
+
+# ── Ausbaustufe 3 Nachbesserung: Verdrahtung in main() ───────────────────────
+#
+# nachfragen() allein zu testen deckt NICHT ab, dass main() die Pruefung
+# ueberhaupt richtig aufruft: nur fuer neue Skills, nur mit Schluessel, und
+# ohne dass ein werfendes client_bauen() den ganzen Lauf mitreisst. Genau das
+# war die Luecke, die eine Pruefung an dieser Stelle fand (die Duplikatpruefung
+# lief unter einer Mutation auch fuer Aenderungen mit, ohne dass ein Test rot
+# wurde).
+
+def test_main_ruft_duplikatpruefung_nur_fuer_neue_skills_auf(monkeypatch):
+    """Eine Aenderung zeigt schon ueber Stufe/Kategorie/Titel auf einen
+    bestimmten vorhandenen Skill – "aehnelt einem vorhandenen Skill" ist dort
+    keine sinnvolle Frage. Nur neue Skills duerfen an pruefe_duplikate() gehen,
+    auch wenn im selben Lauf beide Arten vorkommen."""
+    monkeypatch.setattr(vh, "hole_issues", lambda: [
+        freigegebenes_issue(1, NEUER_SKILL),
+        freigegebenes_issue(2, AENDERUNG),
+    ])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: DATEN_MIT_SKILL)
+    monkeypatch.setattr(vh, "issue_schliessen", lambda nummer: None)
+    monkeypatch.setattr(
+        vh.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0)
+    )
+    monkeypatch.setattr(
+        vh, "in_excel_uebernehmen",
+        lambda pfad, aenderungen, neue: len(aenderungen) + len(neue),
+    )
+
+    monkeypatch.setattr(vh.duplikat, "schluessel_finden", lambda projekt: "fake-schluessel")
+    monkeypatch.setattr(vh.duplikat, "client_bauen", lambda schluessel: object())
+    gesehen = []
+
+    def gefaelscht(neue, bestand, client):
+        gesehen.append([n["titel"] for n in neue])
+        return []
+
+    monkeypatch.setattr(vh.duplikat, "pruefe_duplikate", gefaelscht)
+
+    vh.main()
+
+    assert gesehen == [["Spazieren gehen"]], (
+        "nur der neue Skill darf geprueft werden, die Aenderung nicht"
+    )
+
+
+def test_main_ruft_duplikatpruefung_nicht_ohne_neue_skills(monkeypatch):
+    """Nur eine Aenderung im Lauf, kein neuer Skill: pruefe_duplikate() darf gar
+    nicht erst aufgerufen werden – ohne neue Skills gibt es nichts zu pruefen.
+
+    Absichtlich KEIN "wirft AssertionError, wenn aufgerufen": main() faengt seit
+    dem Client-Bau-Fix (siehe test_main_faengt_einen_werfenden_client_bauen_ab)
+    JEDE Ausnahme aus diesem Block ab und laeuft normal weiter – ein
+    AssertionError als Wachposten wuerde also lautlos verschluckt und die
+    Pruefung waere wertlos. Stattdessen wird der Aufruf aufgezeichnet und NACH
+    main() geprueft.
+    """
+    monkeypatch.setattr(vh, "hole_issues", lambda: [freigegebenes_issue(2, AENDERUNG)])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: DATEN_MIT_SKILL)
+    monkeypatch.setattr(vh, "issue_schliessen", lambda nummer: None)
+    monkeypatch.setattr(
+        vh.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0)
+    )
+    monkeypatch.setattr(
+        vh, "in_excel_uebernehmen",
+        lambda pfad, aenderungen, neue: len(aenderungen) + len(neue),
+    )
+
+    monkeypatch.setattr(vh.duplikat, "schluessel_finden", lambda projekt: "fake-schluessel")
+
+    client_bauen_aufrufe = []
+    monkeypatch.setattr(
+        vh.duplikat, "client_bauen", lambda *a, **k: client_bauen_aufrufe.append(1)
+    )
+    pruefe_aufrufe = []
+    monkeypatch.setattr(
+        vh.duplikat, "pruefe_duplikate", lambda *a, **k: pruefe_aufrufe.append(1)
+    )
+
+    vh.main()
+
+    assert client_bauen_aufrufe == [], "ohne neue Skills darf kein Client gebaut werden"
+    assert pruefe_aufrufe == [], "ohne neue Skills darf nicht geprueft werden"
+
+
+def test_main_ruft_duplikatpruefung_nicht_ohne_schluessel(monkeypatch):
+    """Ohne Schluessel entfaellt die Pruefung kommentarlos – client_bauen() darf
+    dann nicht einmal versucht werden. Ginge der Schluessel-Filter verloren,
+    wuerde client_bauen() mit dem echten anthropic-Paket installiert einen
+    echten Client bauen und pruefe_duplikate() einen echten Netzversuch
+    ausloesen, obwohl kein Schluessel hinterlegt ist – hier unabhaengig davon
+    festgenagelt, ob `anthropic` in der Testumgebung installiert ist oder
+    nicht, weil client_bauen() direkt durch eine Attrappe ersetzt wird.
+
+    Aufzeichnen statt werfen (siehe Begruendung in
+    test_main_ruft_duplikatpruefung_nicht_ohne_neue_skills): main() faengt
+    Ausnahmen aus diesem Block ab, ein Wachposten-AssertionError wuerde also
+    nichts beweisen.
+    """
+    monkeypatch.setattr(vh, "hole_issues", lambda: [freigegebenes_issue(1, NEUER_SKILL)])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: DATEN_MIT_SKILL)
+    monkeypatch.setattr(vh, "issue_schliessen", lambda nummer: None)
+    monkeypatch.setattr(
+        vh.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0)
+    )
+    monkeypatch.setattr(
+        vh, "in_excel_uebernehmen",
+        lambda pfad, aenderungen, neue: len(aenderungen) + len(neue),
+    )
+
+    monkeypatch.setattr(vh.duplikat, "schluessel_finden", lambda projekt: None)
+
+    client_bauen_aufrufe = []
+    monkeypatch.setattr(
+        vh.duplikat, "client_bauen", lambda *a, **k: client_bauen_aufrufe.append(1)
+    )
+
+    vh.main()
+
+    assert client_bauen_aufrufe == [], (
+        "ohne Schluessel haette client_bauen() nicht gerufen werden duerfen"
+    )
+
+
+def test_main_faengt_einen_werfenden_client_bauen_ab(monkeypatch, capsys):
+    """Wirft schon der Bau des Clients (ungueltiger Schluessel, fehlendes Paket,
+    …), liegt das AUSSERHALB der eigenen Absicherung von pruefe_duplikate():
+    client_bauen() wird ausgewertet, BEVOR pruefe_duplikate() ueberhaupt
+    laeuft. Ohne ein eigenes Sicherheitsnetz in main() stuerzt der ganze Lauf
+    ab – genau die Zusage, die Task 3 fuer pruefe_duplikate() schon abgesichert
+    hat, waere eine Ebene hoeher wieder aufgerissen."""
+    monkeypatch.setattr(vh, "hole_issues", lambda: [freigegebenes_issue(1, NEUER_SKILL)])
+    monkeypatch.setattr(vh, "lade_datenstand", lambda: DATEN_MIT_SKILL)
+    monkeypatch.setattr(vh, "issue_schliessen", lambda nummer: None)
+    monkeypatch.setattr(
+        vh.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0)
+    )
+    aufrufe = []
+
+    def uebernehmen(pfad, aenderungen, neue):
+        aufrufe.append([n["titel"] for n in neue])
+        return len(aenderungen) + len(neue)
+
+    monkeypatch.setattr(vh, "in_excel_uebernehmen", uebernehmen)
+
+    monkeypatch.setattr(vh.duplikat, "schluessel_finden", lambda projekt: "fake-schluessel")
+
+    def platzt(schluessel):
+        raise RuntimeError("kaputter Schluessel")
+
+    monkeypatch.setattr(vh.duplikat, "client_bauen", platzt)
+
+    # Wird client_bauen() aufgeloest, BEVOR pruefe_duplikate() aufgerufen wird
+    # (die Reihenfolge, die der Fix verlangt), erreicht dieser Aufruf hier nie
+    # etwas – weder in der reparierten noch in der urspruenglich fehlerhaften
+    # Fassung, denn `client_bauen(schluessel)` wird als Ausdruck ausgewertet,
+    # BEVOR der Funktionsaufruf von pruefe_duplikate() ueberhaupt beginnt.
+    # Aufzeichnen statt werfen, aus demselben Grund wie in den beiden Tests
+    # oben: main() faengt Ausnahmen aus diesem Block ab.
+    pruefe_aufrufe = []
+    monkeypatch.setattr(
+        vh.duplikat, "pruefe_duplikate", lambda *a, **k: pruefe_aufrufe.append(1)
+    )
+
+    vh.main()  # darf NICHT platzen, obwohl client_bauen() wirft
+
+    ausgabe = capsys.readouterr().out
+    assert "uebersprungen" in ausgabe
+    assert "RuntimeError" in ausgabe
+    assert pruefe_aufrufe == [], "pruefe_duplikate() haette nie erreicht werden duerfen"
+    assert aufrufe == [["Spazieren gehen"]], (
+        "die Uebernahme muss trotzdem normal weiterlaufen und den Skill schreiben"
+    )
