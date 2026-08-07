@@ -24,7 +24,7 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -38,6 +38,16 @@ LINK_TAG = re.compile(
     r'<link[^>]+rel=["\'][^"\']*icon[^"\']*["\'][^>]*>', re.IGNORECASE
 )
 HREF = re.compile(r'href=["\']([^"\']+)["\']', re.IGNORECASE)
+
+
+def normalisiere(eingabe: str) -> str:
+    """Hostname wie build.py ihn ableitet - sonst schreibt dieses Skript unter
+    einem Namen, unter dem der Build nie nachschaut, und das faellt niemandem
+    auf."""
+    roh = eingabe.strip()
+    if "//" not in roh:
+        roh = "https://" + roh
+    return (urlsplit(roh).hostname or "").removeprefix("www.")
 
 
 def zielpfad(domain: str) -> Path:
@@ -73,7 +83,7 @@ def main():
         print("Beispiel: uv run tools/favicon_holen.py www.coop.ch")
         raise SystemExit(1)
 
-    domain = sys.argv[1].strip().removeprefix("https://").removeprefix("http://").strip("/")
+    domain = normalisiere(sys.argv[1])
     ZIEL.mkdir(parents=True, exist_ok=True)
     ziel = zielpfad(domain)
 
@@ -89,23 +99,23 @@ def main():
         try:
             roh = hole(adresse)
             bild = Image.open(io.BytesIO(roh))
-        except Exception:
+        except (urllib.error.URLError, OSError, ValueError):
             continue
         bild = bild.convert("RGBA").resize((KANTE, KANTE), Image.LANCZOS)
         bild.save(ziel, "PNG", optimize=True)
         print(f"✅ {ziel.relative_to(ROOT).as_posix()} ({ziel.stat().st_size} Byte)")
-        print("   Jetzt build.bat ausfuehren, damit es eingebettet wird.")
+        print("   Jetzt build.bat ausführen, damit es eingebettet wird.")
         return
 
     print(f"❌ Kein Symbol von {domain} zu holen.")
     print()
-    print("   Das ist bei einem Teil der Haendler normal - sie sperren")
+    print("   Das ist bei einem Teil der Händler normal - sie sperren")
     print("   automatische Abrufe aus. Von Hand geht es so:")
     print()
-    print(f"   1. https://{domain}/ im Browser oeffnen")
+    print(f"   1. https://{domain}/ im Browser öffnen")
     print("   2. Das Symbol im Reiter speichern (oder aus der Seite kopieren)")
     print(f"   3. Als PNG hier ablegen: {ziel.relative_to(ROOT).as_posix()}")
-    print("   4. build.bat ausfuehren")
+    print("   4. build.bat ausführen")
     raise SystemExit(1)
 
 

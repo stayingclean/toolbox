@@ -36,3 +36,16 @@ def test_ohne_domain_beendet_sich_das_skript_verstaendlich(monkeypatch, capsys):
     with pytest.raises(SystemExit):
         fh.main()
     assert "Domain" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    ["WWW.Coop.CH", "https://www.coop.ch/", "https://www.coop.ch/some/path", "coop.ch"],
+)
+def test_normalisiere_liefert_denselben_hostnamen_wie_build(eingabe):
+    """build.py leitet den Schluessel per urlsplit(url).hostname ab (immer
+    klein, ohne www.) - dieselben vier Schreibweisen muessen darum alle auf
+    dieselbe Zieldatei zeigen, sonst schreibt dieses Skript unter einem
+    Namen, unter dem der Build nie nachschaut."""
+    assert fh.normalisiere(eingabe) == "coop.ch"
+    assert fh.zielpfad(fh.normalisiere(eingabe)).name == "coop.ch.png"
