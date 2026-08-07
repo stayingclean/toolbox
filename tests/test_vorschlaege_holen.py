@@ -883,3 +883,54 @@ def test_aenderung_greift_nicht_auf_eine_im_selben_lauf_neue_zeile(tmp_path):
         )
 
     assert inhalt(pfad) == vorher
+
+
+# ── Ausbaustufe 3: Duplikatpruefung mit Rueckfrage ───────────────────────────
+
+TREFFER = [{
+    "titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
+    "stufe": "Hoch", "kategorie": "Ablenkung",
+    "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+}]
+
+
+def uebernehmen_liste():
+    return [({"number": 7}, {"art": "neu", "stufe": "Hoch", "kategorie": "Ablenkung",
+                             "titel": "Lieblingslied auflegen"})]
+
+
+def test_nachfrage_uebernehmen_laesst_den_vorschlag_drin(capsys):
+    offen = vh.nachfragen(TREFFER, uebernehmen_liste(), eingabe=lambda _: "ü")
+    assert offen == []
+    ausgabe = capsys.readouterr().out
+    assert "Musik hören" in ausgabe
+    assert "Beide beschreiben" in ausgabe, "die Begruendung muss sichtbar sein"
+
+
+def test_nachfrage_weiter_nimmt_den_vorschlag_heraus():
+    assert vh.nachfragen(TREFFER, uebernehmen_liste(), eingabe=lambda _: "w") == [7]
+
+
+def test_nachfrage_akzeptiert_grossschreibung_und_leerzeichen():
+    assert vh.nachfragen(TREFFER, uebernehmen_liste(), eingabe=lambda _: " W ") == [7]
+
+
+def test_nachfrage_fragt_erneut_bei_unsinniger_eingabe():
+    antworten = iter(["x", "", "w"])
+    assert vh.nachfragen(TREFFER, uebernehmen_liste(),
+                         eingabe=lambda _: next(antworten)) == [7]
+
+
+def test_nachfrage_ohne_tastatur_ueberspringt_sicherheitshalber():
+    """Laeuft das Skript ohne Eingabemoeglichkeit, wird NICHT stillschweigend
+    uebernommen – lieber bleibt das Issue offen."""
+    def keine_tastatur(_):
+        raise EOFError
+
+    assert vh.nachfragen(TREFFER, uebernehmen_liste(), eingabe=keine_tastatur) == [7]
+
+
+def test_treffer_ohne_passendes_issue_wird_ignoriert():
+    """Nennt die KI einen Titel, den es hier gar nicht gibt, darf nichts passieren."""
+    fremd = [dict(TREFFER[0], titel="Gibt es nicht")]
+    assert vh.nachfragen(fremd, uebernehmen_liste(), eingabe=lambda _: "w") == []

@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["openpyxl"]
+# dependencies = ["openpyxl", "anthropic"]
 # ///
 """
 Freigegebene Skill-Vorschläge übernehmen
@@ -36,6 +36,8 @@ from pathlib import Path
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.exceptions import InvalidFileException
+
+import duplikat
 
 sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
 sys.stderr.reconfigure(encoding="utf-8")
@@ -530,6 +532,42 @@ def warne_offene_issues(nummern: list):
     )
 
 
+def nachfragen(treffer: list, uebernehmen: list, eingabe=input) -> list:
+    """Fragt je Treffer nach und liefert die Nummern der Issues, die
+    uebersprungen werden sollen.
+
+    Uebersprungen heisst: nicht eintragen, Issue bleibt offen. Es geht dabei
+    nichts verloren – der naechste Lauf bietet den Vorschlag wieder an.
+    """
+    nach_titel = {d["titel"]: i["number"] for i, d in uebernehmen}
+    ueberspringen = []
+    for t in treffer:
+        nummer = nach_titel.get(t["titel"])
+        if nummer is None:
+            continue  # kein passender Vorschlag – nichts zu fragen
+        print(
+            f'\n⚠ „{t["titel"]}" aehnelt „{t["aehnlich_zu"]}" '
+            f'({t["stufe"]} / {t["kategorie"]})\n'
+            f'   Begruendung: {t["begruendung"]}'
+        )
+        while True:
+            try:
+                wahl = eingabe("   [ü]bernehmen  [w]eiter (ueberspringen)  ? ")
+            except EOFError:
+                # Kein Mensch am Bildschirm: nicht raten, lieber offen lassen.
+                print("   Keine Eingabe moeglich – wird uebersprungen.")
+                ueberspringen.append(nummer)
+                break
+            wahl = wahl.strip().lower()
+            if wahl in ("ü", "u", "ue"):
+                break
+            if wahl == "w":
+                ueberspringen.append(nummer)
+                break
+            print("   Bitte ü oder w eingeben.")
+    return ueberspringen
+
+
 def main():
     alle_offenen = hole_issues()
     issues = [i for i in alle_offenen if hat_label(i, LABEL)]
@@ -565,6 +603,40 @@ def main():
 
     aenderungen = [d for _, d in uebernehmen if d.get("art") == "aenderung"]
     neue = [d for _, d in uebernehmen if d.get("art") != "aenderung"]
+
+    # Optionale Duplikatpruefung. Ohne Schluessel entfaellt sie kommentarlos;
+    # scheitert sie, laeuft die Uebernahme unveraendert weiter. Geprueft werden
+    # nur neue Skills – eine Aenderung zeigt schon ueber Stufe/Kategorie/Titel
+    # auf einen bestimmten vorhandenen Skill, "aehnelt einem vorhandenen Skill"
+    # ist dort keine sinnvolle Frage.
+    schluessel = duplikat.schluessel_finden(ROOT)
+    if schluessel and neue:
+        print("\nPruefe die neuen Vorschlaege auf Dubletten …")
+        treffer = duplikat.pruefe_duplikate(
+            neue, bestand, duplikat.client_bauen(schluessel)
+        )
+        raus = nachfragen(treffer, uebernehmen)
+        if raus:
+            # In `abgelehnt` statt in `uebersprungen` einsortiert: `uebersprungen`
+            # druckt weiter unten woertlich "kein lesbarer Vorschlagsblock oder
+            # andere Art" – das waere hier schlicht falsch. `abgelehnt` druckt den
+            # mitgegebenen Grund und den ohnehin passenden Hinweis, dass das Label
+            # `freigegeben` stehen bleiben kann und der naechste Lauf es erneut
+            # anbietet.
+            nach_titel = {t["titel"]: t for t in treffer}
+            for issue, daten in uebernehmen:
+                if issue["number"] not in raus:
+                    continue
+                t = nach_titel.get(daten["titel"])
+                grund = (
+                    f'aehnelt vorhandenem Skill „{t["aehnlich_zu"]}" – beim '
+                    f"Nachfragen uebersprungen"
+                    if t else "beim Nachfragen zur Duplikatpruefung uebersprungen"
+                )
+                abgelehnt.append((issue, grund))
+            uebernehmen = [(i, d) for i, d in uebernehmen if i["number"] not in raus]
+            aenderungen = [d for _, d in uebernehmen if d.get("art") == "aenderung"]
+            neue = [d for _, d in uebernehmen if d.get("art") != "aenderung"]
 
     # Ein einziger Schreibvorgang fuer den ganzen Lauf: er gelingt ganz oder gar
     # nicht. Bricht er ab, ist die Excel unveraendert und kein Issue geschlossen
