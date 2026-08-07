@@ -23,6 +23,24 @@ Diese Punkte gelten für **jede** Aufgabe:
 - **Jeder ausgehende Link trägt `rel="noopener noreferrer nofollow ugc"`.** Ohne `nofollow ugc` wird die Seite zum Ziel für Link-Spam.
 - **Kein Netzwerkzugriff in `build.py`** und in keinem Test.
 - **Deutsche Bezeichner und Kommentare**, wie im ganzen Projekt. Kommentare erklären das *Warum*, nicht das *Was*.
+- **Umlaute — die Konvention hängt an der Datei, nicht am Projekt.** Das ist
+  in Aufgabe 1 und 2 je einmal aufgelaufen; die Beispielblöcke unten sind
+  entsprechend gesetzt, aber im Zweifel gilt diese Tabelle:
+
+  | Datei | Kommentare | Zeichenketten, die jemand liest |
+  |---|---|---|
+  | `build.py` | **Umlaute** | **Umlaute** |
+  | `template.html` | **Umlaute** | **Umlaute** |
+  | `tests/test_build.py` | **Umlaute** (die Datei ist gemischt — neuer Text vereinheitlicht auf Umlaute) | **Umlaute** |
+  | `template-vorschlag.html` | ASCII (`Aenderung`, `loeschen`) | **Umlaute** |
+  | `worker/validate.js` | ASCII (`Pruefungen`, `Laengen`) | **Umlaute** (`Ungültige Einreichung.`) |
+  | `worker/index.js` | ASCII (`fuer`, `waere`) | **Umlaute** |
+  | `tools/vorschlaege_holen.py` | ASCII | ASCII (auch die Konsolenausgabe) |
+  | `CLAUDE.md`, `ANLEITUNG.md` | — | **Umlaute** |
+
+  **Python- und JavaScript-Bezeichner bleiben immer ASCII** (`pruefe_link`,
+  `test_ungueltiger_link_bricht_ab`) — das ist keine Ausnahme, sondern die
+  durchgehende Praxis im Projekt.
 - **`docs/skillsliste.html`, `docs/skill-vorschlagen.html` und `docs/skills-daten.json` sind erzeugt** — niemals von Hand bearbeiten. Geändert werden `template.html`, `template-vorschlag.html` und `build.py`.
 - **Tests laufen so:** `uv run --with pytest --with openpyxl --with pypdf --with pillow python -m pytest tests -q` (bzw. `test.bat`) und `cd worker && node --test`.
 
@@ -1318,7 +1336,7 @@ An `tests/test_build.py` anhängen:
 
 ```python
 def test_seed_excel_kennt_die_linkspalten():
-    """Ein Zuruecksetzen der Mappe darf die Bezugsquellen nicht verlieren."""
+    """Ein Zurücksetzen der Mappe darf die Bezugsquellen nicht verlieren."""
     quelle = (build.ROOT / "tools" / "seed_excel.py").read_text(encoding="utf-8")
     assert '"Link1", "Link2", "Link3"' in quelle
     assert 's.get("links"' in quelle
