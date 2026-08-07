@@ -545,17 +545,23 @@ export function pruefeLinks(rohe) {
   for (const eintrag of rohe) {
     const url = text(eintrag);
     if (!url) continue;
-    if (url.length > LINK_MAX_LAENGE) {
-      return {
-        ok: false,
-        fehler: `Zu lang: Bezugsquelle (max. ${LINK_MAX_LAENGE} Zeichen).`,
-      };
-    }
     let zerlegt;
     try {
       zerlegt = new URL(url);
     } catch {
       return { ok: false, fehler: "Bezugsquelle ist keine gültige Adresse." };
+    }
+    // Gemessen wird die NORMALISIERTE Fassung – die wird gespeichert. Die
+    // Rohfassung zu pruefen waere zu lasch: URL codiert Nicht-ASCII-Zeichen
+    // prozentual, eine Adresse aus 298 Zeichen mit CJK-Pfad wird zu 2578.
+    // build.py prueft denselben Wert; laufen die beiden auseinander, nimmt der
+    // Worker etwas an, das der Build spaeter ablehnt – und der Vorschlag
+    // steckt in der Excel fest.
+    if (zerlegt.href.length > LINK_MAX_LAENGE) {
+      return {
+        ok: false,
+        fehler: `Zu lang: Bezugsquelle (max. ${LINK_MAX_LAENGE} Zeichen).`,
+      };
     }
     if (zerlegt.protocol !== "https:") {
       return { ok: false, fehler: "Bezugsquelle muss mit https:// beginnen." };
