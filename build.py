@@ -178,11 +178,14 @@ def lade_favicons(data: dict) -> dict:
     icons = {}
     for host in sorted(h for h in hosts if h):
         pfad = FAVICON_DIR / f"{host}.png"
-        if not pfad.exists():
+        try:
+            roh = pfad.read_bytes()
+        except OSError:
+            # Vorhanden heisst nicht lesbar: gesperrte Datei, oder jemand hat
+            # versehentlich einen Ordner mit diesem Namen angelegt. Ein
+            # einzelnes kaputtes Symbol darf die Website nicht lahmlegen.
             continue
-        icons[host] = "data:image/png;base64," + base64.b64encode(
-            pfad.read_bytes()
-        ).decode("ascii")
+        icons[host] = "data:image/png;base64," + base64.b64encode(roh).decode("ascii")
     return icons
 
 

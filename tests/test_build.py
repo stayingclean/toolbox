@@ -725,3 +725,41 @@ def test_gastgeber_entfernt_www():
 def test_vorlage_hat_den_icons_platzhalter():
     vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
     assert build.PLACEHOLDER_ICONS in vorlage
+
+
+def test_unlesbares_favicon_bricht_den_build_nicht(mappe, monkeypatch, tmp_path):
+    """Vorhanden heisst nicht lesbar. Ein einzelnes kaputtes Symbol darf die
+    Website nicht lahmlegen - hier als Ordner statt Datei nachgestellt, das
+    verhaelt sich auf jedem Betriebssystem gleich."""
+    ordner = tmp_path / "favicons"
+    ordner.mkdir()
+    (ordner / "a.ch.png").mkdir()
+    monkeypatch.setattr(build, "FAVICON_DIR", ordner)
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert build.lade_favicons(build.load_data()) == {}
+
+
+def test_icons_landen_im_gerenderten_html(mappe, monkeypatch, tmp_path):
+    """Ende-zu-Ende: eine befuellte Icon-Tabelle muss auch tatsaechlich in
+    der erzeugten Seite ankommen, nicht nur der Platzhalter im Rohtemplate."""
+    ordner = tmp_path / "favicons"
+    ordner.mkdir()
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+        "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    )
+    (ordner / "a.ch.png").write_bytes(png)
+    monkeypatch.setattr(build, "FAVICON_DIR", ordner)
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    ziel = tmp_path / "skillsliste.html"
+    monkeypatch.setattr(build, "OUTPUT", ziel)
+
+    data = build.load_data()
+    icons = build.lade_favicons(data)
+    build.render(data, icons)
+
+    html = ziel.read_bytes().decode("utf-8-sig")
+    assert '"a.ch": "data:image/png;base64,' in html
+    assert re.search(r'var ICONS = \{"a\.ch": "data:image/png;base64,[^"]+"\};', html)
