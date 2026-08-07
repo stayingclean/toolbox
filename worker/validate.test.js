@@ -306,6 +306,7 @@ for (const [url, muster] of [
   ["http://a.ch/x", /https/],
   ["ftp://a.ch/x", /https/],
   ["javascript:alert(1)", /https/],
+  ["data:text/html,hi", /https/],
   ["https://bit.ly/abc", /Linkverk/],
   ["https://www.tinyurl.com/abc", /Linkverk/],
   ["https://192.168.0.1/x", /IP-Adresse/],
@@ -328,11 +329,29 @@ test("zu lange Adresse wird abgelehnt", () => {
   assert.match(ergebnis.fehler, /lang/);
 });
 
+test("normalisierte Adresse (mit Unicode) wird auf Laenge geprueft", () => {
+  // Raw URL ist 113 Zeichen, normalisierter href wird 613 Zeichen (Umlaute
+  // werden zu %XX-Sequenzen). Die Laengenprüfung muss auf dem gespeicherten
+  // Wert (href) laufen, nicht auf dem Rohstring, sonst landen zu lange
+  // Links in der Excel und build.py weigert sich zu bauen.
+  const ergebnis = pruefeLinks(["https://a.ch/" + "ü".repeat(100)]);
+  assert.equal(ergebnis.ok, false);
+  assert.match(ergebnis.fehler, /lang/);
+});
+
 test("spitze Klammern werden beim Normalisieren codiert", () => {
   // Sie duerfen den Kommentarblock im Issue nicht beenden koennen.
   const ergebnis = pruefeLinks(["https://a.ch/a-->b"]);
   assert.equal(ergebnis.ok, true);
   assert.equal(ergebnis.links[0].includes(">"), false);
+});
+
+test("eine Domain die bit.ly enthaelt ist kein Verkürzungsdienst", () => {
+  // bit.ly.evil.com ist nicht bit.ly – die Shortener-Prüfung ist eine
+  // exakte Abfrage, nicht "includes". Wenn das verändert wird (z. B. zu
+  // includes), muss dieser Test die Regression fangen.
+  const ergebnis = pruefeLinks(["https://bit.ly.evil.com/x"]);
+  assert.equal(ergebnis.ok, true);
 });
 
 test("ein neuer Skill traegt seine Bezugsquellen", () => {

@@ -140,17 +140,17 @@ export function pruefeLinks(rohe) {
   for (const eintrag of rohe) {
     const url = text(eintrag);
     if (!url) continue;
-    if (url.length > LINK_MAX_LAENGE) {
-      return {
-        ok: false,
-        fehler: `Zu lang: Bezugsquelle (max. ${LINK_MAX_LAENGE} Zeichen).`,
-      };
-    }
     let zerlegt;
     try {
       zerlegt = new URL(url);
     } catch {
       return { ok: false, fehler: "Bezugsquelle ist keine gültige Adresse." };
+    }
+    if (zerlegt.href.length > LINK_MAX_LAENGE) {
+      return {
+        ok: false,
+        fehler: `Zu lang: Bezugsquelle (max. ${LINK_MAX_LAENGE} Zeichen).`,
+      };
     }
     if (zerlegt.protocol !== "https:") {
       return { ok: false, fehler: "Bezugsquelle muss mit https:// beginnen." };
