@@ -164,17 +164,48 @@ landet als Eintrag in einer Liste, die nur du freigeben kannst.
 
 Wenn ein Anthropic-Schlüssel hinterlegt ist, schaut das Programm vor dem
 Übernehmen nach, ob ein neuer Vorschlag einen Skill wiederholt, den es schon
-gibt. Ist das der Fall, fragt es nach:
+gibt. Gemeldet werden dabei **auch Zweifelsfälle**, nicht nur sichere Treffer —
+in der Meldung steht, wie sicher die Einschätzung ist. Du siehst **beide
+Einträge vollständig** (Emoji, Beschreibung, Tipp) und entscheidest selbst. So
+sieht das dann aus:
 
 ```
-⚠ „Lieblingslied auflegen" aehnelt „Musik hören" (Hoch / Ablenkung)
-   Begruendung: Beide beschreiben gezieltes Musikhoeren.
-   [ü]bernehmen  [w]eiter (ueberspringen)  ?
+⚠ Issue #42: Moegliche Dublette (SICHER dieselbe Handlung)
+   Einschaetzung: Beide beschreiben das Essen einer scharfen Chilischote als Schmerzreiz gegen Suchtdruck.
+
+   NEU eingereicht  (Hoch / Anti-Craving):
+     🌶️ Scharfe Chili essen
+     Eine scharfe Chilischote essen, um den Suchtdruck durch den Schmerzreiz zu unterbrechen.
+
+   VORHANDEN bereits:
+     🌶️ Chilischote
+     Das intensive Brennen der Chilischote aktiviert starke Schmerzrezeptoren und überlagert den Suchtdruck vollständig.
+     💡 Einfach ein kleines Stück abbeissen und kurz im Mund lassen. 15 – 30 Sekunden genügen.
+
+   [ü]bernehmen  [w]eiter (spaeter entscheiden)  [a]blehnen (mit Begruendung)  ?
 ```
+
+Drei Antworten stehen zur Wahl:
 
 - **ü** — trotzdem eintragen. Die Einschätzung war daneben.
-- **w** — nicht eintragen. Der Vorschlag bleibt offen und kommt beim nächsten
-  Lauf wieder. Es geht nichts verloren.
+- **w** — nicht eintragen. Das Issue bleibt offen und wird beim nächsten Lauf
+  wieder vorgelegt. Es geht nichts verloren.
+- **a** — ablehnen. Danach fragt das Programm nach einer Begründung.
+
+  **Wichtig:** Diese Begründung wird als Kommentar ins Issue geschrieben und
+  ist für die einreichende Person **sichtbar** — sie bekommt beim Absenden
+  ihres Vorschlags einen Link auf genau dieses Issue und kann jederzeit
+  nachschauen, was daraus geworden ist. Es ist also eine Antwort an jemanden,
+  der etwas beitragen wollte, oft in einer schwierigen Lebenslage. Bitte kurz
+  und freundlich formulieren. Das Issue wird danach automatisch mit dem Label
+  `abgelehnt` versehen und geschlossen — das musst du nicht mehr von Hand tun.
+
+**Zu Vorschlägen, die das Programm ohnehin schon aussortiert** (z. B. falscher
+Absender oder eine unbekannte Kategorie), fragt es am Ende zusätzlich, ob der
+Grund als Kommentar ins jeweilige Issue soll — ebenfalls sichtbar für die
+einreichende Person, ebenfalls nur nach deiner Zustimmung. Diese Issues bleiben
+dabei **offen**, weil solche Fälle oft behebbar sind (etwa: erst die Kategorie
+anlegen) und beim nächsten Lauf erneut geprüft werden sollen.
 
 **Ohne Schlüssel entfällt dieser Schritt komplett**, und das Programm läuft wie
 gewohnt. Du musst nichts einrichten, wenn du das nicht möchtest.

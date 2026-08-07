@@ -191,6 +191,36 @@ Zwei Eigenschaften, die jeder Umbau erhalten muss:
    Programm an.** Das Skript schlägt am Ende `git add -A` vor; ohne diese
    Sperre wäre der Schlüssel mit einem Befehl öffentlich.
 
+**Gemeldet werden auch Verdachtsfälle, nicht nur sichere Treffer.** Jeder
+Treffer trägt eine von zwei Sicherheitsstufen, `sicher` oder `unsicher`
+(`duplikat.SICHERHEITSSTUFEN`). Die KI ist darauf bereits über das Antwortschema
+gebunden (`enum` in `duplikat.SCHEMA`), der Filter in `pruefe_duplikate` prüft
+den Wert danach ein zweites Mal — das Schema bindet die KI, nicht zwingend die
+Antwort, die tatsächlich ankommt.
+
+**Die Anzeige (`vorschlaege_holen.gegenueberstellung`) sucht den vorhandenen
+Skill über ALLE Stufen und Kategorien** (`skill_im_bestand`), nicht über Stufe
+und Kategorie aus dem Treffer: Diese beiden Felder im Treffer-Objekt gehören
+zum **eingereichten** Vorschlag, nicht zum gefundenen Bestandsskill. Wer dort
+danach suchte, fände ihn oft nicht.
+
+**Die Reihenfolge ist die Zusicherung.** `nachfragen()` schreibt nichts auf
+GitHub — sie sammelt nur Entscheidungen (übernehmen/überspringen/ablehnen samt
+Begründung). Kommentieren, Labeln und Schliessen (`issue_ablehnen`,
+`issue_kommentieren`) passieren in `main()` erst **nach** dem erfolgreichen
+`in_excel_uebernehmen`. Wer das umstellt, bricht „bei Abbruch ist nichts
+geschrieben und kein Issue verändert" — diese Zusicherung wurde in diesem
+Projekt bereits mehrfach gebrochen und wieder repariert, zuletzt mit einem Test,
+der genau diese Reihenfolge festnagelt.
+
+**Automatische Ablehnungen (falscher Absender, unbekannte Kategorie, …) werden
+nicht geschlossen.** Sie sind oft behebbar (z. B. erst die Kategorie anlegen)
+und sollen beim nächsten Lauf erneut versucht werden. `main()` fragt für sie
+nur, ob eine Begründung als Kommentar ins Issue soll
+(`automatische_ablehnungen_melden`) — und lässt dabei genau die Issue-Nummern
+aus, die schon bei der Duplikat-Rückfrage übersprungen wurden (`raus`), sonst
+würde derselbe Fall zweimal gefragt.
+
 Die Formularseite ist generiert (`template-vorschlag.html` + `build.py`) — nicht
 direkt bearbeiten. Sie ist die einzige Seite in `docs/`, die Internet braucht
 (Spam-Schutz und Absenden); das CSS bleibt trotzdem eingebettet.
