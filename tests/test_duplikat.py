@@ -389,3 +389,24 @@ def test_abgeschnittenes_json_haelt_den_lauf_nicht_an(capsys):
     client = FakeClientMitRohAntwort(_AntwortMitAbgeschnittenemJson())
     assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
     assert "Duplikatpruefung" in capsys.readouterr().out
+
+
+def test_fehlende_prompt_datei_schlaegt_bei_der_pruefung_durch(tmp_path, monkeypatch):
+    """SystemExit aus lade_prompt() ist KEIN Schnittstellenfehler der KI --
+    er darf nicht als leere Liste verschluckt werden, sondern muss
+    durchschlagen (siehe lade_prompt: fehlende Datei ist kein optionaler
+    Ausfall, sondern ein Aufbaufehler, den jemand beheben muss)."""
+    monkeypatch.setattr(duplikat, "PROJEKT", tmp_path)  # kein tools/-Ordner hier
+    client = FakeClient()
+    with pytest.raises(SystemExit):
+        duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    assert client.gesehen == {}, "vor dem Aufruf werten wir schon aus, dass die Datei fehlt"
+
+
+def test_leere_prompt_datei_schlaegt_bei_der_pruefung_ebenfalls_durch(tmp_path, monkeypatch):
+    ordner = tmp_path / "tools"
+    ordner.mkdir()
+    (ordner / "duplikat_prompt.md").write_text("   \n\n", encoding="utf-8")
+    monkeypatch.setattr(duplikat, "PROJEKT", tmp_path)
+    with pytest.raises(SystemExit):
+        duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient())

@@ -288,6 +288,7 @@ def pruefe_duplikate(neue: list, bestand: dict, client) -> list:
         print(
             f"\n⚠ Die Duplikatpruefung wurde uebersprungen: {type(fehler).__name__}.\n"
             "   Die Uebernahme laeuft normal weiter – sie haengt nicht daran.\n"
-            "   Meist ist das Internet weg oder der Schluessel nicht mehr gueltig."
+            "   Moegliche Ursachen: kein Internet, ein nicht mehr gueltiger\n"
+            "   Schluessel oder eine unerwartete Antwort der KI."
         )
         return []
