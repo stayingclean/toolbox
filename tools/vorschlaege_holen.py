@@ -49,7 +49,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # (Die JavaScript-Fassung in worker/validate.js haelt niemand; dort ist beim
 # Aendern Handarbeit gefragt.)
 sys.path.insert(0, str(ROOT))
-from build import LINK_SPALTEN, pruefe_link  # noqa: E402
+from build import LINK_PAARE, LINK_SPALTEN, pruefe_link  # noqa: E402
 
 MAX_LINKS = len(LINK_SPALTEN)
 
@@ -102,6 +102,9 @@ SPALTEN = [
     ("Link1", "link1"),
     ("Link2", "link2"),
     ("Link3", "link3"),
+    ("Text1", "text1"),
+    ("Text2", "text2"),
+    ("Text3", "text3"),
 ]
 
 # Bei einer Aenderung werden NUR diese Spalten ueberschrieben. `Stufe` und
@@ -461,6 +464,15 @@ def zeile_ersetzen(ws, kopf: list, eintrag: dict):
             f"'{original}' in {e['stufe']} / {e['kategorie']} "
             f"steht in den Zeilen {zeilen}"
         )
+    # Wechselt eine Adresse, wird ihre Beschriftung falsch: sie beschriebe dann
+    # ein anderes Produkt, und das faellt niemandem auf, weil im Knopf nur die
+    # Beschriftung steht. Bleibt die Adresse gleich, bleibt sie erhalten.
+    for linkspalte, textspalte in LINK_PAARE:
+        alt = ws.cell(row=treffer[0], column=kopf.index(linkspalte) + 1).value
+        alt = str(alt).strip() if alt is not None else ""
+        if alt != e.get(linkspalte.lower(), ""):
+            ws.cell(row=treffer[0], column=kopf.index(textspalte) + 1).value = ""
+
     for name, schluessel in SPALTEN_AENDERUNG:
         ws.cell(row=treffer[0], column=kopf.index(name) + 1, value=e.get(schluessel, ""))
 
@@ -526,7 +538,12 @@ def in_excel_uebernehmen(pfad: Path, aenderungen: list, neue: list) -> int:
                 f"   soll. Bitte die Kopfzeile nicht umbenennen.\n\n"
                 f"   Es wurde nichts veraendert – die Vorschlaege bleiben freigegeben."
             )
-        neue_spalte = spalten_sichern(ws, kopf, SPALTEN_AENDERUNG)
+        # Die Textspalten werden hier nur ANGELEGT, nicht geschrieben - siehe
+        # SPALTEN_AENDERUNG. Ohne sie liefe der Zugriff weiter unten in einen
+        # ValueError, sobald eine Mappe sie noch nicht hat.
+        neue_spalte = spalten_sichern(
+            ws, kopf, SPALTEN_AENDERUNG + [(t, t.lower()) for _, t in LINK_PAARE]
+        )
         for eintrag in aenderungen:
             zeile_ersetzen(ws, kopf, eintrag)
 

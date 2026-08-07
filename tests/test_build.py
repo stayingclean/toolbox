@@ -555,8 +555,14 @@ def test_beide_absende_ruempfe_schicken_links():
 def test_seed_excel_kennt_die_linkspalten():
     """Ein Zurücksetzen der Mappe darf die Bezugsquellen nicht verlieren."""
     quelle = (build.ROOT / "tools" / "seed_excel.py").read_text(encoding="utf-8")
-    assert '"Link1", "Link2", "Link3"' in quelle
+    assert '"Link1", "Text1", "Link2", "Text2", "Link3", "Text3"' in quelle
     assert 's.get("links"' in quelle
+
+
+def test_seed_excel_kennt_die_textspalten():
+    quelle = (build.ROOT / "tools" / "seed_excel.py").read_text(encoding="utf-8")
+    assert '"Link1", "Text1", "Link2", "Text2", "Link3", "Text3"' in quelle
+    assert 'l.get("t"' in quelle
 
 
 def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
@@ -574,11 +580,14 @@ def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
                     "skills": [
                         {"e": "🎧", "t": "Ohne Link", "b": "b", "links": []},
                         {"e": "🎧", "t": "Ein Link", "b": "b",
-                         "links": ["https://a.ch"]},
+                         "links": [{"u": "https://a.ch", "t": "A"}]},
                         {"e": "🎧", "t": "Zwei Links", "b": "b",
-                         "links": ["https://a.ch", "https://b.ch"]},
+                         "links": [{"u": "https://a.ch", "t": "A"},
+                                   {"u": "https://b.ch", "t": ""}]},
                         {"e": "🎧", "t": "Drei Links", "b": "b",
-                         "links": ["https://a.ch", "https://b.ch", "https://c.ch"]},
+                         "links": [{"u": "https://a.ch", "t": "A"},
+                                   {"u": "https://b.ch", "t": "B"},
+                                   {"u": "https://c.ch", "t": "C"}]},
                     ],
                 }
             ]
@@ -605,7 +614,8 @@ def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
     ws = wb["Skills"]
     header = [c.value for c in ws[1]]
     assert header == ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp",
-                       "Von", "Ergaenzt", "Link1", "Link2", "Link3"]
+                       "Von", "Ergaenzt",
+                       "Link1", "Text1", "Link2", "Text2", "Link3", "Text3"]
 
     zeilen = {row[3].value: row for row in ws.iter_rows(min_row=2)}  # Titel -> Zeile
 
@@ -615,12 +625,16 @@ def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
     # geprueft, nicht gegen "".
     def links_spalten(titel):
         zeile = zeilen[titel]
-        return [zeile[8].value, zeile[9].value, zeile[10].value]  # Link1..3
+        return [zeile[i].value for i in range(8, 14)]  # Link1..Text3
 
-    assert links_spalten("Ohne Link") == [None, None, None]
-    assert links_spalten("Ein Link") == ["https://a.ch", None, None]
-    assert links_spalten("Zwei Links") == ["https://a.ch", "https://b.ch", None]
-    assert links_spalten("Drei Links") == ["https://a.ch", "https://b.ch", "https://c.ch"]
+    assert links_spalten("Ohne Link") == [None] * 6
+    assert links_spalten("Ein Link") == ["https://a.ch", "A", None, None, None, None]
+    assert links_spalten("Zwei Links") == [
+        "https://a.ch", "A", "https://b.ch", None, None, None
+    ]
+    assert links_spalten("Drei Links") == [
+        "https://a.ch", "A", "https://b.ch", "B", "https://c.ch", "C"
+    ]
 
 
 TEXT_HEADER = SKILLS_HEADER + ["Link1", "Text1", "Link2", "Text2", "Link3", "Text3"]

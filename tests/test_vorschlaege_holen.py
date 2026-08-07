@@ -77,7 +77,7 @@ def test_anhaengen_schreibt_in_die_richtigen_spalten(tmp_path):
     assert ws2.max_row == 3
     kopf = [c.value for c in ws2[1]]
     zeile = dict(zip(kopf, [c.value for c in ws2[3]]))
-    # BEISPIEL traegt keine "links" - die drei neu angelegten Link-Spalten
+    # BEISPIEL traegt keine "links" - die neu angelegten Link- und Text-Spalten
     # bleiben leer und kommen als None zurueck (openpyxl schreibt eine leere
     # Zelle nie als "" zurueck, siehe Kommentar bei test_neue_zeile_traegt_die_links).
     assert zeile == {
@@ -91,6 +91,9 @@ def test_anhaengen_schreibt_in_die_richtigen_spalten(tmp_path):
         "Link1": None,
         "Link2": None,
         "Link3": None,
+        "Text1": None,
+        "Text2": None,
+        "Text3": None,
     }
 
 
@@ -423,20 +426,21 @@ def test_aenderung_erhaelt_filter_und_dropdown(tmp_path):
     # Stufen-Dropdown verlorengehen – beides sieht man der Datei nicht an,
     # es faellt erst auf, wenn jemand in Excel sortiert.
     #
-    # Die Mappe hier hat die Link-Spalten bereits (LINK_KOPF), damit
+    # Die Mappe hier hat die Link- UND Text-Spalten bereits (PAAR_KOPF), damit
     # spalten_sichern nichts anlegen muss: nur so prueft dieser Test den
-    # Erhalt-Pfad. Mit dem alten KOPF (ohne Link-Spalten) legt spalten_sichern
-    # sie automatisch an, und der Filter wird zwangslaeufig breiter – das
-    # deckt dann den WEITEN-Pfad ab, nicht den ERHALT-Pfad, fuer den dieser
-    # Test benannt ist.
+    # Erhalt-Pfad. Fehlte eine der beiden, legt spalten_sichern sie automatisch
+    # an, und der Filter wird zwangslaeufig breiter – das deckt dann den
+    # WEITEN-Pfad ab, nicht den ERHALT-Pfad, fuer den dieser Test benannt ist.
     pfad = tmp_path / "skills_daten.xlsx"
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Skills"
-    ws.append(LINK_KOPF)
-    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "", "Max", "", "", "", ""])
-    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "", "", "", "", "", ""])
-    ws.auto_filter.ref = "A1:K3"
+    ws.append(PAAR_KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "",
+               "Max", "", "", "", "", "", "", ""])
+    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "",
+               "", "", "", "", "", "", "", ""])
+    ws.auto_filter.ref = "A1:N3"
     pruefung = DataValidation(type="list", formula1='"Hoch,Mittel,Tief"', allow_blank=True)
     ws.add_data_validation(pruefung)
     pruefung.add("A2:A3")
@@ -445,8 +449,9 @@ def test_aenderung_erhaelt_filter_und_dropdown(tmp_path):
     vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
 
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
-    # Die Link-Spalten waren schon da – der Filter muss unveraendert bleiben.
-    assert ws2.auto_filter.ref == "A1:K3"
+    # Die Link- und Text-Spalten waren schon da – der Filter muss unveraendert
+    # bleiben.
+    assert ws2.auto_filter.ref == "A1:N3"
     bereiche = [str(p.sqref) for p in ws2.data_validations.dataValidation]
     assert bereiche == ["A2:A3"]
 
@@ -473,8 +478,9 @@ def test_aenderung_zieht_den_filter_ueber_eine_neu_angelegte_spalte(tmp_path):
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
     assert [c.value for c in ws2[1]][7] == "Ergaenzt"
     assert [c.value for c in ws2[2]][7] == "Lea"
-    # Ergaenzt UND die drei Link-Spalten kommen neu dazu (G -> K statt G -> H).
-    assert ws2.auto_filter.ref == "A1:K3"
+    # Ergaenzt UND die sechs Link-/Text-Spalten kommen neu dazu (G -> N statt
+    # G -> H).
+    assert ws2.auto_filter.ref == "A1:N3"
     assert [str(p.sqref) for p in ws2.data_validations.dataValidation] == ["A2:A3"]
 
 
@@ -789,9 +795,10 @@ def test_anhaengen_zieht_filter_und_dropdown_auf_die_neue_zeile(tmp_path):
 
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
     assert ws2.max_row == 4
-    # KOPF kennt die Link-Spalten nicht - sie werden automatisch angelegt
-    # (spalten_sichern), darum wird der Filter breiter statt bei H zu bleiben.
-    assert ws2.auto_filter.ref == "A1:K4"
+    # KOPF kennt die Link- und Text-Spalten nicht - sie werden automatisch
+    # angelegt (spalten_sichern), darum wird der Filter breiter statt bei H zu
+    # bleiben.
+    assert ws2.auto_filter.ref == "A1:N4"
     assert [str(p.sqref) for p in ws2.data_validations.dataValidation] == ["A2:A4"]
 
 
@@ -948,7 +955,7 @@ def test_fehlende_linkspalten_werden_angelegt(tmp_path):
     vh.in_excel_uebernehmen(pfad, [], [{**BEISPIEL, "links": ["https://a.ch/x"]}])
 
     kopf = [c.value for c in openpyxl.load_workbook(pfad)["Skills"][1]]
-    assert kopf[-3:] == ["Link1", "Link2", "Link3"]
+    assert kopf[-6:] == ["Link1", "Link2", "Link3", "Text1", "Text2", "Text3"]
 
 
 def test_aenderung_ersetzt_die_links_vollstaendig(tmp_path):
@@ -995,3 +1002,52 @@ def test_beschreibung_darf_weiterhin_keinen_link_tragen():
         {**BEISPIEL, "beschreibung": "Siehe http://a.ch", "links": []}, BESTAND
     )
     assert meldung == "Links sind nicht erlaubt."
+
+
+PAAR_KOPF = KOPF + ["Link1", "Text1", "Link2", "Text2", "Link3", "Text3"]
+
+
+def test_aenderung_leert_die_beschriftung_wenn_der_link_wechselt(tmp_path):
+    """Sonst beschriebe die alte Beschriftung ein anderes Produkt - und das
+    faellt niemandem auf, weil im Knopf nur sie steht."""
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(PAAR_KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "",
+               "Max", "", "https://alt.ch/1", "Alter Artikel", "", "", "", ""])
+    wb.save(pfad)
+
+    vh.in_excel_uebernehmen(pfad, [{**AENDERUNG, "links": ["https://neu.ch/1"]}], [])
+
+    ws2 = openpyxl.load_workbook(pfad)["Skills"]
+    zeile = dict(zip([c.value for c in ws2[1]], [c.value for c in ws2[2]]))
+    assert zeile["Link1"] == "https://neu.ch/1"
+    assert zeile["Text1"] in (None, "")
+
+
+def test_aenderung_behaelt_die_beschriftung_bei_gleichem_link(tmp_path):
+    """Wer nur den Tipp ergaenzt, soll die gepflegten Beschriftungen behalten."""
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(PAAR_KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "",
+               "Max", "", "https://alt.ch/1", "Igelball", "", "", "", ""])
+    wb.save(pfad)
+
+    vh.in_excel_uebernehmen(pfad, [{**AENDERUNG, "links": ["https://alt.ch/1"]}], [])
+
+    ws2 = openpyxl.load_workbook(pfad)["Skills"]
+    zeile = dict(zip([c.value for c in ws2[1]], [c.value for c in ws2[2]]))
+    assert zeile["Text1"] == "Igelball"
+
+
+def test_fehlende_textspalten_werden_angelegt(tmp_path):
+    pfad = mappe_mit_kopf(tmp_path, KOPF)
+    vh.in_excel_uebernehmen(pfad, [], [{**BEISPIEL, "links": ["https://a.ch/x"]}])
+    kopf = [c.value for c in openpyxl.load_workbook(pfad)["Skills"][1]]
+    for name in ("Link1", "Text1", "Link2", "Text2", "Link3", "Text3"):
+        assert name in kopf
