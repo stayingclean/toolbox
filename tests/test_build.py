@@ -463,3 +463,27 @@ def test_links_stehen_in_der_json(mappe, monkeypatch, tmp_path):
     build.write_daten_json(build.load_data())
     daten = json.loads(ziel.read_text(encoding="utf-8"))
     assert daten["hoch"]["kategorien"][0]["skills"][0]["links"] == ["https://a.ch/x"]
+
+
+def test_vorlage_zeigt_bezugsquellen():
+    vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
+    assert 'id="m-links"' in vorlage
+    assert 'id="m-links-liste"' in vorlage
+    assert "Von Besuchern vorgeschlagen · keine Empfehlung, keine Provision" in vorlage
+
+    block = ohne_umbrueche(js_funktion(vorlage, "openModal"))
+    # Ohne Links bleibt der ganze Bereich verborgen – keine leere Ueberschrift.
+    assert "mLinks.hidden = !(s.links && s.links.length);" in block
+    # Ohne nofollow/ugc waere die Seite ein lohnendes Ziel fuer Link-Spam.
+    assert "a.rel='noopener noreferrer nofollow ugc';" in block
+    # Der Bereich muss bei jedem Oeffnen geleert werden, sonst stehen die
+    # Quellen des zuvor angesehenen Skills noch da.
+    assert "mLinksListe.textContent='';" in block
+
+
+def test_gastgeber_kuerzt_www():
+    vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
+    rumpf = ohne_umbrueche(js_funktion(vorlage, "gastgeber"))
+    assert "new URL(u).hostname.replace(/^www\\./,'')" in rumpf
+    # Faellt das Zerlegen aus, darf der Dialog nicht leer bleiben.
+    assert "catch" in rumpf

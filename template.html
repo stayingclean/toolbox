@@ -139,6 +139,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .modal-desc{font-size:.93rem;line-height:1.68;color:var(--text);margin-bottom:1rem}
 .modal-tip{background:var(--active-h);border-left:3px solid var(--active);border-radius:0 var(--r-xs) var(--r-xs) 0;padding:.65rem .9rem;font-size:.85rem;color:var(--text);line-height:1.55;transition:background var(--tr),border-color var(--tr)}
 .modal-von{margin-top:.9rem;font-size:.78rem;color:var(--muted);font-style:italic}
+.modal-links{margin-top:1rem}
+.modal-links-titel{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
+.modal-links-liste{display:flex;flex-wrap:wrap;gap:.5rem}
+.modal-links-liste a{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .7rem;border:1px solid var(--border);border-radius:var(--r-xs);font-size:.82rem;color:var(--text);text-decoration:none;transition:border-color var(--tr),background var(--tr)}
+.modal-links-liste a:hover{border-color:var(--active);background:var(--active-h)}
+.modal-links-fuss{margin-top:.55rem;font-size:.72rem;color:var(--muted)}
 /* Auf Desktop zentrieren */
 @media(min-width:580px){
   .modal-backdrop{align-items:center}
@@ -300,6 +306,11 @@ footer{text-align:center;padding:2rem 1rem;font-size:.74rem;color:var(--muted);b
     <div class="modal-body">
       <p class="modal-desc" id="m-desc"></p>
       <div class="modal-tip" id="m-tip"></div>
+      <div class="modal-links" id="m-links" hidden>
+        <div class="modal-links-titel">Bezugsquellen</div>
+        <div class="modal-links-liste" id="m-links-liste"></div>
+        <div class="modal-links-fuss">Von Besuchern vorgeschlagen · keine Empfehlung, keine Provision</div>
+      </div>
       <div class="modal-von" id="m-von" hidden></div>
     </div>
   </div>
@@ -417,6 +428,15 @@ function render(anim){
 var _scrollY=0;
 var mb=el('mb'), modal=el('modal');
 var mEmoji=el('m-emoji'), mCat=el('m-cat'), mTitle=el('m-title'), mDesc=el('m-desc'), mTip=el('m-tip'), mVon=el('m-von');
+var mLinks=el('m-links'), mLinksListe=el('m-links-liste');
+
+/* Aufschrift des Knopfes ist der Hostname, nicht ein frei getippter Name:
+   so sieht man vor dem Klick, wo man landet. Faellt das Zerlegen aus, steht
+   die ganze Adresse da – besser als ein leerer Knopf. */
+function gastgeber(u){
+  try{ return new URL(u).hostname.replace(/^www\./,''); }
+  catch(e){ return u; }
+}
 
 function openModal(s){
   mEmoji.textContent = s.e||'💡';
@@ -429,6 +449,17 @@ function openModal(s){
   if(s.erg){ teile.push('Ergänzt von '+s.erg); }
   if(teile.length){ mVon.textContent=teile.join(' · '); mVon.hidden=false; }
   else { mVon.textContent=''; mVon.hidden=true; }
+
+  mLinksListe.textContent='';
+  (s.links||[]).forEach(function(u){
+    var a=document.createElement('a');
+    a.href=u;
+    a.target='_blank';
+    a.rel='noopener noreferrer nofollow ugc';
+    a.textContent='↗ '+gastgeber(u);
+    mLinksListe.appendChild(a);
+  });
+  mLinks.hidden = !(s.links && s.links.length);
 
   _scrollY=window.scrollY;
   mb.classList.add('open');
