@@ -357,6 +357,7 @@ def load_data():
         # entfernt, soll die uebrigen nicht von Hand aufruecken muessen. Die
         # Beschriftung wandert dabei mit ihrer Adresse mit.
         links = []
+        link_spalten = {}  # url -> (Link-, Text-Spalte) der ersten Fundstelle
         for spalte, textspalte in LINK_PAARE:
             roh_url, roh_text = rec[spalte], rec[textspalte]
             if not roh_url:
@@ -381,8 +382,24 @@ def load_data():
                     f"'{textspalte}': {meldung}."
                 )
                 continue
-            if any(vorhanden["u"] == url for vorhanden in links):
+            vorhanden = next((v for v in links if v["u"] == url), None)
+            if vorhanden is not None:
+                # Dieselbe Adresse zweimal ist der haeufige Fall (dieselben
+                # skills-box.ch-Knoepfe) und faellt bewusst still weg. Nur wenn
+                # BEIDE Beschriftungen gesetzt und verschieden sind, ist es
+                # vermutlich ein Tippfehler beim Einfuegen – das wuerde sonst
+                # eine Beschriftung wortlos verschlucken.
+                if beschriftung and vorhanden["t"] and beschriftung != vorhanden["t"]:
+                    erste_spalte, erste_textspalte = link_spalten[url]
+                    errors.append(
+                        f"Blatt 'Skills', Zeile {rec['_row']}: Dieselbe Adresse "
+                        f"steht in '{erste_spalte}' und '{spalte}' mit "
+                        f"unterschiedlicher Beschriftung ('{vorhanden['t']}' in "
+                        f"'{erste_textspalte}' und '{beschriftung}' in "
+                        f"'{textspalte}')."
+                    )
                 continue
+            link_spalten[url] = (spalte, textspalte)
             links.append({"u": url, "t": beschriftung})
         skills_by.setdefault((key, label), []).append(
             {
@@ -464,12 +481,20 @@ def _render(template_path, output_path, ersetzungen):
 
 
 def render(data: dict, icons: dict):
+    # ICONS zuerst, DATA danach: die "Platzhalter nicht gefunden"-Pruefung in
+    # _render prueft gegen das schon (teilweise) ersetzte HTML. Stuende DATA
+    # zuerst, koennte eine Beschreibung, die zufaellig den Text des
+    # ICONS-Platzhalters enthaelt, in die eingesetzte DATA-Zeile geraten und
+    # wuerde dann von der zweiten Ersetzung getroffen – die Seite waere
+    # verstuemmelt, ohne dass der Build das meldet. Umgekehrt kann die
+    # ICONS-Nutzlast (Base64/Hostnamen) den DATA-Platzhalter nicht enthalten,
+    # darum ist diese Reihenfolge ohne Spiegelrisiko.
     _render(
         TEMPLATE,
         OUTPUT,
         [
-            (PLACEHOLDER, "var DATA = %s;", data),
             (PLACEHOLDER_ICONS, "var ICONS = %s;", icons),
+            (PLACEHOLDER, "var DATA = %s;", data),
         ],
     )
 

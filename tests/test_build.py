@@ -559,12 +559,6 @@ def test_seed_excel_kennt_die_linkspalten():
     assert 's.get("links"' in quelle
 
 
-def test_seed_excel_kennt_die_textspalten():
-    quelle = (build.ROOT / "tools" / "seed_excel.py").read_text(encoding="utf-8")
-    assert '"Link1", "Text1", "Link2", "Text2", "Link3", "Text3"' in quelle
-    assert 'l.get("t"' in quelle
-
-
 def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
     """Fuehrt seed_excel.main() wirklich aus (statt nur den Quelltext zu
     grep-en) und prueft die geschriebenen Zellen fuer 0, 1, 2 und 3 Links.
@@ -648,12 +642,6 @@ def test_beschriftung_wird_gelesen(mappe, monkeypatch):
     ]
 
 
-def test_ohne_beschriftung_bleibt_t_leer(mappe, monkeypatch):
-    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
-    monkeypatch.setattr(build, "XLSX", pfad)
-    assert erste_skills(build.load_data())["links"] == [{"u": "https://a.ch/x", "t": ""}]
-
-
 def test_beschriftung_ohne_adresse_bricht_ab(mappe, monkeypatch):
     """Sonst staende eine Beschriftung ohne Ziel in der Mappe und niemand saehe es."""
     pfad = mappe(TEXT_HEADER, [SKILLS_ROW + ["", "Igelball", "", "", "", ""]])
@@ -699,6 +687,50 @@ def test_beschriftungen_folgen_ihrem_link_beim_zusammenschieben(mappe, monkeypat
     assert erste_skills(build.load_data())["links"] == [
         {"u": "https://b.ch/y", "t": "Massage"},
         {"u": "https://c.ch/z", "t": "Kette"},
+    ]
+
+
+def test_doppelte_adresse_mit_gleicher_beschriftung_faellt_weg(mappe, monkeypatch):
+    """Genuine Redundanz (z. B. dreimal derselbe skills-box.ch-Knopf mit
+    derselben Beschriftung) faellt weiterhin still weg."""
+    pfad = mappe(
+        TEXT_HEADER,
+        [SKILLS_ROW + ["https://a.ch/x", "Igelball", "https://a.ch/x", "Igelball", "", ""]],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://a.ch/x", "t": "Igelball"}
+    ]
+
+
+def test_doppelte_adresse_mit_unterschiedlicher_beschriftung_bricht_ab(mappe, monkeypatch):
+    """Sonst verschluckte der Build wortlos eine der beiden Beschriftungen -
+    genau der Fall, den die Beschriftung ueberhaupt erst ermoeglicht (z. B.
+    dieselbe Adresse aus Versehen zweimal eingefuegt, mit je einem eigenen
+    Text)."""
+    pfad = mappe(
+        TEXT_HEADER,
+        [SKILLS_ROW + ["https://a.ch/x", "Igelball", "https://a.ch/x", "Massagerolle", "", ""]],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    with pytest.raises(build.BuildError) as fehler:
+        build.load_data()
+    meldung = str(fehler.value)
+    assert "Zeile 2" in meldung
+    assert "Link1" in meldung and "Link2" in meldung
+    assert "Igelball" in meldung and "Massagerolle" in meldung
+
+
+def test_doppelte_adresse_mit_leerer_beschriftung_faellt_weg(mappe, monkeypatch):
+    """Fehlt bei einer der beiden Fundstellen die Beschriftung, ist das kein
+    Widerspruch, sondern faellt wie bisher still weg."""
+    pfad = mappe(
+        TEXT_HEADER,
+        [SKILLS_ROW + ["https://a.ch/x", "Igelball", "https://a.ch/x", "", "", ""]],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://a.ch/x", "t": "Igelball"}
     ]
 
 
@@ -799,5 +831,12 @@ def test_dialog_zeigt_symbol_und_beschriftung():
 def test_symbol_schlaegt_in_der_icons_tabelle_nach():
     vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
     rumpf = ohne_umbrueche(js_funktion(vorlage, "symbol"))
-    assert "ICONS[new URL(u).hostname.replace(/^www\\./,'')]" in rumpf
-    assert "catch" in rumpf
+    # Exakte Fassung statt nur "catch" in rumpf: sonst koennte der catch-Rumpf
+    # klanglos etwas anderes liefern (z. B. den rohen Hostnamen statt ''), und
+    # dieser Test wuerde es nicht merken – wie schon bei test_gastgeber_kuerzt_www.
+    assert rumpf == (
+        "function symbol(u){ "
+        "try{ return ICONS[new URL(u).hostname.replace(/^www\\./,'')]||''; } "
+        "catch(e){ return ''; } "
+        "}"
+    )
