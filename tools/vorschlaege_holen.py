@@ -599,20 +599,78 @@ def treffer_je_issue(treffer: list, uebernehmen: list) -> dict:
     return zuordnung
 
 
-def nachfragen(treffer: list, uebernehmen: list, eingabe=input) -> list:
+def skill_im_bestand(bestand: dict, titel: str):
+    """Sucht einen vorhandenen Skill ueber ALLE Stufen und Kategorien.
+
+    Bewusst nicht ueber Stufe und Kategorie aus dem Treffer: die beziehen sich
+    laut Prompt auf den EINGEREICHTEN Vorschlag, nicht auf den gefundenen
+    Bestandsskill. Wer danach suchte, faende oft nichts.
+    """
+    for stufe in bestand.values():
+        for kategorie in stufe.get("kategorien", []):
+            for skill in kategorie.get("skills", []):
+                if skill.get("t") == titel:
+                    return skill
+    return None
+
+
+def gegenueberstellung(neu: dict, alt, t: dict, nummer=None) -> str:
+    """Stellt den eingereichten und den vorhandenen Eintrag untereinander.
+
+    Untereinander, nicht nebeneinander: Beschreibungen sind zu lang fuer zwei
+    Spalten in einem Konsolenfenster, und umgebrochener Text laesst sich
+    schlechter vergleichen als zwei ganze Absaetze.
+
+    `nummer` (die Issue-Nummer) ist optional und rein kosmetisch: steht sie
+    dabei, kann der Mensch am Bildschirm einen Fehltreffer sofort dem
+    richtigen Issue zuordnen, statt nur zwei Titel vor sich zu haben.
+    """
+    wie_sicher = (
+        "SICHER dieselbe Handlung" if t.get("sicherheit") == "sicher"
+        else "unsicher – bitte selbst beurteilen"
+    )
+    kennung = f"Issue #{nummer}: " if nummer is not None else ""
+    zeilen = [
+        f'\n⚠ {kennung}Moegliche Dublette ({wie_sicher})',
+        f'   Einschaetzung: {t["begruendung"]}',
+        "",
+        f'   NEU eingereicht  ({t["stufe"]} / {t["kategorie"]}):',
+        f'     {neu.get("emoji", "")} {neu["titel"]}',
+        f'     {neu["beschreibung"]}',
+    ]
+    if neu.get("tipp"):
+        zeilen.append(f'     Tipp: {neu["tipp"]}')
+    zeilen.append("")
+    if alt is None:
+        zeilen.append(f'   VORHANDEN: „{t["aehnlich_zu"]}" – im Bestand nicht gefunden.')
+    else:
+        zeilen += [
+            "   VORHANDEN bereits:",
+            f'     {alt.get("e", "")} {alt.get("t", "")}',
+            f'     {alt.get("b", "")}',
+        ]
+        if alt.get("tip"):
+            zeilen.append(f'     {alt["tip"]}')
+    return "\n".join(zeilen)
+
+
+def nachfragen(treffer: list, uebernehmen: list, bestand: dict | None = None, eingabe=input) -> list:
     """Fragt je Treffer nach und liefert die Nummern der Issues, die
     uebersprungen werden sollen.
 
     Uebersprungen heisst: nicht eintragen, Issue bleibt offen. Es geht dabei
     nichts verloren – der naechste Lauf bietet den Vorschlag wieder an.
+
+    `bestand` ist optional (Default: kein Bestand), damit bestehende Aufrufe
+    ohne diesen Parameter weiterhin funktionieren – dann wird der vorhandene
+    Skill nicht gefunden und die Anzeige sagt das dazu.
     """
+    daten_je_issue = {i["number"]: d for i, d in uebernehmen}
     ueberspringen = []
     for nummer, t in treffer_je_issue(treffer, uebernehmen).items():
-        print(
-            f'\n⚠ „{t["titel"]}" aehnelt „{t["aehnlich_zu"]}" '
-            f'({t["stufe"]} / {t["kategorie"]})\n'
-            f'   Begruendung: {t["begruendung"]}'
-        )
+        neu = daten_je_issue.get(nummer, {})
+        alt = skill_im_bestand(bestand or {}, t.get("aehnlich_zu"))
+        print(gegenueberstellung(neu, alt, t, nummer))
         while True:
             try:
                 wahl = eingabe("   [ü]bernehmen  [w]eiter (ueberspringen)  ? ")
@@ -689,7 +747,7 @@ def main():
             # unbrauchbarer Treffer riss mit `TypeError: unhashable type` den
             # ganzen Uebernahmelauf mit. Die Pruefung ist eine Zutat, keine
             # Voraussetzung – aus diesem Block darf nichts entkommen.
-            raus = nachfragen(treffer, uebernehmen)
+            raus = nachfragen(treffer, uebernehmen, bestand)
             gruende = {
                 nummer: (
                     f'aehnelt vorhandenem Skill „{t["aehnlich_zu"]}" – beim '

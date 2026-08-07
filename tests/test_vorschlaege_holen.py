@@ -891,12 +891,15 @@ TREFFER = [{
     "titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
     "stufe": "Hoch", "kategorie": "Ablenkung",
     "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+    "sicherheit": "unsicher",
 }]
 
 
 def uebernehmen_liste():
     return [({"number": 7}, {"art": "neu", "stufe": "Hoch", "kategorie": "Ablenkung",
-                             "titel": "Lieblingslied auflegen"})]
+                             "titel": "Lieblingslied auflegen", "emoji": "🎵",
+                             "beschreibung": "Ein Lied aussuchen und nur darauf achten.",
+                             "tipp": ""})]
 
 
 def test_nachfrage_uebernehmen_laesst_den_vorschlag_drin(capsys):
@@ -941,7 +944,8 @@ def test_treffer_ohne_passendes_issue_wird_ignoriert():
 
 def _neu(nummer, titel, stufe="Hoch", kategorie="Ablenkung"):
     return ({"number": nummer},
-            {"art": "neu", "stufe": stufe, "kategorie": kategorie, "titel": titel})
+            {"art": "neu", "stufe": stufe, "kategorie": kategorie, "titel": titel,
+             "emoji": "🙂", "beschreibung": f"Beschreibung von {titel}.", "tipp": ""})
 
 
 def _aenderung(nummer, titel, stufe="Hoch", kategorie="Ablenkung"):
@@ -952,7 +956,8 @@ def _aenderung(nummer, titel, stufe="Hoch", kategorie="Ablenkung"):
 
 def _treffer(titel, stufe="Hoch", kategorie="Ablenkung"):
     return [{"titel": titel, "aehnlich_zu": "Musik hören", "stufe": stufe,
-             "kategorie": kategorie, "begruendung": "Dieselbe Handlung."}]
+             "kategorie": kategorie, "begruendung": "Dieselbe Handlung.",
+             "sicherheit": "unsicher"}]
 
 
 def test_nachfrage_trifft_nie_eine_aenderung():
@@ -1217,7 +1222,7 @@ def _duplikat_lauf(monkeypatch, issues, pruefe, aufrufe, eingabe=None):
     if eingabe is not None:
         echte = vh.nachfragen
         monkeypatch.setattr(
-            vh, "nachfragen", lambda t, u: echte(t, u, eingabe=eingabe)
+            vh, "nachfragen", lambda t, u, b: echte(t, u, b, eingabe=eingabe)
         )
 
 
@@ -1255,7 +1260,7 @@ def test_main_ueberlebt_einen_fehler_beim_verarbeiten_der_treffer(monkeypatch, c
         lambda neue, bestand, client: TREFFER, aufrufe,
     )
 
-    def platzt(treffer, uebernehmen):
+    def platzt(treffer, uebernehmen, bestand):
         raise RuntimeError("beim Verarbeiten geplatzt")
 
     monkeypatch.setattr(vh, "nachfragen", platzt)
@@ -1287,7 +1292,7 @@ def test_main_wirft_bei_gleichem_titel_die_aenderung_nicht_heraus(monkeypatch, c
         lambda neue, bestand, client: [{
             "titel": "Musik hören", "aehnlich_zu": "Musik hören",
             "stufe": "Hoch", "kategorie": "Ablenkung",
-            "begruendung": "Dieselbe Handlung.",
+            "begruendung": "Dieselbe Handlung.", "sicherheit": "unsicher",
         }],
         aufrufe,
         eingabe=lambda _: "w",
@@ -1301,3 +1306,50 @@ def test_main_wirft_bei_gleichem_titel_die_aenderung_nicht_heraus(monkeypatch, c
     ausgabe = capsys.readouterr().out
     assert "#1" in ausgabe, "das Issue des neuen Skills muss als abgelehnt erscheinen"
     assert "#2" not in ausgabe, "die Aenderung darf nicht abgelehnt werden"
+
+
+# ── Task 2: beide Eintraege im Volltext ──────────────────────────────────────
+
+BESTAND_ANZEIGE = {
+    "hoch": {"kategorien": [{"label": "Ablenkung", "skills": [
+        {"e": "🎧", "t": "Musik hören", "b": "Ein Lied auflegen und zuhoeren.",
+         "tip": "💡 Kopfhoerer", "von": "Max", "erg": ""},
+    ]}]},
+    "mittel": {"kategorien": []},
+    "tief": {"kategorien": []},
+}
+
+
+def test_skill_im_bestand_findet_ueber_alle_stufen():
+    gefunden = vh.skill_im_bestand(BESTAND_ANZEIGE, "Musik hören")
+    assert gefunden["b"] == "Ein Lied auflegen und zuhoeren."
+
+
+def test_skill_im_bestand_ohne_treffer_ist_none():
+    assert vh.skill_im_bestand(BESTAND_ANZEIGE, "Gibt es nicht") is None
+
+
+def test_gegenueberstellung_zeigt_beide_beschreibungen():
+    neu = {"emoji": "🎵", "titel": "Lieblingslied auflegen",
+           "beschreibung": "Ein Lied aussuchen und nur darauf achten.",
+           "tipp": "", "stufe": "Hoch", "kategorie": "Ablenkung"}
+    alt = vh.skill_im_bestand(BESTAND_ANZEIGE, "Musik hören")
+    t = {"titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
+         "stufe": "Hoch", "kategorie": "Ablenkung",
+         "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+         "sicherheit": "unsicher"}
+    text = vh.gegenueberstellung(neu, alt, t)
+    assert "Ein Lied aussuchen und nur darauf achten." in text
+    assert "Ein Lied auflegen und zuhoeren." in text, "der vorhandene Text fehlt"
+    assert "unsicher" in text.lower()
+    assert "Beide beschreiben gezieltes Musikhoeren." in text
+
+
+def test_gegenueberstellung_ohne_alten_eintrag_sagt_es():
+    neu = {"emoji": "🎵", "titel": "Neu", "beschreibung": "Text.", "tipp": "",
+           "stufe": "Hoch", "kategorie": "Ablenkung"}
+    t = {"titel": "Neu", "aehnlich_zu": "Verschwunden", "stufe": "Hoch",
+         "kategorie": "Ablenkung", "begruendung": "…", "sicherheit": "sicher"}
+    text = vh.gegenueberstellung(neu, None, t)
+    assert "Verschwunden" in text
+    assert "nicht gefunden" in text.lower()
