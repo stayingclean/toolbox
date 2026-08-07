@@ -768,13 +768,17 @@ def test_icons_landen_im_gerenderten_html(mappe, monkeypatch, tmp_path):
 def test_dialog_zeigt_symbol_und_beschriftung():
     vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
     block = ohne_umbrueche(js_funktion(vorlage, "openModal"))
-    # Ohne Beschriftung faellt der Knopf auf den Hostnamen zurueck.
+    # Ohne Beschriftung fällt der Knopf auf den Hostnamen zurück.
     assert "l.t||gastgeber(l.u)" in block
-    # Die Domain steht nicht mehr im Text - der title haelt die Zusicherung
+    # Die Domain steht nicht mehr im Text - der title hält die Zusicherung
     # aufrecht, dass man das Ziel vor dem Klick sieht.
     assert "a.title=l.u;" in block
     assert "a.rel='noopener noreferrer nofollow ugc';" in block
-    # Symbol ist Schmuck, die Beschriftung traegt die Bedeutung.
+    # title muss vor der Icon-Verzweigung gesetzt werden, sonst bekäme nur
+    # ein Link mit Icon einen title und die Zusicherung würde stillschweigend
+    # löchrig.
+    assert block.index("a.title=l.u;") < block.index("if(bild)")
+    # Symbol ist Schmuck, die Beschriftung trägt die Bedeutung.
     assert "img.alt='';" in block
 
 

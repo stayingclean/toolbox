@@ -438,8 +438,8 @@ function gastgeber(u){
   catch(e){ return u; }
 }
 
-/* Das Symbol kommt aus der beim Bauen eingebetteten Tabelle, nie vom Haendler:
-   ein Bild von coop.ch wuerde beim Oeffnen dieses Dialogs an Coop melden, dass
+/* Das Symbol kommt aus der beim Bauen eingebetteten Tabelle, nie vom Händler:
+   ein Bild von coop.ch würde beim Öffnen dieses Dialogs an Coop melden, dass
    jemand genau diesen Skill angeschaut hat. */
 function symbol(u){
   try{ return ICONS[new URL(u).hostname.replace(/^www\./,'')]||''; }
@@ -464,7 +464,7 @@ function openModal(s){
     a.href=l.u;
     a.target='_blank';
     a.rel='noopener noreferrer nofollow ugc';
-    /* Die Domain steht nicht mehr im Text – der title haelt die Zusicherung
+    /* Die Domain steht nicht mehr im Text – der title hält die Zusicherung
        aufrecht, dass man vor dem Klick sieht, wo man landet. */
     a.title=l.u;
     var bild=symbol(l.u);
