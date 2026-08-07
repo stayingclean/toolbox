@@ -70,7 +70,7 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
 `docs/skillsliste.html` wird **generiert** — nicht direkt bearbeiten.
 
 1. Inhalte in **`skills_daten.xlsx`** ändern (Blätter `Skills`, `Stufen`, `Kategorien`).
-   Das Blatt `Skills` hat acht Spalten; `Von` und `Ergaenzt` nennen die beiden
+   Das Blatt `Skills` hat elf Spalten; `Von` und `Ergaenzt` nennen die beiden
    Beitragenden und dürfen leer bleiben. `build.py` liest sie **tolerant** —
    fehlen die Spalten ganz, baut eine ältere Mappe weiter (`optional_header`).
 

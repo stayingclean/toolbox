@@ -1,9 +1,15 @@
 import json
 import re
+import sys
 
+import openpyxl
 import pytest
 
 import build
+
+sys.path.insert(0, str(build.ROOT / "tools"))
+
+import seed_excel  # noqa: E402
 
 SKILLS_HEADER = ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"]
 SKILLS_ROW = ["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen", "Kopfhörer"]
@@ -535,3 +541,67 @@ def test_seed_excel_kennt_die_linkspalten():
     quelle = (build.ROOT / "tools" / "seed_excel.py").read_text(encoding="utf-8")
     assert '"Link1", "Link2", "Link3"' in quelle
     assert 's.get("links"' in quelle
+
+
+def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
+    """Fuehrt seed_excel.main() wirklich aus (statt nur den Quelltext zu
+    grep-en) und prueft die geschriebenen Zellen fuer 0, 1, 2 und 3 Links.
+    Deckt genau das ab, was der Quelltext-Test oben nicht sehen wuerde: eine
+    falsche Slice-Grenze, eine falsch herum aufgefuellte Liste oder vertauschte
+    Spalten wuerden hier auffliegen, dort nicht.
+    """
+    synthetisch = {
+        "hoch": {
+            "kategorien": [
+                {
+                    "label": "Testkategorie",
+                    "skills": [
+                        {"e": "🎧", "t": "Ohne Link", "b": "b", "links": []},
+                        {"e": "🎧", "t": "Ein Link", "b": "b",
+                         "links": ["https://a.ch"]},
+                        {"e": "🎧", "t": "Zwei Links", "b": "b",
+                         "links": ["https://a.ch", "https://b.ch"]},
+                        {"e": "🎧", "t": "Drei Links", "b": "b",
+                         "links": ["https://a.ch", "https://b.ch", "https://c.ch"]},
+                    ],
+                }
+            ]
+        }
+    }
+
+    # Beweis, dass die Umleitung wirklich greift, bevor main() ueberhaupt
+    # laeuft: main() liest OUT als Modul-Global bei jedem Aufruf frisch, ein
+    # monkeypatch.setattr auf das Modulattribut wirkt darum zuverlaessig (im
+    # Unterschied zu einem Default-Argument, das beim Definieren der Funktion
+    # gebunden wuerde). Die echte Mappe bleibt Beweis-Byte-fuer-Byte unberuehrt.
+    echte_mappe = seed_excel.ROOT / "skills_daten.xlsx"
+    vorher = echte_mappe.read_bytes()
+    ziel = tmp_path / "skills_daten.xlsx"
+    monkeypatch.setattr(seed_excel, "load_data", lambda: synthetisch)
+    monkeypatch.setattr(seed_excel, "OUT", ziel)
+
+    seed_excel.main()
+
+    assert echte_mappe.read_bytes() == vorher, "seed_excel hat die echte Mappe angefasst"
+    assert ziel.exists()
+
+    wb = openpyxl.load_workbook(ziel)
+    ws = wb["Skills"]
+    header = [c.value for c in ws[1]]
+    assert header == ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp",
+                       "Von", "Ergaenzt", "Link1", "Link2", "Link3"]
+
+    zeilen = {row[3].value: row for row in ws.iter_rows(min_row=2)}  # Titel -> Zeile
+
+    # openpyxl schreibt eine leere Zeichenkette nicht als "" in die Zelle,
+    # sondern laesst sie leer: beim erneuten Oeffnen liest eine so gespeicherte
+    # Zelle als None zurueck, nicht als "". Darum wird unten gegen None
+    # geprueft, nicht gegen "".
+    def links_spalten(titel):
+        zeile = zeilen[titel]
+        return [zeile[8].value, zeile[9].value, zeile[10].value]  # Link1..3
+
+    assert links_spalten("Ohne Link") == [None, None, None]
+    assert links_spalten("Ein Link") == ["https://a.ch", None, None]
+    assert links_spalten("Zwei Links") == ["https://a.ch", "https://b.ch", None]
+    assert links_spalten("Drei Links") == ["https://a.ch", "https://b.ch", "https://c.ch"]
