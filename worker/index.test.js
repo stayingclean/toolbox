@@ -141,7 +141,7 @@ test("Bezugsquellen stehen in der Tabelle eines neuen Skills", () => {
     titel: "Musik", beschreibung: "Ein Lied", tipp: "", von: "",
     links: ["https://a.ch/x", "https://b.ch/y"],
   });
-  assert.match(rumpf, /\| Bezugsquellen \| https:\/\/a\.ch\/x<br>https:\/\/b\.ch\/y \|/);
+  assert.match(rumpf, /\| Bezugsquellen \| `https:\/\/a\.ch\/x`<br>`https:\/\/b\.ch\/y` \|/);
 });
 
 test("ohne Bezugsquellen steht ein Strich", () => {
@@ -159,7 +159,7 @@ test("die Aenderung stellt alte und neue Quellen nebeneinander", () => {
       links: ["https://neu.ch/x"] },
     { e: "🎧", t: "Musik", b: "Alt", tip: "", links: ["https://alt.ch/x"] }
   );
-  assert.match(rumpf, /\| Bezugsquellen \| https:\/\/alt\.ch\/x \| https:\/\/neu\.ch\/x \|/);
+  assert.match(rumpf, /\| Bezugsquellen \| `https:\/\/alt\.ch\/x` \| `https:\/\/neu\.ch\/x` \|/);
 });
 
 test("ein alter Datenstand ohne links bricht nicht", () => {

@@ -21,8 +21,10 @@ export const LINK_MAX_LAENGE = 300;
 
 // Linkverkuerzer verbergen das Ziel vor der Freigabe – die Pruefung im Issue
 // waere wertlos – und ergaeben als Knopfaufschrift nur "bit.ly" statt eines
-// erkennbaren Haendlers. Dieselbe Liste steht in build.py und in
-// tools/vorschlaege_holen.py.
+// erkennbaren Haendlers. Dieselbe Liste steht in build.py; tools/vorschlaege_holen.py
+// importiert sie von dort und kann darum nicht abweichen. Nur diese
+// JavaScript-Fassung muss von Hand nachgezogen werden – wird das vergessen,
+// laesst der Worker einen Link durch, den der Build spaeter ablehnt.
 const VERKUERZER = new Set([
   "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd",
   "buff.ly", "rb.gy", "cutt.ly", "shorturl.at", "s.id", "lnkd.in",
@@ -152,6 +154,13 @@ export function pruefeLinks(rohe) {
         fehler: `Zu lang: Bezugsquelle (max. ${LINK_MAX_LAENGE} Zeichen).`,
       };
     }
+    // Die Bezugsquellen-Spalte ist die einzige, die Markdown-Metazeichen tragen
+    // kann – jedes andere Feld sperrt bereits "http", "<" und ">". Ein Backtick
+    // im normalisierten href koennte im Issue-Rumpf Inline-Code oeffnen und die
+    // Tabellenzelle verlassen, die die betreuende Person vor der Freigabe sieht.
+    if (zerlegt.href.includes("`")) {
+      return { ok: false, fehler: "Bezugsquelle darf kein Backtick enthalten." };
+    }
     if (zerlegt.protocol !== "https:") {
       return { ok: false, fehler: "Bezugsquelle muss mit https:// beginnen." };
     }
@@ -164,7 +173,11 @@ export function pruefeLinks(rohe) {
     if (zerlegt.port) {
       return { ok: false, fehler: "Bezugsquelle darf keine Portnummer enthalten." };
     }
-    const host = zerlegt.hostname.replace(/\.+$/, "");
+    // Fuehrende UND abschliessende Punkte weg: build.pruefe_link (.strip("."))
+    // sieht "bit.ly" auch bei ".bit.ly" – ohne dieselbe Behandlung hier liesse
+    // sich ein Linkverkuerzer am Worker vorbeischleusen, den der Build danach
+    // trotzdem ablehnt, und die Freigabe steckte fest.
+    const host = zerlegt.hostname.replace(/^\.+|\.+$/g, "");
     // Eckige Klammer: so schreibt URL eine IPv6-Adresse.
     if (host.startsWith("[") || IPV4.test(host)) {
       return { ok: false, fehler: "Bezugsquelle darf keine IP-Adresse sein." };

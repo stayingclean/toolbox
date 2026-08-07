@@ -64,10 +64,11 @@ def sortier_schluessel(titel):
 
 
 # ── Bezugsquellen ────────────────────────────────────────────
-# Dieselben Regeln stehen in worker/validate.js (pruefeLinks) und in
-# tools/vorschlaege_holen.py. Wer hier etwas ändert, muss dort nachziehen —
-# so wie bei GRENZEN. Ein Test in tests/test_vorschlaege_holen.py hält die
-# beiden Python-Fassungen zusammen; die JavaScript-Fassung hält niemand.
+# Dieselben Regeln stehen hier und in worker/validate.js (pruefeLinks).
+# tools/vorschlaege_holen.py importiert sie von hier und kann darum nicht
+# abweichen. Nur die JavaScript-Fassung muss von Hand nachgezogen werden —
+# wird das vergessen, lässt der Worker einen Link durch, den der Build
+# später ablehnt, und der Vorschlag steckt in der Excel fest.
 LINK_SPALTEN = ["Link1", "Link2", "Link3"]
 LINK_MAX_LAENGE = 300
 

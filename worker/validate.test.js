@@ -299,7 +299,7 @@ test("mehr als drei Bezugsquellen werden abgelehnt", () => {
     "https://a.ch/1", "https://b.ch/2", "https://c.ch/3", "https://d.ch/4",
   ]);
   assert.equal(ergebnis.ok, false);
-  assert.match(ergebnis.fehler, /3/);
+  assert.equal(ergebnis.fehler, `Höchstens ${MAX_LINKS} Bezugsquellen.`);
 });
 
 for (const [url, muster] of [
@@ -339,11 +339,34 @@ test("normalisierte Adresse (mit Unicode) wird auf Laenge geprueft", () => {
   assert.match(ergebnis.fehler, /lang/);
 });
 
+test("ein Backtick in der Bezugsquelle wird abgelehnt", () => {
+  // Die Bezugsquelle ist die einzige Spalte im Issue, die ueberhaupt
+  // Markdown-Metazeichen tragen kann (jedes Textfeld sperrt schon "http").
+  // Ein Backtick im href koennte im Issue-Rumpf Inline-Code oeffnen und aus
+  // der Tabellenzelle ausbrechen, die die betreuende Person vor der Freigabe
+  // sieht. Im Query-Teil normalisiert URL Backticks nicht weg (anders als im
+  // Pfad), darum muss die Pruefung sie hier selbst abfangen.
+  const ergebnis = pruefeLinks(["https://shop.ch/x?q=`a`"]);
+  assert.equal(ergebnis.ok, false);
+  assert.match(ergebnis.fehler, /Backtick/);
+});
+
 test("spitze Klammern werden beim Normalisieren codiert", () => {
   // Sie duerfen den Kommentarblock im Issue nicht beenden koennen.
   const ergebnis = pruefeLinks(["https://a.ch/a-->b"]);
   assert.equal(ergebnis.ok, true);
   assert.equal(ergebnis.links[0].includes(">"), false);
+});
+
+test("ein fuehrender Punkt vor dem Hostnamen schuetzt einen Verkuerzer nicht", () => {
+  // build.pruefe_link entfernt fuehrende UND abschliessende Punkte
+  // (.strip(".")) und sieht ".bit.ly" als "bit.ly". Wuerde der Worker nur
+  // abschliessende Punkte entfernen, liesse er ".bit.ly" durch – die
+  // Freigabe schiene in Ordnung, und der Build lehnte den Vorschlag danach
+  // ab: die zwei Schichten muessen hier uebereinstimmen.
+  const ergebnis = pruefeLinks(["https://.bit.ly/x"]);
+  assert.equal(ergebnis.ok, false);
+  assert.match(ergebnis.fehler, /Linkverk/);
 });
 
 test("eine Domain die bit.ly enthaelt ist kein Verkürzungsdienst", () => {

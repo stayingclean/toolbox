@@ -77,9 +77,18 @@ export function zelle(wert) {
 /**
  * Bezugsquellen fuer eine Tabellenzelle. Undefiniert kommt vor: ein
  * zwischengespeicherter Datenstand von vor dieser Neuerung kennt das Feld nicht.
+ *
+ * Jeder Link steht in Inline-Code (Backticks): die Bezugsquelle ist die
+ * einzige Spalte, die Markdown-Metazeichen wie `[`, `]`, `(` oder `)` tragen
+ * kann (jedes andere Feld sperrt bereits "http"), und Inline-Code verhindert,
+ * dass Markdown sie als Link oder Formatierung interpretiert. pruefeLinks
+ * weist einen Backtick im Link selbst bereits zurueck, sonst liesse sich
+ * damit aus dem Inline-Code ausbrechen.
  */
 export function quellen(liste) {
-  return liste && liste.length ? liste.map(zelle).join("<br>") : "—";
+  return liste && liste.length
+    ? liste.map((url) => "`" + zelle(url) + "`").join("<br>")
+    : "—";
 }
 
 /**
@@ -94,7 +103,15 @@ export function quellen(liste) {
  *
  * Der Abruf ist ungefaehrlich, weil pruefeLinks vorher nur https ohne Port und
  * ohne IP-Adresse durchgelassen hat – auf interne Adressen laesst sich der
- * Worker damit nicht richten.
+ * Worker damit nicht richten. Das gilt aber nur fuer den ERSTEN Hop: folgt
+ * ein Shop mit "redirect: follow" auf eine interne oder sonst gesperrte
+ * Adresse weiter, prueft niemand mehr nach. Und die Zeile ist mit der
+ * urspruenglich eingereichten Adresse beschriftet, obwohl Status und "ok" vom
+ * LETZTEN Hop stammen – nach einer Weiterleitung passen Beschriftung und
+ * Befund nicht mehr zwingend zur selben URL. Bewusst trotzdem "follow" statt
+ * "manual": mit "manual" wuerde jede gewoehnliche Shop-Kanonisierung (z. B.
+ * ohne www. auf mit www.) als "keine Aussage" erscheinen, und die Zeile waere
+ * fuer die allermeisten Shops wertlos.
  */
 export async function linkBefund(url) {
   try {
