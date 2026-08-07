@@ -93,6 +93,17 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    neu — stünden `Text1`–`Text3` dort, würde jede Übernahme die Beschriftung mit
    `""` überschreiben, und das Leeren weiter oben wäre toter Code.
 
+   **Spalten von Hand in die Mappe einfügen: `insert_cols()` allein genügt nicht.**
+   openpyxl verschiebt dabei nur die Zellwerte, nicht die an Koordinaten
+   gebundenen Zusatzangaben — Hyperlinks, verbundene Zellen, Gültigkeitsregeln,
+   benannte Bereiche. Beim Anlegen von `Text1`–`Text3` blieben so alte
+   Hyperlink-Ziele auf den neuen, sichtbar leeren Zellen liegen und tauchten beim
+   nächsten Laden im Normalmodus als Werte wieder auf — genau der Modus, den
+   `tools/vorschlaege_holen.py` verwendet. Im `read_only`-Modus war nichts davon
+   zu sehen. Wer die Mappe wieder umbaut: Hyperlinks nach dem Einfügen entfernen,
+   Filterbereich und Dropdown neu setzen, und **in beiden Lademodi gegenprüfen** —
+   stimmen sie nicht überein, ist etwas liegengeblieben.
+
    **Die URL-Regeln stehen an zwei Stellen:**
 
    - `build.py` → `pruefe_link`, `VERKUERZER`, `LINK_MAX_LAENGE`, `LINK_SPALTEN`.
