@@ -74,6 +74,95 @@ export function zelle(wert) {
   return String(wert).replace(/\|/g, "\\|").replace(/\r?\n/g, "<br>");
 }
 
+/**
+ * Bezugsquellen fuer eine Tabellenzelle. Undefiniert kommt vor: ein
+ * zwischengespeicherter Datenstand von vor dieser Neuerung kennt das Feld nicht.
+ *
+ * Jeder Link steht in Inline-Code (Backticks): die Adresse kann Markdown-
+ * Metazeichen wie `[`, `]`, `(` oder `)` tragen, und Inline-Code verhindert,
+ * dass Markdown sie als Link oder Formatierung interpretiert. pruefeLinks
+ * weist einen Backtick im Link selbst bereits zurueck, sonst liesse sich
+ * damit aus dem Inline-Code ausbrechen. Seit der Beschriftung ist die Adresse
+ * nicht mehr die einzige Spalte mit moeglichen Markdown-Metazeichen: das
+ * Label (eintrag.t) kann sie ebenfalls tragen (die Excel-Pruefung sperrt dort
+ * nur Laenge, spitze Klammern und "http") und steht bewusst NICHT in
+ * Inline-Code – nur zelle() maskiert dort `|` und Zeilenumbrueche.
+ */
+export function quellen(liste) {
+  if (!liste || !liste.length) {
+    return "—";
+  }
+  // Der Datenstand wird 300 Sekunden zwischengespeichert: direkt nach einer
+  // Veroeffentlichung kann hier noch die alte Form (blosse Zeichenketten)
+  // ankommen. Darum beide Formen lesen.
+  return liste
+    .map((eintrag) => {
+      const url = typeof eintrag === "string" ? eintrag : eintrag.u;
+      const text = typeof eintrag === "string" ? "" : eintrag.t;
+      return "`" + zelle(url) + "`" + (text ? " " + zelle(text) : "");
+    })
+    .join("<br>");
+}
+
+/**
+ * Ruft eine Bezugsquelle einmal ab und fasst das Ergebnis in einer Zeile.
+ *
+ * Lehnt NIE ab: ein Shop, der Cloudflare-Adressen aussperrt, darf keine
+ * ehrliche Einreichung blockieren – der Link funktioniert im Browser tadellos,
+ * und die einreichende Person haette keine Chance zu verstehen, was von ihr
+ * verlangt wird. Die Zeile ist Entscheidungshilfe fuer die Freigabe, nicht mehr.
+ *
+ * Darum gilt nur 404/410 als Befund; 403, 429 und 5xx heissen "keine Aussage".
+ *
+ * Der Abruf ist ungefaehrlich, weil pruefeLinks vorher nur https ohne Port und
+ * ohne IP-Adresse durchgelassen hat – auf interne Adressen laesst sich der
+ * Worker damit nicht richten. Das gilt aber nur fuer den ERSTEN Hop: folgt
+ * ein Shop mit "redirect: follow" auf eine interne oder sonst gesperrte
+ * Adresse weiter, prueft niemand mehr nach. Und die Zeile ist mit der
+ * urspruenglich eingereichten Adresse beschriftet, obwohl Status und "ok" vom
+ * LETZTEN Hop stammen – nach einer Weiterleitung passen Beschriftung und
+ * Befund nicht mehr zwingend zur selben URL. Bewusst trotzdem "follow" statt
+ * "manual": mit "manual" wuerde jede gewoehnliche Shop-Kanonisierung (z. B.
+ * ohne www. auf mit www.) als "keine Aussage" erscheinen, und die Zeile waere
+ * fuer die allermeisten Shops wertlos.
+ */
+export async function linkBefund(url) {
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: { "user-agent": "toolbox-linkpruefung" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.status === 404 || res.status === 410) {
+      return `⚠ ${url} — ${res.status}, Link zeigt ins Leere`;
+    }
+    if (res.ok) {
+      return `✓ ${url} — ${res.status} OK`;
+    }
+    return `· ${url} — ${res.status}, keine Aussage`;
+  } catch {
+    return `· ${url} — nicht erreichbar, keine Aussage`;
+  }
+}
+
+/**
+ * Haengt die Befunde an den Rumpf – hinter den Kommentarblock, damit dieser
+ * der einzige bleibt (parse_body in vorschlaege_holen.py verwirft ein Issue
+ * mit mehr als einem Block).
+ */
+export function mitBefunden(rumpf, befunde) {
+  if (!befunde.length) {
+    return rumpf;
+  }
+  return (
+    rumpf +
+    "\n**Erreichbarkeit beim Einreichen**\n\n```\n" +
+    befunde.join("\n") +
+    "\n```\n"
+  );
+}
+
 export function issueRumpf(w) {
   const zeilen = [
     "| Feld | Wert |",
@@ -85,6 +174,7 @@ export function issueRumpf(w) {
     `| Beschreibung | ${zelle(w.beschreibung)} |`,
     `| Tipp | ${w.tipp ? zelle(w.tipp) : "—"} |`,
     `| Name | ${w.von ? zelle(w.von) : "— (anonym)"} |`,
+    `| Bezugsquellen | ${quellen(w.links)} |`,
   ];
   // Der JSON-Block bleibt unveraendert – er traegt die Wahrheit.
   return (
@@ -108,6 +198,7 @@ export function issueRumpfAenderung(w, alt) {
     `| Titel | ${zelle(alt.t)} | ${zelle(w.titel)} |`,
     `| Beschreibung | ${zelle(alt.b)} | ${zelle(w.beschreibung)} |`,
     `| Tipp | ${alt.tip ? zelle(alt.tip) : "—"} | ${w.tipp ? zelle(w.tipp) : "—"} |`,
+    `| Bezugsquellen | ${quellen(alt.links)} | ${quellen(w.links)} |`,
   ];
   const kopf =
     `**Stufe:** ${zelle(w.stufe)} · **Kategorie:** ${zelle(w.kategorie)}` +
@@ -206,6 +297,11 @@ export default {
       return antwort({ fehler: geprueft.fehler }, 400);
     }
 
+    const quellenListe = geprueft.wert.links || [];
+    const befunde = quellenListe.length
+      ? await Promise.all(quellenListe.map(linkBefund))
+      : [];
+
     const issueRes = await fetch(
       `https://api.github.com/repos/${umgebung.REPO}/issues`,
       {
@@ -220,9 +316,12 @@ export default {
           title: istAenderung
             ? `[Änderung] ${geprueft.wert.original}`
             : geprueft.wert.titel,
-          body: istAenderung
-            ? issueRumpfAenderung(geprueft.wert, altenSkillFinden(daten, geprueft.wert))
-            : issueRumpf(geprueft.wert),
+          body: mitBefunden(
+            istAenderung
+              ? issueRumpfAenderung(geprueft.wert, altenSkillFinden(daten, geprueft.wert))
+              : issueRumpf(geprueft.wert),
+            befunde
+          ),
         }),
       }
     );

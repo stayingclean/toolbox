@@ -70,14 +70,90 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
 `docs/skillsliste.html` wird **generiert** — nicht direkt bearbeiten.
 
 1. Inhalte in **`skills_daten.xlsx`** ändern (Blätter `Skills`, `Stufen`, `Kategorien`).
-   Das Blatt `Skills` hat acht Spalten; `Von` und `Ergaenzt` nennen die beiden
+   Das Blatt `Skills` hat vierzehn Spalten; `Von` und `Ergaenzt` nennen die beiden
    Beitragenden und dürfen leer bleiben. `build.py` liest sie **tolerant** —
    fehlen die Spalten ganz, baut eine ältere Mappe weiter (`optional_header`).
+
+   Drei weitere Spalten `Link1`, `Link2`, `Link3` nehmen **Bezugsquellen** auf —
+   reine `https`-Adressen, jede darf leer bleiben, Lücken werden beim Bauen
+   zusammengeschoben. Im Detail-Dialog werden daraus Knöpfe; ohne Link erscheint
+   der Bereich gar nicht.
+
+   Neben jeder Link-Spalte steht eine **`Text*`-Spalte** mit der Beschriftung des
+   Knopfes (höchstens 30 Zeichen, ohne `http`). Bleibt sie leer, zeigt der Knopf
+   den Hostnamen. Die Spaltenzahl im Blatt `Skills` ist damit **vierzehn**.
+
+   **Die Beschriftung pflegt nur die Betreuung.** Das Formular sendet ausschliesslich
+   Adressen — ohne Domain im Knopftext fiele eine irreführende Beschriftung kaum auf.
+
+   **Wechselt bei einer Übernahme die Adresse, wird ihre Beschriftung geleert**
+   (`tools/vorschlaege_holen.py`, `zeile_ersetzen`). Sonst beschriebe sie ein anderes
+   Produkt, und das sähe niemand. Die Text-Spalten fehlen bewusst in
+   `SPALTEN_AENDERUNG`: die Liste schreibt bei jeder Übernahme jede ihrer Spalten
+   neu — stünden `Text1`–`Text3` dort, würde jede Übernahme die Beschriftung mit
+   `""` überschreiben, und das Leeren weiter oben wäre toter Code.
+
+   **Spalten von Hand in die Mappe einfügen: `insert_cols()` allein genügt nicht.**
+   openpyxl verschiebt dabei nur die Zellwerte, nicht die an Koordinaten
+   gebundenen Zusatzangaben — Hyperlinks, verbundene Zellen, Gültigkeitsregeln,
+   benannte Bereiche. Beim Anlegen von `Text1`–`Text3` blieben so alte
+   Hyperlink-Ziele auf den neuen, sichtbar leeren Zellen liegen und tauchten beim
+   nächsten Laden im Normalmodus als Werte wieder auf — genau der Modus, den
+   `tools/vorschlaege_holen.py` verwendet. Im `read_only`-Modus war nichts davon
+   zu sehen. Wer die Mappe wieder umbaut: Hyperlinks nach dem Einfügen entfernen,
+   Filterbereich und Dropdown neu setzen, und **in beiden Lademodi gegenprüfen** —
+   stimmen sie nicht überein, ist etwas liegengeblieben.
+
+   **Die URL-Regeln stehen an zwei Stellen:**
+
+   - `build.py` → `pruefe_link`, `VERKUERZER`, `LINK_MAX_LAENGE`, `LINK_SPALTEN`.
+     `tools/vorschlaege_holen.py` **importiert** sie von dort — bewusst keine
+     Kopie, anders als bei `GRENZEN` (das sind vier Zeilen Daten, dies ist Logik).
+   - `worker/validate.js` → `pruefeLinks`, `VERKUERZER`, `LINK_MAX_LAENGE`,
+     `MAX_LINKS`.
+
+   Die JavaScript-Fassung hält **niemand** mit der Python-Seite zusammen — wird
+   sie beim Ändern vergessen, lässt der Worker etwas durch, das der Build später
+   ablehnt, und der Vorschlag steckt in der Excel fest.
+
+   **Die `http`-Sperre im Worker gilt weiterhin für Titel, Beschreibung, Tipp und
+   Name.** Nur das Link-Feld ist ausgenommen. Diese Sperre ist die Spam-Abwehr des
+   Formulars — sie darf nicht „vereinheitlicht" werden.
+
+   **Die Höchstzahl drei steht an vier Stellen**, wie schon bei den Stufen-Namen
+   oben:
+
+   - `build.py` → `LINK_SPALTEN` (drei Einträge)
+   - `worker/validate.js` → `MAX_LINKS`
+   - `template-vorschlag.html` → `var MAX_LINKS = 3;`
+   - der sichtbare Hinweis „(freiwillig, höchstens 3)" in derselben Datei
+
+   Auch hier gibt es keine Sperre, die ein Auseinanderlaufen meldet.
 2. **`build.bat`** doppelklicken (bzw. `uv run build.py`) → erzeugt `docs/skillsliste.html`
    aus `template.html` + Excel.
 3. Das Layout/Design steckt in `template.html` (nur die Datenzeile ist ein Platzhalter).
 4. `tools/seed_excel.py` erzeugt die Excel reproduzierbar neu aus `docs/skillsliste.html`
    (nur Erst-Einrichtung/Reset).
+
+### Symbole der Händler
+
+`assets/favicons/<hostname>.png` (32 × 32, Hostname ohne `www.`). `build.py`
+bettet sie als `data:`-URI ein — **einmal je Hostname** in der Tabelle `ICONS`,
+nicht je Link: 49 der heutigen Links zeigen auf denselben Shop.
+
+**Fehlt eine Datei, gibt es kein Symbol und der Build läuft weiter.** Diese
+Eigenschaft muss jeder Umbau erhalten: sonst legte eine Bezugsquelle bei einem
+unbekannten Händler die ganze Website lahm.
+
+**Die Symbole werden nie vom Händler geladen.** Ein `<img src="https://coop.ch/…">`
+meldete beim Öffnen eines Skill-Dialogs an Coop, dass jemand genau diesen Skill
+angeschaut hat — ohne Klick. Neues Symbol holen: `uv run tools/favicon_holen.py <domain>`.
+
+**Sechs der sieben heutigen Symbole liegen bereits vor; `lidl.ch` blockiert den
+automatischen Abruf.** `assets/favicons/lidl.ch.png` fehlt darum und muss von
+Hand abgelegt werden — `favicon_holen.py` gibt beim Scheitern die Anleitung
+dazu aus. Der Build läuft unverändert durch, der betroffene Knopf zeigt bis
+dahin nur den Hostnamen.
 
 **Die Zeilenfolge in der Excel bestimmt die Anzeige NICHT (mehr):** `build.py`
 sortiert die Skills innerhalb jeder Kategorie alphabetisch nach Titel

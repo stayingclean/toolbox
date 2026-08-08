@@ -19,7 +19,21 @@
       "b": "Der intensive Geruch aktiviert das Nervensystem direkt und bricht Trance- oder Schockzustände schnell auf.",
       "tip": "💡 Tigerbalm ist handlicher und weniger aggressiv als reines Ammoniak.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Tiger+Balm",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/ammola-riechstaebchen",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=tiger%2Bbalm",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "✨",
@@ -27,7 +41,13 @@
       "b": "Das Kribbeln des Brausepulvers auf der Zunge ist ein spielerischer, aber wirksamer Sinnesreiz, der Craving-Schleifen unterbricht.",
       "tip": "💡 Bitterstoffe (z. B. Angostura) haben eine beruhigende Wirkung auf das Verdauungssystem.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Brause",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🌶️",
@@ -35,7 +55,21 @@
       "b": "Das intensive Brennen der Chilischote aktiviert starke Schmerzrezeptoren und überlagert den Suchtdruck vollständig.",
       "tip": "💡 Einfach ein kleines Stück abbeissen und kurz im Mund lassen. 15 – 30 Sekunden genügen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.denner.ch/de/search?q=chili",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=peperoncini",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=peperoncini",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🌸",
@@ -43,7 +77,39 @@
       "b": "Intensive Gerüche aktivieren das limbische System direkt und können emotionale Zustände rasch verändern.",
       "tip": "💡 Pfefferminze und Zitrus wirken aktivierend, Lavendel beruhigend. Mehrere Varianten bereithalten.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Riechstift",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=%C3%A4therisches+%C3%B6l",
+        "t": ""
+       }
+      ]
+     },
+     {
+      "e": "🍋",
+      "t": "Extrem saures Bonbon",
+      "b": "Starke Säure reizt andere Rezeptoren als Schärfe und erzeugt einen ebenso überwältigenden Sinnesreiz — hilfreich, wenn Capsaicin nicht wirkt oder den Magen belastet.",
+      "tip": "💡 Nur ein Stück. Danach Wasser trinken und mit dem Zähneputzen 30 Minuten warten — Säure weicht den Zahnschmelz auf.",
+      "von": "skills-box",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Toxic+Waste",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/death-balls-todesmutig-sauere-apfel-limette",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=saure+bonbons",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🍋",
@@ -51,7 +117,21 @@
       "b": "Das intensive Sauerstoffgefühl beim Zitronenbeissen oder -riechen aktiviert mehrere Sinne gleichzeitig und bricht das Grubeln auf.",
       "tip": "💡 Zitrone in Scheiben schneiden und direkt reinbeissen — oder den Saft auf die Zunge träufeln.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.lidl.ch/q/de-CH/search?q=zitronen",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=zitronen",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=zitronen",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🍨",
@@ -59,7 +139,43 @@
       "b": "Eiskalte Temperatur plus Geschmack ergibt einen doppelten Sinnesreiz. Das schnelle Essen erhöht die Körperaktivität.",
       "tip": "💡 Auf Vorrat im Tiefkühler halten. Wirkt besonders gut als Belohnungsritual nach einer überstandenen Krise.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.aldi-suisse.ch/de/ergebnisse?q=glace",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=glace",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=glace",
+        "t": ""
+       }
+      ]
+     },
+     {
+      "e": "✊",
+      "t": "Handmuskeln anspannen",
+      "b": "Isometrische Anspannung über die Griffkraft baut Anspannung körperlich ab, ohne dass man aufstehen oder den Raum verlassen muss.",
+      "tip": "💡 10 Sekunden maximal drücken, 10 Sekunden lösen, mehrfach wiederholen. Die Entspannungsphase ist der Wirkfaktor, nicht die Anspannung.",
+      "von": "skills-box",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Hand+Grip",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/flexbar-1",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/wrist-ball",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🧊",
@@ -67,7 +183,17 @@
       "b": "Kaltes Wasser aktiviert den Vagusnerv und löst eine parasympathische Reaktion aus, die den Körper aus dem Hochalarm holt.",
       "tip": "💡 Schon 30 Sekunden kaltes Wasser im Gesicht oder am Handgelenk zeigen Wirkung.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
+     },
+     {
+      "e": "📄",
+      "t": "Papier zerreissen",
+      "b": "Zerreissen kanalisiert den destruktiven Impuls in eine folgenlose Handlung. Geräusch, Widerstand und Bewegung wirken dabei zusammen.",
+      "tip": "💡 Alte Kataloge, Telefonbücher oder Zeitungen bereitlegen. Je dicker der Stapel, desto länger trägt der Skill.",
+      "von": "skills-box",
+      "erg": "",
+      "links": []
      },
      {
       "e": "⚫",
@@ -75,7 +201,17 @@
       "b": "Im Mund zerbeissen erzeugen beide Gewürze einen sehr intensiven, lokalen Geschmacksreiz, der den Fokus bindet.",
       "tip": "💡 Nelke wirkt auch leicht betäubend auf die Mundschleimhaut — hilft bei körperlicher Unruhe.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.migros.ch/de/search?query=gew%C3%BCrznelken",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=pfefferk%C3%B6rner",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🧂",
@@ -83,7 +219,21 @@
       "b": "Ammoniumcarbonat löst einen starken Refleximpuls aus, der das Nervensystem sofort aktiviert und aus dem Dissoziation herausreißt.",
       "tip": "💡 Kurz unter die Nase halten, nicht direkt einatmen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Riechstift",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/ammola-riechstaebchen",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/riechstigte",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🥄",
@@ -91,15 +241,39 @@
       "b": "Einen Teellöffel pur nehmen. Die Schärfe ist intensiv genug, um den Fokus sofort vom Craving wegzureissen.",
       "tip": "💡 Kombination mit Wasabi ergibt noch stärkere Wirkung.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.denner.ch/de/search?q=senf",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=senf%2Bscharf",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=senf",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🍬",
       "t": "Scharfes Bonbon",
       "b": "Der scharfe Geschmack lenkt das Gehirn auf einen starken, neuen Sinnesreiz um und unterbricht die Craving-Schleife.",
-      "tip": "💡 Immer ein paar in der Tasche haben — ideal als diskrete Notfalllösung.",
+      "tip": "💡 Immer ein paar in der Tasche haben — ideal als diskrete Notfalllösung. Varianten: Chili-Lutscher, extrem saure Bonbons oder Menthol (z. B. Fisherman's Friend). Reines Minzöl nicht unverdünnt auf die Zunge — das reizt die Schleimhaut.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Chili",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/search?q=Toxic+Waste",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "✋",
@@ -107,7 +281,21 @@
       "b": "Gezielter Druck auf bestimmte Akupressurpunkte (z. B. zwischen Daumen und Zeigefinger) lenkt die Aufmerksamkeit auf körperliche Empfindung.",
       "tip": "💡 Punkt zwischen Daumen und Zeigefinger für 30 – 60 Sekunden fest drücken.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Massage",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/igelball",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/magnetische-akupressurkugeln",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🗣️",
@@ -115,7 +303,8 @@
       "b": "Lautes Schreien setzt Energie frei, senkt Cortisol und gibt dem Körper eine überwiegend sichere Möglichkeit, Druck abzubauen.",
       "tip": "💡 Kissen als Dämpfer verwenden, wenn kein Aussenbereich vorhanden. Tief einatmen vorher.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🌶️",
@@ -123,7 +312,17 @@
       "b": "Wenige Tropfen direkt auf die Zunge gesetzt erzeugen einen intensiven Reiz, der das Gehirn mit einer neuen Empfindung überflutet.",
       "tip": "💡 Kleine Flasche lässt sich leicht mitnehmen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.migros.ch/de/search?query=tabasco",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=tabasco",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🟢",
@@ -131,7 +330,21 @@
       "b": "Der schärfste unter den Alltagsreizstoffen — wirkt blitzschnell und überlagert selbst starke Spannungszustände.",
       "tip": "💡 Nur sehr kleine Menge verwenden. Wirkung tritt innerhalb von Sekunden ein.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.aldi-suisse.ch/de/ergebnisse?q=wasabi",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=wasabi",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=wasabi",
+        "t": ""
+       }
+      ]
      }
     ]
    },
@@ -146,7 +359,8 @@
       "b": "Diese Technik verbindet radikale Akzeptanz mit Selbstmotivation: den Zustand annehmen, sich selbst anfeuern und die Anspannung aktiv abreiten.",
       "tip": "💡 Laut zusprechen: «Es ist okay. Ich schaffe das. Ich reite das aus.»",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "💤",
@@ -154,7 +368,8 @@
       "b": "Schlaf ist die mächtigste Erholungsmöglichkeit des Körpers. Selbst kurze Nickerchen (10 – 20 Min.) können das Erregungsniveau senken.",
       "tip": "💡 Wenn einschlafen nicht möglich ist, einfach hinlegen und Augen schliessen reicht.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "💆",
@@ -162,7 +377,21 @@
       "b": "Körperliche Berührung setzt Oxytocin frei und aktiviert das parasympathische Nervensystem, was den Stresszustand direkt senkt.",
       "tip": "💡 Auch Selbstmassage (Hände, Unterarme, Kopfhaut) hat einen messbaren Effekt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Massage",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/massage-ball",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s6/producttype/faszienball-faszienrolle-3965",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "⛰️",
@@ -170,7 +399,8 @@
       "b": "Rhythmische Bewegung in der Natur kombiniert sanfte körperliche Aktivität mit Naturreizen — ein bewährter Stressabbau.",
       "tip": "💡 Bewusstes Wahrnehmen der Umgebung (Geräusche, Gerüche) verstärkt den Effekt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🚿",
@@ -178,7 +408,8 @@
       "b": "Der Wechsel zwischen warm und kalt trainiert das vegetative Nervensystem und gibt dem Körper einen kontrollierbaren Stressreiz mit schneller Erholung.",
       "tip": "💡 Mit warmem Wasser beginnen, zuletzt auf kalt wechseln und dabei tief ausatmen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      }
     ]
    },
@@ -191,9 +422,10 @@
       "e": "🤝",
       "t": "Andere unterstützen / helfen",
       "b": "Anderen zu helfen verschiebt den Fokus von sich selbst weg und aktiviert das Empathie- und Belohnungssystem gleichzeitig.",
-      "tip": "💡 Auch Kleinigkeiten: jemandem die Tür aufhalten, eine kurze Nachricht schreiben.",
+      "tip": "💡 Auch Kleinigkeiten: jemandem die Tür aufhalten, eine kurze Nachricht schreiben. Auch jemanden zu beschenken zählt — Vorfreude auf die Reaktion wirkt oft schon vorher.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "✨",
@@ -201,7 +433,8 @@
       "b": "Gezieltes Suchen nach drei positiven Dingen im Moment aktiviert das Belohnungssystem und bricht die Fixierung auf Negatives auf.",
       "tip": "💡 Nicht erzwingen. Auch kleine Dinge zählen: Tageslicht, ein Getränk, eine bequeme Sitzposition.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🙏",
@@ -209,7 +442,8 @@
       "b": "Für viele Menschen ist Gebet eine kraftvolle Form der Entspannung und des Vertrauens — es aktiviert ähnliche Gehirnmuster wie Meditation.",
       "tip": "💡 Kein Ritual nötig — jede Form des stillen Kontakts mit etwas Grösserem wirkt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "📝",
@@ -217,7 +451,21 @@
       "b": "Das Aufschreiben von Auslöser, Intensität und Verlauf eines Cravings hilft, Muster zu erkennen und das nächste Mal besser vorbereitet zu sein.",
       "tip": "💡 Datum, Uhrzeit, Situation, Intensität (0–100 %) und verwendete Skills notieren.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/dein-wut-weg-buch",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/notizbuch-1673?tagIds=1230",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizbuch",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🥦",
@@ -225,7 +473,17 @@
       "b": "Regelmässige Mahlzeiten stabilisieren den Blutzucker und damit das Erregungsniveau des Nervensystems. Hunger verstärkt Anspannung.",
       "tip": "💡 Drei Mahlzeiten pro Tag als Minimalziel. Zucker und Koffein reduzieren.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
+     },
+     {
+      "e": "🃏",
+      "t": "Lebenskarten durchlesen",
+      "b": "Im Hochalarm ist der Zugriff auf die eigenen Argumente blockiert. Vorbereitete Karten mit Sätzen aus ruhigen Momenten übernehmen dann das Denken.",
+      "tip": "💡 In ruhigem Zustand schreiben, nie in der Krise. Fünf bis zehn Karten genügen — immer griffbereit halten.",
+      "von": "skills-box",
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧘",
@@ -233,7 +491,8 @@
       "b": "Regelmässige Meditation (5 – 10 Min.) verändert langfristig die Reaktionsfähigkeit des Nervensystems auf Stress.",
       "tip": "💡 Körperscan oder Atembeobachtung sind gute Einsteigerübungen. Apps wie Insight Timer helfen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧳",
@@ -241,7 +500,21 @@
       "b": "Ein physischer Koffer oder Beutel mit vorbereiteten Skills (z. B. Zitrone, Duftöl, Protokollbogen) reduziert die Entscheidungszeit in der Krise drastisch.",
       "tip": "💡 Koffer an einem fixen Ort aufbewahren. Regelmässig nachfüllen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Box",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/taeschli",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/sackli",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "⚖️",
@@ -249,7 +522,8 @@
       "b": "Das schriftliche Abwägen bringt Distanz zu impulsiven Entscheidungen und aktiviert den rationalen Teil des Gehirns.",
       "tip": "💡 Wirkt am besten, wenn man bei hoher Anspannung Zeit braucht, bevor man handelt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🌙",
@@ -257,7 +531,8 @@
       "b": "Regelmässige Schlafzeiten, kein Bildschirm vor dem Schlafen und eine kühle, dunkle Umgebung senken das Grundniveau der Anspannung langfristig.",
       "tip": "💡 Gleiche Schlafens- und Aufstehzeit auch am Wochenende einhalten.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🔗",
@@ -265,7 +540,17 @@
       "b": "Eine vorher festgelegte Abfolge von drei bis fünf Skills, die man der Reihe nach anwendet, wenn einer allein nicht reicht.",
       "tip": "💡 Aufschreiben: Erst X, dann Y, dann Z. In der Krise kein Nachdenken nötig.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/schluesselanhaenger",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/keycup-schluesselanhaenger",
+        "t": ""
+       }
+      ]
      }
     ]
    }
@@ -286,20 +571,53 @@
     "icon": "🎯",
     "skills": [
      {
+      "e": "🦷",
+      "t": "Auf etwas Festes kauen",
+      "b": "Die Kaubewegung liefert dem Gehirn kräftige Rückmeldung aus dem Kiefer und wirkt regulierend, ohne von aussen sichtbar zu sein.",
+      "tip": "💡 Kauobjekt aus lebensmittelechtem Silikon verwenden — nicht Stifte oder Fingernägel. Zäher Kaugummi tut es zur Not auch.",
+      "von": "skills-box",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/beisskette",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=kaugummi",
+        "t": ""
+       }
+      ]
+     },
+     {
       "e": "👣",
       "t": "Barfuss laufen",
       "b": "Direkter Bodenkontakt aktiviert viele Nervenenden in den Fusssohlen und fördert Erdüng — ein wirkungsvolles Gegenmittel zu dissoziativem Erleben.",
       "tip": "💡 Auf verschiedenen Untergründen laufen (Gras, Kies, Holzboden) verstärkt den Effekt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🎨",
       "t": "Basteln / Malen nach Zahlen",
       "b": "Kreative Tätigkeiten aktivieren den präfrontalen Kortex und geben dem Geist eine klare, überschaubare Aufgabe.",
-      "tip": "💡 Malen nach Zahlen ist besonders geeignet, weil das Ergebnis vorstrukturiert ist — kein Druck.",
+      "tip": "💡 Malen nach Zahlen ist besonders geeignet, weil das Ergebnis vorstrukturiert ist — kein Druck. Mandalas ausmalen wirkt ähnlich: klare Struktur, kein leeres Blatt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.galaxus.ch/de/s5/producttype/malset-1708/subtype/malsettyp-malen-nach-zahlen-2909",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/malen-und-entspannen-achtsamkeit",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/ausmal-postkarten",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🖼️",
@@ -307,23 +625,26 @@
       "b": "Das intensive Betrachten eines Kunstwerks oder Fotos lenkt den analytischen Geist ab und gibt Raum für Abstand vom eigenen Erleben.",
       "tip": "💡 Versuchen, im Bild drei Farben, zwei Formen und eine Stimmung zu benennen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🛁",
       "t": "Coolpack / Heisses Bad",
       "b": "Extreme Temperaturreize (Kälte oder Wärme) regulieren das autonome Nervensystem und erzeugen körperliche Entspannung.",
-      "tip": "💡 Coolpack: Nacken und Handgelenke. Heisses Bad: 38 – 40 °C, mindestens 15 Minuten.",
+      "tip": "💡 Coolpack: Nacken und Handgelenke. Heisses Bad: 38 – 40 °C, mindestens 15 Minuten. Auch der Unterarm eignet sich fürs Coolpack. Wenn kein Vollbad möglich ist: Fussbad mit Badezusatz.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "😂",
       "t": "Eine Comedyshow schauen",
       "b": "Lachen senkt Cortisol und Adrenalin messbar und kann selbst bei gekünsteltem Lachen wirken — der Körper reagiert auf die Muskelaktivität.",
-      "tip": "💡 Lieblingsshow vorher festlegen, damit in der Krise keine Entscheidung nötig ist.",
+      "tip": "💡 Lieblingsshow vorher festlegen, damit in der Krise keine Entscheidung nötig ist. Ein Film geht ebenso — nur nichts Trauriges oder Aufwühlendes.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧊",
@@ -331,23 +652,57 @@
       "b": "Drei Minuten in kaltem Wasser senken Cortisol, aktivieren den Vagusnerv und trainieren die Toleranz für unangenehme Empfindungen.",
       "tip": "💡 Tief und langsam atmen. Der erste Schreck geht nach 30 Sekunden vorbei.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧊",
       "t": "Eiswürfel auf die Haut",
       "b": "Das intensive Kältegefühl eines Eiswürfels auf der Haut ist ein starker, aber harmloser sensorischer Reiz, der als Alternative zu selbstverletzendem Verhalten eingesetzt wird.",
-      "tip": "💡 Auf Handgelenk, Unterarm oder Hals halten. Bewusst auf die Kälteempfindung konzentrieren.",
+      "tip": "💡 Auf Handgelenk, Unterarm oder Hals halten. Bewusst auf die Kälteempfindung konzentrieren. Ein Eiswürfel im Mund wirkt ähnlich stark und fällt von aussen nicht auf.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.migros.ch/de/search?query=eisw%C3%BCrfelform",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s2/producttype/eisformen-3900/subtype/eisformtyp-eiswuerfelform-6926",
+        "t": ""
+       }
+      ]
+     },
+     {
+      "e": "🌀",
+      "t": "Fidget-Objekt in der Hand",
+      "b": "Ein Objekt zum Drehen, Drücken oder Klicken bindet Aufmerksamkeit über die Hände und funktioniert dort, wo Essen, Riechen oder Bewegung nicht möglich sind.",
+      "tip": "💡 Ohne Einkauf geht es auch: eine Kordel kompliziert verknoten und später wieder entknoten. Zwei Objekte abwechseln, sonst tritt Gewöhnung ein.",
+      "von": "skills-box",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Fidget",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/fidget-cube",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/pop-it",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🎮",
       "t": "Gamen",
       "b": "Videospiele, besonders solche die volle Konzentration erfordern, überfordern das Arbeitsgedächtnis für Grubeln und bieten einen strukturierten Fluchtpunkt.",
-      "tip": "💡 Zeitlimit setzen (z. B. 30 Min.) damit Gaming nicht selbst zur Vermeidung wird.",
+      "tip": "💡 Zeitlimit setzen (z. B. 30 Min.) damit Gaming nicht selbst zur Vermeidung wird. Gesellschafts- und Kartenspiele mit anderen wirken ähnlich und bringen sozialen Kontakt dazu.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🪢",
@@ -355,7 +710,21 @@
       "b": "Ein kurzer, gezielter Reiz, der als Signal für den Körper dient: «Stopp — jetzt ein anderes Verhalten.»",
       "tip": "💡 Nicht zu fest. Das Signal, nicht der Schmerz, ist der Wirkfaktor.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/gummiband",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=gummib%C3%A4nder",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=gummib%C3%A4nder",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🪑",
@@ -363,7 +732,8 @@
       "b": "Man stellt sich eine leere Stuhllehne vor, auf der eine belastende Person oder Situation sitzt, und spricht sie laut an — eine Form der emotionalen Entlastung.",
       "tip": "💡 Keine Antwort erwarten. Nur das Aussprechen ist das Ziel.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🔢",
@@ -371,7 +741,8 @@
       "b": "Diese kognitive Aufgabe beansprucht genug Arbeitsgedächtnis, um Grubeln zu unterbrechen, ist aber einfach genug, um bei hoher Anspannung machbar zu sein.",
       "tip": "💡 Laut zählen verstärkt den Effekt. Bei Fehler: nochmals von vorne beginnen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🪶",
@@ -379,23 +750,44 @@
       "b": "Der sanfte, unvorhersehbare Reiz einer Feder auf der Haut zwingt das Gehirn, sich auf die Körperempfindung zu konzentrieren statt auf Gedanken.",
       "tip": "💡 Unterarme, Hände und Hals sind besonders empfindlich. Langsam und gezielt streichen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "💪",
       "t": "Liegestütze / Plank / Kissen boxen",
       "b": "Kurze, intensive körperliche Belastung baut Stresshormone schnell ab und gibt dem Körper ein Ventil für aufgestaute Energie.",
-      "tip": "💡 So viele Liegestütze wie möglich — bis zur Erschöpfung. Das ist der Punkt.",
+      "tip": "💡 So viele Liegestütze wie möglich — bis zur Erschöpfung. Das ist der Punkt. Alternativen: mit einem verknoteten Handtuch auf die Matratze schlagen, auf einen Boxsack einschlagen oder das Treppenhaus mehrmals hoch- und runterrennen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.galaxus.ch/de/s3/producttype/yogamatte-1238",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "💆",
       "t": "Massageroller",
       "b": "Selbstmassage mit einem Faszienroller aktiviert Druckrezeptoren in Muskeln und Faszien, was nachweislich entspannend wirkt.",
-      "tip": "💡 Oberschenkel, Waden und Rücken. Langsam und mit körperlichem Gewicht arbeiten.",
+      "tip": "💡 Oberschenkel, Waden und Rücken. Langsam und mit körperlichem Gewicht arbeiten. Ein Igelball über Arme und Schultern gerollt wirkt ähnlich und passt in jede Tasche.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Massage",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/massageholz-dreipunkt",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s6/producttype/faszienball-faszienrolle-3965",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🧑",
@@ -403,7 +795,8 @@
       "b": "Ein offenes Gespräch mit jemandem, dem man vertraut, kombiniert soziale Verbindung mit dem heilsamen Effekt des Aussprechens.",
       "tip": "💡 Nicht lösen müssen — nur da sein. Das ist genug.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧦",
@@ -411,7 +804,8 @@
       "b": "Das unangenehme, aber harmlose Gefühl feuchter Socken erzeugt einen anhältenden sensorischen Reiz, der Grubeln unterbricht.",
       "tip": "💡 Einfach und kostenlos. Bewusstes Wahrnehmen des Gefühls beim Gehen erhöht den Effekt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "📞",
@@ -419,7 +813,8 @@
       "b": "Ein vorab vereinbarter Ansprechpartner für Krisen gibt Sicherheit und reduziert die Hürde, sich in schwierigen Momenten zu melden.",
       "tip": "💡 Nummer im Telefon als «Notfall» speichern. Kontakt vorab über die Rolle informieren.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "☁️",
@@ -427,7 +822,8 @@
       "b": "Eine geführte Imagination eines sicheren, angenehmen Ortes aktiviert das parasympathische Nervensystem und kann tiefe Entspannung bewirken.",
       "tip": "💡 Eigenen sicheren Ort im Ruhezustand ausarbeiten (Aussehen, Geräusche, Gefühl), damit er in der Krise abrufbar ist.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "✨",
@@ -435,7 +831,8 @@
       "b": "Physische Aktivität mit sichtbarem Ergebnis gibt ein Gefühl von Kontrolle und Selbstwirksamkeit — ein wichtiges Gegenmittel zu Ohnmachtsgefühlen.",
       "tip": "💡 Nur eine Schublade oder eine Ecke — kleine Erfolge zählen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🥁",
@@ -443,15 +840,26 @@
       "b": "Klopfen erzeugt ein rhythmisches sensorisches Feedback, das ähnlich wie beim EFT (Emotional Freedom Techniques) beruhigend wirkt.",
       "tip": "💡 Mit den Fingern auf Brust, Oberschenkel oder Schulter in einem regelmässigen Rhythmus klopfen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
+     },
+     {
+      "e": "💅",
+      "t": "Sich zurechtmachen",
+      "b": "Haare, Schminke oder Nägel verlangen Feinmotorik und Konzentration und wirken zugleich als Signal an sich selbst: Ich bin es mir wert.",
+      "tip": "💡 Bewusst Zeit nehmen statt schnell erledigen — die Dauer ist Teil der Wirkung.",
+      "von": "skills-box",
+      "erg": "",
+      "links": []
      },
      {
       "e": "🏃",
       "t": "Sport / Auspowern",
       "b": "Intensive körperliche Belastung baut Stresshormone ab, setzt Endorphine frei und gibt dem Körper einen natürlichen Reset.",
-      "tip": "💡 Jumping Jacks, Treppen steigen, Laufen — alles zählt. Ziel: ausser Atem kommen.",
+      "tip": "💡 Jumping Jacks, Treppen steigen, Laufen — alles zählt. Ziel: ausser Atem kommen. Im Haus: das Treppenhaus mehrmals schnell hoch- und runterrennen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🪨",
@@ -459,7 +867,8 @@
       "b": "Ein kleiner Stein im Schuh erzeugt einen anhaltenden, leicht unangenehmen Reiz, der ähnlich wie Eiswürfel die Aufmerksamkeit auf den Körper lenkt.",
       "tip": "💡 Kein spitzer oder grosser Stein — das Ziel ist Aufmerksamkeit, nicht Schmerz.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧶",
@@ -467,15 +876,35 @@
       "b": "Repetitive manuelle Tätigkeiten versetzen das Gehirn in einen meditativen Zustand und verbinden motorische und visuelle Aufmerksamkeit.",
       "tip": "💡 Das Ergebnis ist ein Nebenprodukt — der Prozess selbst ist die Therapie.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.galaxus.ch/de/s2/producttype/garn-wolle-2752",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=wolle",
+        "t": ""
+       }
+      ]
+     },
+     {
+      "e": "💃",
+      "t": "Tanzen",
+      "b": "Bewegung im Rhythmus verbindet körperliches Auspowern mit dem stimmungsverändernden Effekt von Musik — beides verstärkt sich gegenseitig.",
+      "tip": "💡 Allein im Zimmer reicht. Tempo der Musik dem Ziel anpassen: schnell zum Abreagieren, langsam zum Herunterfahren.",
+      "von": "skills-box",
+      "erg": "",
+      "links": []
      },
      {
       "e": "📱",
       "t": "Unterhalten / Chatten / Telefonieren",
       "b": "Soziale Verbindung aktiviert das Bindungssystem und gibt das Gefühl, nicht allein zu sein — ein starkes Gegengewicht zu Krisengefühlen.",
-      "tip": "💡 Vorher festlegen, wen man anruft. Auch eine kurze Nachricht reicht für den ersten Schritt.",
+      "tip": "💡 Vorher festlegen, wen man anruft. Auch eine kurze Nachricht reicht für den ersten Schritt. Wenn Sprechen zu viel ist: einen Brief oder eine E-Mail schreiben. Abschicken ist optional.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🏠",
@@ -483,7 +912,8 @@
       "b": "Eine veränderte Umgebung signalisiert dem Gehirn einen Neuanfang und gibt Energie für kreative Entscheidungen frei.",
       "tip": "💡 Nur umstellen, nicht kaufen. Die Veränderung selbst ist das Ziel.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🐾",
@@ -491,7 +921,8 @@
       "b": "Körperlicher Kontakt mit einem Tier setzt Oxytocin frei, senkt Blutdruck und gibt ein Gefühl von bedingungsloser Zugehörigkeit.",
       "tip": "💡 Auch das Beobachten (z. B. Fische im Aquarium) hat eine nachweisbar beruhigende Wirkung.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧷",
@@ -499,7 +930,17 @@
       "b": "Der kurze, kontrollierte Schmerz einer Wäscheklammer lenkt die Aufmerksamkeit auf den Körper, ohne dauerhaften Schaden zu verursachen.",
       "tip": "💡 An Fingerbeere oder Unterarm. Immer als Skill einsetzen, nie als Bestrafung.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.migros.ch/de/search?query=w%C3%A4scheklammern",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=w%C3%A4scheklammern",
+        "t": ""
+       }
+      ]
      }
     ]
    },
@@ -514,7 +955,13 @@
       "b": "Gezieltes langsames Ausatmen aktiviert den Vagusnerv und löst eine parasympathische Reaktion aus. 4 Sekunden einatmen, 6 Sekunden ausatmen.",
       "tip": "💡 Die Ausatemphase muss länger sein als die Einatemphase — das ist der Wirkmechanismus.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/anti-angst-atmungskette",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🖼️",
@@ -522,7 +969,8 @@
       "b": "Das aktive Zusammenstellen von positiven Bildern ist therapeutisch doppelt wirksam: Ablenkung plus positive Emotionsaktivierung.",
       "tip": "💡 Thema wählen (z. B. Urlaub, Freunde, Natur) und 15 – 20 Fotos auswählen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🗣️",
@@ -530,7 +978,17 @@
       "b": "Das Benennen von Gefühlen (Affect Labeling) reduziert nachweislich die Aktivität der Amygdala und schafft Distanz zum emotionalen Erleben.",
       "tip": "💡 So genau wie möglich: nicht «schlecht», sondern «ich fühle Angst und Hilflosigkeit».",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/gefuehl-squishy",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/dein-wut-weg-buch",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "📸",
@@ -538,7 +996,8 @@
       "b": "Positive visuelle Erinnerungen aktivieren das Belohnungssystem und können kurzfristig gegenteilige Emotionen erzeugen.",
       "tip": "💡 Ein eigenes «Freude-Album» auf dem Handy anlegen, das jederzeit verfügbar ist.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧘",
@@ -546,15 +1005,17 @@
       "b": "Schon 10 Minuten achtsames Sitzen ohne Ziel reduziert Cortisol und fördert die Verbindung von Präfrontalem Kortex und Amygdala.",
       "tip": "💡 Keine Gedanken wegdrängen — sie beobachten wie Wolken, die vorbeizeigen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "💪",
       "t": "Muskeln anspannen & loslassen (PMR)",
       "b": "Progressive Muskelrelaxation nach Jacobson: Muskelgruppen nacheinander anspannen und loslassen trainiert den Körper, Entspannung aktiv herzustellen.",
-      "tip": "💡 Mit den Händen beginnen: 10 Sek. fest zusammendrücken, dann loslassen und 20 Sek. nachspüren.",
+      "tip": "💡 Mit den Händen beginnen: 10 Sek. fest zusammendrücken, dann loslassen und 20 Sek. nachspüren. Autogenes Training ist die Alternative für alle, denen das Anspannen unangenehm ist — dort wird über Vorstellung (Schwere, Wärme) gearbeitet.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧘",
@@ -562,7 +1023,13 @@
       "b": "Yoga kombiniert Körperarbeit, Atemtechniken und Achtsamkeit zu einer der wirksamsten Methoden zur Stressregulation.",
       "tip": "💡 Auch 10 Minuten sanftes Yoga (z. B. Kind-Pose, Vorwärtsbeuge) haben einen messbaren Effekt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.galaxus.ch/de/s3/producttype/yogamatte-1238",
+        "t": ""
+       }
+      ]
      }
     ]
    },
@@ -577,7 +1044,8 @@
       "b": "Der Widerstand gegen das, was ist, erhöht den Leidensdruck. Radikale Akzeptanz bedeutet nicht Zustimmung, sondern das Aufhören des Kampfes gegen die Realität.",
       "tip": "💡 Satz: «Es ist, wie es ist. Ich kann die Vergangenheit nicht ändern. Was kann ich jetzt tun?»",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "👀",
@@ -585,7 +1053,8 @@
       "b": "Bewusstes Wahrnehmen von je drei Dingen in drei Sinneskanälen verankert im Hier und Jetzt und unterbricht Dissoziation oder Grubeln.",
       "tip": "💡 Erst 3 Dinge sehen benennen, dann 3 hören, dann 3 am Körper spüren.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "📝",
@@ -593,7 +1062,21 @@
       "b": "Eine kurze schriftliche Zustandserfassung (Stimmung, Körper, Gedanken) schafft Bewusstsein und unterbricht automatische Reaktionsmuster.",
       "tip": "💡 Skala 0 – 10 nutzen für Stimmung, Anspannung und Energie — dreimal täglich.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/dein-wut-weg-buch",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizheft",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🫱",
@@ -601,7 +1084,17 @@
       "b": "Die bewusste Entscheidung, für einen Moment bereit zu sein, Unangenehmes zu spüren ohne es sofort wegzumachen, öffnet Raum für Heilung.",
       "tip": "💡 Nicht für immer — nur für die nächste Stunde. Dann neu entscheiden.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
+     },
+     {
+      "e": "🎁",
+      "t": "Sich selbst loben und belohnen",
+      "b": "Selbstverstärkung nach überstandener Anspannung koppelt das Durchhalten an etwas Positives und macht den nächsten Versuch wahrscheinlicher.",
+      "tip": "💡 Die Belohnung vorher festlegen und klein halten. Laut aussprechen wirkt stärker als nur denken.",
+      "von": "skills-box",
+      "erg": "",
+      "links": []
      },
      {
       "e": "📔",
@@ -609,7 +1102,21 @@
       "b": "Das Aufschreiben von Gedanken und Gefühlen externalisiert innere Zustände und ermöglicht Distanz und Reflexion.",
       "tip": "💡 Kein Perfektionismus. Stichworte genügen. Das Schreiben selbst ist der Wirkfaktor.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/dein-wut-weg-buch",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/notizbuch-1673?tagIds=1230",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizbuch",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "✅",
@@ -617,7 +1124,17 @@
       "b": "Eine überschaubare Liste von kleinen, machbaren Aufgaben gibt Struktur, Kontrolle und ein erreichbares Erfolgserlebnis.",
       "tip": "💡 Maximal 3 – 5 Aufgaben. Sehr kleine Schritte — z. B. «ein Glas Wasser trinken» zählt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizblock",
+        "t": ""
+       }
+      ]
      }
     ]
    }
@@ -643,7 +1160,8 @@
       "b": "Bewusstes Wahrnehmen von Geschmack, Textur und Geruch beim Essen aktiviert mehrere Sinne und verankert im Augenblick.",
       "tip": "💡 Handy weglegen. Jeden Bissen 10 – 15 Mal kauen und bewusst wahrnehmen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🤸",
@@ -651,7 +1169,17 @@
       "b": "Balancierübungen fordern volle Körperperzeption und können im Stehen auf einem Bein oder auf einer Wackelmatte geübt werden.",
       "tip": "💡 Augen schliessen während des Balancierens erhöht die Anforderung deutlich.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/mokuru",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/wrist-ball",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "📖",
@@ -659,7 +1187,8 @@
       "b": "Das Auswendiglernen von Texten beansprucht Kurz- und Langzeitgedächtnis gleichzeitig und gibt ein nachhaltiges Erfolgserlebnis.",
       "tip": "💡 Kurze Gedichte oder Liedstrophen beginnen. Wiederholung ist der Schlüssel.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "📷",
@@ -667,7 +1196,8 @@
       "b": "Der fotografische Blick trainiert bewusstes Wahrnehmen und Schönheit im Alltag — eine aktive Form von Achtsamkeit.",
       "tip": "💡 Thema wählen: z. B. «Alles in Blau» oder «Dinge auf dem Boden». Handykamera reicht.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🟨",
@@ -675,7 +1205,30 @@
       "b": "Das motorische und räumliche Denken beim Lösen eines Rubik’s Cube fordert Konzentration auf mehreren Ebenen gleichzeitig.",
       "tip": "💡 Den Cube im Ruhezustand lösen lernen — dann ist er in stressigen Momenten abrufbar.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/search?q=Cube",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/megaminx",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/labyrinth",
+        "t": ""
+       }
+      ]
+     },
+     {
+      "e": "☕",
+      "t": "Im Café Leute beobachten",
+      "b": "Die Anwesenheit anderer Menschen wirkt beruhigend, ohne dass Kontakt nötig ist — niederschwelliger als jedes Gespräch.",
+      "tip": "💡 Ein Getränk bestellen und einfach bleiben. Ein Buch oder Notizheft nimmt den Druck, etwas tun zu müssen.",
+      "von": "skills-box",
+      "erg": "",
+      "links": []
      },
      {
       "e": "🍳",
@@ -683,7 +1236,8 @@
       "b": "Kochen kombiniert kreative Planung, sensorische Aktivität und ein konkretes Ergebnis — ein fast vollständiger Selbstfürsorge-Akt.",
       "tip": "💡 Lieblingsgericht kochen. Der Prozess ist die Therapie, das Essen der Bonus.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🗞️",
@@ -691,7 +1245,26 @@
       "b": "Kreuzworträtsel aktivieren Wortgedächtnis, Allgemeinwissen und Kreativität gleichzeitig — das Selbst-Erstellen noch intensiver.",
       "tip": "💡 Zeitung oder App. Das Erstellen eigener Rätsel für andere ist ein höheres Ziel.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
+     },
+     {
+      "e": "✏️",
+      "t": "Kritzeln / Doodeln",
+      "b": "Zielloses Zeichnen bindet Aufmerksamkeit ohne Leistungsanspruch — das ist der entscheidende Unterschied zu Basteln oder Malen nach Zahlen.",
+      "tip": "💡 Kein Ergebnis anstreben. Muster, Linien und Schraffuren genügen; Kugelschreiber und Papierrand reichen.",
+      "von": "skills-box",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizheft",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "📚",
@@ -699,7 +1272,8 @@
       "b": "Lesen ist eine der wirksamsten Methoden, um aus dem eigenen Kopf herauszukommen — selbst 6 Minuten lesen senkt Stressmessungen um bis zu 68 %.",
       "tip": "💡 Leichtes, vertrautes Material wählen. Kein Selbsthilfebuch in der Krise.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🎙️",
@@ -707,7 +1281,8 @@
       "b": "Ein vertrautes Hörspiel bietet narrative Ablenkung ohne visuelle Stimulation — ideal zum Einschlafen oder bei niedriger Energie.",
       "tip": "💡 Alte Favoriten wirken besser als Neues — die Vertrautheit ist der beruhigende Faktor.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "✍️",
@@ -715,7 +1290,8 @@
       "b": "Das Schreiben mit der nicht-dominanten Hand fordert volle Konzentration und erzeugt eine neuartige Körpererfahrung.",
       "tip": "💡 Auch das Zeichnen von einfachen Formen mit der anderen Hand reicht aus.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🎵",
@@ -723,7 +1299,8 @@
       "b": "Musik aktiviert fast alle Gehirnbereiche gleichzeitig und kann Stimmungen gezielt beeinflussen — beim Machen noch stärker als beim Hören.",
       "tip": "💡 Eine Playlist für ruhige Momente vorab zusammenstellen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🌿",
@@ -731,7 +1308,8 @@
       "b": "Natürliche Gerüche aktivieren primitive Gehirnstrukturen und können tiefe Entspannung und Verbundenheit auslösen.",
       "tip": "💡 Nach dem Regen nach draussengehen. Frische Erde riechen (Petrichor) wirkt besonders.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🧩",
@@ -739,7 +1317,17 @@
       "b": "Puzzlen kombiniert räumliches Denken, Mustererkennung und Geduld — ein meditativer Fokuszustand stellt sich oft von selbst ein.",
       "tip": "💡 Schwierigkeitsgrad anpassen: In der Erholung lieber einfacher beginnen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.galaxus.ch/de/s5/producttype/puzzle-622",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=puzzle",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🧩",
@@ -747,7 +1335,21 @@
       "b": "Logische Rätsel beanspruchen den präfrontalen Kortex vollständig und lassen kaum Raum für emotionale Grubeleien.",
       "tip": "💡 Der Schwierigkeitsgrad sollte herausfordernd, aber lösbar sein — Frust wäre kontraproduktiv.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/metall-puzzle",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/mini-knobel-spiele",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/wooden-intellegence",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🔧",
@@ -755,7 +1357,8 @@
       "b": "Praktische Reparaturen geben ein starkes Gefühl von Kompetenz und Selbstwirksamkeit — und das Ergebnis ist sichtbar und real.",
       "tip": "💡 Kleine, machbare Aufgaben wählen — der Nagel im Regal, der Knopf am Hemd.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "✏️",
@@ -763,7 +1366,8 @@
       "b": "Mentale Buchstabieraufgaben beschäftigen das Arbeitsgedächtnis ohne körperliche Aktivität — gut für ruhige, zurückgezogene Momente.",
       "tip": "💡 Rückwärts buchstabieren erhöht den kognitiven Aufwand deutlich.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🔢",
@@ -771,7 +1375,17 @@
       "b": "Zahlenlogik beansprucht das analytische Denken vollständig und lässt kaum Raum für emotionale Verarbeitung im gleichen Moment.",
       "tip": "💡 Schwierigkeitsgrad wählen, der Herausforderung bietet, aber nicht frustriert.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/sudoku",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "☁️",
@@ -779,7 +1393,8 @@
       "b": "Das passive Beobachten von Wolken übt das geduldige, nicht wertende Wahrnehmen — eine natürliche Form von Achtsamkeit.",
       "tip": "💡 Formen in Wolken suchen oder einfach dem Ziehen folgen ohne zu bewerten.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      }
     ]
    },
@@ -792,9 +1407,10 @@
       "e": "🌿",
       "t": "Achtsam spazieren",
       "b": "Langsames Gehen mit voller Aufmerksamkeit auf jeden Schritt und die Umgebung ist eine der kraftvollsten und zugänglichsten Achtsamkeitspraktiken.",
-      "tip": "💡 Handy in der Tasche lassen. Bei jedem Schritt bewusst den Bodenkontakt wahrnehmen.",
+      "tip": "💡 Handy in der Tasche lassen. Bei jedem Schritt bewusst den Bodenkontakt wahrnehmen. Bei Regen bewusst rausgehen: Geräusch, Geruch und Kälte auf der Haut verstärken den Effekt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🌬️",
@@ -802,7 +1418,13 @@
       "b": "Bei tiefer Anspannung genügen sehr sanfte Atemtechniken: einfach die natürliche Atmung beobachten, ohne sie zu verändern.",
       "tip": "💡 Eine Hand auf den Bauch legen und nur das Heben und Senken wahrnehmen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.skills-box.ch/products/anti-angst-atmungskette",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "👁️",
@@ -810,7 +1432,8 @@
       "b": "Bilaterale Augenbewegungen von links nach rechts aktivieren ähnliche Prozesse wie im REM-Schlaf und können die Verarbeitung belastender Gedanken fördern (EMDR-ähnlich).",
       "tip": "💡 Den Finger langsam von links nach rechts bewegen und mit den Augen folgen, 20 – 30 Sekunden.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🔥",
@@ -818,7 +1441,8 @@
       "b": "Das Betrachten von Feuer aktiviert ähnliche Entspannungsreaktionen wie Meditation: Herzfrequenz sinkt, Gedanken beruhigen sich.",
       "tip": "💡 Kerze, Kamin oder Lagerfeuer. Auch ein Feuer-Video auf dem Bildschirm hat eine messbare Wirkung.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🌿",
@@ -826,7 +1450,21 @@
       "b": "Das Ertasten und Erriechen verschiedener Kräuter aktiviert mehrere Sinne gleichzeitig und kombiniert Erden (barfuss) mit sensorischer Entdeckung.",
       "tip": "💡 Basilikum, Thymian, Minze, Rosmarin — blind oder mit geschlossenen Augen erraten.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.denner.ch/de/search?q=kr%C3%A4uter",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=kr%C3%A4utertopf",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=frische+kr%C3%A4uter",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "😊",
@@ -834,7 +1472,8 @@
       "b": "Selbst ein gefünsteltes Lächeln aktiviert Gesichtsmuskeln, die über Biofeedback das Gehirn zur Ausschüttung von Serotonin anregen.",
       "tip": "💡 Lächeln in den Spiegel schauen, 30 Sekunden halten. Wirkt besser als man denkt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🌊",
@@ -842,7 +1481,8 @@
       "b": "Natürliche Klanglandschaften reduzieren Cortisolspiegel und aktivieren das parasympathische Nervensystem — eine der einfachsten verfügbaren Entspannungsmethoden.",
       "tip": "💡 Ohrsstöpsel oder Kopfhörer verwenden. YouTube oder Entspannungs-Apps haben stundenlange Aufnahmen.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "⭐",
@@ -850,7 +1490,8 @@
       "b": "Der Blick in den Sternenhimmel erzeugt das Gefühl von Unendlichkeit und Perspektive — ein natürliches Gegengewicht zu persönlichen Problemen.",
       "tip": "💡 Mindestens 10 Minuten. Der Effekt baut sich mit der Zeit auf.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "🫧",
@@ -858,7 +1499,8 @@
       "b": "Der rhythmische, kreisende Bewegungsablauf einer Waschmaschine hat eine ähnliche beruhigende Wirkung wie das Betrachten eines Lagerfeuers.",
       "tip": "💡 Einfach sitzen und schauen, ohne etwas tun zu müssen. Das ist genug.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      },
      {
       "e": "⏱️",
@@ -866,7 +1508,17 @@
       "b": "Das rhythmische, vorhersehbare Pendeln eines Metronomzeigers erzeugt einen hypnotischen Fokuspunkt, der Gedankenspiralen unterbricht.",
       "tip": "💡 Metronom-App auf 60 BPM einstellen. Die Synchronisierung der eigenen Atmung verstärkt den Effekt.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.galaxus.ch/de/s1/product/wittner-maelzel-serie-810k-metronom-zubehoer-instrumente-12496767",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s1/product/korg-metronom-ma-2-stimmgeraet-11249498",
+        "t": ""
+       }
+      ]
      }
     ]
    },
@@ -881,15 +1533,30 @@
       "b": "Angenehme natürliche Gerüche aktivieren das limbische System positiv und können die Stimmung innerhalb von Sekunden verändern.",
       "tip": "💡 Frische Zitrone, Lavendel oder Rosen eignen sich besonders gut. Tief einatmen, 5 – 10 Atemzüge.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": [
+       {
+        "u": "https://www.denner.ch/de/search?q=fr%C3%BCchte",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=fr%C3%BCchte",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=fr%C3%BCchte",
+        "t": ""
+       }
+      ]
      },
      {
       "e": "🧘",
       "t": "Optimale Körperhaltung einnehmen",
       "b": "Eine aufrechte, offene Körperhaltung (Schultern zurück, Kinn leicht angehoben) beeinflusst über Biofeedback die eigene Stimmung und das Selbstwertgefühl messbar.",
-      "tip": "💡 «Power Pose»: 2 Minuten mit breitem Stand und auf Hüfte gestützten Händen stehen.",
+      "tip": "💡 «Power Pose»: 2 Minuten mit breitem Stand und auf Hüfte gestützten Händen stehen. Im Sitzen festgefahren? Aufstehen und umhergehen — schon der Wechsel der Position verändert den Zustand.",
       "von": "",
-      "erg": ""
+      "erg": "",
+      "links": []
      }
     ]
    }

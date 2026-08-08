@@ -55,6 +55,8 @@ Jede Zeile ist ein Skill. Spalten:
 | **Tipp** | Optionaler Zusatztipp (darf leer sein). Die Glühbirne **💡 wird automatisch** vorangestellt – also **nicht** selbst eintippen, nur den Text. |
 | **Von** | Name der Person, die den Skill vorgeschlagen hat (darf leer sein). |
 | **Ergaenzt** | Name der Person, die den Skill später ergänzt hat (darf leer sein). Die Spalte heisst wirklich so – **ohne Umlaut**. |
+| **Link1**, **Link2**, **Link3** | Bis zu drei Bezugsquellen (wo man das Nötige bekommt), alle drei dürfen leer bleiben. Details weiter unten im Abschnitt „Bezugsquellen". |
+| **Text1**, **Text2**, **Text3** | Beschriftet den Knopf zur jeweiligen Link-Spalte (freiwillig, darf leer bleiben). Details weiter unten im Abschnitt „Bezugsquellen". |
 
 > **Zu `Von` und `Ergaenzt`:** Beide Namen erscheinen auf der Webseite, wenn man
 > einen Skill antippt – als Zeile „Vorgeschlagen von … · Ergänzt von …". Sie
@@ -97,6 +99,49 @@ mit welchem **Icon**.
 
 - **Neue Kategorie:** zuerst hier eine Zeile anlegen (Stufe + Name + Icon),
   danach kann sie im Blatt `Skills` verwendet werden.
+
+## Bezugsquellen (wo man etwas bestellen kann)
+
+Ganz rechts im Blatt `Skills` stehen drei Spalten: **Link1**, **Link2**,
+**Link3**. Dort kommt hinein, wo man das Nötige bekommt — zum Beispiel die
+Adresse eines Shops für einen Zauberwürfel. Auf der Website werden daraus
+Knöpfe im Fenster, das aufgeht, wenn man einen Skill antippt.
+
+- **Alle drei dürfen leer bleiben.** Dann erscheinen gar keine Knöpfe.
+- **Auch Lücken sind in Ordnung.** Steht nur in `Link2` etwas, ist das richtig
+  so — beim Bauen rückt es von selbst auf.
+- Die Adresse muss **mit `https://` anfangen** und vollständig sein. Am
+  einfachsten: die Seite im Browser öffnen und die Adresse oben kopieren.
+- **Kurzlinks werden nicht angenommen** (`bit.ly`, `tinyurl.com` und ähnliche).
+  Man sieht ihnen nicht an, wohin sie führen.
+
+Stimmt eine Adresse nicht, hält `build.bat` an und sagt, in welcher **Zeile**
+und welcher **Spalte** — also genau, wo in der Excel nachzuschauen ist. Es
+wird dann nichts erzeugt; nach dem Korrigieren einfach nochmals starten.
+
+### Beschriftung der Knöpfe
+
+Neben jeder Link-Spalte steht eine **Text-Spalte** (`Text1` zu `Link1` und so
+weiter). Was du dort einträgst, steht auf dem Knopf:
+
+| Link1 | Text1 | Auf dem Knopf steht |
+|---|---|---|
+| `https://www.skills-box.ch/products/igelball` | `Igelball` | Igelball |
+| `https://www.skills-box.ch/products/igelball` | *(leer)* | skills-box.ch |
+
+Höchstens **30 Zeichen**, und keine Internetadresse hineinschreiben.
+
+Manche Knöpfe zeigen zusätzlich ein kleines Shop-Symbol vor dem Text — das
+hat mit dieser Spalte nichts zu tun, es hängt allein davon ab, ob für die
+Adresse schon ein Symbol hinterlegt ist.
+
+Das lohnt sich vor allem, wenn ein Skill **mehrere Links zum selben Shop** hat —
+sonst stehen dort zweimal dieselben Wörter, und niemand weiss, welcher Knopf
+wohin führt.
+
+**Wichtig:** Trägst du einen Text ein, ohne daneben eine Adresse zu haben, hält
+`build.bat` an und sagt es dir. Das ist Absicht — eine Beschriftung ohne Ziel
+wäre sonst nie aufgefallen.
 
 ## Wenn etwas nicht stimmt
 
