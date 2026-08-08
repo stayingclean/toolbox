@@ -239,17 +239,26 @@ interaktiv im Konsolenfenster.
 Der Push bleibt bewusst manuell. Nichts geht online, ohne dass es jemand
 gesehen hat.
 
-### Duplikatprüfung mit KI (optional)
+### Duplikatprüfung mit KI (optional) — umgesetzt
 
-Ist die Umgebungsvariable `ANTHROPIC_API_KEY` gesetzt, prüft das Skript vor der
-Übernahme jeden neuen Vorschlag gegen den bestehenden Bestand. Ist sie nicht
-gesetzt, entfällt der Schritt kommentarlos und das Skript läuft wie sonst.
+Wird ein Schlüssel gefunden (erst `ANTHROPIC_API_KEY`, sonst eine `.env` im
+Projektordner), prüft `tools/duplikat.py` vor der Übernahme jeden neuen
+Vorschlag gegen den bestehenden Bestand. Ohne Schlüssel entfällt der Schritt
+kommentarlos und das Skript läuft wie sonst. Geprüft werden nur **neue**
+Skills, keine Änderungen — eine Änderung zeigt über Stufe, Kategorie und
+ursprünglichen Titel schon auf einen bestimmten Skill, „ähnelt einem
+vorhandenen Skill" ist dort keine sinnvolle Frage.
 
 - Modell: `claude-opus-5` (Standard). Der Modellname steht als Konstante oben im
   Skript, damit ein günstigeres Modell eine Einzeiler-Änderung ist.
 - Aufruf über das offizielle `anthropic`-Paket, Antwort per `output_config.format`
-  auf ein festes JSON-Schema festgelegt (Treffer ja/nein, Titel des ähnlichen
-  Skills, kurze Begründung).
+  auf ein festes JSON-Schema festgelegt (Titel, Titel des ähnlichen Skills,
+  Stufe, Kategorie, kurze Begründung).
+- Der Anweisungstext an die KI steht in einer eigenen Datei
+  (`tools/duplikat_prompt.md`), nicht im Code. Sie enthält **nur** die
+  Anweisung, keine Daten — Bestand und neue Vorschläge setzt der Code als
+  eigene Nachricht zusammen, damit die Datei sich frei umformulieren lässt,
+  ohne dass ein Platzhalter kaputtgehen kann.
 - Kosten: der ganze Bestand plus die neuen Vorschläge liegen deutlich unter
   100'000 Zeichen — ein Durchgang kostet einige Rappen.
 
@@ -258,12 +267,21 @@ Bei einem Treffer fragt das Skript pro Fall nach:
 ```
 ⚠ „Musik bewusst hören" ähnelt „Lieblingslied auflegen" (Hoch / Ablenkung)
    Begründung: Beide beschreiben gezieltes Musikhören zur Ablenkung.
-   [ü]bernehmen  [w]eiter (überspringen)  [ä]ls Änderung einarbeiten  ?
+   [ü]bernehmen  [w]eiter (überspringen)  ?
 ```
 
-„Als Änderung einarbeiten" ersetzt die Felder des bestehenden Skills durch die
-des Vorschlags, statt eine zweite Zeile anzulegen. Übersprungene Issues bleiben
-offen und behalten ihr Label.
+**Bewusst nur zwei Antworten** — übernehmen oder überspringen. Eine dritte
+Option „als Änderung einarbeiten" (Felder des bestehenden Skills durch die des
+Vorschlags ersetzen, statt eine zweite Zeile anzulegen) war ursprünglich
+angedacht, wurde aber nicht gebaut: Ohne Tastatur (kein Mensch am Bildschirm)
+wird nicht geraten, sondern übersprungen. Übersprungene Issues bleiben offen
+und behalten ihr Label — es geht nichts verloren, der nächste Lauf bietet den
+Vorschlag wieder an.
+
+Die Prüfung ist eine Zutat, keine Voraussetzung: Scheitert der Aufruf oder die
+Auswertung der Antwort (kein Internet, ungültiger Schlüssel, unerwartete
+Antwortform), wird das gemeldet und die Übernahme läuft ohne Prüfung normal
+weiter — sie darf nie blockieren.
 
 ### Namensfeld in der Datenkette
 
@@ -316,8 +334,10 @@ Die Umsetzung erfolgt in drei Schritten, jeder für sich lauffähig:
    die neuen Zeilen zuerst angehängt, stünden sie bei einem Abbruch schon in der
    Mappe, während ihre Issues noch offen sind — und kämen beim nächsten Lauf ein
    zweites Mal.
-3. **Ergänzungen** — offen. Duplikatprüfung mit KI, Kaffeekasse
-   (`docs/unterstuetzen.html` existiert noch nicht).
+3. **Ergänzungen** — teilweise umgesetzt.
+   - **Duplikatprüfung mit KI** — umgesetzt (`tools/duplikat.py`, siehe
+     Abschnitt oben).
+   - **Kaffeekasse** — offen (`docs/unterstuetzen.html` existiert noch nicht).
 
 Schritt 3 ist unabhängig von 1 und 2 und kann vorgezogen werden.
 
@@ -328,6 +348,8 @@ Schritt 3 ist unabhängig von 1 und 2 und kann vorgezogen werden.
 | `template-vorschlag.html` | neu — Vorlage der Formularseite, CSS eingebettet |
 | `worker/` | neu — Quelltext des Workers, versioniert, nicht veröffentlicht |
 | `tools/vorschlaege_holen.py`, `vorschlaege.bat` | neu — Freigegebene in die Excel übernehmen |
+| `tools/duplikat.py` | neu — optionale Duplikatprüfung per KI (Schlüssel finden, Bestand aufbereiten, Antwort auswerten) |
+| `tools/duplikat_prompt.md` | neu — Anweisungstext der Duplikatprüfung, nur Anweisungen, keine Daten |
 | `docs/unterstuetzen.html` | neu — Kaffeekasse |
 | `build.py` | erzeugt zusätzlich `docs/skill-vorschlagen.html` und `docs/skills-daten.json`; liest Spalte `Von` |
 | `template.html` | Detail-Dialog zeigt „Vorgeschlagen von …"; Fusszeile mit Unterstützungs-Link |
@@ -365,8 +387,8 @@ Deploy-Workflow.
 - Eine Änderung ersetzt die bestehende Zeile, statt eine zweite anzulegen; ein
   nicht auffindbarer Skill lässt das Issue offen und wird gemeldet
 - Ohne `ANTHROPIC_API_KEY` läuft die Übernahme unverändert durch; mit Schlüssel
-  erscheint bei einem Duplikat die Rückfrage, und alle drei Antworten tun das
-  Richtige
+  erscheint bei einem Duplikat die Rückfrage, und beide Antworten (übernehmen,
+  überspringen) tun das Richtige
 - Bestehende Excel ohne Spalte `Von` baut weiterhin fehlerfrei
 - Detail-Dialog zeigt die Namenszeile nur bei vorhandenem Namen
 - Fusszeilen-Link erscheint auf allen Seiten in `docs/`

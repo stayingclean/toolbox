@@ -228,6 +228,16 @@ Zugesicherte Eigenschaft, die jeder Umbau erhalten muss: **Bricht der Lauf ab,
 ist nichts in die Excel geschrieben und kein Issue geschlossen** — der Lauf
 lässt sich gefahrlos wiederholen. Genau darauf verweist `ANLEITUNG.md`.
 
+**Ihr Gegenstück gilt für alles NACH dem Schreiben:** Sobald
+`in_excel_uebernehmen` durch ist, liegt jeder weitere Schritt (Schliessen,
+Ablehnen, die Rückfrage zu den aussortierten Vorschlägen) in **einem**
+gemeinsamen `try … except BaseException` in `main()`. Bricht dort etwas ab —
+auch ein Strg+C an einer der Rückfragen —, erscheinen erst die Erfolgszeile und
+`warne_offene_issues`, dann erst fliegt der Fehler weiter. Ohne diesen
+Wachposten endete der Lauf im rohen Traceback: die Mappe geschrieben, Issues
+offen, und der nächste Lauf trüge dieselben Skills ein zweites Mal ein. Neue
+Schritte gehören deshalb **in** diesen Block, nicht dahinter.
+
 **Eine Änderung an einem Skill, der im selben Lauf erst neu dazukommt, geht
 nicht.** Der ursprüngliche Titel wird gegen `docs/skills-daten.json` geprüft, und
 diese Datei schreibt erst `build.py` am Ende des Laufs neu. Solche Änderungen
@@ -241,6 +251,68 @@ liefe eine Änderung durch `pruefeVorschlag` und würde klaglos als **neuer** Sk
 angelegt — die übrigen Felder passen auf beide Formen. Heute unerreichbar: das
 Formular sendet `art` immer mit, und jedes Issue geht durch ein menschliches
 Auge. Relevant, sobald je ein zweiter Client dazukommt.
+
+**Duplikatprüfung (optional, `tools/duplikat.py`):** Läuft nur, wenn ein
+Schlüssel gefunden wird — erst `ANTHROPIC_API_KEY`, sonst eine `.env` im
+Projektordner. Geprüft werden **nur neue** Skills, nicht Änderungen (eine
+Änderung zeigt bereits auf einen bestimmten Skill). Der Anweisungstext steht in
+`tools/duplikat_prompt.md` und enthält **nur Anweisungen, keine Daten** — die
+setzt der Code zusammen, damit kein Platzhalter kaputtgehen kann.
+
+Zwei Eigenschaften, die jeder Umbau erhalten muss:
+
+1. **Die Prüfung ist eine Zutat, keine Voraussetzung.** Ohne Schlüssel, ohne
+   Netz oder bei einer unerwarteten Antwort läuft die Übernahme unverändert
+   weiter — auch die Rückfrage an den Menschen und alles, was danach mit den
+   Treffern geschieht, liegt innerhalb dieser Absicherung. Sie darf den
+   Hauptweg nie blockieren.
+
+   **Eine gewollte Ausnahme:** Fehlt `tools/duplikat_prompt.md` oder ist sie
+   leer, hält der Lauf an (`lade_prompt` wirft `SystemExit`, das erbt nicht
+   von `Exception` und durchschlägt die Absicherung darum absichtlich). Das
+   ist kein Ausfall der Schnittstelle, sondern ein Aufbaufehler, den jemand
+   beheben muss — ohne Anweisungstext läge nur Raten nahe. Auch dann ist
+   nichts in die Excel geschrieben und kein Issue geschlossen.
+2. **Liegt eine `.env` im Ordner, die `.gitignore` nicht abdeckt, hält das
+   Programm an.** Das Skript schlägt am Ende `git add -A` vor; ohne diese
+   Sperre wäre der Schlüssel mit einem Befehl öffentlich.
+
+**Gemeldet werden auch Verdachtsfälle, nicht nur sichere Treffer.** Jeder
+Treffer trägt eine von zwei Sicherheitsstufen, `sicher` oder `unsicher`
+(`duplikat.SICHERHEITSSTUFEN`). Die KI ist darauf bereits über das Antwortschema
+gebunden (`enum` in `duplikat.SCHEMA`), der Filter in `pruefe_duplikate` prüft
+den Wert danach ein zweites Mal — das Schema bindet die KI, nicht zwingend die
+Antwort, die tatsächlich ankommt.
+
+**Die Anzeige (`vorschlaege_holen.gegenueberstellung`) sucht den vorhandenen
+Skill über ALLE Stufen und Kategorien** (`skill_im_bestand`), nicht über Stufe
+und Kategorie aus dem Treffer: Diese beiden Felder im Treffer-Objekt gehören
+zum **eingereichten** Vorschlag, nicht zum gefundenen Bestandsskill. Wer dort
+danach suchte, fände ihn oft nicht.
+
+**Die Reihenfolge ist die Zusicherung.** `nachfragen()` schreibt nichts auf
+GitHub — sie sammelt nur Entscheidungen (übernehmen/überspringen/ablehnen samt
+Begründung). Kommentieren, Labeln und Schliessen (`issue_ablehnen`,
+`issue_kommentieren`) passieren in `main()` erst **nach** dem erfolgreichen
+`in_excel_uebernehmen`. Wer das umstellt, bricht „bei Abbruch ist nichts
+geschrieben und kein Issue verändert" — diese Zusicherung wurde in diesem
+Projekt bereits mehrfach gebrochen und wieder repariert, zuletzt mit einem Test,
+der genau diese Reihenfolge festnagelt.
+
+**Automatische Ablehnungen (falscher Absender, unbekannte Kategorie, …) werden
+nicht geschlossen.** Sie sind oft behebbar (z. B. erst die Kategorie anlegen)
+und sollen beim nächsten Lauf erneut versucht werden. `main()` fragt für sie
+nur, ob eine Begründung als Kommentar ins Issue soll
+(`automatische_ablehnungen_melden`) — und lässt dabei genau die Issue-Nummern
+aus, die schon bei der Duplikat-Rückfrage übersprungen wurden (`raus`), sonst
+würde derselbe Fall zweimal gefragt.
+
+**Diese Rückfrage hängt an keinem Schlüssel.** Sie läuft auch dann, wenn keine
+Duplikatprüfung eingerichtet ist — und ist damit für die meisten Benutzer der
+einzige sichtbare Unterschied zur Fassung davor: War mindestens ein Vorschlag
+aussortiert, hält `vorschlaege.bat` an und wartet auf eine Eingabe, wo es
+vorher durchlief. `ANLEITUNG.md` sagt das unter einer eigenen Überschrift; wer
+hier etwas umbaut, muss es dort nachziehen.
 
 Die Formularseite ist generiert (`template-vorschlag.html` + `build.py`) — nicht
 direkt bearbeiten. Sie ist die einzige Seite in `docs/`, die Internet braucht

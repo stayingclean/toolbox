@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["openpyxl"]
+# dependencies = ["openpyxl", "anthropic"]
 # ///
 """
 Freigegebene Skill-Vorschläge übernehmen
@@ -31,11 +31,14 @@ import re
 import subprocess
 import sys
 import zipfile
+from collections import Counter
 from pathlib import Path
 
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.exceptions import InvalidFileException
+
+import duplikat
 
 sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
 sys.stderr.reconfigure(encoding="utf-8")
@@ -585,6 +588,32 @@ def issue_schliessen(nummer: int):
     )
 
 
+def issue_kommentieren(nummer: int, text: str):
+    subprocess.run(
+        ["gh", "issue", "comment", str(nummer), "--repo", REPO, "--body", text],
+        check=True, capture_output=True, text=True, encoding="utf-8",
+    )
+
+
+def issue_ablehnen(nummer: int, grund: str):
+    """Begruendung als Kommentar, Label `abgelehnt`, Issue schliessen.
+
+    Reihenfolge mit Absicht: Erst der Kommentar. Scheitert das Schliessen
+    danach, steht die Begruendung wenigstens schon da – umgekehrt waere das
+    Issue zu, ohne dass jemand erfaehrt, warum.
+    """
+    issue_kommentieren(nummer, grund)
+    subprocess.run(
+        ["gh", "issue", "edit", str(nummer), "--repo", REPO,
+         "--add-label", "abgelehnt", "--remove-label", LABEL],
+        check=True, capture_output=True, text=True, encoding="utf-8",
+    )
+    subprocess.run(
+        ["gh", "issue", "close", str(nummer), "--repo", REPO],
+        check=True, capture_output=True, text=True, encoding="utf-8",
+    )
+
+
 def warne_offene_issues(nummern: list):
     """Warnt vor Vorschlaegen, die in der Excel stehen, deren Issue aber offen ist."""
     if not nummern:
@@ -598,6 +627,224 @@ def warne_offene_issues(nummern: list):
         f"   doppelt in der Liste, und eine Aenderung liesse sich nicht mehr\n"
         f"   zuordnen."
     )
+
+
+def treffer_je_issue(treffer: list, uebernehmen: list) -> dict:
+    """Ordnet die Treffer der Duplikatpruefung den Issues zu, aus denen sie
+    stammen: `{Issue-Nummer: Treffer}`. Treffer ohne passenden Vorschlag
+    fallen weg.
+
+    Zwei Dinge sind dabei tragend:
+
+    1. **Nur neue Skills kommen ueberhaupt in Frage.** Geprueft werden ohnehin
+       nur neue Skills (eine Aenderung zeigt schon ueber Stufe/Kategorie/Titel
+       auf einen bestimmten vorhandenen Skill). Eine Aenderung darf durch eine
+       Rueckfrage deshalb NIEMALS herausfallen. Frueher lief die Zuordnung
+       ueber ganz `uebernehmen` und allein ueber den Titel – und der Titel
+       einer Aenderung bleibt im Regelfall unveraendert. Trafen ein neuer
+       Skill und eine Aenderung auf denselben Titel, gewann im dict der
+       letzte: eingetragen wurde die Dublette, herausgeworfen die Aenderung.
+       Das Gegenteil dessen, was der Mensch angewiesen hatte.
+    2. **Der Titel allein ist kein Schluessel.** Zwei neue Vorschlaege koennen
+       denselben Titel tragen. Stufe und Kategorie stehen im Treffer und
+       machen die Zuordnung eindeutig.
+
+    Rueckfallweg ueber den Titel allein: Laut `tools/duplikat_prompt.md`
+    beziehen sich `stufe`/`kategorie` im Treffer auf den EINGEREICHTEN
+    Vorschlag. Erzwingen laesst sich das nicht – das Antwortschema kennt nur
+    „Zeichenkette". Nennt das Modell stattdessen die Werte des aehnlichen
+    Bestandsskills, faende der Dreier-Schluessel nichts und die Rueckfrage
+    entfiele lautlos (fail-open: die Dublette liefe durch). Deshalb greift
+    dann der Titel – aber nur, wenn er unter den neuen Vorschlaegen genau
+    einmal vorkommt, sonst waere er wieder mehrdeutig.
+    """
+    kandidaten = [(i, d) for i, d in uebernehmen if d.get("art") != "aenderung"]
+    # Bei zwei voellig gleichen neuen Vorschlaegen (gleiche Stufe, Kategorie
+    # UND Titel) bleibt der Schluessel mehrdeutig; dann gewinnt der letzte.
+    # Das ist hier vertretbar: Solche Vorschlaege sind Dubletten voneinander,
+    # der Mensch wird einmal gefragt, und der uebrige bleibt sichtbar in der
+    # Liste stehen.
+    nach_schluessel = {
+        (d.get("stufe"), d.get("kategorie"), d.get("titel")): i["number"]
+        for i, d in kandidaten
+    }
+    haeufigkeit = Counter(d.get("titel") for _, d in kandidaten)
+    nach_titel = {
+        d.get("titel"): i["number"]
+        for i, d in kandidaten
+        if haeufigkeit[d.get("titel")] == 1
+    }
+
+    zuordnung = {}
+    for t in treffer:
+        if not isinstance(t, dict):
+            continue
+        schluessel = (t.get("stufe"), t.get("kategorie"), t.get("titel"))
+        # Bei falsch getypten Feldern kaeme es hier zu `TypeError: unhashable
+        # type`. duplikat.pruefe_duplikate filtert sie bereits weg; das hier
+        # ist die zweite Schutzebene, damit ein einzelner unbrauchbarer
+        # Treffer nicht die Rueckfrage zu den uebrigen mitreisst.
+        if not all(isinstance(w, str) for w in schluessel):
+            continue
+        nummer = nach_schluessel.get(schluessel)
+        if nummer is None:
+            nummer = nach_titel.get(t.get("titel"))
+        if nummer is None:
+            continue  # kein passender Vorschlag – nichts zu fragen
+        zuordnung.setdefault(nummer, t)
+    return zuordnung
+
+
+def skill_im_bestand(bestand: dict, titel: str):
+    """Sucht einen vorhandenen Skill ueber ALLE Stufen und Kategorien.
+
+    Bewusst nicht ueber Stufe und Kategorie aus dem Treffer: die beziehen sich
+    laut Prompt auf den EINGEREICHTEN Vorschlag, nicht auf den gefundenen
+    Bestandsskill. Wer danach suchte, faende oft nichts.
+    """
+    for stufe in bestand.values():
+        for kategorie in stufe.get("kategorien", []):
+            for skill in kategorie.get("skills", []):
+                if skill.get("t") == titel:
+                    return skill
+    return None
+
+
+def gegenueberstellung(neu: dict, alt, t: dict, nummer=None) -> str:
+    """Stellt den eingereichten und den vorhandenen Eintrag untereinander.
+
+    Untereinander, nicht nebeneinander: Beschreibungen sind zu lang fuer zwei
+    Spalten in einem Konsolenfenster, und umgebrochener Text laesst sich
+    schlechter vergleichen als zwei ganze Absaetze.
+
+    `nummer` (die Issue-Nummer) ist optional und rein kosmetisch: steht sie
+    dabei, kann der Mensch am Bildschirm einen Fehltreffer sofort dem
+    richtigen Issue zuordnen, statt nur zwei Titel vor sich zu haben.
+    """
+    wie_sicher = (
+        "SICHER dieselbe Handlung" if t.get("sicherheit") == "sicher"
+        else "unsicher – bitte selbst beurteilen"
+    )
+    kennung = f"Issue #{nummer}: " if nummer is not None else ""
+    zeilen = [
+        f'\n⚠ {kennung}Moegliche Dublette ({wie_sicher})',
+        f'   Einschaetzung: {t["begruendung"]}',
+        "",
+        f'   NEU eingereicht  ({t["stufe"]} / {t["kategorie"]}):',
+        f'     {neu.get("emoji", "")} {neu["titel"]}',
+        f'     {neu["beschreibung"]}',
+    ]
+    if neu.get("tipp"):
+        zeilen.append(f'     Tipp: {neu["tipp"]}')
+    zeilen.append("")
+    if alt is None:
+        zeilen.append(f'   VORHANDEN: „{t["aehnlich_zu"]}" – im Bestand nicht gefunden.')
+    else:
+        zeilen += [
+            "   VORHANDEN bereits:",
+            f'     {alt.get("e", "")} {alt.get("t", "")}',
+            f'     {alt.get("b", "")}',
+        ]
+        if alt.get("tip"):
+            zeilen.append(f'     {alt["tip"]}')
+    return "\n".join(zeilen)
+
+
+def nachfragen(treffer: list, uebernehmen: list, bestand: dict, eingabe=input):
+    """Legt jeden Verdacht vor und sammelt die Entscheidungen.
+
+    Liefert `(ueberspringen, ablehnungen)`:
+      ueberspringen — Issue-Nummern, die NICHT eingetragen werden
+      ablehnungen   — Liste von (Nummer, Begruendung)
+
+    Diese Funktion schreibt NICHTS auf GitHub. Sie sammelt nur. Ausgefuehrt wird
+    erst nach dem erfolgreichen Schreiben in die Excel – sonst hinterliesse ein
+    Abbruch geschlossene Issues bei ungeschriebener Mappe.
+    """
+    nach_nummer = {i["number"]: d for i, d in uebernehmen}
+    ueberspringen, ablehnungen = [], []
+    for nummer, t in treffer_je_issue(treffer, uebernehmen).items():
+        neu = nach_nummer[nummer]
+        alt = skill_im_bestand(bestand, t.get("aehnlich_zu"))
+        print(gegenueberstellung(neu, alt, t, nummer))
+        while True:
+            try:
+                wahl = eingabe(
+                    "   [ü]bernehmen  [w]eiter (spaeter entscheiden)  "
+                    "[a]blehnen (mit Begruendung)  ? "
+                )
+            except EOFError:
+                # Kein Mensch am Bildschirm: nicht raten und nichts schreiben.
+                print("   Keine Eingabe moeglich – wird uebersprungen.")
+                ueberspringen.append(nummer)
+                break
+            wahl = wahl.strip().lower()
+            if wahl in ("ü", "u", "ue"):
+                break
+            if wahl == "w":
+                ueberspringen.append(nummer)
+                break
+            if wahl == "a":
+                grund = begruendung_erfragen(eingabe)
+                if grund is None:
+                    # Abbruch waehrend der Begruendung: nicht ablehnen, nur
+                    # ueberspringen. Eine Ablehnung ohne Begruendung waere fuer
+                    # die einreichende Person wertlos.
+                    ueberspringen.append(nummer)
+                    break
+                ueberspringen.append(nummer)
+                ablehnungen.append((nummer, grund))
+                break
+            print("   Bitte ü, w oder a eingeben.")
+    return ueberspringen, ablehnungen
+
+
+def begruendung_erfragen(eingabe=input):
+    """Fragt nach einer Begruendung. Liefert None, wenn keine kommt.
+
+    Der Text wird als Kommentar im Issue veroeffentlicht und ist fuer die
+    einreichende Person ueber ihren Statuslink sichtbar. Deshalb wird nicht
+    stillschweigend eine leere Begruendung akzeptiert.
+    """
+    print("   Die Begruendung erscheint im Issue und ist fuer die einreichende")
+    print("   Person sichtbar. Bitte kurz und freundlich.")
+    while True:
+        try:
+            grund = eingabe("   Begruendung: ")
+        except EOFError:
+            return None
+        grund = grund.strip()
+        if grund:
+            return grund
+        print("   Bitte eine kurze Begruendung eingeben (oder Strg+C zum Abbrechen).")
+
+
+def automatische_ablehnungen_melden(faelle: list, eingabe=input) -> list:
+    """Fragt je Fall, ob der Grund als Kommentar ins Issue soll.
+
+    Der Text ist fuer die einreichende Person ueber ihren Statuslink sichtbar.
+    Darum wird er vorher gezeigt und nichts ohne Zustimmung geschrieben.
+    Diese Faelle werden NICHT geschlossen: Sie sind oft behebbar (etwa die
+    Kategorie zuerst anlegen), und dann soll der naechste Lauf sie wieder
+    anbieten.
+    """
+    zu_schreiben = []
+    if not faelle:
+        return zu_schreiben
+    print("\nZu den nicht uebernommenen Vorschlaegen kannst du eine Rueckmeldung")
+    print("ins Issue schreiben. Sie ist fuer die einreichende Person sichtbar.")
+    for issue, grund in faelle:
+        text = f"Nicht uebernommen: {grund}"
+        print(f'\n   Issue #{issue["number"]} „{issue["title"]}"')
+        print(f"   Vorgeschlagener Kommentar: {text}")
+        try:
+            wahl = eingabe("   Schreiben? [j]a  [n]ein  ? ")
+        except EOFError:
+            print("   Keine Eingabe moeglich – es wird nichts geschrieben.")
+            return zu_schreiben
+        if wahl.strip().lower() in ("j", "ja"):
+            zu_schreiben.append((issue["number"], text))
+    return zu_schreiben
 
 
 def main():
@@ -636,6 +883,86 @@ def main():
     aenderungen = [d for _, d in uebernehmen if d.get("art") == "aenderung"]
     neue = [d for _, d in uebernehmen if d.get("art") != "aenderung"]
 
+    # Optionale Duplikatpruefung. Ohne Schluessel entfaellt sie kommentarlos;
+    # scheitert sie, laeuft die Uebernahme unveraendert weiter. Geprueft werden
+    # nur neue Skills – eine Aenderung zeigt schon ueber Stufe/Kategorie/Titel
+    # auf einen bestimmten vorhandenen Skill, "aehnelt einem vorhandenen Skill"
+    # ist dort keine sinnvolle Frage.
+    #
+    # `raus` und `ablehnungen` werden HIER (ausserhalb des folgenden if) auf
+    # leer gesetzt, nicht erst darin: weiter unten, nach dem Schreiben in die
+    # Excel, wird `raus` gebraucht, um die automatischen Ablehnungen von den
+    # gerade erst beim Nachfragen beantworteten zu trennen. Ohne diese Faelle
+    # gaebe es unten ein UnboundLocalError, sobald kein Schluessel hinterlegt
+    # ist oder kein neuer Skill dabei ist – also im ganz gewoehnlichen Fall
+    # ohne Duplikatpruefung. (UnboundLocalError, nicht NameError: die
+    # Zuweisung im `if`-Block macht den Namen fuer den ganzen Funktionskoerper
+    # lokal – ohne diese Vorbelegung waere er bekannt, aber noch nicht
+    # gesetzt.)
+    raus, gruende, ablehnungen = [], {}, []
+    schluessel = duplikat.schluessel_finden(ROOT)
+    if schluessel and neue:
+        print("\nPruefe die neuen Vorschlaege auf Dubletten …")
+        # Vor dem try festgelegt: Platzt es mitten im Block, gilt das, was bis
+        # dahin feststand. `raus` wird deshalb ZUERST gefuellt (die Antwort des
+        # Menschen darf eine spaetere Panne nicht wieder aufheben), die
+        # Begruendungen danach.
+        try:
+            client = duplikat.client_bauen(schluessel)
+            treffer = duplikat.pruefe_duplikate(neue, bestand, client)
+            # Das VERARBEITEN der Antwort steht mit im try, nicht nur ihr
+            # Beschaffen. Genau das war die dritte Bruchstelle derselben
+            # Fehlerklasse: `nachfragen()` lag dahinter im Freien, und ein
+            # unbrauchbarer Treffer riss mit `TypeError: unhashable type` den
+            # ganzen Uebernahmelauf mit. Die Pruefung ist eine Zutat, keine
+            # Voraussetzung – aus diesem Block darf nichts entkommen.
+            raus, ablehnungen = nachfragen(treffer, uebernehmen, bestand)
+            gruende = {
+                nummer: (
+                    f'aehnelt vorhandenem Skill „{t["aehnlich_zu"]}" – beim '
+                    f"Nachfragen uebersprungen"
+                )
+                for nummer, t in treffer_je_issue(treffer, uebernehmen).items()
+            }
+        except Exception as fehler:
+            # client_bauen() wird HIER aufgerufen, nicht als Argument innerhalb
+            # des Aufrufs von pruefe_duplikate() (das war der Fehler): dessen
+            # eigene Absicherung (siehe duplikat.py) greift nur INNERHALB ihres
+            # eigenen try-Blocks, also erst NACHDEM der Client schon fertig
+            # gebaut ist. Scheitert schon der Bau (ungueltiger Schluessel,
+            # fehlendes Paket `anthropic`, …), liegt das ausserhalb dieser
+            # Absicherung. Ohne dieses eigene Sicherheitsnetz wuerde main()
+            # abstuerzen, obwohl die Pruefung nur eine Zutat ist und der Rest
+            # der Uebernahme normal weiterlaufen soll. Nur der Typname erscheint
+            # in der Meldung, nie str(fehler) – dieselbe Begruendung wie in
+            # duplikat.pruefe_duplikate: eine Fehlermeldung koennte den
+            # Schluessel mitfuehren.
+            print(
+                f"\n⚠ Die Duplikatpruefung wurde uebersprungen: {type(fehler).__name__}.\n"
+                "   Die Uebernahme laeuft normal weiter – sie haengt nicht daran."
+            )
+        # Ab hier nur noch Umsortieren – reine Listenarbeit, die nicht platzen
+        # kann. Alles Fehleranfaellige liegt oben im try.
+        if raus:
+            # In `abgelehnt` statt in `uebersprungen` einsortiert: `uebersprungen`
+            # druckt weiter unten woertlich "kein lesbarer Vorschlagsblock oder
+            # andere Art" – das waere hier schlicht falsch. `abgelehnt` druckt den
+            # mitgegebenen Grund und den ohnehin passenden Hinweis, dass das Label
+            # `freigegeben` stehen bleiben kann und der naechste Lauf es erneut
+            # anbietet.
+            for issue, _ in uebernehmen:
+                if issue["number"] not in raus:
+                    continue
+                # Der Rueckfall greift, wenn die Begruendungen oben nicht mehr
+                # zustande kamen: Die Antwort des Menschen gilt trotzdem.
+                abgelehnt.append((issue, gruende.get(
+                    issue["number"],
+                    "beim Nachfragen zur Duplikatpruefung uebersprungen",
+                )))
+            uebernehmen = [(i, d) for i, d in uebernehmen if i["number"] not in raus]
+            aenderungen = [d for _, d in uebernehmen if d.get("art") == "aenderung"]
+            neue = [d for _, d in uebernehmen if d.get("art") != "aenderung"]
+
     # Ein einziger Schreibvorgang fuer den ganzen Lauf: er gelingt ganz oder gar
     # nicht. Bricht er ab, ist die Excel unveraendert und kein Issue geschlossen
     # – der Lauf laesst sich gefahrlos wiederholen.
@@ -665,6 +992,25 @@ def main():
 
     nicht_geschlossen = []
     geschlossen = set()
+
+    def erfolg_melden():
+        """Die Erfolgszeile – gebraucht auf zwei Wegen (regulaerer Abschluss und
+        Abbruch nach dem Schreiben), darum nur einmal formuliert."""
+        if anzahl:
+            wort = "Vorschlag" if anzahl == 1 else "Vorschläge"
+            print(f"\n✅ {anzahl} {wort} in {XLSX.name} übernommen.")
+
+    # Ab hier steht die Uebernahme in der Excel. ALLES, was danach kommt und
+    # abbrechen kann, gehoert in diesen einen try-Block: das Schliessen, die
+    # Ablehnungen und die Rueckfrage zu den automatisch aussortierten Faellen
+    # (die ein interaktives input() enthaelt – Strg+C ist dort jederzeit
+    # moeglich, und die Begruendungs-Rueckfrage bringt es dem Menschen sogar
+    # ausdruecklich bei). Schlaegt hier irgendetwas durch, muessen Erfolgszeile
+    # und Warnung trotzdem erscheinen: sonst endet der Lauf im rohen Traceback,
+    # niemand erfaehrt, dass die Mappe bereits geschrieben ist und Issues offen
+    # sind – und der naechste Lauf traegt dieselben Skills ein zweites Mal ein.
+    # Bewusst EIN gemeinsamer Block statt zweier gleichlautender Wachposten:
+    # ein zweiter waere eine Kopie, die beim naechsten Umbau auseinanderlaeuft.
     try:
         for issue, daten in uebernehmen:
             kennung = "~" if daten.get("art") == "aenderung" else "+"
@@ -674,20 +1020,71 @@ def main():
                 geschlossen.add(issue["number"])
             except subprocess.CalledProcessError:
                 nicht_geschlossen.append(issue["number"])
+
+        # Ab hier weitere GitHub-Schreibvorgaenge – wie das Schliessen oben
+        # duerfen auch sie erst NACH dem erfolgreichen Schreiben in die Excel
+        # passieren. Ein einzelner Fehlschlag bricht den Lauf nicht ab: die
+        # Uebernahme steht schon in der Mappe, ein Absturz hinterliesse nur
+        # einen halben Zustand auf GitHub, den niemand einordnen koennte.
+        # Stattdessen wird gemeldet, was von Hand nachzuholen ist – genau wie
+        # beim Schliessen oben.
+        # `erledigt_durch_ablehnen` merkt sich, welche Issues hier tatsaechlich
+        # geschlossen wurden: die spaetere "bleibt offen"-Ausgabe (weiter unten,
+        # `for issue, grund in abgelehnt_offen`) darf fuer genau diese Nummern
+        # nicht mehr erscheinen – sonst behauptet das Programm im selben Lauf
+        # zweimal etwas Gegenteiliges ueber denselben Vorgang.
+        erledigt_durch_ablehnen = set()
+        for nummer, grund in ablehnungen:
+            try:
+                issue_ablehnen(nummer, grund)
+                erledigt_durch_ablehnen.add(nummer)
+                print(f"  ✗ Issue #{nummer} abgelehnt und geschlossen.")
+            except subprocess.CalledProcessError:
+                # issue_ablehnen() kommentiert ZUERST und labelt danach: bei
+                # einem Fehlschlag steht die Begruendung womoeglich schon
+                # oeffentlich im Issue. Wer sie hier blind noch einmal
+                # hineinschreibt, postet denselben Text zweimal.
+                print(
+                    f"\n⚠ Issue #{nummer} konnte nicht abgelehnt werden.\n"
+                    f"   Bitte von Hand auf github.com/{REPO}/issues/{nummer}\n"
+                    f"   das Label `abgelehnt` setzen und schliessen.\n"
+                    f"   Die Begruendung wird als Erstes geschrieben – sie steht\n"
+                    f"   dort moeglicherweise schon als Kommentar. Bitte zuerst\n"
+                    f"   nachschauen und nur nachtragen, falls sie fehlt:\n"
+                    f"   {grund}"
+                )
+
+        # `abgelehnt` enthaelt NICHT nur die automatisch aussortierten
+        # Vorschlaege (falscher Absender, gescheiterte Pruefung): weiter oben
+        # landen dort auch die beim Nachfragen zur Duplikatpruefung
+        # uebersprungenen Issues – sowohl das „weiter, spaeter entscheiden" als
+        # auch das „ablehnen" (Letzteres ist gerade eben ueber die Schleife oben
+        # abgearbeitet worden). Fuer all diese Faelle hat der Mensch die Frage
+        # schon beantwortet. Wuerde die ganze Liste an
+        # automatische_ablehnungen_melden() gehen, bekaeme er fuer genau diese
+        # Issues eine ZWEITE Rueckfrage. `raus` traegt exakt die Issue-Nummern,
+        # die aus der Rueckfrage stammen – deshalb hier NICHT vereinfachen zu
+        # "ganz abgelehnt uebergeben".
+        aus_rueckfrage = {n for n in raus}
+        automatisch = [(i, g) for i, g in abgelehnt if i["number"] not in aus_rueckfrage]
+        for nummer, text in automatische_ablehnungen_melden(automatisch):
+            try:
+                issue_kommentieren(nummer, text)
+            except subprocess.CalledProcessError:
+                print(
+                    f"⚠ Der Kommentar zu Issue #{nummer} konnte nicht geschrieben werden.\n"
+                    f"   Nicht weiter schlimm: das Issue bleibt ohnehin offen und wird\n"
+                    f"   beim naechsten Lauf erneut angeboten – dann kannst du es noch\n"
+                    f"   einmal versuchen."
+                )
     except BaseException:
-        # Ab hier steht die Uebernahme bereits in der Excel. Schlaegt etwas
-        # Unerwartetes durch (oder bricht jemand mit Strg+C ab), muss die
-        # Warnung trotzdem erscheinen – sonst bleibt unbemerkt, dass Issues
-        # offen sind und der naechste Lauf Dubletten erzeugt.
+        erfolg_melden()
         warne_offene_issues(
             [i["number"] for i, _ in uebernehmen if i["number"] not in geschlossen]
         )
         raise
 
-    if anzahl:
-        wort = "Vorschlag" if anzahl == 1 else "Vorschläge"
-        print(f"\n✅ {anzahl} {wort} in {XLSX.name} übernommen.")
-
+    erfolg_melden()
     warne_offene_issues(nicht_geschlossen)
 
     for issue in uebersprungen:
@@ -696,20 +1093,31 @@ def main():
             f'(kein lesbarer Vorschlagsblock oder andere Art) – bleibt offen.'
         )
 
-    for issue, grund in abgelehnt:
+    # Wer gerade eben ueber issue_ablehnen() erfolgreich geschlossen wurde,
+    # darf hier nicht nochmal als "bleibt offen" auftauchen – das waere eine
+    # falsche Aussage ueber einen Vorgang, den der Lauf selbst schon erledigt
+    # hat (siehe erledigt_durch_ablehnen oben). Alle anderen Faelle in
+    # `abgelehnt` (automatisch aussortiert, oder beim Nachfragen mit „weiter"
+    # zurueckgestellt) sind tatsaechlich noch offen.
+    abgelehnt_offen = [(i, g) for i, g in abgelehnt if i["number"] not in erledigt_durch_ablehnen]
+
+    for issue, grund in abgelehnt_offen:
         print(
             f'⚠ Issue #{issue["number"]} „{issue["title"]}" nicht übernommen: '
             f"{grund} – bleibt offen."
         )
 
-    if uebersprungen or abgelehnt:
+    if uebersprungen or abgelehnt_offen:
         print(
             f"\n   Was tun? Diese Issues auf github.com/{REPO}/issues anschauen.\n"
             f"   Taugt ein Vorschlag nichts, gib ihm das Label `abgelehnt` mit\n"
             f"   einer kurzen Begruendung als Kommentar und schliesse ihn. Soll er\n"
-            f"   doch hinein, behebe den oben genannten Punkt (z. B. die Kategorie\n"
-            f"   in der Excel wieder anlegen) und starte vorschlaege.bat noch\n"
-            f"   einmal – das Label `freigegeben` kann stehen bleiben."
+            f"   doch hinein: Meist genuegt es, den oben genannten Punkt zu beheben\n"
+            f"   (z. B. die Kategorie in der Excel wieder anlegen) und\n"
+            f"   vorschlaege.bat noch einmal zu starten – bei einer wegen einer\n"
+            f"   moeglichen Dublette uebersprungenen Zeile genuegt es, beim\n"
+            f"   naechsten Lauf einfach anders zu antworten. Das Label\n"
+            f"   `freigegeben` kann in jedem Fall stehen bleiben."
         )
 
     if anzahl:

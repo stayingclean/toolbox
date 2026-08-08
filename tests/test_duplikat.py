@@ -1,0 +1,528 @@
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
+
+import duplikat
+
+
+def test_umgebungsvariable_wird_gefunden(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test-aus-der-umgebung")
+    assert duplikat.schluessel_finden(tmp_path) == "sk-test-aus-der-umgebung"
+
+
+def test_auskommentierte_zuweisung_gewinnt_nicht(tmp_path, monkeypatch):
+    """Eine auskommentierte Zuweisung darf die echte Zeile nicht verdraengen.
+
+    Prueft NICHT den `startswith("#")`-Zweig einzeln -- das kann kein
+    ausgabebasierter Test, siehe Kommentar in `_env_datei_lesen`. Geprueft
+    wird nur das Ergebnis: Steht vor der echten Zuweisung eine Zeile, die wie
+    eine auskommentierte Zuweisung aussieht, gewinnt trotzdem der echte Wert.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    (tmp_path / ".gitignore").write_text(".env*\n", encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "# ANTHROPIC_API_KEY=sk-auskommentiert\n"
+        "ANTHROPIC_API_KEY=sk-test-aus-der-datei\n",
+        encoding="utf-8",
+    )
+    assert duplikat.schluessel_finden(tmp_path) == "sk-test-aus-der-datei"
+
+
+def test_umgebungsvariable_hat_vorrang(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-umgebung")
+    (tmp_path / ".gitignore").write_text(".env*\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-datei\n", encoding="utf-8")
+    assert duplikat.schluessel_finden(tmp_path) == "sk-umgebung"
+
+
+def test_anfuehrungszeichen_und_leerzeichen_werden_entfernt(tmp_path, monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    (tmp_path / ".gitignore").write_text(".env*\n", encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        '  ANTHROPIC_API_KEY = "sk-in-anfuehrungszeichen"  \n', encoding="utf-8"
+    )
+    assert duplikat.schluessel_finden(tmp_path) == "sk-in-anfuehrungszeichen"
+
+
+def test_ohne_alles_kein_schluessel(tmp_path, monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    assert duplikat.schluessel_finden(tmp_path) is None
+
+
+def test_env_ohne_gitignore_schutz_haelt_an(tmp_path, monkeypatch):
+    """Sonst wuerde `git add -A` den Schluessel veroeffentlichen."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    (tmp_path / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-ungeschuetzt\n", encoding="utf-8")
+    with pytest.raises(SystemExit) as ausnahme:
+        duplikat.schluessel_finden(tmp_path)
+    meldung = str(ausnahme.value)
+    assert ".gitignore" in meldung
+    assert "sk-ungeschuetzt" not in meldung, "der Schluessel darf nie in der Meldung stehen"
+
+
+def test_env_ohne_gitignore_datei_haelt_ebenfalls_an(tmp_path, monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-ungeschuetzt\n", encoding="utf-8")
+    with pytest.raises(SystemExit):
+        duplikat.schluessel_finden(tmp_path)
+
+
+def test_env_mit_git_negation_haelt_an(tmp_path, monkeypatch):
+    """`.gitignore` mit `.env*` UND `!.env` schuetzt die Datei in Wirklichkeit NICHT.
+
+    Ein reiner Zeichenkettenvergleich der .gitignore-Zeilen sieht die Negation
+    nicht -- nur Git selbst kennt sie. In einem echten Repo muss deshalb trotz
+    vorhandener Zeile `.env*` angehalten werden.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / ".gitignore").write_text(".env*\n!.env\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-ungeschuetzt\n", encoding="utf-8")
+    with pytest.raises(SystemExit):
+        duplikat.schluessel_finden(tmp_path)
+
+
+def test_env_in_echtem_git_repo_wird_erkannt(tmp_path, monkeypatch):
+    """Bestaetigt den Git-Pfad auch fuer den normalen (geschuetzten) Fall."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / ".gitignore").write_text(".env*\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-aus-git-repo\n", encoding="utf-8")
+    assert duplikat.schluessel_finden(tmp_path) == "sk-aus-git-repo"
+
+
+def test_ohne_git_greift_der_rueckfallweg(tmp_path, monkeypatch):
+    """Ist Git nicht aufrufbar (z. B. nicht installiert), greift der
+    Zeichenkettenvergleich als Rueckfall -- ohne echten Eingriff ins System.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    def kein_git(*args, **kwargs):
+        raise FileNotFoundError("git nicht gefunden")
+
+    monkeypatch.setattr(duplikat.subprocess, "run", kein_git)
+    (tmp_path / ".gitignore").write_text(".env*\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-ohne-git\n", encoding="utf-8")
+    assert duplikat.schluessel_finden(tmp_path) == "sk-ohne-git"
+
+
+def test_ohne_git_und_ohne_schutz_haelt_der_rueckfallweg_ebenfalls_an(tmp_path, monkeypatch):
+    """Derselbe Rueckfallweg muss auch den ungeschuetzten Fall erkennen."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    def kein_git(*args, **kwargs):
+        raise FileNotFoundError("git nicht gefunden")
+
+    monkeypatch.setattr(duplikat.subprocess, "run", kein_git)
+    (tmp_path / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-ungeschuetzt\n", encoding="utf-8")
+    with pytest.raises(SystemExit):
+        duplikat.schluessel_finden(tmp_path)
+
+
+def test_notbremse_behauptet_keinen_schluessel_den_sie_nie_gelesen_hat(tmp_path, monkeypatch):
+    """Die Notbremse haengt allein daran, DASS eine .env daliegt -- gelesen wird
+    sie erst danach. Eine leere .env oder eine mit ganz anderen Eintraegen
+    loest die Meldung genauso aus. Sie darf deshalb nicht behaupten, die Datei
+    enthalte einen Schluessel: Fuer die Zielgruppe („was fuer ein Schluessel?
+    ich habe gar keinen") macht das unnoetig Angst.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    (tmp_path / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("IRGENDWAS_ANDERES=1\n", encoding="utf-8")
+    with pytest.raises(SystemExit) as ausnahme:
+        duplikat.schluessel_finden(tmp_path)
+    meldung = str(ausnahme.value)
+    assert "enthaelt einen Schluessel" not in meldung, (
+        "gelesen wurde die Datei an dieser Stelle noch gar nicht"
+    )
+    assert "koennte" in meldung, "die Meldung muss den Vorbehalt benennen"
+    assert ".gitignore" in meldung
+
+
+def test_kaputte_gitignore_stuerzt_den_rueckfallweg_nicht_ab(tmp_path, monkeypatch):
+    """Ohne Git wird die .gitignore selbst gelesen. Ist sie kein gueltiges
+    UTF-8, gab das einen rohen UnicodeDecodeError -- waehrend dasselbe Problem
+    an der .env sauber abgefangen wird. Fuer die Notbremse zaehlt nur, ob eine
+    der Schutzzeilen dasteht; unlesbare Stellen duerfen ersetzt werden.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    def kein_git(*args, **kwargs):
+        raise FileNotFoundError("git nicht gefunden")
+
+    monkeypatch.setattr(duplikat.subprocess, "run", kein_git)
+    (tmp_path / ".gitignore").write_bytes(b"# \xff\xfe kaputte Zeile\n.env*\n")
+    (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-trotzdem\n", encoding="utf-8")
+    assert duplikat.schluessel_finden(tmp_path) == "sk-trotzdem"
+
+
+def test_env_mit_ungueltigem_utf8_haelt_verstaendlich_an(tmp_path, monkeypatch):
+    """Kaputte/binaere .env: verstaendliche Meldung statt rohem Traceback.
+
+    Ein roher UnicodeDecodeError zeigt in seiner Meldung eine Byte-Vorschau
+    der Datei -- ein unwahrscheinlicher, aber unnoetiger Weg, auf dem
+    Schluesselmaterial in der Konsole landen koennte.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    (tmp_path / ".gitignore").write_text(".env*\n", encoding="utf-8")
+    (tmp_path / ".env").write_bytes(b"ANTHROPIC_API_KEY=\xff\xfe kaputt")
+    with pytest.raises(SystemExit) as ausnahme:
+        duplikat.schluessel_finden(tmp_path)
+    meldung = str(ausnahme.value)
+    assert "UTF-8" in meldung
+    assert "\\xff" not in meldung
+
+
+BESTAND = {
+    "hoch": {"kategorien": [{"label": "Ablenkung", "skills": [
+        {"e": "🎧", "t": "Musik hören", "b": "Ein Lied auflegen.", "tip": "", "von": "", "erg": ""},
+    ]}]},
+    "mittel": {"kategorien": []},
+    "tief": {"kategorien": [{"label": "Ruhe", "skills": [
+        {"e": "🌊", "t": "Atmen", "b": "Ruhig atmen.", "tip": "", "von": "", "erg": ""},
+    ]}]},
+}
+
+
+def test_prompt_wird_aus_der_datei_gelesen(tmp_path):
+    ordner = tmp_path / "tools"
+    ordner.mkdir()
+    (ordner / "duplikat_prompt.md").write_text("Sei streng.", encoding="utf-8")
+    assert duplikat.lade_prompt(tmp_path) == "Sei streng."
+
+
+def test_fehlende_prompt_datei_meldet_sich_verstaendlich(tmp_path):
+    with pytest.raises(SystemExit) as ausnahme:
+        duplikat.lade_prompt(tmp_path)
+    meldung = str(ausnahme.value)
+    assert "duplikat_prompt.md" in meldung
+    assert "fehlt" in meldung.lower()
+
+
+def test_leere_prompt_datei_meldet_sich(tmp_path):
+    """Eine leere Datei ergaebe eine Pruefung ohne Anweisung – das faellt sonst
+    erst an unbrauchbaren Antworten auf."""
+    ordner = tmp_path / "tools"
+    ordner.mkdir()
+    (ordner / "duplikat_prompt.md").write_text("   \n\n", encoding="utf-8")
+    with pytest.raises(SystemExit):
+        duplikat.lade_prompt(tmp_path)
+
+
+def test_bestand_wird_kompakt_aufbereitet():
+    text = duplikat.bestand_als_text(BESTAND)
+    assert "Hoch / Ablenkung: Musik hören | Ein Lied auflegen." in text
+    assert "Tief / Ruhe: Atmen | Ruhig atmen." in text
+    assert "Mittel" not in text, "leere Stufen erzeugen keine Zeilen"
+
+
+def test_bestand_zeile_bleibt_eindeutig_bei_gedankenstrich_in_beschreibung():
+    """21 von 100 echten Beschreibungen enthalten selbst einen Gedankenstrich.
+
+    Ein Gedankenstrich als Trenner zwischen Titel und Beschreibung waere dann
+    nicht mehr eindeutig. Das Trennzeichen `|` kommt in keinem der echten
+    Felder vor (siehe docs/skills-daten.json)."""
+    bestand = {
+        "hoch": {"kategorien": [{"label": "Achtsamkeit", "skills": [
+            {
+                "e": "🍽️",
+                "t": "Achtsames Essen üben",
+                "b": "Bewusst essen — jeden Bissen schmecken.",
+                "tip": "",
+                "von": "",
+                "erg": "",
+            },
+        ]}]},
+        "mittel": {"kategorien": []},
+        "tief": {"kategorien": []},
+    }
+    text = duplikat.bestand_als_text(bestand)
+    assert (
+        "Hoch / Achtsamkeit: Achtsames Essen üben | Bewusst essen — jeden Bissen schmecken."
+        in text
+    )
+
+
+def test_echte_prompt_datei_existiert_und_ist_gefuellt():
+    """Die mitgelieferte Datei muss im Repo liegen, sonst laeuft nichts."""
+    text = duplikat.lade_prompt(duplikat.PROJEKT)
+    assert len(text) > 200
+
+
+NEUE = [
+    {"stufe": "Hoch", "kategorie": "Ablenkung", "titel": "Lieblingslied auflegen",
+     "beschreibung": "Ein Lied aussuchen und hoeren."},
+]
+
+
+class FakeAntwort:
+    def __init__(self, nutzlast):
+        block = type("Block", (), {"parsed_output": nutzlast, "text": json.dumps(nutzlast)})
+        self.content = [block()]
+
+
+class FakeClient:
+    """Ersetzt den echten Client – die Tests duerfen nie ins Netz."""
+
+    def __init__(self, nutzlast=None, fehler=None):
+        self.nutzlast = nutzlast if nutzlast is not None else {"treffer": []}
+        self.fehler = fehler
+        self.gesehen = {}
+        aussen = self
+
+        class Messages:
+            def create(self, **kwargs):
+                aussen.gesehen = kwargs
+                if aussen.fehler:
+                    raise aussen.fehler
+                return FakeAntwort(aussen.nutzlast)
+
+        self.messages = Messages()
+
+
+def test_treffer_wird_durchgereicht():
+    client = FakeClient({"treffer": [{
+        "titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
+        "stufe": "Hoch", "kategorie": "Ablenkung",
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+        "sicherheit": "sicher",
+    }]})
+    treffer = duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    assert len(treffer) == 1
+    assert treffer[0]["aehnlich_zu"] == "Musik hören"
+
+
+def test_ohne_treffer_leere_liste():
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient()) == []
+
+
+def test_ohne_neue_vorschlaege_wird_gar_nicht_gefragt():
+    client = FakeClient()
+    assert duplikat.pruefe_duplikate([], BESTAND, client) == []
+    assert client.gesehen == {}, "ohne Vorschlaege darf kein Aufruf erfolgen"
+
+
+def test_anfrage_enthaelt_prompt_bestand_und_neue():
+    client = FakeClient()
+    duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    assert client.gesehen["model"] == duplikat.MODELL
+    assert client.gesehen["max_tokens"] == 2000
+    assert "Dublette" in client.gesehen["system"]
+    inhalt = client.gesehen["messages"][0]["content"]
+    assert "Musik hören" in inhalt, "der Bestand fehlt in der Anfrage"
+    assert "Lieblingslied auflegen" in inhalt, "der neue Vorschlag fehlt"
+    schema = client.gesehen["output_config"]["format"]
+    assert schema["type"] == "json_schema"
+    assert "treffer" in schema["schema"]["properties"]
+
+
+def test_fehler_der_schnittstelle_haelt_den_lauf_nicht_an(capsys):
+    """Eine optionale Zutat darf den Hauptweg niemals blockieren."""
+    client = FakeClient(fehler=RuntimeError("Netz weg"))
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+    ausgabe = capsys.readouterr().out
+    assert "Duplikatpruefung" in ausgabe
+    assert "uebersprungen" in ausgabe.lower() or "übersprungen" in ausgabe.lower()
+
+
+def test_unerwartete_antwort_haelt_den_lauf_nicht_an():
+    """Kommt etwas anderes zurueck als erwartet, wird nicht geraten."""
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient({"quatsch": 1})) == []
+
+
+def test_treffer_ohne_pflichtfelder_werden_verworfen():
+    client = FakeClient({"treffer": [{"titel": "Lieblingslied auflegen"}]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+class FakeClientMitRohAntwort:
+    """Reicht eine vorgegebene (ggf. absichtlich kaputte) Antwort unveraendert
+    durch.
+
+    Anders als FakeClient baut diese Attrappe keine passende Antwort selbst
+    zusammen -- sie gibt zurueck, was der Test vorgibt. So lassen sich
+    Antwortformen nachstellen, die FakeAntwort gar nicht abbilden kann (z. B.
+    eine Antwort ganz ohne `content`-Attribut).
+    """
+
+    def __init__(self, antwort):
+        self._antwort = antwort
+        self.gesehen = {}
+        aussen = self
+
+        class Messages:
+            def create(self, **kwargs):
+                aussen.gesehen = kwargs
+                return aussen._antwort
+
+        self.messages = Messages()
+
+
+class _AntwortOhneContent:
+    """Hat gar kein `content`-Attribut -- z. B. eine unerwartete Antwortform."""
+
+
+class _AntwortMitLeeremContent:
+    content = []
+
+
+class _BlockOhneText:
+    """Ein Content-Block ohne `text`-Attribut."""
+
+
+class _AntwortMitTextlosemBlock:
+    content = [_BlockOhneText()]
+
+
+class _BlockMitAbgeschnittenemJson:
+    text = '{"treffer": [{"titel": "Lieblingslied auf'  # absichtlich kaputt
+
+
+class _AntwortMitAbgeschnittenemJson:
+    content = [_BlockMitAbgeschnittenemJson()]
+
+
+def test_leere_content_liste_haelt_den_lauf_nicht_an(capsys):
+    """`antwort.content[0]` auf einer leeren Liste ist ein IndexError --
+    das ist genauso ein Schnittstellenfehler wie ein Netzwerkfehler."""
+    client = FakeClientMitRohAntwort(_AntwortMitLeeremContent())
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+    assert "Duplikatpruefung" in capsys.readouterr().out
+
+
+def test_antwort_ohne_content_haelt_den_lauf_nicht_an():
+    """Fehlt `content` ganz, waere `antwort.content` ein AttributeError."""
+    client = FakeClientMitRohAntwort(_AntwortOhneContent())
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_block_ohne_parsed_output_und_ohne_text_haelt_den_lauf_nicht_an():
+    """Ohne `text`-Attribut waere `block.text` ein AttributeError."""
+    client = FakeClientMitRohAntwort(_AntwortMitTextlosemBlock())
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_antwort_als_liste_statt_objekt_ergibt_leere_liste():
+    """Text/`parsed_output` als JSON-Liste statt eines Objekts mit "treffer"."""
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient([1, 2, 3])) == []
+
+
+def test_treffer_mit_zeichenketten_statt_objekten_werden_verworfen():
+    """Ein Treffer-Eintrag, der selbst kein Objekt ist, fliegt beim Filtern
+    raus, statt beim `.get(...)`-Aufruf abzustuerzen."""
+    client = FakeClient({"treffer": ["Lieblingslied auflegen"]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_treffer_mit_liste_statt_titel_wird_verworfen():
+    """Ein Filter, der nur auf VORHANDENSEIN prueft, laesst falsche Typen durch:
+    `str(["x"])` ergibt "['x']" und ist damit wahrheitswert-wahr. Der Titel wird
+    weiter oben als dict-Schluessel benutzt (`vorschlaege_holen.nachfragen`) --
+    eine Liste ist dort `TypeError: unhashable type`. Geprueft wird deshalb der
+    TYP, nicht nur das Vorhandensein."""
+    client = FakeClient({"treffer": [{
+        "titel": ["Lieblingslied auflegen"], "aehnlich_zu": "Musik hören",
+        "stufe": "Hoch", "kategorie": "Ablenkung",
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+    }]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_treffer_mit_zahl_oder_objekt_statt_text_wird_verworfen():
+    """Dieselbe Luecke in den uebrigen Pflichtfeldern: eine Zahl oder ein
+    verschachteltes Objekt liefe frueher durch den Filter und stuende dann in
+    der Rueckfrage an den Menschen."""
+    client = FakeClient({"treffer": [{
+        "titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
+        "stufe": 1, "kategorie": {"label": "Ablenkung"},
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+    }]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_treffer_mit_null_als_pflichtfeld_wird_verworfen():
+    client = FakeClient({"treffer": [{
+        "titel": "Lieblingslied auflegen", "aehnlich_zu": None,
+        "stufe": "Hoch", "kategorie": "Ablenkung",
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+    }]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_abgeschnittenes_json_haelt_den_lauf_nicht_an(capsys):
+    """Abgebrochenes JSON (z. B. weil max_tokens erreicht wurde) darf den
+    Lauf nicht zum Absturz bringen."""
+    client = FakeClientMitRohAntwort(_AntwortMitAbgeschnittenemJson())
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+    assert "Duplikatpruefung" in capsys.readouterr().out
+
+
+def test_fehlende_prompt_datei_schlaegt_bei_der_pruefung_durch(tmp_path, monkeypatch):
+    """SystemExit aus lade_prompt() ist KEIN Schnittstellenfehler der KI --
+    er darf nicht als leere Liste verschluckt werden, sondern muss
+    durchschlagen (siehe lade_prompt: fehlende Datei ist kein optionaler
+    Ausfall, sondern ein Aufbaufehler, den jemand beheben muss)."""
+    monkeypatch.setattr(duplikat, "PROJEKT", tmp_path)  # kein tools/-Ordner hier
+    client = FakeClient()
+    with pytest.raises(SystemExit):
+        duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    assert client.gesehen == {}, "vor dem Aufruf werten wir schon aus, dass die Datei fehlt"
+
+
+def test_leere_prompt_datei_schlaegt_bei_der_pruefung_ebenfalls_durch(tmp_path, monkeypatch):
+    ordner = tmp_path / "tools"
+    ordner.mkdir()
+    (ordner / "duplikat_prompt.md").write_text("   \n\n", encoding="utf-8")
+    monkeypatch.setattr(duplikat, "PROJEKT", tmp_path)
+    with pytest.raises(SystemExit):
+        duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient())
+
+
+def treffer(**abweichung):
+    grund = {
+        "titel": "Lieblingslied auflegen", "aehnlich_zu": "Musik hören",
+        "stufe": "Hoch", "kategorie": "Ablenkung",
+        "begruendung": "Beide beschreiben gezieltes Musikhoeren.",
+        "sicherheit": "sicher",
+    }
+    grund.update(abweichung)
+    return grund
+
+
+def test_sicherheit_wird_durchgereicht():
+    client = FakeClient({"treffer": [treffer(sicherheit="unsicher")]})
+    ergebnis = duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    assert ergebnis[0]["sicherheit"] == "unsicher"
+
+
+def test_treffer_ohne_sicherheit_wird_verworfen():
+    ohne = {k: v for k, v in treffer().items() if k != "sicherheit"}
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, FakeClient({"treffer": [ohne]})) == []
+
+
+def test_treffer_mit_unbekannter_sicherheit_wird_verworfen():
+    """Ein erfundener Wert darf nicht als 'sicher' durchgehen."""
+    client = FakeClient({"treffer": [treffer(sicherheit="vielleicht")]})
+    assert duplikat.pruefe_duplikate(NEUE, BESTAND, client) == []
+
+
+def test_schema_verlangt_die_sicherheit():
+    client = FakeClient()
+    duplikat.pruefe_duplikate(NEUE, BESTAND, client)
+    eigenschaften = client.gesehen["output_config"]["format"]["schema"]
+    felder = eigenschaften["properties"]["treffer"]["items"]
+    assert "sicherheit" in felder["required"]
+    assert felder["properties"]["sicherheit"]["enum"] == ["sicher", "unsicher"]
+
+
+def test_prompt_verlangt_auch_verdachtsfaelle():
+    text = duplikat.lade_prompt(duplikat.PROJEKT)
+    assert "unsicher" in text
+    assert "Im Zweifel: kein Treffer" not in text, "die alte Regel muss weg sein"
