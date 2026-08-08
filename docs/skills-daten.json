@@ -21,9 +21,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Tiger+Balm",
-       "https://www.skills-box.ch/products/ammola-riechstaebchen",
-       "https://www.coop.ch/de/search/?text=tiger%2Bbalm"
+       {
+        "u": "https://www.skills-box.ch/search?q=Tiger+Balm",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/ammola-riechstaebchen",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=tiger%2Bbalm",
+        "t": ""
+       }
       ]
      },
      {
@@ -34,7 +43,10 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Brause"
+       {
+        "u": "https://www.skills-box.ch/search?q=Brause",
+        "t": ""
+       }
       ]
      },
      {
@@ -45,9 +57,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.denner.ch/de/search?q=chili",
-       "https://www.migros.ch/de/search?query=peperoncini",
-       "https://www.coop.ch/de/search/?text=peperoncini"
+       {
+        "u": "https://www.denner.ch/de/search?q=chili",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=peperoncini",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=peperoncini",
+        "t": ""
+       }
       ]
      },
      {
@@ -58,8 +79,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Riechstift",
-       "https://www.migros.ch/de/search?query=%C3%A4therisches+%C3%B6l"
+       {
+        "u": "https://www.skills-box.ch/search?q=Riechstift",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=%C3%A4therisches+%C3%B6l",
+        "t": ""
+       }
       ]
      },
      {
@@ -70,9 +97,18 @@
       "von": "skills-box",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Toxic+Waste",
-       "https://www.skills-box.ch/products/death-balls-todesmutig-sauere-apfel-limette",
-       "https://www.coop.ch/de/search/?text=saure+bonbons"
+       {
+        "u": "https://www.skills-box.ch/search?q=Toxic+Waste",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/death-balls-todesmutig-sauere-apfel-limette",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=saure+bonbons",
+        "t": ""
+       }
       ]
      },
      {
@@ -83,9 +119,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.lidl.ch/q/de-CH/search?q=zitronen",
-       "https://www.migros.ch/de/search?query=zitronen",
-       "https://www.coop.ch/de/search/?text=zitronen"
+       {
+        "u": "https://www.lidl.ch/q/de-CH/search?q=zitronen",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=zitronen",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=zitronen",
+        "t": ""
+       }
       ]
      },
      {
@@ -96,9 +141,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.aldi-suisse.ch/de/ergebnisse?q=glace",
-       "https://www.migros.ch/de/search?query=glace",
-       "https://www.coop.ch/de/search/?text=glace"
+       {
+        "u": "https://www.aldi-suisse.ch/de/ergebnisse?q=glace",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=glace",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=glace",
+        "t": ""
+       }
       ]
      },
      {
@@ -109,9 +163,18 @@
       "von": "skills-box",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Hand+Grip",
-       "https://www.skills-box.ch/products/flexbar-1",
-       "https://www.skills-box.ch/products/wrist-ball"
+       {
+        "u": "https://www.skills-box.ch/search?q=Hand+Grip",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/flexbar-1",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/wrist-ball",
+        "t": ""
+       }
       ]
      },
      {
@@ -140,8 +203,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.migros.ch/de/search?query=gew%C3%BCrznelken",
-       "https://www.coop.ch/de/search/?text=pfefferk%C3%B6rner"
+       {
+        "u": "https://www.migros.ch/de/search?query=gew%C3%BCrznelken",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=pfefferk%C3%B6rner",
+        "t": ""
+       }
       ]
      },
      {
@@ -152,9 +221,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Riechstift",
-       "https://www.skills-box.ch/products/ammola-riechstaebchen",
-       "https://www.skills-box.ch/products/riechstigte"
+       {
+        "u": "https://www.skills-box.ch/search?q=Riechstift",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/ammola-riechstaebchen",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/riechstigte",
+        "t": ""
+       }
       ]
      },
      {
@@ -165,9 +243,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.denner.ch/de/search?q=senf",
-       "https://www.migros.ch/de/search?query=senf%2Bscharf",
-       "https://www.coop.ch/de/search/?text=senf"
+       {
+        "u": "https://www.denner.ch/de/search?q=senf",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=senf%2Bscharf",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=senf",
+        "t": ""
+       }
       ]
      },
      {
@@ -178,8 +265,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Chili",
-       "https://www.skills-box.ch/search?q=Toxic+Waste"
+       {
+        "u": "https://www.skills-box.ch/search?q=Chili",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/search?q=Toxic+Waste",
+        "t": ""
+       }
       ]
      },
      {
@@ -190,9 +283,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Massage",
-       "https://www.skills-box.ch/products/igelball",
-       "https://www.skills-box.ch/products/magnetische-akupressurkugeln"
+       {
+        "u": "https://www.skills-box.ch/search?q=Massage",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/igelball",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/magnetische-akupressurkugeln",
+        "t": ""
+       }
       ]
      },
      {
@@ -212,8 +314,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.migros.ch/de/search?query=tabasco",
-       "https://www.coop.ch/de/search/?text=tabasco"
+       {
+        "u": "https://www.migros.ch/de/search?query=tabasco",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=tabasco",
+        "t": ""
+       }
       ]
      },
      {
@@ -224,9 +332,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.aldi-suisse.ch/de/ergebnisse?q=wasabi",
-       "https://www.migros.ch/de/search?query=wasabi",
-       "https://www.coop.ch/de/search/?text=wasabi"
+       {
+        "u": "https://www.aldi-suisse.ch/de/ergebnisse?q=wasabi",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=wasabi",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=wasabi",
+        "t": ""
+       }
       ]
      }
     ]
@@ -262,9 +379,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Massage",
-       "https://www.skills-box.ch/products/massage-ball",
-       "https://www.galaxus.ch/de/s6/producttype/faszienball-faszienrolle-3965"
+       {
+        "u": "https://www.skills-box.ch/search?q=Massage",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/massage-ball",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s6/producttype/faszienball-faszienrolle-3965",
+        "t": ""
+       }
       ]
      },
      {
@@ -327,9 +453,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/dein-wut-weg-buch",
-       "https://www.galaxus.ch/de/s12/producttype/notizbuch-1673?tagIds=1230",
-       "https://www.coop.ch/de/search/?text=notizbuch"
+       {
+        "u": "https://www.skills-box.ch/products/dein-wut-weg-buch",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/notizbuch-1673?tagIds=1230",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizbuch",
+        "t": ""
+       }
       ]
      },
      {
@@ -367,9 +502,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Box",
-       "https://www.skills-box.ch/products/taeschli",
-       "https://www.skills-box.ch/products/sackli"
+       {
+        "u": "https://www.skills-box.ch/search?q=Box",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/taeschli",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/sackli",
+        "t": ""
+       }
       ]
      },
      {
@@ -398,8 +542,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/schluesselanhaenger",
-       "https://www.skills-box.ch/products/keycup-schluesselanhaenger"
+       {
+        "u": "https://www.skills-box.ch/products/schluesselanhaenger",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/keycup-schluesselanhaenger",
+        "t": ""
+       }
       ]
      }
     ]
@@ -428,8 +578,14 @@
       "von": "skills-box",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/beisskette",
-       "https://www.migros.ch/de/search?query=kaugummi"
+       {
+        "u": "https://www.skills-box.ch/products/beisskette",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=kaugummi",
+        "t": ""
+       }
       ]
      },
      {
@@ -449,9 +605,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.galaxus.ch/de/s5/producttype/malset-1708/subtype/malsettyp-malen-nach-zahlen-2909",
-       "https://www.skills-box.ch/products/malen-und-entspannen-achtsamkeit",
-       "https://www.skills-box.ch/products/ausmal-postkarten"
+       {
+        "u": "https://www.galaxus.ch/de/s5/producttype/malset-1708/subtype/malsettyp-malen-nach-zahlen-2909",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/malen-und-entspannen-achtsamkeit",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/ausmal-postkarten",
+        "t": ""
+       }
       ]
      },
      {
@@ -498,8 +663,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.migros.ch/de/search?query=eisw%C3%BCrfelform",
-       "https://www.galaxus.ch/de/s2/producttype/eisformen-3900/subtype/eisformtyp-eiswuerfelform-6926"
+       {
+        "u": "https://www.migros.ch/de/search?query=eisw%C3%BCrfelform",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s2/producttype/eisformen-3900/subtype/eisformtyp-eiswuerfelform-6926",
+        "t": ""
+       }
       ]
      },
      {
@@ -510,9 +681,18 @@
       "von": "skills-box",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Fidget",
-       "https://www.skills-box.ch/products/fidget-cube",
-       "https://www.skills-box.ch/products/pop-it"
+       {
+        "u": "https://www.skills-box.ch/search?q=Fidget",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/fidget-cube",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/pop-it",
+        "t": ""
+       }
       ]
      },
      {
@@ -532,9 +712,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/gummiband",
-       "https://www.migros.ch/de/search?query=gummib%C3%A4nder",
-       "https://www.coop.ch/de/search/?text=gummib%C3%A4nder"
+       {
+        "u": "https://www.skills-box.ch/products/gummiband",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=gummib%C3%A4nder",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=gummib%C3%A4nder",
+        "t": ""
+       }
       ]
      },
      {
@@ -572,7 +761,10 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.galaxus.ch/de/s3/producttype/yogamatte-1238"
+       {
+        "u": "https://www.galaxus.ch/de/s3/producttype/yogamatte-1238",
+        "t": ""
+       }
       ]
      },
      {
@@ -583,9 +775,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Massage",
-       "https://www.skills-box.ch/products/massageholz-dreipunkt",
-       "https://www.galaxus.ch/de/s6/producttype/faszienball-faszienrolle-3965"
+       {
+        "u": "https://www.skills-box.ch/search?q=Massage",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/massageholz-dreipunkt",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s6/producttype/faszienball-faszienrolle-3965",
+        "t": ""
+       }
       ]
      },
      {
@@ -677,8 +878,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.galaxus.ch/de/s2/producttype/garn-wolle-2752",
-       "https://www.coop.ch/de/search/?text=wolle"
+       {
+        "u": "https://www.galaxus.ch/de/s2/producttype/garn-wolle-2752",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=wolle",
+        "t": ""
+       }
       ]
      },
      {
@@ -725,8 +932,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.migros.ch/de/search?query=w%C3%A4scheklammern",
-       "https://www.coop.ch/de/search/?text=w%C3%A4scheklammern"
+       {
+        "u": "https://www.migros.ch/de/search?query=w%C3%A4scheklammern",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=w%C3%A4scheklammern",
+        "t": ""
+       }
       ]
      }
     ]
@@ -744,7 +957,10 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/anti-angst-atmungskette"
+       {
+        "u": "https://www.skills-box.ch/products/anti-angst-atmungskette",
+        "t": ""
+       }
       ]
      },
      {
@@ -764,8 +980,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/gefuehl-squishy",
-       "https://www.skills-box.ch/products/dein-wut-weg-buch"
+       {
+        "u": "https://www.skills-box.ch/products/gefuehl-squishy",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/dein-wut-weg-buch",
+        "t": ""
+       }
       ]
      },
      {
@@ -803,7 +1025,10 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.galaxus.ch/de/s3/producttype/yogamatte-1238"
+       {
+        "u": "https://www.galaxus.ch/de/s3/producttype/yogamatte-1238",
+        "t": ""
+       }
       ]
      }
     ]
@@ -839,9 +1064,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/dein-wut-weg-buch",
-       "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
-       "https://www.coop.ch/de/search/?text=notizheft"
+       {
+        "u": "https://www.skills-box.ch/products/dein-wut-weg-buch",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizheft",
+        "t": ""
+       }
       ]
      },
      {
@@ -870,9 +1104,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/dein-wut-weg-buch",
-       "https://www.galaxus.ch/de/s12/producttype/notizbuch-1673?tagIds=1230",
-       "https://www.coop.ch/de/search/?text=notizbuch"
+       {
+        "u": "https://www.skills-box.ch/products/dein-wut-weg-buch",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/notizbuch-1673?tagIds=1230",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizbuch",
+        "t": ""
+       }
       ]
      },
      {
@@ -883,8 +1126,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
-       "https://www.coop.ch/de/search/?text=notizblock"
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizblock",
+        "t": ""
+       }
       ]
      }
     ]
@@ -922,8 +1171,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/mokuru",
-       "https://www.skills-box.ch/products/wrist-ball"
+       {
+        "u": "https://www.skills-box.ch/products/mokuru",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/wrist-ball",
+        "t": ""
+       }
       ]
      },
      {
@@ -952,9 +1207,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/search?q=Cube",
-       "https://www.skills-box.ch/products/megaminx",
-       "https://www.skills-box.ch/products/labyrinth"
+       {
+        "u": "https://www.skills-box.ch/search?q=Cube",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/megaminx",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/labyrinth",
+        "t": ""
+       }
       ]
      },
      {
@@ -992,8 +1256,14 @@
       "von": "skills-box",
       "erg": "",
       "links": [
-       "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
-       "https://www.coop.ch/de/search/?text=notizheft"
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=notizheft",
+        "t": ""
+       }
       ]
      },
      {
@@ -1049,8 +1319,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.galaxus.ch/de/s5/producttype/puzzle-622",
-       "https://www.coop.ch/de/search/?text=puzzle"
+       {
+        "u": "https://www.galaxus.ch/de/s5/producttype/puzzle-622",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=puzzle",
+        "t": ""
+       }
       ]
      },
      {
@@ -1061,9 +1337,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/metall-puzzle",
-       "https://www.skills-box.ch/products/mini-knobel-spiele",
-       "https://www.skills-box.ch/products/wooden-intellegence"
+       {
+        "u": "https://www.skills-box.ch/products/metall-puzzle",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/mini-knobel-spiele",
+        "t": ""
+       },
+       {
+        "u": "https://www.skills-box.ch/products/wooden-intellegence",
+        "t": ""
+       }
       ]
      },
      {
@@ -1092,8 +1377,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/sudoku",
-       "https://www.galaxus.ch/de/s12/producttype/heft-block-1673"
+       {
+        "u": "https://www.skills-box.ch/products/sudoku",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "t": ""
+       }
       ]
      },
      {
@@ -1129,7 +1420,10 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.skills-box.ch/products/anti-angst-atmungskette"
+       {
+        "u": "https://www.skills-box.ch/products/anti-angst-atmungskette",
+        "t": ""
+       }
       ]
      },
      {
@@ -1158,9 +1452,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.denner.ch/de/search?q=kr%C3%A4uter",
-       "https://www.migros.ch/de/search?query=kr%C3%A4utertopf",
-       "https://www.coop.ch/de/search/?text=frische+kr%C3%A4uter"
+       {
+        "u": "https://www.denner.ch/de/search?q=kr%C3%A4uter",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=kr%C3%A4utertopf",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=frische+kr%C3%A4uter",
+        "t": ""
+       }
       ]
      },
      {
@@ -1207,8 +1510,14 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.galaxus.ch/de/s1/product/wittner-maelzel-serie-810k-metronom-zubehoer-instrumente-12496767",
-       "https://www.galaxus.ch/de/s1/product/korg-metronom-ma-2-stimmgeraet-11249498"
+       {
+        "u": "https://www.galaxus.ch/de/s1/product/wittner-maelzel-serie-810k-metronom-zubehoer-instrumente-12496767",
+        "t": ""
+       },
+       {
+        "u": "https://www.galaxus.ch/de/s1/product/korg-metronom-ma-2-stimmgeraet-11249498",
+        "t": ""
+       }
       ]
      }
     ]
@@ -1226,9 +1535,18 @@
       "von": "",
       "erg": "",
       "links": [
-       "https://www.denner.ch/de/search?q=fr%C3%BCchte",
-       "https://www.migros.ch/de/search?query=fr%C3%BCchte",
-       "https://www.coop.ch/de/search/?text=fr%C3%BCchte"
+       {
+        "u": "https://www.denner.ch/de/search?q=fr%C3%BCchte",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=fr%C3%BCchte",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/search/?text=fr%C3%BCchte",
+        "t": ""
+       }
       ]
      },
      {

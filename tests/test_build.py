@@ -1,3 +1,4 @@
+import base64
 import json
 import re
 import sys
@@ -127,7 +128,7 @@ def test_script_block_kann_nicht_verlassen_werden(mappe, monkeypatch, tmp_path):
     monkeypatch.setattr(build, "XLSX", pfad)
     monkeypatch.setattr(build, "OUTPUT", ziel)
 
-    build.render(build.load_data())
+    build.render(build.load_data(), {})
 
     html = ziel.read_bytes().decode("utf-8-sig")
     assert gift not in html, "die Zeichenfolge darf nicht wörtlich im Erzeugnis stehen"
@@ -404,7 +405,9 @@ def erste_skills(daten):
 def test_links_werden_gelesen(mappe, monkeypatch):
     pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://www.skillsbox.ch/p/1", "", ""]])
     monkeypatch.setattr(build, "XLSX", pfad)
-    assert erste_skills(build.load_data())["links"] == ["https://www.skillsbox.ch/p/1"]
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://www.skillsbox.ch/p/1", "t": ""}
+    ]
 
 
 def test_links_sind_leer_wenn_spalten_fehlen(mappe, monkeypatch):
@@ -418,13 +421,16 @@ def test_luecke_wird_zusammengeschoben(mappe, monkeypatch):
     von Hand aufruecken muessen."""
     pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["", "https://a.ch/x", "https://b.ch/y"]])
     monkeypatch.setattr(build, "XLSX", pfad)
-    assert erste_skills(build.load_data())["links"] == ["https://a.ch/x", "https://b.ch/y"]
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://a.ch/x", "t": ""},
+        {"u": "https://b.ch/y", "t": ""},
+    ]
 
 
 def test_doppelte_url_faellt_weg(mappe, monkeypatch):
     pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "https://a.ch/x", ""]])
     monkeypatch.setattr(build, "XLSX", pfad)
-    assert erste_skills(build.load_data())["links"] == ["https://a.ch/x"]
+    assert erste_skills(build.load_data())["links"] == [{"u": "https://a.ch/x", "t": ""}]
 
 
 @pytest.mark.parametrize(
@@ -468,7 +474,9 @@ def test_links_stehen_in_der_json(mappe, monkeypatch, tmp_path):
     monkeypatch.setattr(build, "DATEN_JSON", ziel)
     build.write_daten_json(build.load_data())
     daten = json.loads(ziel.read_text(encoding="utf-8"))
-    assert daten["hoch"]["kategorien"][0]["skills"][0]["links"] == ["https://a.ch/x"]
+    assert daten["hoch"]["kategorien"][0]["skills"][0]["links"] == [
+        {"u": "https://a.ch/x", "t": ""}
+    ]
 
 
 def test_vorlage_zeigt_bezugsquellen():
@@ -534,8 +542,10 @@ def test_ergaenzen_fuellt_die_bestehenden_links_vor():
     vorlage = vorschlagsvorlage()
     rumpf = ohne_umbrueche(js_funktion(vorlage, "originalUebernehmen"))
     # Traegt das Vorausfuellen die Links nicht mit, wuerde eine Ergaenzung sie
-    # loeschen: das Uebernahme-Skript ersetzt die Spalten vollstaendig.
-    assert "linksSetzen(s.links||[]);" in rumpf
+    # loeschen: das Uebernahme-Skript ersetzt die Spalten vollstaendig. Das
+    # Formular schickt weiterhin nur Adressen (l.u), die Beschriftung pflegt
+    # allein die betreuende Person in der Excel.
+    assert "linksSetzen((s.links||[]).map(function(l){ return l.u||l; }));" in rumpf
 
 
 def test_beide_absende_ruempfe_schicken_links():
@@ -545,7 +555,7 @@ def test_beide_absende_ruempfe_schicken_links():
 def test_seed_excel_kennt_die_linkspalten():
     """Ein Zurücksetzen der Mappe darf die Bezugsquellen nicht verlieren."""
     quelle = (build.ROOT / "tools" / "seed_excel.py").read_text(encoding="utf-8")
-    assert '"Link1", "Link2", "Link3"' in quelle
+    assert '"Link1", "Text1", "Link2", "Text2", "Link3", "Text3"' in quelle
     assert 's.get("links"' in quelle
 
 
@@ -564,11 +574,14 @@ def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
                     "skills": [
                         {"e": "🎧", "t": "Ohne Link", "b": "b", "links": []},
                         {"e": "🎧", "t": "Ein Link", "b": "b",
-                         "links": ["https://a.ch"]},
+                         "links": [{"u": "https://a.ch", "t": "A"}]},
                         {"e": "🎧", "t": "Zwei Links", "b": "b",
-                         "links": ["https://a.ch", "https://b.ch"]},
+                         "links": [{"u": "https://a.ch", "t": "A"},
+                                   {"u": "https://b.ch", "t": ""}]},
                         {"e": "🎧", "t": "Drei Links", "b": "b",
-                         "links": ["https://a.ch", "https://b.ch", "https://c.ch"]},
+                         "links": [{"u": "https://a.ch", "t": "A"},
+                                   {"u": "https://b.ch", "t": "B"},
+                                   {"u": "https://c.ch", "t": "C"}]},
                     ],
                 }
             ]
@@ -595,7 +608,8 @@ def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
     ws = wb["Skills"]
     header = [c.value for c in ws[1]]
     assert header == ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp",
-                       "Von", "Ergaenzt", "Link1", "Link2", "Link3"]
+                       "Von", "Ergaenzt",
+                       "Link1", "Text1", "Link2", "Text2", "Link3", "Text3"]
 
     zeilen = {row[3].value: row for row in ws.iter_rows(min_row=2)}  # Titel -> Zeile
 
@@ -605,9 +619,224 @@ def test_seed_excel_schreibt_die_links_richtig(monkeypatch, tmp_path):
     # geprueft, nicht gegen "".
     def links_spalten(titel):
         zeile = zeilen[titel]
-        return [zeile[8].value, zeile[9].value, zeile[10].value]  # Link1..3
+        return [zeile[i].value for i in range(8, 14)]  # Link1..Text3
 
-    assert links_spalten("Ohne Link") == [None, None, None]
-    assert links_spalten("Ein Link") == ["https://a.ch", None, None]
-    assert links_spalten("Zwei Links") == ["https://a.ch", "https://b.ch", None]
-    assert links_spalten("Drei Links") == ["https://a.ch", "https://b.ch", "https://c.ch"]
+    assert links_spalten("Ohne Link") == [None] * 6
+    assert links_spalten("Ein Link") == ["https://a.ch", "A", None, None, None, None]
+    assert links_spalten("Zwei Links") == [
+        "https://a.ch", "A", "https://b.ch", None, None, None
+    ]
+    assert links_spalten("Drei Links") == [
+        "https://a.ch", "A", "https://b.ch", "B", "https://c.ch", "C"
+    ]
+
+
+TEXT_HEADER = SKILLS_HEADER + ["Link1", "Text1", "Link2", "Text2", "Link3", "Text3"]
+
+
+def test_beschriftung_wird_gelesen(mappe, monkeypatch):
+    pfad = mappe(TEXT_HEADER, [SKILLS_ROW + ["https://a.ch/x", "Igelball", "", "", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://a.ch/x", "t": "Igelball"}
+    ]
+
+
+def test_beschriftung_ohne_adresse_bricht_ab(mappe, monkeypatch):
+    """Sonst staende eine Beschriftung ohne Ziel in der Mappe und niemand saehe es."""
+    pfad = mappe(TEXT_HEADER, [SKILLS_ROW + ["", "Igelball", "", "", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    with pytest.raises(build.BuildError) as fehler:
+        build.load_data()
+    meldung = str(fehler.value)
+    assert "Text1" in meldung and "Link1" in meldung
+    assert "Zeile 2" in meldung
+
+
+@pytest.mark.parametrize(
+    "text, teil",
+    [
+        ("x" * 31, "zu lang"),
+        ("<b>Igelball", "Klammern"),
+        ("Siehe http://a.ch", "Adresse"),
+    ],
+)
+def test_ungueltige_beschriftung_bricht_ab(mappe, monkeypatch, text, teil):
+    pfad = mappe(TEXT_HEADER, [SKILLS_ROW + ["https://a.ch/x", text, "", "", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    with pytest.raises(build.BuildError) as fehler:
+        build.load_data()
+    assert teil in str(fehler.value)
+    assert "Text1" in str(fehler.value)
+
+
+def test_genau_dreissig_zeichen_sind_erlaubt(mappe, monkeypatch):
+    pfad = mappe(TEXT_HEADER, [SKILLS_ROW + ["https://a.ch/x", "x" * 30, "", "", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"][0]["t"] == "x" * 30
+
+
+def test_beschriftungen_folgen_ihrem_link_beim_zusammenschieben(mappe, monkeypatch):
+    """Luecke in Link1: Link2/Text2 ruecken gemeinsam auf, das Paar darf nicht
+    auseinanderfallen."""
+    pfad = mappe(
+        TEXT_HEADER,
+        [SKILLS_ROW + ["", "", "https://b.ch/y", "Massage", "https://c.ch/z", "Kette"]],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://b.ch/y", "t": "Massage"},
+        {"u": "https://c.ch/z", "t": "Kette"},
+    ]
+
+
+def test_doppelte_adresse_mit_gleicher_beschriftung_faellt_weg(mappe, monkeypatch):
+    """Genuine Redundanz (z. B. dreimal derselbe skills-box.ch-Knopf mit
+    derselben Beschriftung) faellt weiterhin still weg."""
+    pfad = mappe(
+        TEXT_HEADER,
+        [SKILLS_ROW + ["https://a.ch/x", "Igelball", "https://a.ch/x", "Igelball", "", ""]],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://a.ch/x", "t": "Igelball"}
+    ]
+
+
+def test_doppelte_adresse_mit_unterschiedlicher_beschriftung_bricht_ab(mappe, monkeypatch):
+    """Sonst verschluckte der Build wortlos eine der beiden Beschriftungen -
+    genau der Fall, den die Beschriftung ueberhaupt erst ermoeglicht (z. B.
+    dieselbe Adresse aus Versehen zweimal eingefuegt, mit je einem eigenen
+    Text)."""
+    pfad = mappe(
+        TEXT_HEADER,
+        [SKILLS_ROW + ["https://a.ch/x", "Igelball", "https://a.ch/x", "Massagerolle", "", ""]],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    with pytest.raises(build.BuildError) as fehler:
+        build.load_data()
+    meldung = str(fehler.value)
+    assert "Zeile 2" in meldung
+    assert "Link1" in meldung and "Link2" in meldung
+    assert "Igelball" in meldung and "Massagerolle" in meldung
+
+
+def test_doppelte_adresse_mit_leerer_beschriftung_faellt_weg(mappe, monkeypatch):
+    """Fehlt bei einer der beiden Fundstellen die Beschriftung, ist das kein
+    Widerspruch, sondern faellt wie bisher still weg."""
+    pfad = mappe(
+        TEXT_HEADER,
+        [SKILLS_ROW + ["https://a.ch/x", "Igelball", "https://a.ch/x", "", "", ""]],
+    )
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert erste_skills(build.load_data())["links"] == [
+        {"u": "https://a.ch/x", "t": "Igelball"}
+    ]
+
+
+def test_favicon_wird_eingebettet(mappe, monkeypatch, tmp_path):
+    ordner = tmp_path / "favicons"
+    ordner.mkdir()
+    # Kleinstes gueltiges PNG (1x1, transparent) - als base64, damit man es
+    # nicht Byte fuer Byte pruefen muss.
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+        "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    )
+    (ordner / "a.ch.png").write_bytes(png)
+    monkeypatch.setattr(build, "FAVICON_DIR", ordner)
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    icons = build.lade_favicons(build.load_data())
+    assert list(icons) == ["a.ch"]
+    assert icons["a.ch"].startswith("data:image/png;base64,")
+
+
+def test_fehlendes_favicon_bricht_den_build_nicht(mappe, monkeypatch, tmp_path):
+    """Wer eine Bezugsquelle bei einem neuen Haendler eintraegt, darf damit
+    nicht die ganze Website blockieren."""
+    leer = tmp_path / "leer"
+    leer.mkdir()
+    monkeypatch.setattr(build, "FAVICON_DIR", leer)
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert build.lade_favicons(build.load_data()) == {}
+
+
+def test_gastgeber_entfernt_www():
+    assert build.gastgeber("https://www.skills-box.ch/products/x") == "skills-box.ch"
+    assert build.gastgeber("kein link") == ""
+
+
+def test_vorlage_hat_den_icons_platzhalter():
+    vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
+    assert build.PLACEHOLDER_ICONS in vorlage
+
+
+def test_unlesbares_favicon_bricht_den_build_nicht(mappe, monkeypatch, tmp_path):
+    """Vorhanden heisst nicht lesbar. Ein einzelnes kaputtes Symbol darf die
+    Website nicht lahmlegen - hier als Ordner statt Datei nachgestellt, das
+    verhaelt sich auf jedem Betriebssystem gleich."""
+    ordner = tmp_path / "favicons"
+    ordner.mkdir()
+    (ordner / "a.ch.png").mkdir()
+    monkeypatch.setattr(build, "FAVICON_DIR", ordner)
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    assert build.lade_favicons(build.load_data()) == {}
+
+
+def test_icons_landen_im_gerenderten_html(mappe, monkeypatch, tmp_path):
+    """Ende-zu-Ende: eine befuellte Icon-Tabelle muss auch tatsaechlich in
+    der erzeugten Seite ankommen, nicht nur der Platzhalter im Rohtemplate."""
+    ordner = tmp_path / "favicons"
+    ordner.mkdir()
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+        "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    )
+    (ordner / "a.ch.png").write_bytes(png)
+    monkeypatch.setattr(build, "FAVICON_DIR", ordner)
+    pfad = mappe(LINK_HEADER, [SKILLS_ROW + ["https://a.ch/x", "", ""]])
+    monkeypatch.setattr(build, "XLSX", pfad)
+    ziel = tmp_path / "skillsliste.html"
+    monkeypatch.setattr(build, "OUTPUT", ziel)
+
+    data = build.load_data()
+    icons = build.lade_favicons(data)
+    build.render(data, icons)
+
+    html = ziel.read_bytes().decode("utf-8-sig")
+    assert '"a.ch": "data:image/png;base64,' in html
+    assert re.search(r'var ICONS = \{"a\.ch": "data:image/png;base64,[^"]+"\};', html)
+
+
+def test_dialog_zeigt_symbol_und_beschriftung():
+    vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
+    block = ohne_umbrueche(js_funktion(vorlage, "openModal"))
+    # Ohne Beschriftung fällt der Knopf auf den Hostnamen zurück.
+    assert "l.t||gastgeber(l.u)" in block
+    # Die Domain steht nicht mehr im Text - der title hält die Zusicherung
+    # aufrecht, dass man das Ziel vor dem Klick sieht.
+    assert "a.title=l.u;" in block
+    assert "a.rel='noopener noreferrer nofollow ugc';" in block
+    # title muss vor der Icon-Verzweigung gesetzt werden, sonst bekäme nur
+    # ein Link mit Icon einen title und die Zusicherung würde stillschweigend
+    # löchrig.
+    assert block.index("a.title=l.u;") < block.index("if(bild)")
+    # Symbol ist Schmuck, die Beschriftung trägt die Bedeutung.
+    assert "img.alt='';" in block
+
+
+def test_symbol_schlaegt_in_der_icons_tabelle_nach():
+    vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
+    rumpf = ohne_umbrueche(js_funktion(vorlage, "symbol"))
+    # Exakte Fassung statt nur "catch" in rumpf: sonst koennte der catch-Rumpf
+    # klanglos etwas anderes liefern (z. B. den rohen Hostnamen statt ''), und
+    # dieser Test wuerde es nicht merken – wie schon bei test_gastgeber_kuerzt_www.
+    assert rumpf == (
+        "function symbol(u){ "
+        "try{ return ICONS[new URL(u).hostname.replace(/^www\\./,'')]||''; } "
+        "catch(e){ return ''; } "
+        "}"
+    )

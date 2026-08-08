@@ -16,6 +16,7 @@ Emoji) werden aus der Excel-Datei eingesetzt. Das Layout/Design steckt
 unverändert in template.html.
 """
 
+import base64
 import ipaddress
 import json
 import re
@@ -36,6 +37,8 @@ TEMPLATE = ROOT / "template.html"
 OUTPUT = ROOT / "docs" / "skillsliste.html"   # generierte Skillsliste-Seite
 DATEN_JSON = ROOT / "docs" / "skills-daten.json"   # Datenstand für Formular + Worker
 PLACEHOLDER = "var DATA = /*__BUILD_DATA__*/{};"
+FAVICON_DIR = ROOT / "assets" / "favicons"
+PLACEHOLDER_ICONS = "var ICONS = /*__BUILD_ICONS__*/{};"
 
 TEMPLATE_VORSCHLAG = ROOT / "template-vorschlag.html"
 OUTPUT_VORSCHLAG = ROOT / "docs" / "skill-vorschlagen.html"
@@ -71,6 +74,11 @@ def sortier_schluessel(titel):
 # später ablehnt, und der Vorschlag steckt in der Excel fest.
 LINK_SPALTEN = ["Link1", "Link2", "Link3"]
 LINK_MAX_LAENGE = 300
+TEXT_SPALTEN = ["Text1", "Text2", "Text3"]
+# Adresse und Beschriftung gehoeren zusammen: sie werden gemeinsam gelesen,
+# gemeinsam geprueft und rutschen beim Zusammenschieben gemeinsam auf.
+LINK_PAARE = list(zip(LINK_SPALTEN, TEXT_SPALTEN))
+TEXT_MAX_LAENGE = 30
 
 # Linkverkürzer verbergen das Ziel vor der Freigabe – die Prüfung im Issue
 # wäre wertlos – und ergeben als Knopfaufschrift nur "bit.ly" statt eines
@@ -125,6 +133,60 @@ def pruefe_link(roh: str) -> tuple[str | None, str | None]:
     if host.removeprefix("www.") in VERKUERZER:
         return None, "Linkverkürzer sind nicht erlaubt"
     return url, None
+
+
+def pruefe_text(roh) -> tuple[str | None, str | None]:
+    """Prüft die Beschriftung einer Bezugsquelle.
+
+    Liefert (text, None) oder (None, Meldung). Kein `http`: die Domain steht
+    nicht mehr im Knopf, darum fiele eine Beschriftung, die eine Adresse
+    vortäuscht, kaum auf.
+    """
+    text = str(roh or "").strip()
+    if len(text) > TEXT_MAX_LAENGE:
+        return None, f"Beschriftung ist zu lang (höchstens {TEXT_MAX_LAENGE} Zeichen)"
+    if "<" in text or ">" in text:
+        return None, "Beschriftung darf keine spitzen Klammern enthalten"
+    if "http" in text.lower():
+        return None, "Beschriftung darf keine Adresse enthalten"
+    return text, None
+
+
+def gastgeber(url: str) -> str:
+    """Hostname ohne führendes www. — der Schlüssel der Symboltabelle."""
+    try:
+        return (urlsplit(url).hostname or "").removeprefix("www.")
+    except ValueError:
+        return ""
+
+
+def lade_favicons(data: dict) -> dict:
+    """Symbol je Hostname als data:-URI.
+
+    Fehlt eine Datei, kommt der Hostname schlicht nicht vor und der Knopf zeigt
+    später den Hostnamen statt eines Bildes. Der Build darf daran NICHT
+    scheitern: sonst legte eine neue Bezugsquelle bei einem unbekannten Händler
+    die ganze Website lahm.
+    """
+    hosts = {
+        gastgeber(link["u"])
+        for stufe in data.values()
+        for kat in stufe["kategorien"]
+        for skill in kat["skills"]
+        for link in skill["links"]
+    }
+    icons = {}
+    for host in sorted(h for h in hosts if h):
+        pfad = FAVICON_DIR / f"{host}.png"
+        try:
+            roh = pfad.read_bytes()
+        except OSError:
+            # Vorhanden heisst nicht lesbar: gesperrte Datei, oder jemand hat
+            # versehentlich einen Ordner mit diesem Namen angelegt. Ein
+            # einzelnes kaputtes Symbol darf die Website nicht lahmlegen.
+            continue
+        icons[host] = "data:image/png;base64," + base64.b64encode(roh).decode("ascii")
+    return icons
 
 
 class BuildError(Exception):
@@ -226,7 +288,7 @@ def load_data():
     skill_rows = read_rows(
         get_sheet(wb, "Skills"),
         ["Stufe", "Kategorie", "Emoji", "Titel", "Beschreibung", "Tipp"],
-        optional_header=["Von", "Ergaenzt"] + LINK_SPALTEN,
+        optional_header=["Von", "Ergaenzt"] + LINK_SPALTEN + TEXT_SPALTEN,
     )
     wb.close()
 
@@ -292,20 +354,53 @@ def load_data():
             )
             continue
         # Luecken werden zusammengeschoben: wer den ersten von zwei Links
-        # entfernt, soll die uebrigen nicht von Hand aufruecken muessen.
+        # entfernt, soll die uebrigen nicht von Hand aufruecken muessen. Die
+        # Beschriftung wandert dabei mit ihrer Adresse mit.
         links = []
-        for spalte in LINK_SPALTEN:
-            if not rec[spalte]:
+        link_spalten = {}  # url -> (Link-, Text-Spalte) der ersten Fundstelle
+        for spalte, textspalte in LINK_PAARE:
+            roh_url, roh_text = rec[spalte], rec[textspalte]
+            if not roh_url:
+                if roh_text:
+                    errors.append(
+                        f"Blatt 'Skills', Zeile {rec['_row']}, Spalte "
+                        f"'{textspalte}': Beschriftung ohne Adresse in "
+                        f"'{spalte}'."
+                    )
                 continue
-            url, meldung = pruefe_link(rec[spalte])
+            url, meldung = pruefe_link(roh_url)
             if meldung:
                 errors.append(
                     f"Blatt 'Skills', Zeile {rec['_row']}, Spalte '{spalte}': "
                     f"{meldung}."
                 )
                 continue
-            if url not in links:
-                links.append(url)
+            beschriftung, meldung = pruefe_text(roh_text)
+            if meldung:
+                errors.append(
+                    f"Blatt 'Skills', Zeile {rec['_row']}, Spalte "
+                    f"'{textspalte}': {meldung}."
+                )
+                continue
+            vorhanden = next((v for v in links if v["u"] == url), None)
+            if vorhanden is not None:
+                # Dieselbe Adresse zweimal ist der haeufige Fall (dieselben
+                # skills-box.ch-Knoepfe) und faellt bewusst still weg. Nur wenn
+                # BEIDE Beschriftungen gesetzt und verschieden sind, ist es
+                # vermutlich ein Tippfehler beim Einfuegen – das wuerde sonst
+                # eine Beschriftung wortlos verschlucken.
+                if beschriftung and vorhanden["t"] and beschriftung != vorhanden["t"]:
+                    erste_spalte, erste_textspalte = link_spalten[url]
+                    errors.append(
+                        f"Blatt 'Skills', Zeile {rec['_row']}: Dieselbe Adresse "
+                        f"steht in '{erste_spalte}' und '{spalte}' mit "
+                        f"unterschiedlicher Beschriftung ('{vorhanden['t']}' in "
+                        f"'{erste_textspalte}' und '{beschriftung}' in "
+                        f"'{textspalte}')."
+                    )
+                continue
+            link_spalten[url] = (spalte, textspalte)
+            links.append({"u": url, "t": beschriftung})
         skills_by.setdefault((key, label), []).append(
             {
                 "e": rec["Emoji"],
@@ -358,35 +453,57 @@ def load_data():
 
 
 # ── HTML schreiben ───────────────────────────────────────────
-def _render(template_path, output_path, placeholder, ersatz, data: dict):
+def _render(template_path, output_path, ersetzungen):
+    """Setzt mehrere Platzhalter in eine Vorlage ein.
+
+    `ersetzungen` ist eine Liste von (Platzhalter, Muster, Daten).
+    """
     if not template_path.exists():
         raise BuildError(f"Vorlage nicht gefunden: {template_path.name}")
-    template = template_path.read_bytes().decode("utf-8-sig")  # evtl. BOM entfernen
-    if placeholder not in template:
-        raise BuildError(
-            f"Platzhalter nicht in {template_path.name} gefunden. "
-            f"Die Vorlage muss '{placeholder}' enthalten."
+    html = template_path.read_bytes().decode("utf-8-sig")  # evtl. BOM entfernen
+    for platzhalter, muster, daten in ersetzungen:
+        if platzhalter not in html:
+            raise BuildError(
+                f"Platzhalter nicht in {template_path.name} gefunden. "
+                f"Die Vorlage muss '{platzhalter}' enthalten."
+            )
+        payload = json.dumps(daten, ensure_ascii=False, separators=(", ", ": "))
+        # Ausgabecodierung fuer den <script>-Block: sonst beendet ein </script>
+        # im Freitext das Skriptelement und der Rest wird als Markup ausgefuehrt.
+        payload = (
+            payload.replace("<", "\\u003c")
+            .replace(">", "\\u003e")
+            .replace("&", "\\u0026")
         )
-    payload = json.dumps(data, ensure_ascii=False, separators=(", ", ": "))
-    # Ausgabecodierung fuer den <script>-Block: sonst beendet ein </script> im
-    # Freitext das Skriptelement und der Rest wird als Markup ausgefuehrt.
-    payload = payload.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
-    html = template.replace(placeholder, ersatz % payload, 1)
+        html = html.replace(platzhalter, muster % payload, 1)
     # gleiche Datei-Konvention wie das Original: UTF-8 mit BOM
     output_path.write_bytes(b"\xef\xbb\xbf" + html.encode("utf-8"))
 
 
-def render(data: dict):
-    _render(TEMPLATE, OUTPUT, PLACEHOLDER, "var DATA = %s;", data)
+def render(data: dict, icons: dict):
+    # ICONS zuerst, DATA danach: die "Platzhalter nicht gefunden"-Pruefung in
+    # _render prueft gegen das schon (teilweise) ersetzte HTML. Stuende DATA
+    # zuerst, koennte eine Beschreibung, die zufaellig den Text des
+    # ICONS-Platzhalters enthaelt, in die eingesetzte DATA-Zeile geraten und
+    # wuerde dann von der zweiten Ersetzung getroffen – die Seite waere
+    # verstuemmelt, ohne dass der Build das meldet. Umgekehrt kann die
+    # ICONS-Nutzlast (Base64/Hostnamen) den DATA-Platzhalter nicht enthalten,
+    # darum ist diese Reihenfolge ohne Spiegelrisiko.
+    _render(
+        TEMPLATE,
+        OUTPUT,
+        [
+            (PLACEHOLDER_ICONS, "var ICONS = %s;", icons),
+            (PLACEHOLDER, "var DATA = %s;", data),
+        ],
+    )
 
 
 def render_vorschlag(data: dict):
     _render(
         TEMPLATE_VORSCHLAG,
         OUTPUT_VORSCHLAG,
-        PLACEHOLDER_VORSCHLAG,
-        "var DATEN = %s;",
-        data,
+        [(PLACEHOLDER_VORSCHLAG, "var DATEN = %s;", data)],
     )
 
 
@@ -408,7 +525,7 @@ def write_daten_json(data: dict):
 def main():
     try:
         data = load_data()
-        render(data)
+        render(data, lade_favicons(data))
         render_vorschlag(data)
         write_daten_json(data)
     except BuildError as exc:
