@@ -149,11 +149,25 @@ unbekannten Händler die ganze Website lahm.
 meldete beim Öffnen eines Skill-Dialogs an Coop, dass jemand genau diesen Skill
 angeschaut hat — ohne Klick. Neues Symbol holen: `uv run tools/favicon_holen.py <domain>`.
 
-**Sechs der sieben heutigen Symbole liegen bereits vor; `lidl.ch` blockiert den
-automatischen Abruf.** `assets/favicons/lidl.ch.png` fehlt darum und muss von
-Hand abgelegt werden — `favicon_holen.py` gibt beim Scheitern die Anleitung
-dazu aus. Der Build läuft unverändert durch, der betroffene Knopf zeigt bis
-dahin nur den Hostnamen.
+**Alle sieben heutigen Symbole liegen vor.** `lidl.ch` blockiert den
+automatischen Abruf; das Symbol wurde darum aus `assets/favicons/lidl.svg`
+gerendert. Bei jedem weiteren Händler, der sperrt, gibt `favicon_holen.py` beim
+Scheitern die Anleitung von Hand aus. Der Build läuft unverändert durch, der
+betroffene Knopf zeigt bis dahin nur den Hostnamen.
+
+**Aus einem SVG wird ein Symbol so:** gross rendern, dann auf 32 × 32 herunter-
+rechnen — direkt auf 32 px gerendert zermatscht die Schrift.
+
+```
+uv run --with svglib --with reportlab --with rlPyCairo --with pillow python -c "from svglib.svglib import svg2rlg; from reportlab.graphics import renderPM; from PIL import Image; d=svg2rlg('assets/favicons/lidl.svg'); g=renderPM.drawToPIL(d, dpi=72*512/d.width, bg=0xFFFFFF); g.convert('RGBA').resize((32,32), Image.LANCZOS).save('assets/favicons/lidl.ch.png','PNG',optimize=True)"
+```
+
+`rlPyCairo` ist nicht optional — ohne dieses Paket bricht `renderPM` mit
+„cannot import desired renderPM backend" ab. Die Vorlage darf im Ordner liegen
+bleiben: `build.py` sucht ausschliesslich nach `<hostname>.png` und rührt `.svg`
+nicht an. **Der Dateiname muss der Hostname sein** (`lidl.ch.png`, nicht
+`lidl.png`) — sonst schaut der Build unter einem Namen nach, den es nicht gibt,
+und das fällt niemandem auf.
 
 **Die Zeilenfolge in der Excel bestimmt die Anzeige NICHT (mehr):** `build.py`
 sortiert die Skills innerhalb jeder Kategorie alphabetisch nach Titel
