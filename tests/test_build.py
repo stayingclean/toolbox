@@ -828,6 +828,35 @@ def test_dialog_zeigt_symbol_und_beschriftung():
     assert "img.alt='';" in block
 
 
+def test_karte_reicht_jedes_feld_weiter_das_der_dialog_liest():
+    """Die Karte uebergibt dem Dialog NICHT den Skill aus DATA, sondern eine
+    von Hand zusammengesetzte Kopie (`sObj`). Jedes Feld, das `openModal`
+    liest, muss dort auftauchen - sonst bleibt es im Dialog stillschweigend
+    leer, ohne Fehlermeldung, ohne fehlgeschlagenen Test.
+
+    Genau so verschwanden die Bezugsquellen: `links` wurde beim Bauen in die
+    Daten geschrieben und von `openModal` gerendert, aber `sObj` gab es nicht
+    weiter. Der Test prueft die Kopie deshalb gegen die gelesenen Felder statt
+    gegen eine feste Liste - sonst faellt beim naechsten neuen Feld dieselbe
+    Luecke wieder erst dem Benutzer auf.
+    """
+    vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
+
+    treffer = re.search(r"var sObj=\{([^}]*)\}", vorlage)
+    assert treffer, "Kopie sObj in render() nicht gefunden"
+    weitergereicht = set(re.findall(r"(\w+)\s*:", treffer.group(1)))
+
+    dialog = js_funktion(vorlage, "openModal")
+    # Kleines s: S.level ist die Zustandsvariable, nicht der Skill.
+    gelesen = set(re.findall(r"\bs\.(\w+)", dialog))
+
+    fehlend = gelesen - weitergereicht
+    assert not fehlend, (
+        f"openModal liest {sorted(fehlend)}, aber die Karte reicht diese Felder "
+        f"nicht weiter (sObj hat {sorted(weitergereicht)})"
+    )
+
+
 def test_symbol_schlaegt_in_der_icons_tabelle_nach():
     vorlage = build.TEMPLATE.read_bytes().decode("utf-8-sig")
     rumpf = ohne_umbrueche(js_funktion(vorlage, "symbol"))

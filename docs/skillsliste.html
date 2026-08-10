@@ -400,7 +400,11 @@ function render(anim){
 
     k.skills.forEach(function(s){
       totalCount++;
-      var sObj={lv:S.level,kid:k.id,klbl:k.label,idx:cardIdx,e:s.e,t:s.t,b:s.b,tip:s.tip,von:s.von,erg:s.erg};
+      /* Neue Felder muessen hier mitwandern: der Dialog bekommt diese Kopie,
+         nicht den Skill aus DATA. Fehlt eines, bleibt es im Dialog leer, ohne
+         Fehlermeldung. Der Test dazu heisst
+         test_karte_reicht_jedes_feld_weiter_das_der_dialog_liest. */
+      var sObj={lv:S.level,kid:k.id,klbl:k.label,idx:cardIdx,e:s.e,t:s.t,b:s.b,tip:s.tip,von:s.von,erg:s.erg,links:s.links};
       var card=document.createElement('div');
       card.className='sk card-anim';
       card.style.animationDelay=(cardIdx*26)+'ms';
