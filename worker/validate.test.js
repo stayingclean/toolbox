@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pruefeVorschlag, pruefeAenderung } from "./validate.js";
+import { pruefeVorschlag, pruefeAenderung, pruefeLinks, MAX_LINKS } from "./validate.js";
 
 const DATEN = {
   hoch: { kategorien: [{ id: "ablenkung", label: "Ablenkung", skills: [] }] },
@@ -184,7 +184,7 @@ test("gibt nur die erlaubten Schlüssel zurück", () => {
   assert.equal(r.ok, true);
   assert.deepEqual(
     Object.keys(r.wert).sort(),
-    ["art", "beschreibung", "emoji", "kategorie", "stufe", "tipp", "titel", "von"].sort()
+    ["art", "beschreibung", "emoji", "kategorie", "links", "stufe", "tipp", "titel", "von"].sort()
   );
   // Die Art setzt der Worker selbst – eine mitgeschickte Art wird ignoriert.
   assert.equal(r.wert.art, "neu");
@@ -231,7 +231,7 @@ test("liefert nur die erlaubten Schlüssel zurück", () => {
   const r = pruefeAenderung({ ...AENDERUNG, art: "neu", extra: "x" }, DATEN_MIT_SKILL);
   assert.deepEqual(
     Object.keys(r.wert).sort(),
-    ["art", "beschreibung", "emoji", "erg", "kategorie", "original", "stufe", "tipp", "titel"].sort()
+    ["art", "beschreibung", "emoji", "erg", "kategorie", "links", "original", "stufe", "tipp", "titel"].sort()
   );
   assert.equal(r.wert.art, "aenderung");
 });
@@ -277,4 +277,130 @@ test("der Name des Ergänzenden ist freiwillig", () => {
   const r = pruefeAenderung({ ...AENDERUNG, erg: "" }, DATEN_MIT_SKILL);
   assert.equal(r.ok, true);
   assert.equal(r.wert.erg, "");
+});
+
+test("ohne Angabe ist die Liste leer", () => {
+  assert.deepEqual(pruefeLinks(undefined), { ok: true, links: [] });
+  assert.deepEqual(pruefeLinks([]), { ok: true, links: [] });
+});
+
+test("normalisiert und entfernt Dubletten", () => {
+  const ergebnis = pruefeLinks([
+    "  https://www.skillsbox.ch/p/1  ",
+    "https://www.skillsbox.ch/p/1",
+    "",
+  ]);
+  assert.equal(ergebnis.ok, true);
+  assert.deepEqual(ergebnis.links, ["https://www.skillsbox.ch/p/1"]);
+});
+
+test("mehr als drei Bezugsquellen werden abgelehnt", () => {
+  const ergebnis = pruefeLinks([
+    "https://a.ch/1", "https://b.ch/2", "https://c.ch/3", "https://d.ch/4",
+  ]);
+  assert.equal(ergebnis.ok, false);
+  assert.equal(ergebnis.fehler, `Höchstens ${MAX_LINKS} Bezugsquellen.`);
+});
+
+for (const [url, muster] of [
+  ["http://a.ch/x", /https/],
+  ["ftp://a.ch/x", /https/],
+  ["javascript:alert(1)", /https/],
+  ["data:text/html,hi", /https/],
+  ["https://bit.ly/abc", /Linkverk/],
+  ["https://www.tinyurl.com/abc", /Linkverk/],
+  ["https://192.168.0.1/x", /IP-Adresse/],
+  ["https://[::1]/x", /IP-Adresse/],
+  ["https://a.ch:8080/x", /Portnummer/],
+  ["https://wer:was@a.ch/x", /Benutzerangabe/],
+  ["https://ohnepunkt/x", /Hostnamen/],
+  ["kein link", /Adresse/],
+]) {
+  test(`lehnt ab: ${url}`, () => {
+    const ergebnis = pruefeLinks([url]);
+    assert.equal(ergebnis.ok, false);
+    assert.match(ergebnis.fehler, muster);
+  });
+}
+
+test("zu lange Adresse wird abgelehnt", () => {
+  const ergebnis = pruefeLinks(["https://a.ch/" + "x".repeat(300)]);
+  assert.equal(ergebnis.ok, false);
+  assert.match(ergebnis.fehler, /lang/);
+});
+
+test("normalisierte Adresse (mit Unicode) wird auf Laenge geprueft", () => {
+  // Raw URL ist 113 Zeichen, normalisierter href wird 613 Zeichen (Umlaute
+  // werden zu %XX-Sequenzen). Die Laengenprüfung muss auf dem gespeicherten
+  // Wert (href) laufen, nicht auf dem Rohstring, sonst landen zu lange
+  // Links in der Excel und build.py weigert sich zu bauen.
+  const ergebnis = pruefeLinks(["https://a.ch/" + "ü".repeat(100)]);
+  assert.equal(ergebnis.ok, false);
+  assert.match(ergebnis.fehler, /lang/);
+});
+
+test("ein Backtick in der Bezugsquelle wird abgelehnt", () => {
+  // Die Bezugsquelle ist die einzige Spalte im Issue, die ueberhaupt
+  // Markdown-Metazeichen tragen kann (jedes Textfeld sperrt schon "http").
+  // Ein Backtick im href koennte im Issue-Rumpf Inline-Code oeffnen und aus
+  // der Tabellenzelle ausbrechen, die die betreuende Person vor der Freigabe
+  // sieht. Im Query-Teil normalisiert URL Backticks nicht weg (anders als im
+  // Pfad), darum muss die Pruefung sie hier selbst abfangen.
+  const ergebnis = pruefeLinks(["https://shop.ch/x?q=`a`"]);
+  assert.equal(ergebnis.ok, false);
+  assert.match(ergebnis.fehler, /Backtick/);
+});
+
+test("spitze Klammern werden beim Normalisieren codiert", () => {
+  // Sie duerfen den Kommentarblock im Issue nicht beenden koennen.
+  const ergebnis = pruefeLinks(["https://a.ch/a-->b"]);
+  assert.equal(ergebnis.ok, true);
+  assert.equal(ergebnis.links[0].includes(">"), false);
+});
+
+test("ein fuehrender Punkt vor dem Hostnamen schuetzt einen Verkuerzer nicht", () => {
+  // build.pruefe_link entfernt fuehrende UND abschliessende Punkte
+  // (.strip(".")) und sieht ".bit.ly" als "bit.ly". Wuerde der Worker nur
+  // abschliessende Punkte entfernen, liesse er ".bit.ly" durch – die
+  // Freigabe schiene in Ordnung, und der Build lehnte den Vorschlag danach
+  // ab: die zwei Schichten muessen hier uebereinstimmen.
+  const ergebnis = pruefeLinks(["https://.bit.ly/x"]);
+  assert.equal(ergebnis.ok, false);
+  assert.match(ergebnis.fehler, /Linkverk/);
+});
+
+test("eine Domain die bit.ly enthaelt ist kein Verkürzungsdienst", () => {
+  // bit.ly.evil.com ist nicht bit.ly – die Shortener-Prüfung ist eine
+  // exakte Abfrage, nicht "includes". Wenn das verändert wird (z. B. zu
+  // includes), muss dieser Test die Regression fangen.
+  const ergebnis = pruefeLinks(["https://bit.ly.evil.com/x"]);
+  assert.equal(ergebnis.ok, true);
+});
+
+test("ein neuer Skill traegt seine Bezugsquellen", () => {
+  const ergebnis = pruefeVorschlag(
+    { ...GUELTIG, links: ["https://a.ch/x"] },
+    DATEN
+  );
+  assert.equal(ergebnis.ok, true);
+  assert.deepEqual(ergebnis.wert.links, ["https://a.ch/x"]);
+});
+
+test("die http-Sperre gilt weiterhin fuer die Beschreibung", () => {
+  // Kernpunkt des ganzen Entwurfs: NUR das Link-Feld darf eine Adresse tragen.
+  const ergebnis = pruefeVorschlag(
+    { ...GUELTIG, beschreibung: "Siehe http://a.ch", links: ["https://a.ch/x"] },
+    DATEN
+  );
+  assert.equal(ergebnis.ok, false);
+  assert.equal(ergebnis.fehler, "Links sind nicht erlaubt.");
+});
+
+test("eine Aenderung traegt ihre Bezugsquellen", () => {
+  const ergebnis = pruefeAenderung(
+    { ...AENDERUNG, links: ["https://a.ch/x"] },
+    DATEN_MIT_SKILL
+  );
+  assert.equal(ergebnis.ok, true);
+  assert.deepEqual(ergebnis.wert.links, ["https://a.ch/x"]);
 });

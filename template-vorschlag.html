@@ -44,16 +44,26 @@
     body.modus-aenderung .nur-aenderung{display:block}
     body.modus-aenderung .nur-neu{display:none}
     .feld{margin-bottom:18px}
-    label{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
+    label,#links-label{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
     .hinweis{color:var(--muted);font-size:.8rem;margin:0 0 6px}
-    input[type=text],textarea,select{
+    input[type=text],input[type=url],textarea,select{
       width:100%;padding:10px 12px;font-family:inherit;font-size:1rem;color:var(--text);
       background:var(--bg);border:1px solid var(--border);border-radius:10px}
-    input[type=text]:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    input[type=text]:focus,input[type=url]:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
     textarea{resize:vertical;min-height:88px}
     .falle{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
     .emoji-zeile{display:flex;gap:8px;align-items:stretch}
     .emoji-zeile input{flex:1;min-width:0}
+    .link-zeile{display:flex;gap:8px;align-items:stretch;margin-bottom:8px}
+    .link-zeile input{flex:1;min-width:0}
+    .link-weg{flex:0 0 auto;font-size:1.1rem;font-weight:600;padding:0 14px;
+      border:1px solid var(--border);border-radius:10px;background:var(--card);
+      color:var(--muted);cursor:pointer;transition:background .15s ease}
+    .link-weg:hover{background:var(--accent-tint);color:var(--accent-dark)}
+    .link-plus{font-size:.85rem;padding:8px 14px;border:1px solid var(--border);
+      border-radius:10px;background:var(--card);color:var(--accent-dark);cursor:pointer}
+    .link-plus:hover:not(:disabled){background:var(--accent-tint)}
+    .link-plus:disabled{opacity:.5;cursor:not-allowed}
     .emoji-knopf{flex:0 0 auto;font-family:inherit;font-size:.85rem;font-weight:600;padding:0 14px;
       border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--accent-dark);
       cursor:pointer;transition:background .15s ease}
@@ -149,6 +159,13 @@
         <label for="tipp">Tipp <span class="hinweis" style="display:inline">(freiwillig)</span></label>
         <p class="hinweis">Ein praktischer Hinweis, höchstens 200 Zeichen.</p>
         <textarea id="tipp" maxlength="200"></textarea>
+      </div>
+
+      <div class="feld">
+        <span id="links-label">Bezugsquellen <span class="hinweis" style="display:inline">(freiwillig, höchstens 3)</span></span>
+        <p class="hinweis">Wo bekommt man das Nötige? Vollständige Adresse mit <strong>https://</strong> — keine Kurzlinks (bit.ly und ähnliche).</p>
+        <div id="links-liste" role="group" aria-labelledby="links-label"></div>
+        <button type="button" class="link-plus" id="link-plus">+ Bezugsquelle hinzufügen</button>
       </div>
 
       <div class="feld">
@@ -375,6 +392,69 @@ function feldSetzen(id, wert){
   el(id).dispatchEvent(new Event('input',{bubbles:true}));
 }
 
+/* Bezugsquellen: eine dynamische Liste statt drei starrer Felder. Muss zu
+   MAX_LINKS in worker/validate.js passen. */
+var MAX_LINKS = 3;
+
+function linkKnopfNachziehen(){
+  el('link-plus').disabled = el('links-liste').children.length >= MAX_LINKS;
+}
+
+function linkZeileBauen(wert){
+  var zeile=document.createElement('div');
+  zeile.className='link-zeile';
+  var feld=document.createElement('input');
+  feld.type='url';
+  feld.inputMode='url';
+  feld.placeholder='https://';
+  feld.maxLength=300; /* muss zu LINK_MAX_LAENGE in worker/validate.js passen */
+  feld.setAttribute('aria-label','Bezugsquelle');
+  feld.value=wert||'';
+  var weg=document.createElement('button');
+  weg.type='button';
+  weg.className='link-weg';
+  weg.setAttribute('aria-label','Diese Bezugsquelle entfernen');
+  weg.textContent='×';
+  weg.addEventListener('click', function(){
+    /* Die letzte Zeile wird geleert statt entfernt: sonst staende das Formular
+       ohne jedes Eingabefeld da, und der Plus-Knopf waere der einzige Weg
+       zurueck – das sieht wie ein Fehler aus. */
+    if(el('links-liste').children.length>1){ zeile.remove(); }
+    else { feld.value=''; }
+    linkKnopfNachziehen();
+  });
+  zeile.appendChild(feld);
+  zeile.appendChild(weg);
+  return zeile;
+}
+
+function linksSetzen(liste){
+  var behaelter=el('links-liste');
+  behaelter.textContent='';
+  var werte=(liste&&liste.length)?liste.slice(0,MAX_LINKS):[''];
+  werte.forEach(function(w){ behaelter.appendChild(linkZeileBauen(w)); });
+  linkKnopfNachziehen();
+}
+
+function linksLesen(){
+  var raus=[];
+  Array.prototype.forEach.call(el('links-liste').querySelectorAll('input'), function(f){
+    var w=f.value.trim();
+    if(w && raus.indexOf(w)<0){ raus.push(w); }
+  });
+  return raus;
+}
+
+el('link-plus').addEventListener('click', function(){
+  if(el('links-liste').children.length>=MAX_LINKS){ return; }
+  var zeile=linkZeileBauen('');
+  el('links-liste').appendChild(zeile);
+  zeile.querySelector('input').focus();
+  linkKnopfNachziehen();
+});
+
+linksSetzen([]);
+
 function skillsDerKategorie(){
   var schluessel=stufenSchluessel();
   var liste=(DATEN[schluessel]&&DATEN[schluessel].kategorien)||[];
@@ -404,6 +484,7 @@ function originalUebernehmen(){
   // Der Tipp traegt in den Daten eine fuehrende Gluehbirne; im Formular gehoert
   // sie nicht hinein, sie wird beim Bauen wieder ergaenzt (build.py, format_tip).
   feldSetzen('tipp', (s.tip||'').replace(/^💡\s*/,''));
+  linksSetzen((s.links||[]).map(function(l){ return l.u||l; }));
 }
 
 /* Was jemand schon getippt hat, darf ein Blick in den anderen Reiter nicht
@@ -422,6 +503,7 @@ var entwuerfe={neu:null,aenderung:null};
 function entwurfSichern(){
   var e={};
   ENTWURF_FELDER.forEach(function(f){ e[f]=el(f).value; });
+  e.links=linksLesen();
   // Zur Aenderung gehoert die getroffene Skill-Auswahl dazu: wer einen Skill
   // ausgesucht und seinen Text bearbeitet hat, will beides wiederfinden.
   if(modus==='aenderung'){ e.original=el('original').value; }
@@ -430,6 +512,7 @@ function entwurfSichern(){
 
 function felderSetzen(e){
   ENTWURF_FELDER.forEach(function(f){ feldSetzen(f, e?e[f]:''); });
+  linksSetzen(e?e.links:[]);
 }
 
 /* Rueckkehr in den Aenderungs-Reiter: erst die Auswahlliste zur eingestellten
@@ -541,6 +624,7 @@ el('formular').addEventListener('submit', async function(ereignis){
         beschreibung:el('beschreibung').value,
         tipp:el('tipp').value,
         erg:el('von').value,
+        links:linksLesen(),
         falle:el('falle').value,
         turnstile:token
       } : {
@@ -551,6 +635,7 @@ el('formular').addEventListener('submit', async function(ereignis){
         beschreibung:el('beschreibung').value,
         tipp:el('tipp').value,
         von:el('von').value,
+        links:linksLesen(),
         falle:el('falle').value,
         turnstile:token
       })

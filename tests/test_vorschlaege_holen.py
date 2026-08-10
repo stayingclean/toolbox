@@ -77,6 +77,9 @@ def test_anhaengen_schreibt_in_die_richtigen_spalten(tmp_path):
     assert ws2.max_row == 3
     kopf = [c.value for c in ws2[1]]
     zeile = dict(zip(kopf, [c.value for c in ws2[3]]))
+    # BEISPIEL traegt keine "links" - die neu angelegten Link- und Text-Spalten
+    # bleiben leer und kommen als None zurueck (openpyxl schreibt eine leere
+    # Zelle nie als "" zurueck, siehe Kommentar bei test_neue_zeile_traegt_die_links).
     assert zeile == {
         "Titel": "Musik hören",
         "Stufe": "Hoch",
@@ -85,6 +88,12 @@ def test_anhaengen_schreibt_in_die_richtigen_spalten(tmp_path):
         "Beschreibung": "Ein Lied auflegen.",
         "Emoji": "🎧",
         "Tipp": "Kopfhörer bereitlegen",
+        "Link1": None,
+        "Link2": None,
+        "Link3": None,
+        "Text1": None,
+        "Text2": None,
+        "Text3": None,
     }
 
 
@@ -419,14 +428,22 @@ def test_aenderung_erhaelt_filter_und_dropdown(tmp_path):
     # Beim Ersetzen einer Zeile darf weder der Filterbereich noch das
     # Stufen-Dropdown verlorengehen – beides sieht man der Datei nicht an,
     # es faellt erst auf, wenn jemand in Excel sortiert.
+    #
+    # Die Mappe hier hat die Link- UND Text-Spalten bereits (PAAR_KOPF), damit
+    # spalten_sichern nichts anlegen muss: nur so prueft dieser Test den
+    # Erhalt-Pfad. Fehlte eine der beiden, legt spalten_sichern sie automatisch
+    # an, und der Filter wird zwangslaeufig breiter – das deckt dann den
+    # WEITEN-Pfad ab, nicht den ERHALT-Pfad, fuer den dieser Test benannt ist.
     pfad = tmp_path / "skills_daten.xlsx"
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Skills"
-    ws.append(KOPF)
-    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "", "Max", ""])
-    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "", "", ""])
-    ws.auto_filter.ref = "A1:H3"
+    ws.append(PAAR_KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "",
+               "Max", "", "", "", "", "", "", ""])
+    ws.append(["Tief", "Ruhe", "🌊", "Atmen", "Ruhig atmen.", "",
+               "", "", "", "", "", "", "", ""])
+    ws.auto_filter.ref = "A1:N3"
     pruefung = DataValidation(type="list", formula1='"Hoch,Mittel,Tief"', allow_blank=True)
     ws.add_data_validation(pruefung)
     pruefung.add("A2:A3")
@@ -435,7 +452,9 @@ def test_aenderung_erhaelt_filter_und_dropdown(tmp_path):
     vh.in_excel_uebernehmen(pfad, [AENDERUNG], [])
 
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
-    assert ws2.auto_filter.ref == "A1:H3"
+    # Die Link- und Text-Spalten waren schon da – der Filter muss unveraendert
+    # bleiben.
+    assert ws2.auto_filter.ref == "A1:N3"
     bereiche = [str(p.sqref) for p in ws2.data_validations.dataValidation]
     assert bereiche == ["A2:A3"]
 
@@ -462,7 +481,9 @@ def test_aenderung_zieht_den_filter_ueber_eine_neu_angelegte_spalte(tmp_path):
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
     assert [c.value for c in ws2[1]][7] == "Ergaenzt"
     assert [c.value for c in ws2[2]][7] == "Lea"
-    assert ws2.auto_filter.ref == "A1:H3"
+    # Ergaenzt UND die sechs Link-/Text-Spalten kommen neu dazu (G -> N statt
+    # G -> H).
+    assert ws2.auto_filter.ref == "A1:N3"
     assert [str(p.sqref) for p in ws2.data_validations.dataValidation] == ["A2:A3"]
 
 
@@ -777,7 +798,10 @@ def test_anhaengen_zieht_filter_und_dropdown_auf_die_neue_zeile(tmp_path):
 
     ws2 = openpyxl.load_workbook(pfad)["Skills"]
     assert ws2.max_row == 4
-    assert ws2.auto_filter.ref == "A1:H4"
+    # KOPF kennt die Link- und Text-Spalten nicht - sie werden automatisch
+    # angelegt (spalten_sichern), darum wird der Filter breiter statt bei H zu
+    # bleiben.
+    assert ws2.auto_filter.ref == "A1:N4"
     assert [str(p.sqref) for p in ws2.data_validations.dataValidation] == ["A2:A4"]
 
 
@@ -889,6 +913,142 @@ def test_aenderung_greift_nicht_auf_eine_im_selben_lauf_neue_zeile(tmp_path):
         )
 
     assert inhalt(pfad) == vorher
+
+
+LINK_KOPF = KOPF + ["Link1", "Link2", "Link3"]
+
+
+def mappe_mit_kopf(tmp_path, kopf):
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(kopf)
+    wb.save(pfad)
+    return pfad
+
+
+def test_die_regeln_kommen_aus_build():
+    """Eine Quelle, nicht zwei. Eine Kopie koennte auseinanderlaufen: der
+    Worker liesse dann etwas durch, das der Build spaeter ablehnt – und der
+    Vorschlag steckte in der Excel fest."""
+    import build
+
+    assert vh.pruefe_link is build.pruefe_link
+    assert vh.LINK_SPALTEN is build.LINK_SPALTEN
+
+
+def test_neue_zeile_traegt_die_links(tmp_path):
+    pfad = mappe_mit_kopf(tmp_path, LINK_KOPF)
+
+    vh.in_excel_uebernehmen(
+        pfad, [], [{**BEISPIEL, "links": ["https://a.ch/x", "https://b.ch/y"]}]
+    )
+
+    ws = openpyxl.load_workbook(pfad)["Skills"]
+    zeile = dict(zip([c.value for c in ws[1]], [c.value for c in ws[2]]))
+    assert zeile["Link1"] == "https://a.ch/x"
+    assert zeile["Link2"] == "https://b.ch/y"
+    # openpyxl schreibt eine leere Zelle nie als "" zurueck, sondern immer als
+    # None (cell/_writer.py: "if value is None or value == '': ... return") -
+    # dieselbe Mehrdeutigkeit, die zelle() in zeile_ersetzen schon normalisiert.
+    assert zeile["Link3"] in (None, "")
+
+
+def test_fehlende_linkspalten_werden_angelegt(tmp_path):
+    pfad = mappe_mit_kopf(tmp_path, KOPF)     # KOPF kennt die Link-Spalten nicht
+
+    vh.in_excel_uebernehmen(pfad, [], [{**BEISPIEL, "links": ["https://a.ch/x"]}])
+
+    kopf = [c.value for c in openpyxl.load_workbook(pfad)["Skills"][1]]
+    assert kopf[-6:] == ["Link1", "Text1", "Link2", "Text2", "Link3", "Text3"]
+
+
+def test_aenderung_ersetzt_die_links_vollstaendig(tmp_path):
+    """Das Formular schickt die Liste vollstaendig zurueck – ein Link, der
+    nicht mehr dabei ist, wurde absichtlich entfernt."""
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(LINK_KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "",
+               "Max", "", "https://alt.ch/1", "https://alt.ch/2", ""])
+    wb.save(pfad)
+
+    vh.in_excel_uebernehmen(pfad, [{**AENDERUNG, "links": ["https://neu.ch/1"]}], [])
+
+    ws2 = openpyxl.load_workbook(pfad)["Skills"]
+    zeile = dict(zip([c.value for c in ws2[1]], [c.value for c in ws2[2]]))
+    assert zeile["Link1"] == "https://neu.ch/1"
+    # Siehe Kommentar in test_neue_zeile_traegt_die_links: openpyxl liefert
+    # eine geleerte Zelle als None zurueck, nicht als "".
+    assert zeile["Link2"] in (None, "")
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["http://a.ch/x", "https://bit.ly/x", "https://10.0.0.1/x",
+     "https://a.ch:8080/x", "https://ohnepunkt/x"],
+)
+def test_ungueltiger_link_wird_abgelehnt(url):
+    assert vh.pruefe_eintrag({**BEISPIEL, "links": [url]}, BESTAND) is not None
+
+
+def test_mehr_als_drei_links_werden_abgelehnt():
+    meldung = vh.pruefe_eintrag(
+        {**BEISPIEL, "links": [f"https://a{i}.ch/x" for i in range(4)]}, BESTAND
+    )
+    assert meldung is not None
+    assert "3" in meldung
+
+
+def test_beschreibung_darf_weiterhin_keinen_link_tragen():
+    meldung = vh.pruefe_eintrag(
+        {**BEISPIEL, "beschreibung": "Siehe http://a.ch", "links": []}, BESTAND
+    )
+    assert meldung == "Links sind nicht erlaubt."
+
+
+PAAR_KOPF = KOPF + ["Link1", "Text1", "Link2", "Text2", "Link3", "Text3"]
+
+
+def test_aenderung_leert_die_beschriftung_wenn_der_link_wechselt(tmp_path):
+    """Sonst beschriebe die alte Beschriftung ein anderes Produkt - und das
+    faellt niemandem auf, weil im Knopf nur sie steht."""
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(PAAR_KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "",
+               "Max", "", "https://alt.ch/1", "Alter Artikel", "", "", "", ""])
+    wb.save(pfad)
+
+    vh.in_excel_uebernehmen(pfad, [{**AENDERUNG, "links": ["https://neu.ch/1"]}], [])
+
+    ws2 = openpyxl.load_workbook(pfad)["Skills"]
+    zeile = dict(zip([c.value for c in ws2[1]], [c.value for c in ws2[2]]))
+    assert zeile["Link1"] == "https://neu.ch/1"
+    assert zeile["Text1"] in (None, "")
+
+
+def test_aenderung_behaelt_die_beschriftung_bei_gleichem_link(tmp_path):
+    """Wer nur den Tipp ergaenzt, soll die gepflegten Beschriftungen behalten."""
+    pfad = tmp_path / "skills_daten.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Skills"
+    ws.append(PAAR_KOPF)
+    ws.append(["Hoch", "Ablenkung", "🎧", "Musik hören", "Ein Lied auflegen.", "",
+               "Max", "", "https://alt.ch/1", "Igelball", "", "", "", ""])
+    wb.save(pfad)
+
+    vh.in_excel_uebernehmen(pfad, [{**AENDERUNG, "links": ["https://alt.ch/1"]}], [])
+
+    ws2 = openpyxl.load_workbook(pfad)["Skills"]
+    zeile = dict(zip([c.value for c in ws2[1]], [c.value for c in ws2[2]]))
+    assert zeile["Text1"] == "Igelball"
 
 
 # ── Ausbaustufe 3: Duplikatpruefung mit Rueckfrage ───────────────────────────

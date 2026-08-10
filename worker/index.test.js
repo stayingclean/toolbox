@@ -5,7 +5,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { issueRumpf, issueRumpfAenderung, zelle } from "./index.js";
+import { issueRumpf, issueRumpfAenderung, zelle, quellen, linkBefund, mitBefunden } from "./index.js";
 
 const WERT = {
   art: "neu",
@@ -72,8 +72,8 @@ test("die Tabelle maskiert senkrechte Striche und Zeilenumbrüche", () => {
   const tabelle = rumpf.split("\n\n<!-- vorschlag")[0];
   assert.ok(tabelle.includes("eins \\| zwei<br>drei"));
   // Die Tabelle bleibt eine Zeile je Feld – sonst zerreisst sie.
-  // Kopfzeile + Trennzeile + 7 Felder = 9 Zeilen.
-  assert.equal(tabelle.split("\n").length, 9);
+  // Kopfzeile + Trennzeile + 8 Felder = 10 Zeilen.
+  assert.equal(tabelle.split("\n").length, 10);
 });
 
 test("der JSON-Block trägt die unveränderten Werte", () => {
@@ -133,4 +133,126 @@ test("maskiert Trennstriche und Zeilenumbrüche in beiden Spalten", () => {
   assert.ok(!/[^\\]\| b/.test(tabelle), "Trennstrich im neuen Wert nicht maskiert");
   assert.ok(!/[^\\]\| y/.test(tabelle), "Trennstrich im alten Wert nicht maskiert");
   assert.ok(!tabelle.includes("b\nc"), "Zeilenumbruch nicht maskiert");
+});
+
+test("Bezugsquellen stehen in der Tabelle eines neuen Skills", () => {
+  const rumpf = issueRumpf({
+    stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧",
+    titel: "Musik", beschreibung: "Ein Lied", tipp: "", von: "",
+    links: [
+      { u: "https://a.ch/x", t: "" },
+      { u: "https://b.ch/y", t: "" },
+    ],
+  });
+  assert.match(rumpf, /\| Bezugsquellen \| `https:\/\/a\.ch\/x`<br>`https:\/\/b\.ch\/y` \|/);
+});
+
+test("ohne Bezugsquellen steht ein Strich", () => {
+  const rumpf = issueRumpf({
+    stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧",
+    titel: "Musik", beschreibung: "Ein Lied", tipp: "", von: "", links: [],
+  });
+  assert.match(rumpf, /\| Bezugsquellen \| — \|/);
+});
+
+test("die Aenderung stellt alte und neue Quellen nebeneinander", () => {
+  const rumpf = issueRumpfAenderung(
+    { stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧", titel: "Musik",
+      beschreibung: "Neu", tipp: "", erg: "", original: "Musik",
+      links: [{ u: "https://neu.ch/x", t: "" }] },
+    { e: "🎧", t: "Musik", b: "Alt", tip: "", links: [{ u: "https://alt.ch/x", t: "" }] }
+  );
+  assert.match(rumpf, /\| Bezugsquellen \| `https:\/\/alt\.ch\/x` \| `https:\/\/neu\.ch\/x` \|/);
+});
+
+test("ein alter Datenstand ohne links bricht nicht", () => {
+  // docs/skills-daten.json wird zwischengespeichert; eine Fassung von vor
+  // dieser Neuerung darf den Worker nicht umwerfen.
+  assert.equal(quellen(undefined), "—");
+});
+
+// `await lauf()` statt `return lauf()`: sonst liefe das finally schon, waehrend
+// linkBefund noch auf die Antwort wartet, und das echte fetch staende wieder
+// da. Heute ginge es zufaellig gut (der Aufruf faellt vor das erste await),
+// aber der Test haette diesen Zufall zur Voraussetzung.
+async function mitStubFetch(antwort, lauf) {
+  const echt = globalThis.fetch;
+  globalThis.fetch = async () => {
+    if (antwort instanceof Error) throw antwort;
+    return antwort;
+  };
+  try {
+    return await lauf();
+  } finally {
+    globalThis.fetch = echt;
+  }
+}
+
+test("200 gilt als erreichbar", async () => {
+  const befund = await mitStubFetch({ ok: true, status: 200 }, () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^✓ https:\/\/a\.ch\/x — 200 OK$/);
+});
+
+test("404 wird als toter Link gemeldet", async () => {
+  const befund = await mitStubFetch({ ok: false, status: 404 }, () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^⚠ /);
+  assert.match(befund, /404/);
+});
+
+test("410 wird als toter Link gemeldet", async () => {
+  const befund = await mitStubFetch({ ok: false, status: 410 }, () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^⚠ /);
+});
+
+test("403 ist keine Aussage – Shops sperren Bots aus", async () => {
+  const befund = await mitStubFetch({ ok: false, status: 403 }, () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^· /);
+  assert.match(befund, /keine Aussage/);
+});
+
+test("ein Netzwerkfehler ist keine Aussage", async () => {
+  const befund = await mitStubFetch(new Error("weg"), () =>
+    linkBefund("https://a.ch/x")
+  );
+  assert.match(befund, /^· /);
+  assert.match(befund, /keine Aussage/);
+});
+
+test("ohne Befunde bleibt der Rumpf unveraendert", () => {
+  assert.equal(mitBefunden("RUMPF", []), "RUMPF");
+});
+
+test("Befunde stehen NACH dem Kommentarblock", () => {
+  // Der Block muss der einzige bleiben: parse_body in vorschlaege_holen.py
+  // verwirft ein Issue mit mehr als einem Block.
+  const rumpf = issueRumpf({
+    stufe: "Hoch", kategorie: "Ablenkung", emoji: "🎧",
+    titel: "Musik", beschreibung: "Ein Lied", tipp: "", von: "", links: [],
+  });
+  const ganz = mitBefunden(rumpf, ["✓ https://a.ch/x — 200 OK"]);
+  assert.equal(ganz.match(/<!-- vorschlag/g).length, 1);
+  assert.ok(ganz.indexOf("Erreichbarkeit") > ganz.indexOf("<!-- vorschlag"));
+});
+
+test("Bezugsquellen nutzen die Beschriftung, wenn es eine gibt", () => {
+  const zelleInhalt = quellen([
+    { u: "https://a.ch/x", t: "Igelball" },
+    { u: "https://b.ch/y", t: "" },
+  ]);
+  assert.match(zelleInhalt, /Igelball/);
+  assert.match(zelleInhalt, /https:\/\/b\.ch\/y/);
+});
+
+test("ein zwischengespeicherter Datenstand mit Zeichenketten bricht nicht", () => {
+  // Der Worker holt docs/skills-daten.json mit 300 Sekunden Zwischenspeicher.
+  // Direkt nach einer Veroeffentlichung kann er noch die alte Form sehen.
+  assert.match(quellen(["https://a.ch/x"]), /https:\/\/a\.ch\/x/);
 });
