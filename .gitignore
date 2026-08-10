@@ -12,6 +12,7 @@ __pycache__/
 
 # Isolierte Arbeitskopien (git worktree) für parallele Sitzungen
 .worktrees/
+.claude/worktrees/
 
 # Nur lokale Vergleichs-/Arbeitskopie, gehört nicht ins Repo
 docs/budgetvorlag_aktuell.html
