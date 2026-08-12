@@ -309,7 +309,7 @@ def test_main_gibt_keine_erfolgszeile_bei_null_uebernahmen_aus(monkeypatch, caps
     monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
     # Ohne diese Attrappe wuerde main() fuer den automatisch abgelehnten
     # Vorschlag echtes input() aufrufen – hier nicht das Testziel.
-    monkeypatch.setattr(vh, "automatische_ablehnungen_melden", lambda faelle: [])
+    monkeypatch.setattr(vh, "automatische_faelle_klaeren", lambda faelle: [])
 
     vh.main()
 
@@ -871,7 +871,7 @@ def test_main_sagt_was_mit_offen_gebliebenen_issues_zu_tun_ist(monkeypatch, caps
     monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
     # Ohne diese Attrappe wuerde main() fuer den automatisch abgelehnten
     # Vorschlag echtes input() aufrufen – hier nicht das Testziel.
-    monkeypatch.setattr(vh, "automatische_ablehnungen_melden", lambda faelle: [])
+    monkeypatch.setattr(vh, "automatische_faelle_klaeren", lambda faelle: [])
 
     vh.main()
 
@@ -1623,21 +1623,72 @@ def test_issue_ablehnen_kommentiert_labelt_und_schliesst(monkeypatch):
     assert any("close" in b for b in flach)
 
 
-def test_automatische_ablehnung_wird_nur_nach_zustimmung_kommentiert():
-    faelle = [({"number": 9, "title": "Test"}, "Kategorie existiert nicht")]
-    assert vh.automatische_ablehnungen_melden(faelle, eingabe=lambda _: "n") == []
-    zu_schreiben = vh.automatische_ablehnungen_melden(faelle, eingabe=lambda _: "j")
-    assert len(zu_schreiben) == 1
-    assert zu_schreiben[0][0] == 9
-    assert "Kategorie existiert nicht" in zu_schreiben[0][1]
+# ── Rueckfrage zu den automatisch aussortierten Vorschlaegen ──────────
+#
+# Kein Vorschlag wird mehr allein wegen einer Codepruefung abgelehnt. Jeder
+# Fall wird vorgelegt; der Mensch entscheidet ueber Ablehnung UND Wortlaut.
+
+FALL = [({"number": 9, "title": "Test"}, "Kategorie existiert nicht")]
 
 
-def test_automatische_ablehnung_ohne_tastatur_schreibt_nichts():
+def antworten(*folge):
+    """Beantwortet die Rueckfragen der Reihe nach."""
+    rest = iter(folge)
+    return lambda _: next(rest)
+
+
+def test_weiter_entscheidet_nichts():
+    """Ohne Antwort des Menschen passiert nichts - der Vorschlag bleibt offen
+    und der naechste Lauf legt ihn wieder vor."""
+    assert vh.automatische_faelle_klaeren(FALL, eingabe=antworten("w")) == []
+
+
+def test_kommentieren_laesst_das_issue_offen():
+    ergebnis = vh.automatische_faelle_klaeren(FALL, eingabe=antworten("k", ""))
+    assert len(ergebnis) == 1
+    nummer, aktion, text = ergebnis[0]
+    assert (nummer, aktion) == (9, "kommentieren")
+    # Leere Eingabe uebernimmt den vorgeschlagenen Text.
+    assert "Kategorie existiert nicht" in text
+
+
+def test_ablehnen_uebernimmt_den_eigenen_wortlaut():
+    """Der Mensch entscheidet nicht nur OB, sondern auch WIE begruendet wird -
+    der technische Grund taugt selten als Rueckmeldung an eine fremde Person."""
+    ergebnis = vh.automatische_faelle_klaeren(
+        FALL, eingabe=antworten("a", "Passt thematisch nicht zur Liste.")
+    )
+    assert ergebnis == [(9, "ablehnen", "Passt thematisch nicht zur Liste.")]
+
+
+def test_rueckfrage_ohne_tastatur_entscheidet_nichts():
+    """Ohne Eingabemoeglichkeit (Doppelklick ohne Konsole, Pipe) darf die
+    Rueckfrage nicht haengen und nichts entscheiden."""
+
     def keine_tastatur(_):
         raise EOFError
 
-    faelle = [({"number": 9, "title": "Test"}, "Kategorie existiert nicht")]
-    assert vh.automatische_ablehnungen_melden(faelle, eingabe=keine_tastatur) == []
+    assert vh.automatische_faelle_klaeren(FALL, eingabe=keine_tastatur) == []
+
+
+def test_abgelehnte_bezugsquelle_nennt_die_moegliche_ursache(capsys):
+    """Diese Ablehnung kann es nicht geben, wenn Worker und Build gleich
+    ticken - der Worker hat denselben Link schon geprueft. Der Hinweis muss
+    beim Fall stehen, wo entschieden wird."""
+    faelle = [({"number": 9, "title": "Test"},
+               "Bezugsquelle abgelehnt: Linkverkuerzer sind nicht erlaubt.")]
+    vh.automatische_faelle_klaeren(faelle, eingabe=antworten("w"))
+
+    ausgabe = capsys.readouterr().out
+    assert "worker/validate.js" in ausgabe
+    # Die harmlose Ursache muss mitstehen, sonst schickt der Hinweis den
+    # Menschen auf eine Fehlersuche in Code, der in Ordnung ist.
+    assert "aelter" in ausgabe or "älter" in ausgabe
+
+
+def test_hinweis_erscheint_nur_bei_bezugsquellen(capsys):
+    vh.automatische_faelle_klaeren(FALL, eingabe=antworten("w"))
+    assert "worker/validate.js" not in capsys.readouterr().out
 
 
 def test_main_lehnt_erst_nach_dem_schreiben_ab(tmp_path, monkeypatch):
@@ -1702,7 +1753,7 @@ def test_fehler_beim_ablehnen_bricht_den_lauf_nicht_ab(capsys, monkeypatch):
 def test_automatischer_fall_wird_nicht_ein_zweites_mal_erfragt(monkeypatch):
     """`abgelehnt` enthaelt auch die bei der Duplikat-Rueckfrage uebersprungenen
     Issues (ueber `raus`). Wuerde main() die ganze Liste an
-    automatische_ablehnungen_melden() weiterreichen, bekaeme der Mensch fuer
+    automatische_faelle_klaeren() weiterreichen, bekaeme der Mensch fuer
     genau das Issue, das er soeben mit „weiter" beantwortet hat, eine zweite
     Rueckfrage."""
     aufrufe = []
@@ -1718,13 +1769,13 @@ def test_automatischer_fall_wird_nicht_ein_zweites_mal_erfragt(monkeypatch):
         eingabe=lambda _: "w",
     )
 
-    echte = vh.automatische_ablehnungen_melden
+    echte = vh.automatische_faelle_klaeren
 
     def aufgezeichnet(faelle, eingabe=input):
         gefragt.append([i["number"] for i, _ in faelle])
         return echte(faelle, eingabe=eingabe)
 
-    monkeypatch.setattr(vh, "automatische_ablehnungen_melden", aufgezeichnet)
+    monkeypatch.setattr(vh, "automatische_faelle_klaeren", aufgezeichnet)
 
     vh.main()
 
@@ -1734,35 +1785,50 @@ def test_automatischer_fall_wird_nicht_ein_zweites_mal_erfragt(monkeypatch):
 # ── Fix-Runde nach Pruefung: automatischer Pfad, Widerspruch, Meldungstext ──
 
 
-def test_automatischer_pfad_schliesst_und_labelt_niemals(monkeypatch):
-    """Der Docstring von automatische_ablehnungen_melden verspricht: diese
-    Faelle werden NICHT geschlossen – sie sind oft behebbar (Kategorie zuerst
-    anlegen) und sollen beim naechsten Lauf wieder angeboten werden. Der
-    automatische Pfad in main() darf deshalb NUR kommentieren, niemals
-    schliessen oder labeln."""
+def _automatischer_lauf(monkeypatch, entscheidungen):
+    """Ein Lauf mit genau einem automatisch aussortierten Vorschlag (Issue #1,
+    erfundene Kategorie). Liefert die abgesetzten gh-Befehle."""
     monkeypatch.setattr(vh, "hole_issues", lambda: [
         freigegebenes_issue(1, {**BEISPIEL, "kategorie": "Erfunden"}),
     ])
     monkeypatch.setattr(vh, "lade_datenstand", lambda: BESTAND)
     monkeypatch.setattr(vh, "in_excel_uebernehmen", lambda pfad, aenderungen, neue: 0)
-    monkeypatch.setattr(
-        vh, "automatische_ablehnungen_melden",
-        lambda faelle: [(i, f"Nicht uebernommen: {g}") for i, g in [(1, "x")]],
-    )
+    monkeypatch.setattr(vh, "automatische_faelle_klaeren", lambda faelle: entscheidungen)
     aufrufe = []
     monkeypatch.setattr(vh.subprocess, "run",
                         lambda befehl, **k: aufrufe.append(befehl) or types.SimpleNamespace(returncode=0))
-
     vh.main()
+    return [" ".join(b) for b in aufrufe]
 
-    flach = [" ".join(b) for b in aufrufe]
+
+def test_kommentieren_schliesst_und_labelt_nicht(monkeypatch):
+    """„Nur kommentieren" laesst das Issue offen: der Fall ist oft behebbar
+    (Kategorie zuerst anlegen) und soll beim naechsten Lauf wieder kommen."""
+    flach = _automatischer_lauf(monkeypatch, [(1, "kommentieren", "Fehlt noch.")])
+
     assert any("comment" in b for b in flach), "der Kommentar muss geschrieben werden"
-    assert not any("close" in b for b in flach), (
-        "der automatische Pfad darf das Issue nicht schliessen"
-    )
-    assert not any("--add-label" in b for b in flach), (
-        "der automatische Pfad darf kein Label setzen"
-    )
+    assert not any("close" in b for b in flach), "kommentieren darf nicht schliessen"
+    assert not any("--add-label" in b for b in flach), "kommentieren darf nicht labeln"
+
+
+def test_ablehnen_schliesst_und_labelt(monkeypatch):
+    """Der Gegenpol: Hat der Mensch „ablehnen" gewaehlt, wird auch wirklich
+    abgelehnt – Kommentar, Label, geschlossen."""
+    flach = _automatischer_lauf(monkeypatch, [(1, "ablehnen", "Passt nicht.")])
+
+    assert any("comment" in b for b in flach)
+    assert any("--add-label abgelehnt" in b for b in flach)
+    assert any("close" in b for b in flach)
+
+
+def test_ohne_entscheidung_geschieht_gar_nichts(monkeypatch):
+    """Der Kern der Zusicherung: Ohne Antwort des Menschen fasst der Lauf das
+    Issue nicht an. Keine Ablehnung entsteht allein aus einer Codepruefung."""
+    flach = _automatischer_lauf(monkeypatch, [])
+
+    assert not any("comment" in b for b in flach)
+    assert not any("close" in b for b in flach)
+    assert not any("--add-label" in b for b in flach)
 
 
 def test_erfolgreich_abgelehntes_issue_erscheint_nicht_als_bleibt_offen(monkeypatch, capsys):
@@ -1812,7 +1878,7 @@ def test_bleibt_offen_erscheint_nur_fuer_tatsaechlich_offene_issues(monkeypatch,
         aufrufe,
         eingabe=lambda _: next(antworten),
     )
-    monkeypatch.setattr(vh, "automatische_ablehnungen_melden", lambda faelle: [])
+    monkeypatch.setattr(vh, "automatische_faelle_klaeren", lambda faelle: [])
 
     vh.main()
 
@@ -1833,7 +1899,7 @@ def test_bleibt_offen_erscheint_nur_fuer_tatsaechlich_offene_issues(monkeypatch,
 #
 # Zwischen der Schliess-Schleife (mit `except BaseException` abgesichert) und
 # der abschliessenden Warnung stehen seit diesem Zweig zwei neue Bloecke: die
-# `ablehnungen`-Schleife und `automatische_ablehnungen_melden` – Letztere mit
+# `ablehnungen`-Schleife und `automatische_faelle_klaeren` – Letztere mit
 # einem interaktiven `input()`. Bricht dort etwas ab, steht die Uebernahme
 # bereits in der Mappe. Ohne Warnung bleibt unbemerkt, dass Issues offen sind,
 # und der naechste Lauf traegt dieselben Skills ein zweites Mal ein.
@@ -1861,9 +1927,9 @@ def test_abbruch_bei_der_zweiten_rueckfrage_warnt_vor_offenen_issues(monkeypatch
     def strg_c(_):
         raise KeyboardInterrupt
 
-    echte = vh.automatische_ablehnungen_melden
+    echte = vh.automatische_faelle_klaeren
     monkeypatch.setattr(
-        vh, "automatische_ablehnungen_melden",
+        vh, "automatische_faelle_klaeren",
         lambda faelle: echte(faelle, eingabe=strg_c),
     )
 
