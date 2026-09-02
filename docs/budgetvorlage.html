@@ -2047,7 +2047,7 @@
     function hydrateFormFromActiveVersion() {
         // Push the active version's data into the DOM form.
         const active = getActiveVersion();
-        $$('input.amount-input').forEach((input) => { input.value = ''; delete input.dataset.userEdited; });
+        $$('input.amount-input').forEach((input) => { input.value = ''; });
         $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
         // Collapse all expander rows; we'll re-open the ones with content below.
         $$('.row-expander').forEach((btn) => {
@@ -2061,7 +2061,6 @@
             const input = $(`input[data-row-id="${rowId}"][data-period="${period}"]`);
             if (input && Number.isFinite(value) && value !== 0) {
                 input.value = formatAmount(value);
-                input.dataset.userEdited = '1';
             }
         });
         Object.entries(active.comments || {}).forEach(([rowId, text]) => {
@@ -3153,11 +3152,7 @@
     async function resetAll() {
         const ok = await confirmReset();
         if (!ok) return;
-        $$('input.amount-input').forEach((input) => {
-            input.value = '';
-            delete input.dataset.userEdited;
-            delete input.dataset.autoFilled;
-        });
+        $$('input.amount-input').forEach((input) => { input.value = ''; });
         $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
         // Collapse all expander rows; refresh their visual state.
         $$('.row-expander').forEach((btn) => {
@@ -3189,9 +3184,13 @@
     }
 
     // ----------------------------------------------------------------
-    // Input handling — auto-fill counterpart period
+    // Input handling — the edited column always drives its counterpart
     // ----------------------------------------------------------------
     // Pairs of period names that mirror each other (×12 / ÷12).
+    // The column typed into last wins, in both directions: there is no
+    // "user edited" lock any more. Such a lock froze the other column
+    // after its first manual entry, so a later change to the yearly
+    // amount left the monthly amount untouched until it was cleared.
     const MIRROR_PAIRS = {
         jaehrlich: 'monatlich',
         monatlich: 'jaehrlich',
@@ -3202,19 +3201,15 @@
         const counterpartPeriod = MIRROR_PAIRS[period];
         if (counterpartPeriod) {
             const counterpart = $(`input[data-row-id="${input.dataset.rowId}"][data-period="${counterpartPeriod}"]`);
-            if (counterpart && !counterpart.dataset.userEdited) {
+            if (counterpart) {
                 const v = parseAmount(input.value);
                 if (v === 0) {
                     counterpart.value = '';
                 } else {
                     const mirror = (period === 'jaehrlich') ? v / 12 : v * 12;
                     counterpart.value = formatAmount(mirror);
-                    counterpart.dataset.autoFilled = '1';
                 }
             }
-            input.dataset.userEdited = '1';
-            if (parseAmount(input.value) === 0) delete input.dataset.userEdited;
-            delete input.dataset.autoFilled;
         }
         recomputeAll();
         // Differences between versions are surfaced via renderVersionsOverview
