@@ -1,4 +1,5 @@
 viewer.js -whitespace linguist-generated
+viewer.js.LEGAL.txt -whitespace linguist-generated
 vendor/worker.mjs -whitespace linguist-generated
 model.ifc -diff linguist-generated
 model.frag binary
