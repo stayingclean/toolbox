@@ -9,6 +9,23 @@ const artifacts=path.resolve(__dirname,'../test-output');fs.mkdirSync(artifacts,
  await page.goto(process.env.VIEWER_URL||'http://127.0.0.1:8768/altbau/');await page.waitForFunction(()=>window.viewerState,null,{timeout:60000});
  if(process.env.SMOKE){await page.screenshot({path:path.join(artifacts,'bim-smoke.png')});console.log('READY',await page.evaluate(async()=>({box:viewerState.model.box,mode:viewerState.mode,coordinates:await viewerState.model.getCoordinates()})));return;}
  const settle=()=>page.evaluate(()=>viewerState.settled());
+ if(process.env.CAD){
+  assert(await page.locator('#cut-tool').count(),'CAD toolbox must expose one-click sections');
+  await page.locator('#cut-tool').click();assert.equal(await page.evaluate(()=>viewerState.clipper.list.size),1);
+  assert(await page.locator('[data-pane=cut]').isVisible());
+  await page.locator('[data-cut-axis="[1,0,0]"]').click();assert.equal(await page.evaluate(()=>viewerState.clipper.list.size),1,'Direction replaces active section');
+  const limits=await page.locator('#section-slider').evaluate(e=>({min:+e.min,max:+e.max}));assert(limits.max-limits.min<40);
+  await page.locator('#section-position').fill('100');await page.locator('#section-position').dispatchEvent('change');
+  assert(Math.abs(await page.locator('#section-slider').inputValue()-limits.min-1)<.02);
+  await page.locator('#section-flip').click();assert.equal(await page.evaluate(()=>viewerState.clipper.list.size),1);
+  await page.locator('#section-new').click();assert.equal(await page.evaluate(()=>viewerState.clipper.list.size),2);
+  await page.locator('#section-clear').click();assert.equal(await page.evaluate(()=>viewerState.clipper.list.size),0);assert(await page.locator('#section-position').isDisabled());
+  await page.locator('#cut-tool').click();await page.waitForTimeout(500);await page.screenshot({path:path.join(artifacts,'cad-desktop.png')});
+  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(500);await page.screenshot({path:path.join(artifacts,'cad-mobile.png')});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),390);
+  await page.locator('#toggle').click();assert(!await page.locator('#panel').isVisible());await page.locator('#cut-tool').click();assert(await page.locator('#panel').isVisible());
+  assert.deepEqual(errors,[]);console.log('PASS CAD toolbox, section direction/position/flip/multiple/reset, mobile panel');return;
+ }
+
  if(process.env.INTERACTIVE){
   await page.locator('[data-tab=view]').click();await page.locator('#top').click();await page.waitForTimeout(500);
   const samples=await page.evaluate(async()=>{const s=viewerState,canvas=s.renderer.domElement,rect=canvas.getBoundingClientRect(),found=[];for(let x=rect.width*.32;x<rect.width*.7;x+=rect.width*.07){const mouse=s.world.renderer.getSize().set(rect.left+x,rect.top+rect.height*.48);const hit=await s.model.raycast({camera:s.camera,mouse,dom:canvas});if(hit)found.push({x:mouse.x,y:mouse.y,point:hit.point.toArray()});}return found;});
@@ -32,7 +49,7 @@ const artifacts=path.resolve(__dirname,'../test-output');fs.mkdirSync(artifacts,
   for(const p of triangle){await page.mouse.move(p.x,p.y);await page.waitForTimeout(900);await page.mouse.click(p.x,p.y);await page.waitForTimeout(900);}
   await page.waitForFunction(()=>viewerState.measures.tools.angle.list.size===1,null,{timeout:20000});assert(Math.abs(await page.evaluate(()=>[...viewerState.measures.tools.angle.list][0].value)-90)<.2);
   console.log('PASS interactive area/angle',area);
-  await page.keyboard.press('Escape');await page.locator('[data-tab=view]').click();await page.locator('[data-cut-axis="[0,-1,0]"]').click();
+  await page.keyboard.press('Escape');await page.locator('[data-tab=cut]').click();await page.locator('[data-cut-axis="[0,-1,0]"]').click();
   await page.locator('#section-slider').fill('0');await page.locator('#section-slider').dispatchEvent('input');await page.waitForTimeout(300);
   await page.screenshot({path:path.join(artifacts,'bim-section.png')});assert.equal(await page.evaluate(()=>viewerState.world.renderer.clippingPlanes.length),1);
   const clippedHit=await page.evaluate(async p=>{const s=viewerState;await s.fragments.update(true);const hit=await s.model.raycast({camera:s.camera,mouse:s.world.renderer.getSize().set(p.x,p.y),dom:s.renderer.domElement});return hit?.point.y;},samples[0]);assert(clippedHit===undefined||clippedHit<.01,'Clipped roof must not remain pickable');
@@ -47,12 +64,12 @@ const artifacts=path.resolve(__dirname,'../test-output');fs.mkdirSync(artifacts,
  await page.locator('#isolate-selected').click();await settle();assert.equal(await page.evaluate(()=>viewerState.serializeView().visible.length),1);
  await page.locator('#hide-selected').click();await settle();assert.equal(await page.evaluate(()=>viewerState.serializeView().visible.length),0);
  await page.locator('[data-tab=model]').click();await page.locator('#all').click();await settle();assert.equal(await page.evaluate(()=>viewerState.serializeView().visible.length),2249);
- await page.locator('[data-tab=view]').click();await page.locator('[data-cut-axis="[0,-1,0]"]').click();assert.equal(await page.evaluate(()=>viewerState.clipper.list.size),1);
+ await page.locator('[data-tab=cut]').click();await page.locator('[data-cut-axis="[0,-1,0]"]').click();assert.equal(await page.evaluate(()=>viewerState.clipper.list.size),1);
  await page.locator('#section-slider').fill('-3');await page.locator('#section-slider').dispatchEvent('input');
  const saved=await page.evaluate(()=>viewerState.serializeView());assert.equal(saved.planes.length,1);
  await page.locator('#section-clear').click();await page.evaluate(data=>viewerState.importView(data),saved);assert.equal(await page.evaluate(()=>viewerState.clipper.list.size),1);
  await page.locator('#section-clear').click();
- await page.locator('#projection').selectOption('Orthographic');await page.waitForFunction(()=>viewerState.world.camera.projection.current==='Orthographic');
+ await page.locator('[data-tab=view]').click();await page.locator('#projection').selectOption('Orthographic');await page.waitForFunction(()=>viewerState.world.camera.projection.current==='Orthographic');
  await page.locator('#top').click();await page.waitForFunction(()=>viewerState.world.camera.mode.id==='Plan');
  await page.evaluate(()=>viewerState.world.camera.controls.zoomTo(2.5,false));const zoomView=await page.evaluate(()=>viewerState.serializeView());
  await page.evaluate(()=>viewerState.world.camera.controls.zoomTo(.6,false));await page.evaluate(data=>viewerState.importView(data),zoomView);
