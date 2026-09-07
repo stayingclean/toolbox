@@ -257,28 +257,50 @@ kopieren und den Schlüssel dort eintragen. Ein Durchgang kostet einige Rappen.
 
 ### Rückmeldung zu aussortierten Vorschlägen (immer, auch ohne Schlüssel)
 
-**Zu Vorschlägen, die das Programm ohnehin schon aussortiert** (z. B. falscher
-Absender oder eine unbekannte Kategorie), fragt es am Ende zusätzlich, ob der
-Grund als Kommentar ins jeweilige Issue soll — ebenfalls sichtbar für die
-einreichende Person, ebenfalls nur nach deiner Zustimmung. Diese Issues bleiben
-dabei **offen**, weil solche Fälle oft behebbar sind (etwa: erst die Kategorie
-anlegen) und beim nächsten Lauf erneut geprüft werden sollen.
+**Vorschläge, die das Programm nicht übernehmen kann** (z. B. falscher Absender
+oder eine unbekannte Kategorie), lehnt es **nicht von sich aus ab**. Es legt
+dir jeden Fall vor, und du entscheidest — auch, was der einreichenden Person
+geschrieben wird.
 
 **Das passiert unabhängig vom Schlüssel — also auch dann, wenn du keinen
-eingerichtet hast.** War mindestens ein Vorschlag dabei, den das Programm
-aussortiert hat, hält es an dieser Stelle an und wartet auf deine Antwort:
+eingerichtet hast.** War mindestens ein Vorschlag dabei, hält das Programm an
+dieser Stelle an und wartet auf deine Antwort:
 
 ```
-Zu den nicht uebernommenen Vorschlaegen kannst du eine Rueckmeldung
-ins Issue schreiben. Sie ist fuer die einreichende Person sichtbar.
+Diese Vorschlaege konnten nicht uebernommen werden. Du entscheidest,
+was mit ihnen geschieht. Ein Kommentar ist fuer die einreichende
+Person ueber ihren Statuslink sichtbar.
 
    Issue #102 „Frische Luft"
-   Vorgeschlagener Kommentar: Nicht uebernommen: Unbekannte Kategorie: 'Draussen' gibt es in der Stufe 'Hoch' nicht (mehr).
-   Schreiben? [j]a  [n]ein  ?
+   Grund: Unbekannte Kategorie: 'Draussen' gibt es in der Stufe 'Hoch' nicht (mehr).
+   [a]blehnen und schliessen  [k]ommentieren, offen lassen  [w]eiter  ?
 ```
 
-**n** (oder Enter) schreibt nichts. Waren alle Vorschläge in Ordnung, kommt die
-Frage gar nicht, und `vorschlaege.bat` läuft wie früher ohne Halt durch.
+- **a** — ablehnen. Das Issue bekommt deine Begründung als Kommentar, das
+  Label `abgelehnt` und wird geschlossen.
+- **k** — nur eine Rückmeldung schreiben. Das Issue **bleibt offen** und kommt
+  beim nächsten Lauf wieder — richtig, wenn der Fall behebbar ist (etwa: erst
+  die Kategorie in der Excel anlegen).
+- **w** (oder Enter) — nichts tun. Das Issue bleibt offen.
+
+Bei **a** und **k** fragt das Programm danach nach dem Wortlaut:
+
+```
+   Vorgeschlagener Text: Nicht uebernommen: Unbekannte Kategorie: 'Draussen' …
+   Anderer Wortlaut (Enter übernimmt den Vorschlag):
+```
+
+Enter nimmt den Vorschlag. Sonst tippst du deinen eigenen Text — meist die
+bessere Wahl, denn der technische Grund ist als Antwort an eine fremde Person
+selten verständlich.
+
+Waren alle Vorschläge in Ordnung, kommt die Frage gar nicht, und
+`vorschlaege.bat` läuft ohne Halt durch.
+
+**Bei einer abgelehnten Bezugsquelle steht zusätzlich ein Hinweis dabei.**
+Dieser Fall sollte es eigentlich nicht geben — das Formular prüft dieselbe
+Regel. Der Hinweis nennt die beiden möglichen Ursachen; meldet er sich bei
+mehreren Vorschlägen auf einmal, ist es ein Fall für die betreuende Person.
 
 ### Wenn im Fenster etwas steht
 

@@ -113,8 +113,13 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
      `MAX_LINKS`.
 
    Die JavaScript-Fassung hält **niemand** mit der Python-Seite zusammen — wird
-   sie beim Ändern vergessen, lässt der Worker etwas durch, das der Build später
-   ablehnt, und der Vorschlag steckt in der Excel fest.
+   sie beim Ändern vergessen, lässt der Worker etwas durch, das `pruefe_link`
+   später ablehnt. **In der Excel landet dabei nichts:**
+   `tools/vorschlaege_holen.py` prüft vor dem Schreiben, der Vorschlag wird
+   aussortiert und das Issue bleibt offen — bei jedem Lauf aufs Neue, bis
+   jemand eingreift. Damit das nicht als gewöhnliche Ablehnung untergeht,
+   nennt die Rückfrage bei genau diesem Grund die mögliche Ursache
+   (`LINK_ABLEHNUNG`, `LINK_HINWEIS`).
 
    **Die `http`-Sperre im Worker gilt weiterhin für Titel, Beschreibung, Tipp und
    Name.** Nur das Link-Feld ist ausgenommen. Diese Sperre ist die Spam-Abwehr des
@@ -313,13 +318,30 @@ geschrieben und kein Issue verändert" — diese Zusicherung wurde in diesem
 Projekt bereits mehrfach gebrochen und wieder repariert, zuletzt mit einem Test,
 der genau diese Reihenfolge festnagelt.
 
-**Automatische Ablehnungen (falscher Absender, unbekannte Kategorie, …) werden
-nicht geschlossen.** Sie sind oft behebbar (z. B. erst die Kategorie anlegen)
-und sollen beim nächsten Lauf erneut versucht werden. `main()` fragt für sie
-nur, ob eine Begründung als Kommentar ins Issue soll
-(`automatische_ablehnungen_melden`) — und lässt dabei genau die Issue-Nummern
-aus, die schon bei der Duplikat-Rückfrage übersprungen wurden (`raus`), sonst
-würde derselbe Fall zweimal gefragt.
+**Kein Vorschlag wird allein aufgrund einer Codeprüfung abgelehnt.** Der Code
+sortiert aus und schlägt eine Begründung vor — entschieden wird in
+`automatische_faelle_klaeren`, und zwar über das **Ob** und den **Wortlaut**:
+
+- **a** — ablehnen: Kommentar, Label `abgelehnt`, Issue geschlossen.
+- **k** — nur kommentieren, Issue bleibt offen.
+- **w** (und jede unklare Eingabe) — nichts. Der nächste Lauf legt den Fall
+  wieder vor.
+
+Dass eine unklare Eingabe wie `w` wirkt und nicht wie `a`, ist Absicht: Ein
+Vertipper darf niemals das Issue einer fremden Person schliessen.
+
+Die Funktion **schreibt nichts** — sie sammelt `(Nummer, Aktion, Text)`.
+Ausgeführt wird erst nach dem erfolgreichen `in_excel_uebernehmen`, wie bei
+`nachfragen()`. Sie lässt dabei genau die Issue-Nummern aus, die schon bei der
+Duplikat-Rückfrage übersprungen wurden (`raus`), sonst würde derselbe Fall
+zweimal gefragt. Wer per `a` geschlossen wurde, landet in
+`erledigt_durch_ablehnen` und darf in der Schlussübersicht nicht mehr als
+„bleibt offen" erscheinen.
+
+`ablehnung_ausfuehren` ist bewusst eine eigene Funktion: Zwei Wege führen zum
+Ablehnen (Duplikat-Rückfrage und diese hier), und der Hinweistext im
+Fehlerfall hängt daran, dass `issue_ablehnen` **zuerst** kommentiert — zwei
+Kopien liefen mit der Zeit auseinander.
 
 **Diese Rückfrage hängt an keinem Schlüssel.** Sie läuft auch dann, wenn keine
 Duplikatprüfung eingerichtet ist — und ist damit für die meisten Benutzer der

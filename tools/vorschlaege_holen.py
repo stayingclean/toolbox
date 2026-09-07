@@ -56,6 +56,13 @@ from build import LINK_PAARE, LINK_SPALTEN, pruefe_link  # noqa: E402
 
 MAX_LINKS = len(LINK_SPALTEN)
 
+# Anfang der Meldung, wenn eine Bezugsquelle die Pruefung nicht besteht.
+# Steht als Konstante da, weil die Rueckfrage diesen Fall wiedererkennen muss:
+# Er ist der einzige, den der Worker schon geprueft hat, und deshalb der
+# einzige, der auf auseinandergelaufene Regeln hindeutet. Ein `startswith` auf
+# einen frei getippten Text passte beim naechsten Umformulieren still nicht mehr.
+LINK_ABLEHNUNG = "Bezugsquelle abgelehnt: "
+
 XLSX = ROOT / "skills_daten.xlsx"
 BUILD = ROOT / "build.py"
 DATEN_JSON = ROOT / "docs" / "skills-daten.json"
@@ -270,7 +277,7 @@ def pruefe_eintrag(eintrag: dict, daten: dict):
             continue
         geprueft, meldung = pruefe_link(url)
         if meldung:
-            return f"Bezugsquelle abgelehnt: {meldung}."
+            return f"{LINK_ABLEHNUNG}{meldung}."
         if geprueft not in gesehen:
             gesehen.append(geprueft)
     if len(gesehen) > MAX_LINKS:
@@ -614,6 +621,39 @@ def issue_ablehnen(nummer: int, grund: str):
     )
 
 
+def ablehnung_ausfuehren(nummer: int, grund: str) -> bool:
+    """Lehnt ein Issue ab und meldet einen Fehlschlag verstaendlich.
+
+    Liefert True, wenn das Issue tatsaechlich geschlossen wurde - nur dann
+    darf die Schlussuebersicht es nicht mehr als "bleibt offen" fuehren.
+
+    Steht als eigene Funktion da, weil zwei Wege hierher fuehren: die
+    Rueckfrage zur Duplikatpruefung und die zu den aussortierten
+    Vorschlaegen. Zwei Kopien wuerden mit der Zeit auseinanderlaufen, und der
+    Hinweistext unten ist heikel - er haengt daran, dass issue_ablehnen()
+    ZUERST kommentiert.
+    """
+    try:
+        issue_ablehnen(nummer, grund)
+    except subprocess.CalledProcessError:
+        # issue_ablehnen() kommentiert ZUERST und labelt danach: bei einem
+        # Fehlschlag steht die Begruendung womoeglich schon oeffentlich im
+        # Issue. Wer sie hier blind noch einmal hineinschreibt, postet
+        # denselben Text zweimal.
+        print(
+            f"\n⚠ Issue #{nummer} konnte nicht abgelehnt werden.\n"
+            f"   Bitte von Hand auf github.com/{REPO}/issues/{nummer}\n"
+            f"   das Label `abgelehnt` setzen und schliessen.\n"
+            f"   Die Begruendung wird als Erstes geschrieben – sie steht\n"
+            f"   dort moeglicherweise schon als Kommentar. Bitte zuerst\n"
+            f"   nachschauen und nur nachtragen, falls sie fehlt:\n"
+            f"   {grund}"
+        )
+        return False
+    print(f"  ✗ Issue #{nummer} abgelehnt und geschlossen.")
+    return True
+
+
 def warne_offene_issues(nummern: list):
     """Warnt vor Vorschlaegen, die in der Excel stehen, deren Issue aber offen ist."""
     if not nummern:
@@ -819,32 +859,73 @@ def begruendung_erfragen(eingabe=input):
         print("   Bitte eine kurze Begruendung eingeben (oder Strg+C zum Abbrechen).")
 
 
-def automatische_ablehnungen_melden(faelle: list, eingabe=input) -> list:
-    """Fragt je Fall, ob der Grund als Kommentar ins Issue soll.
+LINK_HINWEIS = (
+    "   Diese Ablehnung kann es eigentlich nicht geben: Der Worker prueft\n"
+    "   dieselbe Regel und hat den Link durchgelassen. Zwei Ursachen kommen\n"
+    "   in Frage:\n"
+    "     • worker/validate.js ist nicht mehr auf dem Stand von build.py.\n"
+    "       Von Hand nachzuziehen sind dort VERKUERZER, LINK_MAX_LAENGE und\n"
+    "       MAX_LINKS. Wahrscheinlich, wenn es mehrere Vorschlaege trifft.\n"
+    "     • Das Issue ist aelter als eine Verschaerfung der Regel. Dann ist\n"
+    "       die Ablehnung richtig und betrifft nur diesen Vorschlag."
+)
 
-    Der Text ist fuer die einreichende Person ueber ihren Statuslink sichtbar.
-    Darum wird er vorher gezeigt und nichts ohne Zustimmung geschrieben.
-    Diese Faelle werden NICHT geschlossen: Sie sind oft behebbar (etwa die
-    Kategorie zuerst anlegen), und dann soll der naechste Lauf sie wieder
-    anbieten.
+
+def automatische_faelle_klaeren(faelle: list, eingabe=input) -> list:
+    """Legt jeden aussortierten Vorschlag vor und sammelt die Entscheidung.
+
+    Liefert `[(Nummer, Aktion, Text), …]` mit Aktion "ablehnen" (Kommentar,
+    Label `abgelehnt`, schliessen) oder "kommentieren" (Kommentar, Issue
+    bleibt offen). Wer weitergeht, taucht gar nicht auf.
+
+    KEIN Vorschlag wird allein aufgrund einer Codepruefung abgelehnt: Der
+    Code sortiert nur aus und schlaegt eine Begruendung vor, entschieden wird
+    hier - ueber das Ob UND den Wortlaut. Der technische Grund taugt selten
+    als Rueckmeldung an eine fremde Person.
+
+    Diese Funktion schreibt NICHTS auf GitHub. Sie sammelt nur, genau wie
+    nachfragen(). Ausgefuehrt wird erst nach dem erfolgreichen Schreiben in
+    die Excel - sonst hinterliesse ein Abbruch geschlossene Issues bei
+    ungeschriebener Mappe.
     """
-    zu_schreiben = []
+    entscheidungen = []
     if not faelle:
-        return zu_schreiben
-    print("\nZu den nicht uebernommenen Vorschlaegen kannst du eine Rueckmeldung")
-    print("ins Issue schreiben. Sie ist fuer die einreichende Person sichtbar.")
+        return entscheidungen
+    print("\nDiese Vorschlaege konnten nicht uebernommen werden. Du entscheidest,")
+    print("was mit ihnen geschieht. Ein Kommentar ist fuer die einreichende")
+    print("Person ueber ihren Statuslink sichtbar.")
     for issue, grund in faelle:
-        text = f"Nicht uebernommen: {grund}"
+        vorschlag = f"Nicht uebernommen: {grund}"
         print(f'\n   Issue #{issue["number"]} „{issue["title"]}"')
-        print(f"   Vorgeschlagener Kommentar: {text}")
+        print(f"   Grund: {grund}")
+        if grund.startswith(LINK_ABLEHNUNG):
+            print(LINK_HINWEIS)
         try:
-            wahl = eingabe("   Schreiben? [j]a  [n]ein  ? ")
+            wahl = eingabe(
+                "   [a]blehnen und schliessen  [k]ommentieren, offen lassen  "
+                "[w]eiter  ? "
+            )
         except EOFError:
-            print("   Keine Eingabe moeglich – es wird nichts geschrieben.")
-            return zu_schreiben
-        if wahl.strip().lower() in ("j", "ja"):
-            zu_schreiben.append((issue["number"], text))
-    return zu_schreiben
+            print("   Keine Eingabe moeglich – es wird nichts entschieden.")
+            return entscheidungen
+        wahl = wahl.strip().lower()
+        if wahl in ("a", "ablehnen"):
+            aktion = "ablehnen"
+        elif wahl in ("k", "kommentieren"):
+            aktion = "kommentieren"
+        else:
+            # Alles andere heisst weiter: Der Vorschlag bleibt offen und der
+            # naechste Lauf legt ihn wieder vor. Eine unklare Eingabe darf
+            # niemals als Ablehnung durchgehen.
+            continue
+        print(f"   Vorgeschlagener Text: {vorschlag}")
+        try:
+            text = eingabe("   Anderer Wortlaut (Enter übernimmt den Vorschlag): ")
+        except EOFError:
+            print("   Keine Eingabe moeglich – es wird nichts entschieden.")
+            return entscheidungen
+        entscheidungen.append((issue["number"], aktion, text.strip() or vorschlag))
+    return entscheidungen
 
 
 def main():
@@ -1035,24 +1116,8 @@ def main():
         # zweimal etwas Gegenteiliges ueber denselben Vorgang.
         erledigt_durch_ablehnen = set()
         for nummer, grund in ablehnungen:
-            try:
-                issue_ablehnen(nummer, grund)
+            if ablehnung_ausfuehren(nummer, grund):
                 erledigt_durch_ablehnen.add(nummer)
-                print(f"  ✗ Issue #{nummer} abgelehnt und geschlossen.")
-            except subprocess.CalledProcessError:
-                # issue_ablehnen() kommentiert ZUERST und labelt danach: bei
-                # einem Fehlschlag steht die Begruendung womoeglich schon
-                # oeffentlich im Issue. Wer sie hier blind noch einmal
-                # hineinschreibt, postet denselben Text zweimal.
-                print(
-                    f"\n⚠ Issue #{nummer} konnte nicht abgelehnt werden.\n"
-                    f"   Bitte von Hand auf github.com/{REPO}/issues/{nummer}\n"
-                    f"   das Label `abgelehnt` setzen und schliessen.\n"
-                    f"   Die Begruendung wird als Erstes geschrieben – sie steht\n"
-                    f"   dort moeglicherweise schon als Kommentar. Bitte zuerst\n"
-                    f"   nachschauen und nur nachtragen, falls sie fehlt:\n"
-                    f"   {grund}"
-                )
 
         # `abgelehnt` enthaelt NICHT nur die automatisch aussortierten
         # Vorschlaege (falscher Absender, gescheiterte Pruefung): weiter oben
@@ -1061,13 +1126,17 @@ def main():
         # auch das „ablehnen" (Letzteres ist gerade eben ueber die Schleife oben
         # abgearbeitet worden). Fuer all diese Faelle hat der Mensch die Frage
         # schon beantwortet. Wuerde die ganze Liste an
-        # automatische_ablehnungen_melden() gehen, bekaeme er fuer genau diese
+        # automatische_faelle_klaeren() gehen, bekaeme er fuer genau diese
         # Issues eine ZWEITE Rueckfrage. `raus` traegt exakt die Issue-Nummern,
         # die aus der Rueckfrage stammen – deshalb hier NICHT vereinfachen zu
         # "ganz abgelehnt uebergeben".
         aus_rueckfrage = {n for n in raus}
         automatisch = [(i, g) for i, g in abgelehnt if i["number"] not in aus_rueckfrage]
-        for nummer, text in automatische_ablehnungen_melden(automatisch):
+        for nummer, aktion, text in automatische_faelle_klaeren(automatisch):
+            if aktion == "ablehnen":
+                if ablehnung_ausfuehren(nummer, text):
+                    erledigt_durch_ablehnen.add(nummer)
+                continue
             try:
                 issue_kommentieren(nummer, text)
             except subprocess.CalledProcessError:
