@@ -23,6 +23,7 @@
             --color-text-light: #9ca3af;
 
             --color-bg: #ffffff;
+            --color-surface: #ffffff;   /* Versionsleiste und Abzeichen — war undefiniert, also durchsichtig */
             --color-bg-alt: #FAF8F5;
             --color-border: #e5e7eb;
             --color-border-strong: #d1d5db;
@@ -145,18 +146,24 @@
         }
 
         /* ============================================================
-           Toolbar — sticky save controls
+           Sticky-Kopf — Toolbar und Versionsleiste bleiben gemeinsam oben.
+           Die beiden Leisten dürfen NICHT einzeln sticky sein: mit je
+           top: 0 legte sich die Versionsleiste beim Scrollen über die
+           Toolbar, und „Öffnen"/„Speichern" waren nicht mehr klickbar.
            ============================================================ */
-        .toolbar {
+        .sticky-head {
             position: sticky;
             top: 0;
-            z-index: 50;
+            z-index: 90;
+            margin-bottom: 1.5rem;
+        }
+
+        .toolbar {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--color-border);
             padding: 0.75rem 0;
-            margin-bottom: 1.5rem;
         }
 
         .toolbar-inner {
@@ -923,7 +930,7 @@
                 background: white;
                 font-size: 10pt;
             }
-            .toolbar, .footer, .info-box, .version-bar, .toast, .modal-backdrop {
+            .sticky-head, .toolbar, .footer, .info-box, .version-bar, .toast, .modal-backdrop {
                 display: none !important;
             }
             /* Atmenden Hintergrund-Puls im Druck ausblenden. */
@@ -1002,9 +1009,6 @@
            Version bar — tabs to switch between budget versions
            ============================================================ */
         .version-bar {
-            position: sticky;
-            top: 0;
-            z-index: 90;
             display: flex;
             align-items: center;
             gap: 0.6rem;
@@ -1311,6 +1315,7 @@
     </div>
 </header>
 
+<div class="sticky-head">
 <div class="toolbar" role="toolbar" aria-label="Datei-Werkzeuge">
     <div class="toolbar-inner">
         <div class="status" id="status" data-state="empty" role="status" aria-live="polite">
@@ -1361,6 +1366,7 @@
         <span>Neue Version</span>
     </button>
 </div>
+</div><!-- /sticky-head -->
 
 <main class="page">
 
