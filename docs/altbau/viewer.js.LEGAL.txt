@@ -1,0 +1,12 @@
+Bundled license information:
+
+three/build/three.core.js:
+three/build/three.module.js:
+  /**
+   * @license
+   * Copyright 2010-2026 Three.js Authors
+   * SPDX-License-Identifier: MIT
+   */
+
+@thatopen/fragments/dist/index.mjs:
+  /*! pako 2.1.0 https://github.com/nodeca/pako @license (MIT AND Zlib) */

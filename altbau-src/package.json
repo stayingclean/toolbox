@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@thatopen/components": "^3.4.8",
+    "@thatopen/fragments": "^3.4.7",
+    "esbuild": "^0.28.2",
+    "web-ifc": "^0.0.77"
+  }
+}

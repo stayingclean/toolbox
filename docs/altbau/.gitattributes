@@ -1,0 +1,5 @@
+viewer.js -whitespace linguist-generated
+vendor/worker.mjs -whitespace linguist-generated
+model.ifc -diff linguist-generated
+model.frag binary
+elements.json linguist-generated
