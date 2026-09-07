@@ -9,6 +9,23 @@ const artifacts=path.resolve(__dirname,'../test-output');fs.mkdirSync(artifacts,
  await page.goto(process.env.VIEWER_URL||'http://127.0.0.1:8768/altbau/');await page.waitForFunction(()=>window.viewerState,null,{timeout:60000});
  if(process.env.SMOKE){await page.screenshot({path:path.join(artifacts,'bim-smoke.png')});console.log('READY',await page.evaluate(async()=>({box:viewerState.model.box,mode:viewerState.mode,coordinates:await viewerState.model.getCoordinates()})));return;}
  const settle=()=>page.evaluate(()=>viewerState.settled());
+ if(process.env.DRAG){
+  await page.locator('#cut-tool').click();
+  assert(await page.evaluate(()=>[...viewerState.clipper.list.values()][0].visible),'Active section plane must be visible');
+  const before=await page.evaluate(()=>viewerState.serializeView().planes[0].origin);
+  const positions=await page.evaluate(()=>{const p=[...viewerState.clipper.list.values()][0],r=viewerState.renderer.domElement.getBoundingClientRect();return Array.from({length:30},(_,i)=>{const v=p.helper.position.clone().addScaledVector(p.normal,.15+i*.18).project(viewerState.camera);return{x:r.left+(v.x+1)*r.width/2,y:r.top+(1-v.y)*r.height/2};});});
+  let handle;for(const point of positions){await page.mouse.move(point.x,point.y);if(await page.evaluate(()=>[...viewerState.clipper.list.values()][0].controls.axis==='Z')){handle=point;break;}}
+  assert(handle,'Normal-axis handle must be reachable');
+  const cameraBefore=await page.evaluate(()=>viewerState.camera.position.toArray());await page.mouse.down();await page.mouse.move(handle.x,handle.y+70,{steps:15});await page.keyboard.press('Escape');assert(await page.evaluate(()=>viewerState.world.camera.enabled&&![...viewerState.clipper.list.values()][0].controls.dragging),'Escape must release section drag and restore camera');await page.mouse.up();await page.waitForTimeout(400);
+  const after=await page.evaluate(()=>viewerState.serializeView().planes[0].origin);assert(Math.hypot(...before.map((v,i)=>v-after[i]))>.1,'Mouse drag must move the saved section origin');
+  assert.deepEqual(await page.evaluate(()=>viewerState.camera.position.toArray()),cameraBefore,'Dragging section must not orbit camera');
+  const position=await page.evaluate(()=>{const p=[...viewerState.clipper.list.values()][0];return p.origin.dot(p.normal);});assert(Math.abs(+await page.locator('#section-slider').inputValue()-position)<.02);
+  assert.equal(await page.evaluate(()=>viewerState.selection.size),0);await page.screenshot({path:path.join(artifacts,'section-drag.png')});
+  await page.locator('#section-helpers').uncheck();assert(await page.evaluate(()=>![...viewerState.clipper.list.values()][0].controls.enabled));
+  await page.locator('#section-helpers').check();await page.locator('#section-new').click();assert.equal(await page.evaluate(()=>[...viewerState.clipper.list.values()].filter(p=>p.visible&&p.controls.enabled).length),1);await page.locator('[data-tab=view]').click();await page.locator('#projection').selectOption('Orthographic');assert(await page.evaluate(()=>[...viewerState.clipper.list.values()].every(p=>p.controls.camera===viewerState.camera)));
+  assert.deepEqual(errors,[]);console.log('PASS visible section, real mouse handle drag, saved origin/UI sync, stable camera, hide handles');return;
+ }
+
  if(process.env.CAD){
   assert(await page.locator('#cut-tool').count(),'CAD toolbox must expose one-click sections');
   await page.locator('#cut-tool').click();assert.equal(await page.evaluate(()=>viewerState.clipper.list.size),1);
