@@ -1,8 +1,17 @@
 {
   "dependencies": {
     "@thatopen/components": "^3.4.8",
+    "@thatopen/components-front": "3.4.3",
     "@thatopen/fragments": "^3.4.7",
     "esbuild": "^0.28.2",
     "web-ifc": "^0.0.77"
+  },
+  "devDependencies": {
+    "playwright": "1.55.1"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test tests/data.test.mjs",
+    "test:browser": "node tests/browser.cjs"
   }
 }
