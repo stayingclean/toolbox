@@ -522,8 +522,15 @@
             background: var(--color-bg);
             border: 1.5px solid var(--color-border);
             border-radius: var(--radius-sm);
-            resize: vertical;
+            /* Höhe folgt dem Inhalt (autoGrowTextarea) – darum kein Anfasser
+               und keine Bildlaufleiste. */
+            resize: none;
+            overflow-y: hidden;
             transition: all var(--transition-fast);
+        }
+        /* Druckfassung des Kommentars – am Bildschirm unsichtbar, siehe @media print. */
+        .comment-print {
+            display: none;
         }
         .comment-textarea:focus {
             outline: none;
@@ -988,13 +995,31 @@
             body.print-comments .expander-row.has-comment {
                 display: table-row !important;
             }
+            .expander-row.has-comment {
+                page-break-inside: avoid;
+            }
             .comment-panel {
                 border-left-color: #999 !important;
             }
+            /* Eine Textarea wächst nie mit ihrem Inhalt: Auf dem schmaleren
+               A4-Blatt bricht der Text öfter um und wäre unten abgeschnitten.
+               Gedruckt wird darum ein normaler Block mit dem gleichen Text
+               (befüllt in beforeprint), der beliebig hoch werden darf. */
             .comment-textarea {
-                border: 1px solid #999 !important;
-                background: white !important;
-                box-shadow: none !important;
+                display: none !important;
+            }
+            .comment-print {
+                display: block;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                padding: 0.55rem 0.75rem;
+                font-family: var(--font-body);
+                font-size: 0.92rem;
+                line-height: 1.45;
+                color: black;
+                border: 1px solid #999;
+                border-radius: var(--radius-sm);
+                background: white;
             }
         }
 
@@ -2257,11 +2282,26 @@
         ta.dataset.rowId = row.id;
         ta.rows = 2;
         ta.placeholder = 'Notiz zu dieser Position für diese Version – z. B. „Wechsel zu günstigerer Versicherung ab April".';
+        ta.addEventListener('input', () => autoGrowTextarea(ta));
         panel.appendChild(ta);
+
+        // Druckfassung des Kommentars (siehe @media print und beforeprint).
+        const printBlock = document.createElement('div');
+        printBlock.className = 'comment-print';
+        printBlock.setAttribute('aria-hidden', 'true');
+        panel.appendChild(printBlock);
 
         td.appendChild(panel);
         tr.appendChild(td);
         return tr;
+    }
+
+    // Textarea-Höhe an den Inhalt anpassen. scrollHeight ist der Inhalt ohne
+    // Rahmen; wegen box-sizing: border-box kommt der Rahmen wieder dazu.
+    // Nur sinnvoll, wenn die Zeile sichtbar ist – versteckt ist scrollHeight 0.
+    function autoGrowTextarea(ta) {
+        ta.style.height = 'auto';
+        ta.style.height = `${ta.scrollHeight + ta.offsetHeight - ta.clientHeight}px`;
     }
 
     function setRowExpanded(rowId, expanded) {
@@ -2270,6 +2310,10 @@
         if (!btn || !sub) return;
         btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         sub.hidden = !expanded;
+        if (expanded) {
+            const ta = sub.querySelector('.comment-textarea');
+            if (ta) autoGrowTextarea(ta);
+        }
     }
 
     function refreshExpanderUI(rowId) {
@@ -3273,10 +3317,15 @@
         applyPrintComments();
         // Vor dem Drucken Zeilen mit echtem Kommentartext markieren – unabhängig
         // davon, ob sie am Bildschirm auf- oder zugeklappt sind.
+        // Der Text wandert dabei in den Druckblock, der – anders als die
+        // Textarea – auf dem schmaleren Blatt so hoch wird, wie er muss.
         window.addEventListener('beforeprint', () => {
             $$('.expander-row').forEach((tr) => {
                 const ta = tr.querySelector('.comment-textarea');
-                tr.classList.toggle('has-comment', !!(ta && ta.value.trim() !== ''));
+                const text = ta ? ta.value : '';
+                tr.classList.toggle('has-comment', text.trim() !== '');
+                const printBlock = tr.querySelector('.comment-print');
+                if (printBlock) printBlock.textContent = text;
             });
         });
         $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
