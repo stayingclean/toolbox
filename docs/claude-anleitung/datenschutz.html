@@ -218,15 +218,16 @@ footer code { background: var(--card); }
   <div class="card">
     <h3><span class="label warn-l">Nie</span> hochladen oder eintippen</h3>
     <ul>
-      <li>AHV-Nummer, Pass- oder ID-Nummer</li>
-      <li>IBAN, Kartennummern, Passwörter</li>
-      <li>Login-Daten für Portale (die Chrome-Erweiterung braucht sie nicht, du bist selbst eingeloggt)</li>
+      <li>Passwörter, Login-Daten für Portale (die Chrome-Erweiterung braucht sie nicht, du bist selbst eingeloggt)</li>
+      <li>Kreditkarten- und Debitkartennummern samt Ablaufdatum</li>
+      <li>AHV-Nummer, Pass- oder ID-Nummer: echte Identifikatoren, mit Geburtsdatum kombiniert für Identitätsmissbrauch nutzbar</li>
       <li>Unterlagen anderer Personen, die es nicht wissen</li>
     </ul>
   </div>
   <div class="card">
     <h3><span class="label">Nur wenn nötig</span></h3>
     <ul>
+      <li>IBAN: kein Geheimnis (steht auf jeder Rechnung), aber Claude braucht sie zum Schreiben nicht. Platzhalter <code>[IBAN]</code>, am Schluss selbst einsetzen. Siehe Kasten unten.</li>
       <li>Diagnosen und Klinikberichte: nur, wenn das Gesuch sie tatsächlich verlangt, und dann nur den Satz, den es braucht</li>
       <li>Betreibungsauszug, Schuldenliste: Beträge ja, Gläubigernamen kürzen</li>
       <li>Namen von Referenzpersonen: erst im letzten Schritt, wenn der Brief steht</li>
@@ -242,6 +243,15 @@ footer code { background: var(--card); }
     </ul>
   </div>
 </div>
+
+<h3>Warum die IBAN nicht so heikel ist wie die AHV-Nummer</h3>
+<p>Eine berechtigte Frage, die mir gestellt wurde: Was kann jemand mit meiner IBAN anrichten? Ehrliche Antwort: wenig. Mit der IBAN allein kann niemand Geld von deinem Konto holen; sie ist zum Empfangen da, und du gibst sie jedem Arbeitgeber und jeder Stiftung. Die Restrisiken sind indirekt:</p>
+<ul>
+  <li><strong>Lastschriften:</strong> Im EU-Raum kann ein Händler mit einer IBAN eine Lastschrift auslösen, die du acht Wochen lang zurückholen kannst. In der Schweiz braucht jede Belastung (LSV, eBill) deine Zustimmung bei der Bank.</li>
+  <li><strong>Glaubwürdigeres Phishing:</strong> Wer Name, Adresse und IBAN kennt, kann eine täuschend echte Mahnung oder «Rückzahlung» fälschen. Das ist das eigentliche Risiko bei einem Datenleck: die Kombination, nicht die einzelne Nummer.</li>
+  <li><strong>Datensparsamkeit:</strong> Der einfachste Grund für den Platzhalter: Claude braucht die Nummer nicht, um den Brief zu schreiben. Was nicht übertragen wird, kann nicht verloren gehen.</li>
+</ul>
+<p>Die AHV-Nummer ist eine andere Kategorie. Sie identifiziert dich lebenslang gegenüber Ämtern, Versicherungen und Arbeitgebern, und zusammen mit Geburtsdatum und Adresse reicht sie, um in deinem Namen Anträge zu stellen. Darum bleibt sie draussen, auch wenn ein Formular sie verlangt: Feld leer lassen, von Hand ergänzen.</p>
 
 <h3>Platzhalter statt Klarnamen</h3>
 <p>Ein einfacher Trick: In den <code>.md</code>-Dateien stehen Platzhalter wie <code>[AHV]</code> oder <code>[IBAN]</code>. Claude lässt sie im fertigen Dokument stehen, du setzt die echten Werte im letzten Schritt selbst ein. Das kostet zwei Minuten und hält die heikelsten Daten komplett aus dem System.</p>

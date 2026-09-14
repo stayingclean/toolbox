@@ -246,7 +246,7 @@ Bewerte die Passung ehrlich anhand meiner Kriterien. Wenn ein Inserat etwas verl
 
 Am Ende: die drei besten Treffer kurz begründen. Nichts erfinden, wenn du eine Angabe im Inserat nicht findest, schreib «unklar».
 
-Trag danach in log.md ein, was du gemacht hast.</pre>
+Trag danach in log.md ein, was du gemacht hast, und in aufgaben.md die Inserate mit Frist, die ich anschauen soll.</pre>
     </div>
     <p>Claude zeigt zuerst eine Aufgabenliste, fragt allenfalls nach (etwa: «Zählt Lenzburg noch zur Region?») und arbeitet dann die Portale durch. Nach etwa zehn Minuten liegt die Datei mit zwölf Inseraten im Ordner, drei davon mit Passung 4 oder 5.</p>
     <div class="warn"><p><strong>Wann die Chrome-Erweiterung nötig wird:</strong> Manche Portale zeigen Inserate ohne Browser nicht vollständig an, oder du willst dein Job-Room-Konto (RAV) durchsuchen lassen, das einen Login braucht. Dann installierst du die Erweiterung, öffnest Chrome, loggst dich selbst ein und ergänzt im Prompt: «Nutze dafür meinen Chrome-Browser.» Claude fragt dich dann pro Website um Erlaubnis.</p></div>
@@ -254,7 +254,7 @@ Trag danach in log.md ein, was du gemacht hast.</pre>
 
   <li>
     <h3>Auswählen</h3>
-    <p>Nadja liest die Tabelle, öffnet die drei besten Links selbst und entscheidet sich für eine Stelle als stellvertretende Teamleiterin Frische bei einem Supermarkt in Lenzburg, 70 %. Das ist der Schritt, den nur sie machen kann: Will ich das wirklich?</p>
+    <p>Nadja liest die Tabelle (Claude hat sie auf Wunsch auch als <code>inserate.xlsx</code> abgelegt, damit sie eigene Notizen eintragen kann), öffnet die drei besten Links selbst und entscheidet sich für eine Stelle als stellvertretende Teamleiterin Frische bei einem Supermarkt in Lenzburg, 70 %. Das ist der Schritt, den nur sie machen kann: Will ich das wirklich?</p>
     <p>Sie schreibt in den Chat: «Ich bewerbe mich auf Nr. 3 (Lenzburg). Weiter mit der Bewerbung.»</p>
   </li>
 
@@ -266,14 +266,14 @@ Trag danach in log.md ein, was du gemacht hast.</pre>
 
 1. Lies das Inserat nochmals genau und liste mir die 4–5 Anforderungen auf, die dem Arbeitgeber am wichtigsten scheinen.
 
-2. Schreib ein Motivationsschreiben (max. 1 A4-Seite) als motivationsschreiben.md:
+2. Schreib ein Motivationsschreiben (max. 1 A4-Seite) als motivationsschreiben.docx (Word, damit ich es überarbeiten kann):
    - Nur Fakten aus profil.md. Nichts dazuerfinden, keine Eigenschaften behaupten, die dort nicht mit einem Beispiel belegt sind.
    - Den Unterbruch 2023–2025 in einem Satz erwähnen, ohne Details, und dann sofort auf den Wiedereinstieg und das Arbeitstraining kommen.
    - Ton: sachlich, direkt, in der Ich-Form. Keine Floskeln wie «hiermit bewerbe ich mich» und keine Ausrufezeichen.
    - Schweizer Rechtschreibung.
    - Anrede: falls im Inserat eine Kontaktperson steht, diese; sonst «Sehr geehrte Damen und Herren».
 
-3. Erstelle einen aktualisierten Lebenslauf als lebenslauf.md aus profil.md, chronologisch rückwärts, mit den Platzhaltern [ADRESSE], [TELEFON] an der richtigen Stelle.
+3. Erstelle einen aktualisierten Lebenslauf als lebenslauf.docx aus profil.md, chronologisch rückwärts, mit den Platzhaltern [ADRESSE], [TELEFON] an der richtigen Stelle.
 
 4. Zeig mir beide Texte hier im Chat und warte auf mein OK, bevor du PDFs erzeugst.</pre>
     </div>
@@ -283,14 +283,14 @@ Trag danach in log.md ein, was du gemacht hast.</pre>
 
   <li>
     <h3>PDF erzeugen</h3>
-    <p>Nadja schreibt: «OK, erzeuge die PDFs.» Claude wandelt beide Dateien in sauber formatierte PDFs um und legt sie in den Bewerbungsordner. Nadja öffnet die PDFs, setzt in der <code>.md</code>-Datei die Platzhalter ein und lässt das PDF noch einmal erzeugen, oder sie ergänzt Adresse und Telefon von Hand im fertigen Dokument.</p>
+    <p>Nadja schreibt: «OK, erzeuge die PDFs.» Claude wandelt beide Dateien in sauber formatierte PDFs um und legt sie in den Bewerbungsordner. Nadja öffnet die PDFs, setzt in der Word-Datei die Platzhalter ein und lässt das PDF noch einmal erzeugen, oder sie ergänzt Adresse und Telefon von Hand im fertigen Dokument.</p>
     <div class="prompt">
       <div class="ptitle">Prompt 3 · Abschluss <button class="copy" type="button">Kopieren</button></div>
-<pre>OK, erzeuge jetzt motivationsschreiben.pdf und lebenslauf.pdf im selben Ordner. Schlichtes Layout, eine Schrift, keine Farben, keine Icons.
+<pre>OK, erzeuge jetzt aus den beiden Word-Dateien motivationsschreiben.pdf und lebenslauf.pdf im selben Ordner. Schlichtes Layout, eine Schrift, keine Farben, keine Icons.
 
 Erstelle zusätzlich beilagen.md mit der Liste der Dokumente, die ich mitschicken sollte (aus unterlagen/), in sinnvoller Reihenfolge.
 
-Trag in log.md ein: Bewerbung Lenzburg erstellt, Versand offen, Frist laut Inserat.</pre>
+Trag in log.md ein: Bewerbung Lenzburg erstellt. In aufgaben.md: «Bewerbung erstellen» abhaken, «Versand» mit Frist laut Inserat eintragen.</pre>
     </div>
   </li>
 
@@ -300,6 +300,20 @@ Trag in log.md ein: Bewerbung Lenzburg erstellt, Versand offen, Frist laut Inser
     <p>Per Portal: Hier kommt die Chrome-Erweiterung ins Spiel. Nadja öffnet das Bewerbungsformular in Chrome und sagt: «Fülle das Formular auf dieser Seite mit den Angaben aus lebenslauf.md aus. Lade die beiden PDFs hoch. Klick <strong>nicht</strong> auf Absenden.» Claude füllt Feld für Feld, sie kontrolliert und klickt selbst auf «Senden».</p>
   </li>
 </ol>
+
+<h2>Mehrere Bewerbungen auf einmal</h2>
+<p>Wenn drei Inserate passen, musst du den Ablauf nicht dreimal durchspielen. Claude legt alle drei Ordner an, schreibt drei Entwürfe und du gehst sie nacheinander durch. Das spart vor allem die Rüstzeit; die Kontrolle jedes einzelnen Briefs bleibt bei dir.</p>
+<div class="prompt">
+  <div class="ptitle">Prompt · Drei Bewerbungen parallel <button class="copy" type="button">Kopieren</button></div>
+<pre>Erstelle für die Inserate Nr. 3, 7 und 9 aus inserate/2026-09-14_inserate.md je eine Bewerbung, jede in einem eigenen Ordner unter bewerbungen/ (Datum_Firma).
+
+Für jede: Motivationsschreiben als .docx (max. 1 Seite, individuell auf das Inserat bezogen, kein Textbaustein, der in allen drei gleich ist), Lebenslauf als .docx, beilagen.md.
+
+Zeig mir danach eine Tabelle: Firma | Frist | Was am Schreiben speziell ist | Offene Fragen an mich. Ich gehe die drei nacheinander durch. PDFs erst, wenn ich pro Bewerbung «fertig» sage.
+
+Trag alle drei in aufgaben.md ein, mit Frist.</pre>
+</div>
+<div class="note"><p><strong>Erfahrungswert:</strong> Mehr als drei bis vier auf einmal bringt nichts. Ab da liest man die Entwürfe nicht mehr richtig, und genau das Lesen ist der Teil, der zählt.</p></div>
 
 <h2>Am nächsten Tag</h2>
 <p>Nadja öffnet Cowork, verbindet den Ordner wieder und schreibt: «Lies log.md. Was ist offen?» Claude antwortet mit dem Stand: Bewerbung Lenzburg versendet, zwei weitere Inserate ausgewählt, Frist bei einem davon in vier Tagen. Kein Suchen in alten Chats, kein Erklären von vorne.</p>

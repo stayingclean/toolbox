@@ -254,7 +254,7 @@ Trag danach in log.md ein, was du gemacht hast.</pre>
       <div class="ptitle">Prompt 2 · Gesuch erstellen <button class="copy" type="button">Kopieren</button></div>
 <pre>Erstelle ein Gesuch an die Stiftung Nr. 1 aus stiftungen.md. Lege den Ordner gesuche/2026-09-16_stiftung-1 an.
 
-Schreib gesuch.md als Brief, höchstens eine A4-Seite:
+Schreib gesuch.docx als Brief (Word, damit ich ihn in Ruhe überarbeiten und Kommentare setzen kann), höchstens eine A4-Seite:
 - Absender mit Platzhaltern [ADRESSE], [TELEFON], [EMAIL]
 - Betreff: Gesuch um finanzielle Unterstützung, Zahnbehandlung, CHF 3 800
 - Absatz 1: Wer ich bin und worum ich bitte, in drei Sätzen.
@@ -282,9 +282,9 @@ Zeig mir den Brief hier und warte auf mein OK.</pre>
     <h3>PDF und Beilagen</h3>
     <div class="prompt">
       <div class="ptitle">Prompt 3 · Abschluss <button class="copy" type="button">Kopieren</button></div>
-<pre>OK. Erzeuge gesuch.pdf (schlichtes Brieflayout, Datum oben rechts, Platzhalter lassen). Erzeuge beilagen.pdf aus beilagen.md.
+<pre>OK. Erzeuge aus der überarbeiteten gesuch.docx das gesuch.pdf (schlichtes Brieflayout, Datum oben rechts, Platzhalter lassen). Erzeuge beilagen.pdf aus beilagen.md.
 
-Fasse in log.md zusammen: Gesuch an Stiftung 1 erstellt, fehlende Beilage (Bestätigung Arbeitstraining) offen, Versand per Post geplant.
+Fasse in log.md zusammen: Gesuch an Stiftung 1 erstellt. In aufgaben.md: «Gesuch erstellen» abhaken, neu «Bestätigung Arbeitstraining besorgen» und «Versand per Post» mit Frist eintragen.
 
 Erstelle zusätzlich nachfassen.md: wann ich ohne Antwort nachfragen sollte (Erfahrungswerte: 4–6 Wochen) und ein kurzer Text für die Nachfrage.</pre>
     </div>
@@ -296,11 +296,25 @@ Erstelle zusätzlich nachfassen.md: wann ich ohne Antwort nachfragen sollte (Erf
 <p>Das war bei mir der häufigste Fall: Dasselbe Gesuch, aber anderer Empfänger mit anderen Anforderungen. Der Prompt dafür ist kurz:</p>
 <div class="prompt">
   <div class="ptitle">Prompt 4 · Gesuch für zweite Stiftung anpassen <button class="copy" type="button">Kopieren</button></div>
-<pre>Nimm gesuche/2026-09-16_stiftung-1/gesuch.md als Grundlage und erstelle ein angepasstes Gesuch für Stiftung Nr. 2 aus stiftungen.md in einem neuen Ordner.
+<pre>Nimm gesuche/2026-09-16_stiftung-1/gesuch.docx als Grundlage und erstelle ein angepasstes Gesuch für Stiftung Nr. 2 aus stiftungen.md in einem neuen Ordner.
 
 Zeig mir zuerst nur die Stellen, die sich ändern müssen (Anrede, Anforderungen, verlangte Beilagen, Betrag falls die Stiftung Obergrenzen hat), mit deinem Vorschlag. Ich entscheide, dann setzt du um.
 
 Ergänze beilagen.md entsprechend und sag mir, was für Stiftung 2 zusätzlich fehlt.</pre>
+</div>
+
+<h2>Mehrere Gesuche gleichzeitig</h2>
+<p>Bei Einzelfallhilfe ist es üblich, dass mehrere Stiftungen je einen Teil übernehmen. Dann brauchst du drei, vier Gesuche mit demselben Sachverhalt, aber unterschiedlichen Anforderungen und Beträgen. Claude erstellt sie in einem Durchgang, du überarbeitest sie als Word-Dateien, und am Schluss entsteht pro Stiftung ein versandfertiges PDF.</p>
+<div class="prompt">
+  <div class="ptitle">Prompt · Vier Gesuche aus einem Sachverhalt <button class="copy" type="button">Kopieren</button></div>
+<pre>Erstelle aus sachverhalt.md und stiftungen.md für die Stiftungen Nr. 1, 2, 4 und 5 je ein Gesuch, jedes in einem eigenen Ordner unter gesuche/.
+
+Pro Stiftung:
+- gesuch.docx: Brief nach den Anforderungen dieser Stiftung (Formular, falls sie eines verlangt, als ausgefüllte Vorlage). Beantragter Betrag: bei Nr. 1 den ganzen Betrag, bei den anderen je CHF 1 000 mit dem Hinweis, dass weitere Gesuche laufen.
+- beilagen.md: was diese Stiftung verlangt, abgeglichen mit unterlagen/. Fehlendes markieren.
+
+Danach eine Übersicht gesuche/UEBERSICHT.xlsx: Stiftung | Betrag | Einreichweg | Frist | fehlende Beilagen | Status.
+Trag die vier Gesuche in aufgaben.md ein. Ich überarbeite die Word-Dateien und sage dir dann pro Gesuch, wann du das PDF bauen sollst.</pre>
 </div>
 
 <h2>Was ich gelernt habe</h2>

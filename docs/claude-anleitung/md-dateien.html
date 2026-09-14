@@ -188,6 +188,7 @@ footer code { background: var(--card); }
     <li>Eine <code>.md</code>-Datei ist eine reine Textdatei mit ein paar Zeichen für Überschriften und Listen. Öffnen mit jedem Editor (Notepad, TextEdit), lesbar für Menschen und für Claude.</li>
     <li>Du schreibst deine Fakten <strong>einmal</strong> hinein (Profil, Ziele, Stand der Dinge). Claude liest sie bei jeder Sitzung und schreibt nur damit.</li>
     <li>Ergebnis: weniger Wiederholen, weniger erfundene Angaben, und du hast auch ohne Claude alles beisammen.</li>
+    <li><strong>Wichtige Abgrenzung:</strong> <code>.md</code> ist für das, was <em>hinein</em>geht (Fakten, Regeln, Stand). Was <em>heraus</em>kommt (Brief, Gesuch, Tabelle), lässt du als PDF, Word oder Excel erzeugen. Das können alle öffnen, auch der Sozialdienst oder die Stiftung.</li>
   </ul>
 </div>
 
@@ -217,10 +218,42 @@ Normaler Text. **fett** und *kursiv*.
 <p>Die Datei speicherst du mit der Endung <code>.md</code>, zum Beispiel <code>profil.md</code>. Unter Windows: Notepad öffnen, Text schreiben, «Speichern unter», als Dateityp «Alle Dateien» wählen und <code>profil.md</code> eintippen. Oder du lässt Claude die erste Datei anlegen und bearbeitest sie danach.</p>
 
 <div class="note">
-  <p><strong>Warum nicht Word?</strong> Word-Dateien enthalten viel unsichtbare Formatierung; Claude kann sie lesen, aber nicht so sauber bearbeiten. Eine <code>.md</code>-Datei ist klein, überall zu öffnen, und Änderungen sind eindeutig. Für die fertigen Dokumente (PDF, Word) erzeugt Claude dann das passende Format.</p>
+  <p><strong>Warum nicht Word für die Fakten?</strong> Word-Dateien enthalten viel unsichtbare Formatierung; Claude kann sie lesen, aber nicht so sauber bearbeiten. Eine <code>.md</code>-Datei ist klein, überall zu öffnen, und Änderungen sind eindeutig. Für die fertigen Dokumente erzeugt Claude dann das Format, das du brauchst (siehe unten).</p>
 </div>
 
-<h2>Die vier Dateien, die sich bewährt haben</h2>
+<h3>Programme, mit denen sich .md-Dateien angenehm bearbeiten lassen</h3>
+<p>Notepad reicht, aber komfortabler geht es mit einem Programm, das die Struktur farbig anzeigt und eine Vorschau bietet. Alle hier sind gratis:</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Programm</th><th>Für wen</th><th>Bemerkung</th></tr>
+  <tr><td><a href="https://code.visualstudio.com" target="_blank" rel="noopener">VS Code</a> (Microsoft)</td><td>Wer einen ganzen Ordner im Blick haben will</td><td>Ordner öffnen, links alle Dateien, rechts der Text; <kbd>Ctrl+Shift+V</kbd> zeigt die Vorschau. Windows, Mac, Linux.</td></tr>
+  <tr><td><a href="https://obsidian.md" target="_blank" rel="noopener">Obsidian</a></td><td>Wer es wie ein Notizbuch will</td><td>Ordner als «Vault» öffnen, Vorschau beim Tippen, verlinkt Dateien untereinander. Privat gratis.</td></tr>
+  <tr><td><a href="https://notepad-plus-plus.org" target="_blank" rel="noopener">Notepad++</a></td><td>Wer nur Windows und etwas Schlichtes will</td><td>Leichtgewichtig, keine Vorschau, aber Farben für Überschriften.</td></tr>
+  <tr><td>Claude selbst</td><td>Wer nichts installieren will</td><td>«Öffne profil.md und ändere den Wohnort auf …» funktioniert in Cowork genauso. Zum Lesen zeigt dir Claude die Datei im Chat.</td></tr>
+</table>
+</div>
+
+<h3>Die Datei CLAUDE.md: Regeln, die Claude von selbst liest</h3>
+<p>Claude sucht beim Start einer Cowork-Sitzung im verbundenen Ordner nach einer Datei namens <code>CLAUDE.md</code> und liest sie automatisch. Wenn du deine <code>regeln.md</code> so nennst, musst du nicht in jedem Prompt «Lies zuerst regeln.md» schreiben. Inhalt und Aufbau sind identisch; nur der Dateiname ist die Verabredung.</p>
+<div class="warn">
+  <p><strong>Nur für Claude.</strong> Der Name <code>CLAUDE.md</code> ist eine Konvention von Anthropic. ChatGPT, Grok oder andere Programme ignorieren die Datei; dort lädst du sie wie jede andere hoch. Ich halte die Regeln darum in <code>regeln.md</code> und lege daneben eine <code>CLAUDE.md</code> mit nur einer Zeile an: «Lies regeln.md und halte dich daran.» So bleibt die Datei anbieterneutral.</p>
+</div>
+
+<h2>Du musst die Struktur nicht selbst erfinden</h2>
+<p>Der einfachste Einstieg: Claude die Struktur vorschlagen lassen. Er kennt die üblichen Anforderungen für Bewerbungen und Gesuche und legt Ordner und Dateien an, die du dann füllst.</p>
+<div class="prompt">
+  <div class="ptitle">Prompt · Struktur anlegen lassen <button class="copy" type="button">Kopieren</button></div>
+<pre>Ich will in diesem Ordner [Bewerbungen für Stellen im Detailhandel / Gesuche an Stiftungen wegen Zahnarztkosten] vorbereiten.
+
+Schlag mir eine Ordnerstruktur vor und lege sie an:
+- Welche Textdateien (.md) ich brauche, mit einer kurzen Vorlage und Beispielzeilen in jeder Datei, damit ich weiss, was hineingehört.
+- Welche Unterlagen (PDF, Scans) ich typischerweise brauche, als Checkliste in unterlagen/CHECKLISTE.md mit Kästchen zum Abhaken.
+- Eine Datei aufgaben.md mit den nächsten Schritten, die du ab jetzt nachführst.
+
+Stell mir danach 5–8 Fragen und fülle aus meinen Antworten profil.md.</pre>
+</div>
+
+<h2>Die fünf Dateien, die sich bewährt haben</h2>
 <div class="grid">
   <div class="card">
     <h3>profil.md</h3>
@@ -235,10 +268,33 @@ Normaler Text. **fett** und *kursiv*.
     <p>Das Tagebuch des Projekts. Claude trägt nach jedem Schritt ein, was erledigt ist, was offen ist, welche Fristen laufen. Beim nächsten Start liest er zuerst diese Datei.</p>
   </div>
   <div class="card">
+    <h3>aufgaben.md</h3>
+    <p>Die offene Liste mit Kästchen. Claude hakt ab, was erledigt ist, und trägt neue Punkte mit Frist ein. Das Erste, was du morgens anschaust.</p>
+  </div>
+  <div class="card">
     <h3>regeln.md</h3>
-    <p>Wie Claude arbeiten soll: «Nur Fakten aus profil.md verwenden. Bei fehlenden Angaben fragen, nichts erfinden. Schweizer Rechtschreibung (ss statt ß). Vor dem Schreiben eines PDFs den Text zeigen.»</p>
+    <p>Wie Claude arbeiten soll: «Nur Fakten aus profil.md verwenden. Bei fehlenden Angaben fragen, nichts erfinden. Schweizer Rechtschreibung (ss statt ß). Vor dem Schreiben eines PDFs den Text zeigen. aufgaben.md nachführen.»</p>
   </div>
 </div>
+
+<h3>Beispiel: aufgaben.md (von Claude gepflegt)</h3>
+<pre><code># Aufgaben
+
+## Offen
+- [ ] Bestätigung Arbeitstraining bei Frau [Name] anfordern — bis 18.09.
+- [ ] Gesuch Stiftung 1 ausdrucken, unterschreiben, Post — bis 20.09.
+- [ ] Bewerbung Lenzburg: Nachfassen, falls bis 30.09. keine Antwort
+- [ ] Inserat Nr. 7 (Aarau, 60 %) prüfen, Frist 25.09.
+
+## Wartet auf Antwort
+- Bewerbung Lenzburg, versendet 15.09.
+- Krankenkasse, Anfrage Kostengutsprache, 12.09.
+
+## Erledigt
+- [x] 14.09. Inserate gesucht (12 Treffer, 3 passend)
+- [x] 15.09. Bewerbung Lenzburg als PDF erstellt und versendet
+- [x] 16.09. Gesuch Stiftung 1 Entwurf, Beilagen geprüft</code></pre>
+<p>Der Satz in <code>regeln.md</code>, der das auslöst: «Führe aufgaben.md nach: Erledigtes abhaken und mit Datum nach unten verschieben, Neues mit Frist unter Offen eintragen. Bei jedem Start zuerst die offenen Punkte nennen.»</p>
 
 <h3>Beispiel: profil.md (fiktiv)</h3>
 <pre><code># Profil
@@ -276,24 +332,71 @@ Normaler Text. **fett** und *kursiv*.
 - Zeig mir jeden Text, bevor du ein PDF oder Word-Dokument erzeugst.
 - Halte Briefe kurz und sachlich. Keine Floskeln, keine Ausrufezeichen.
 - Nach jedem grösseren Schritt: log.md ergänzen (Datum, was erledigt, was offen).
+- Führe aufgaben.md nach: Erledigtes abhaken, Neues mit Frist eintragen.
+  Bei jedem Start zuerst die offenen Punkte nennen.
+- Entwürfe als Word-Datei (.docx) ablegen, damit ich sie mit Kommentaren
+  überarbeiten kann. Erst auf mein Kommando das fertige PDF erzeugen.
 - Lücken im Lebenslauf: nur als «Unterbruch (gesundheitlich)» erwähnen, keine Details.</code></pre>
+
+<h2>Ausgabeformate: Word und Excel zum Überarbeiten, PDF zum Versenden</h2>
+<p>Claude kann Ergebnisse in jedem gängigen Format ablegen. Welches sinnvoll ist, hängt davon ab, was du damit noch tun willst:</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Format</th><th>Wann</th><th>Typisch</th></tr>
+  <tr><td><strong>Word (.docx)</strong></td><td>Solange der Text noch nicht fertig ist. Du kannst selbst tippen oder mit «Kommentar einfügen» Anmerkungen setzen, die Claude beim nächsten Durchgang liest und umsetzt.</td><td>Gesuchsentwurf, Motivationsschreiben, Brief an Gläubiger</td></tr>
+  <tr><td><strong>Excel (.xlsx)</strong></td><td>Für Listen, die du selbst ergänzen willst: Inserate, Schulden, Bewerbungsübersicht fürs RAV.</td><td>inserate.xlsx, schulden.xlsx, arbeitsbemuehungen.xlsx</td></tr>
+  <tr><td><strong>PDF</strong></td><td>Ganz am Schluss. Sieht überall gleich aus, lässt sich nicht aus Versehen verändern, ist das Format für Mail und Post.</td><td>gesuch.pdf, bewerbung_komplett.pdf</td></tr>
+  <tr><td><strong>HTML / Link</strong></td><td>Für Übersichten, die du auf dem Handy anschauen willst. Eine HTML-Datei öffnet jeder Browser, auch ohne Internet.</td><td>Wochenplan, Kontaktliste</td></tr>
+  <tr><td><strong>Markdown (.md)</strong></td><td>Für alles, was Claude wieder lesen soll: Fakten, Regeln, Log, Aufgaben.</td><td>profil.md, log.md, aufgaben.md</td></tr>
+</table>
+</div>
+
+<h3>Der Kreislauf bei Gesuchen: Word mit Anmerkungen → PDF</h3>
+<div class="flow">
+  <div class="box"><b>Entwurf als .docx</b>Claude schreibt aus deinen Dateien</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>Du in Word</b>Text ändern oder Kommentare setzen («kürzer», «Betrag falsch»)</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>Claude arbeitet ein</b>liest Kommentare, setzt um, neue .docx</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>PDF</b>erst wenn du «fertig» sagst</div>
+</div>
+<div class="prompt">
+  <div class="ptitle">Prompt · Kommentare aus Word einarbeiten <button class="copy" type="button">Kopieren</button></div>
+<pre>Ich habe gesuch.docx in Word überarbeitet und Kommentare eingefügt. Lies die Datei inklusive Kommentare.
+
+Zeig mir zuerst jede Anmerkung mit deinem Änderungsvorschlag als Liste. Ich sage dir, welche du umsetzt. Dann speichere die neue Fassung als gesuch_v2.docx und trag in log.md ein, was sich geändert hat.</pre>
+</div>
+<div class="prompt">
+  <div class="ptitle">Prompt · Aus allen Dateien das fertige PDF für den Versand <button class="copy" type="button">Kopieren</button></div>
+<pre>Das Gesuch ist fertig. Erstelle aus gesuch_v2.docx, beilagen.md und den Dateien in unterlagen/ ein einziges versandfertiges PDF: versand/2026-09-20_gesuch_stiftung-1.pdf.
+
+Reihenfolge: Gesuch, Beilagenverzeichnis, dann die Beilagen in der Reihenfolge des Verzeichnisses. Jede Beilage mit einer Kopfzeile «Beilage 1: Rechnung Zahnarzt» usw. Platzhalter [ADRESSE] und [IBAN] lassen, die setze ich selbst ein.
+
+Erstelle daneben versand/mailtext.md mit einem kurzen Begleittext (3 Sätze) für den Versand per E-Mail, und hake in aufgaben.md «Gesuch Stiftung 1 erstellen» ab. Neuer Punkt: «Versand bis 22.09.».</pre>
+</div>
+<p>Der Vorteil dieses Weges: Bis zum letzten Schritt liegt alles als bearbeitbare Datei da. Wenn die Stiftung nachfragt oder du ein zweites Gesuch brauchst, änderst du die <code>.docx</code> und lässt das PDF neu bauen.</p>
 
 <h2>Wie ein Ordner dann aussieht</h2>
 <div class="tree">Bewerbungen/
+├── CLAUDE.md            <span class="c">← eine Zeile: «Lies regeln.md»</span>
 ├── regeln.md            <span class="c">← wie Claude arbeiten soll</span>
 ├── profil.md            <span class="c">← deine Fakten</span>
 ├── kriterien.md         <span class="c">← was du suchst</span>
-├── log.md               <span class="c">← Stand der Dinge, von Claude gepflegt</span>
+├── aufgaben.md          <span class="c">← offene Punkte, von Claude nachgeführt</span>
+├── log.md               <span class="c">← was wann passiert ist</span>
 ├── unterlagen/
+│   ├── CHECKLISTE.md    <span class="c">← was noch fehlt, zum Abhaken</span>
 │   ├── lebenslauf.pdf
 │   ├── zeugnis_denner.pdf
 │   └── diplom_efz.pdf
 ├── inserate/
-│   └── 2026-09-14_inserate.md   <span class="c">← Suchergebnis, bewertet</span>
+│   ├── 2026-09-14_inserate.md     <span class="c">← Suchergebnis, bewertet</span>
+│   └── 2026-09-14_inserate.xlsx   <span class="c">← dasselbe als Tabelle zum Ergänzen</span>
 └── bewerbungen/
-    ├── 2026-09-15_migros-lenzburg/
-    │   ├── motivationsschreiben.md
-    │   ├── motivationsschreiben.pdf
+    ├── 2026-09-15_lenzburg/
+    │   ├── motivationsschreiben.docx   <span class="c">← Entwurf zum Überarbeiten</span>
+    │   ├── motivationsschreiben.pdf    <span class="c">← fertig, zum Versenden</span>
     │   └── lebenslauf.pdf
     └── …</div>
 
