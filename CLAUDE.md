@@ -23,6 +23,10 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
   ist bewusst getrennt, damit die Seiten untereinander verlinken können.
   Fusszeile mit Credit in jeder Datei. Inhalte sind fiktive Beispiele
   (Nadja Keller, Marco Brunner) – keine echten Personendaten eintragen.
+- `beispiel-projekt/` = Vorlage-Ordner zur Anleitung (fiktive Daten). Wird als
+  `docs/claude-anleitung/beispiel-projekt.zip` zum Download angeboten; nach
+  Änderungen an der Vorlage das Zip neu bauen:
+  `cd beispiel-projekt && zip -r ../docs/claude-anleitung/beispiel-projekt.zip . -x .gitkeep`
 - `docs/plakat.html` = Plakat zur Skillsliste zum Herunterladen (PNG und PDF in
   A5/A4/A3). Das PDF baut die Seite selbst; die Bildpunkte des PNG wandern dabei
   unverändert ins PDF. Das Plakat liegt in **zwei** Dateien daneben:
