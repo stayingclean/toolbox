@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflow: Gesuch · Mit Claude arbeiten</title>
+  <meta name="description" content="Daten sammeln, Gesuch an eine Stiftung">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg: #FAF8F5; --card: #FFFFFF; --card-hover: #F5FAFA; --border: #E8E4DF;
+  --text: #1C1C1C; --muted: #7A7268; --accent: #008080; --accent-dark: #006666;
+  --accent-tint: #E6F2F2; --warn-tint: #FFF4E5; --warn: #B45309;
+  --ok-tint: #EAF6EC; --ok: #2F7D3A;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --sidebar: 260px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; font-family: var(--font-body); background: var(--bg); color: var(--text);
+  line-height: 1.55; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 80% 55% at 50% 0%, var(--accent-tint) 0%, transparent 68%);
+  opacity: 0.3; animation: breathe 7s ease-in-out infinite; }
+@keyframes breathe { 0%,100% { opacity: .22; transform: scaleY(1);} 50% { opacity: .40; transform: scaleY(1.05);} }
+a { color: var(--accent-dark); }
+
+/* Layout: Seitenleiste links, Inhalt rechts */
+.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
+.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 28px 18px 28px 22px;
+  border-right: 1px solid var(--border); background: rgba(255,255,255,.55); backdrop-filter: blur(6px); }
+.brand { display: block; text-decoration: none; margin-bottom: 22px; }
+.brand .title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--accent-dark); line-height: 1.2; }
+.brand .back { display: block; font-size: .78rem; color: var(--muted); margin-top: 4px; }
+.brand .back:hover { color: var(--accent); }
+.nav h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 6px; }
+.nav a { display: block; padding: 7px 10px; border-radius: 9px; text-decoration: none; color: var(--text); font-size: .93rem; }
+.nav a:hover { background: var(--card-hover); color: var(--accent-dark); }
+.nav a.active { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; }
+.nav a .n { display: inline-block; width: 1.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.nav a.active .n { color: var(--accent); }
+
+.menu-toggle { display: none; }
+
+main { padding: 44px 48px 64px; max-width: 860px; }
+header.page { margin-bottom: 28px; }
+.kicker { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 6px; }
+h1 { font-family: var(--font-display); font-size: 2.1rem; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; color: var(--accent-dark); }
+.lead { color: var(--muted); font-size: 1.08rem; margin: 0; }
+h2 { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; margin: 40px 0 12px; color: var(--accent-dark); }
+h3 { font-size: 1.05rem; margin: 26px 0 8px; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 6px; }
+li > ul, li > ol { margin-top: 6px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--card); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; }
+pre { background: #1F2A2A; color: #EAF2F2; padding: 16px 18px; border-radius: 12px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: .86rem; line-height: 1.5; margin: 0 0 18px; white-space: pre-wrap; }
+pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin: 0 0 16px; }
+.card h3 { margin-top: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 0 0 18px; }
+.grid .card { margin: 0; }
+a.card { display: block; text-decoration: none; color: var(--text); transition: transform .15s, border-color .15s; }
+a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+a.card .name { font-weight: 600; color: var(--accent-dark); display: block; margin-bottom: 4px; }
+a.card .meta { color: var(--muted); font-size: .88rem; }
+
+.note { border-left: 4px solid var(--accent); background: var(--accent-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.warn { border-left: 4px solid var(--warn); background: var(--warn-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.ok { border-left: 4px solid var(--ok); background: var(--ok-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.note p:last-child, .warn p:last-child, .ok p:last-child { margin-bottom: 0; }
+.label { display: inline-block; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px;
+  border-radius: 999px; background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; vertical-align: middle; }
+.label.warn-l { background: var(--warn-tint); color: var(--warn); }
+.label.ok-l { background: var(--ok-tint); color: var(--ok); }
+
+.summary { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin: 0 0 28px; }
+.summary h2 { margin: 0 0 8px; font-size: 1.1rem; font-family: var(--font-body); color: var(--text); }
+.summary ul { margin-bottom: 0; }
+
+/* Schritte */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 24px; }
+.steps > li { position: relative; padding: 0 0 22px 52px; margin: 0; }
+.steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
+  width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; font-size: .95rem; }
+.steps > li::after { content: ''; position: absolute; left: 17px; top: 40px; bottom: 0; width: 2px; background: var(--border); }
+.steps > li:last-child::after { display: none; }
+.steps > li h3 { margin: 6px 0 8px; }
+
+/* Prompt-Box */
+.prompt { position: relative; border: 1px solid #CDE4E4; background: #F3FAFA; border-radius: 12px; padding: 14px 16px 14px; margin: 0 0 18px; }
+.prompt .ptitle { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent-dark); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.prompt pre { margin: 0; background: #FFFFFF; color: var(--text); border: 1px solid var(--border); font-family: var(--font-body); font-size: .92rem; }
+.copy { font: inherit; font-size: .75rem; letter-spacing: 0; text-transform: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
+  background: #fff; color: var(--accent-dark); cursor: pointer; }
+.copy:hover { border-color: var(--accent); }
+
+/* Tabellen */
+.tablewrap { overflow-x: auto; margin: 0 0 18px; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+tr:last-child td { border-bottom: 0; }
+td.y { color: var(--ok); font-weight: 600; } td.n { color: var(--warn); font-weight: 600; }
+
+/* Ordnerbaum */
+.tree { font-family: var(--font-mono); font-size: .86rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 0 0 18px; white-space: pre; overflow-x: auto; line-height: 1.6; }
+.tree .c { color: var(--muted); }
+
+/* Diagramm (Flow) */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 20px; }
+.flow .box { flex: 1 1 140px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: .9rem; }
+.flow .box b { display: block; color: var(--accent-dark); margin-bottom: 4px; }
+.flow .arrow { align-self: center; color: var(--accent); font-size: 1.3rem; }
+.flow .box.you { border-color: #CDE4E4; background: var(--accent-tint); }
+
+/* Blättern */
+.pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); }
+.pager a { flex: 1; text-decoration: none; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); }
+.pager a:hover { border-color: var(--accent); }
+.pager a small { display: block; color: var(--muted); font-size: .78rem; }
+.pager a.next { text-align: right; }
+
+footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
+footer code { background: var(--card); }
+.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
+.footer-credit { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-credit:hover { color: var(--accent); }
+.footer-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; display: block; }
+.footer-coffee { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-coffee:hover { color: var(--accent); }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); padding: 16px 18px; }
+  .menu-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; font: inherit; font-weight: 600;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; cursor: pointer; color: var(--accent-dark); }
+  .nav { display: none; margin-top: 10px; }
+  .nav.open { display: block; }
+  .brand { margin-bottom: 12px; }
+  main { padding: 28px 18px 48px; }
+  h1 { font-size: 1.7rem; }
+  .footer-sep { display: none; }
+}
+@media print { .sidebar, .pager, .copy { display: none; } .layout { display: block; } main { max-width: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="index.html">
+      <span class="title">Mit Claude arbeiten</span>
+      <span class="back">Anleitung · Toolbox</span>
+    </a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Inhalt <span aria-hidden="true">☰</span></button>
+    <nav class="nav" id="nav">
+<h2>Einstieg</h2>
+<a href="index.html"><span class="n">1</span>Start</a>
+<a href="voraussetzungen.html"><span class="n">2</span>Voraussetzungen</a>
+<a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
+<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
+<h2>Arbeitsweise</h2>
+<a href="md-dateien.html"><span class="n">5</span>Markdown-Dateien</a>
+<a href="workflow-bewerbung.html"><span class="n">6</span>Workflow: Bewerbung</a>
+<a href="workflow-gesuch.html" class="active" aria-current="page"><span class="n">7</span>Workflow: Gesuch</a>
+<h2>Weiterführend</h2>
+<a href="prompts.html"><span class="n">8</span>Weitere Prompts</a>
+<a href="alternativen.html"><span class="n">9</span>ChatGPT & Grok</a>
+    </nav>
+  </aside>
+  <main>
+<header class="page">
+  <p class="kicker">Arbeitsweise · Durchlauf 2</p>
+  <h1>Workflow: Gesuch an eine Stiftung</h1>
+  <p class="lead">Zweiter erfundener Durchlauf: Daten sammeln, eigene Dokumente dazulegen, ein Gesuch um finanzielle Unterstützung erstellen und anpassen.</p>
+</header>
+
+<div class="summary">
+  <h2>Kurzfassung</h2>
+  <ul>
+    <li><strong>Situation (fiktiv):</strong> Marco Brunner, 42, nach dem Klinikaufenthalt mit offenen Zahnarztkosten von CHF 3 800, die weder Krankenkasse noch Sozialhilfe übernehmen. Er sucht eine Stiftung, die Einzelfallhilfe leistet.</li>
+    <li><strong>Ablauf:</strong> Passende Stiftungen finden → Anforderungen je Stiftung sammeln → Budget und Belege bereitlegen → Gesuch schreiben → Beilagen zusammenstellen → PDF.</li>
+    <li><strong>Grundregel:</strong> Gesuche kurz und sachlich. Der Empfänger kennt das Sozialsystem; man muss ihm nichts erklären, nur die eigene Lage und den konkreten Betrag.</li>
+  </ul>
+</div>
+
+<div class="flow">
+  <div class="box"><b>1 Stiftungen finden</b>Claude sucht, listet Kriterien</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>2 Auswahl + Daten</b>Du: Budget, Belege, Sachverhalt</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>3 Gesuch schreiben</b>Entwurf aus deinen Dateien</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>4 Prüfen</b>Anpassen, Platzhalter setzen</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>5 PDF + Beilagen</b>Gesuch, Budget, Beilagenliste</div>
+</div>
+
+<h2>Der Durchlauf</h2>
+<ol class="steps">
+  <li>
+    <h3>Ordner und Sachverhalt</h3>
+    <p>Marco legt den Ordner <code>Gesuch_Zahnarzt</code> an. Er schreibt <code>sachverhalt.md</code>: was passiert ist, welcher Betrag offen ist, was er selbst schon versucht hat (Krankenkasse angefragt, Sozialdienst der Gemeinde angefragt, Ratenzahlung beim Zahnarzt abgelehnt). Dazu <code>regeln.md</code> wie im Bewerbungs-Workflow, mit einer Zeile mehr: «Gesuche kurz halten, dem Empfänger keine Systeme erklären.»</p>
+<pre><code># Sachverhalt
+
+- Zahnbehandlung März–Mai 2026, Rechnung CHF 3 800, fällig
+- Krankenkasse: nicht gedeckt (Grundversicherung), schriftliche Absage liegt vor
+- Sozialdienst Gemeinde: keine Übernahme, da kein laufender Sozialhilfebezug
+- Zahnarzt: Ratenzahlung angefragt, abgelehnt, Mahnung erhalten
+- Situation: seit Juli 2026 Arbeitstraining 50 %, Einkommen CHF 1 900 netto,
+  keine Ersparnisse, Betreibungsauszug ohne Einträge
+- Ziel: einmalige Unterstützung ganz oder teilweise, Rest per Raten
+
+## Was ich habe
+- unterlagen/rechnung_zahnarzt.pdf
+- unterlagen/absage_krankenkasse.pdf
+- unterlagen/budget.pdf (Budgetvorlage aus der Toolbox)
+- unterlagen/betreibungsauszug.pdf</code></pre>
+    <div class="note"><p><strong>Budget:</strong> Fast jede Stiftung will ein Monatsbudget sehen. Die <a href="../budgetvorlage.html">Budgetvorlage der Toolbox</a> reicht dafür. Als PDF speichern und in <code>unterlagen/</code> legen.</p></div>
+  </li>
+
+  <li>
+    <h3>Stiftungen suchen und Anforderungen sammeln</h3>
+    <div class="prompt">
+      <div class="ptitle">Prompt 1 · Stiftungen finden <button class="copy" type="button">Kopieren</button></div>
+<pre>Lies regeln.md und sachverhalt.md.
+
+Suche im Web nach Stiftungen und Hilfswerken in der Schweiz, die Einzelpersonen bei einmaligen Kosten wie Zahnbehandlungen unterstützen (Einzelfallhilfe). Berücksichtige auch kantonale und regionale Stiftungen im Kanton Aargau sowie grosse Hilfswerke.
+
+Erstelle stiftungen.md mit einer Tabelle:
+Name | Was sie unterstützen | Wer gesuchsberechtigt ist | Wie man einreicht (Formular / Brief / über Sozialdienst) | Nötige Beilagen | Link | Passung (1–5)
+
+Wichtig:
+- Nur Angaben, die du auf der Website der Stiftung tatsächlich findest. Fehlt etwas, schreib «unklar».
+- Viele Stiftungen nehmen Gesuche nur über eine Fachstelle (Sozialdienst, Beratungsstelle) an. Markiere das deutlich.
+- Sortiere nach Passung.
+
+Trag danach in log.md ein, was du gemacht hast.</pre>
+    </div>
+    <p>Claude findet acht Stellen. Drei davon nehmen nur Gesuche über Fachstellen entgegen; das hält Marco fest, weil er dafür seinen Sozialarbeiter braucht. Zwei akzeptieren direkte Gesuche per Brief mit Budget und Belegen. Er entscheidet sich, zuerst bei einer davon einzureichen.</p>
+    <div class="warn"><p><strong>Chrome-Erweiterung nötig?</strong> Für die Suche nicht. Nur wenn eine Stiftung ein Online-Formular hat, das man Feld für Feld ausfüllen muss. Dann öffnet Marco das Formular in Chrome und lässt Claude die Felder aus <code>sachverhalt.md</code> füllen, sendet aber selbst ab.</p></div>
+  </li>
+
+  <li>
+    <h3>Gesuch schreiben</h3>
+    <div class="prompt">
+      <div class="ptitle">Prompt 2 · Gesuch erstellen <button class="copy" type="button">Kopieren</button></div>
+<pre>Erstelle ein Gesuch an die Stiftung Nr. 1 aus stiftungen.md. Lege den Ordner gesuche/2026-09-16_stiftung-1 an.
+
+Schreib gesuch.md als Brief, höchstens eine A4-Seite:
+- Absender mit Platzhaltern [ADRESSE], [TELEFON], [EMAIL]
+- Betreff: Gesuch um finanzielle Unterstützung, Zahnbehandlung, CHF 3 800
+- Absatz 1: Wer ich bin und worum ich bitte, in drei Sätzen.
+- Absatz 2: Sachverhalt aus sachverhalt.md, sachlich, ohne Rechtfertigung. Was ich selbst schon versucht habe (Krankenkasse, Gemeinde, Zahnarzt).
+- Absatz 3: Meine aktuelle Situation in zwei Sätzen: Arbeitstraining, Einkommen, keine Reserven. Den Klinikaufenthalt nur erwähnen, wenn die Stiftung laut ihren Kriterien danach fragt; sonst weglassen.
+- Absatz 4: Was ich beantrage (Betrag ganz oder teilweise) und was ich selbst beitrage (Raten für den Rest).
+- Schluss: Dank, Hinweis auf Beilagen.
+
+Regeln: kurz, sachlich, keine Erklärungen zum Krankenkassen- oder Sozialsystem, keine Ausrufezeichen, Schweizer Rechtschreibung. Keine Angaben, die nicht in sachverhalt.md stehen.
+
+Erstelle daneben beilagen.md: nummerierte Liste der Beilagen aus unterlagen/, in der Reihenfolge, wie sie im Brief erwähnt werden. Prüfe gegen die Anforderungen der Stiftung in stiftungen.md und sag mir, was fehlt.
+
+Zeig mir den Brief hier und warte auf mein OK.</pre>
+    </div>
+    <p>Claude meldet, dass die Stiftung laut Website eine Bestätigung des Arbeitstrainings verlangt, die in <code>unterlagen/</code> fehlt. Marco besorgt sie am nächsten Tag. Das ist einer der nützlichsten Momente: Claude vergleicht deine Beilagen mit den Anforderungen, bevor das Gesuch unvollständig rausgeht.</p>
+  </li>
+
+  <li>
+    <h3>Anpassen</h3>
+    <p>Marco liest den Entwurf. Ein Satz ist ihm zu dramatisch, einer zu lang. Er schreibt: «Absatz 3 kürzer, ohne ‹schwierige Zeit›. Und der Betrag soll zuerst im Betreff stehen, dann im Text nicht mehr wiederholt werden.» Zwei Runden, fertig.</p>
+    <div class="note"><p><strong>Arbeitsweise, die sich bewährt hat:</strong> Claude zeigt zuerst die betroffenen Stellen mit einem Vorschlag, du entscheidest, dann setzt er um. Das lässt sich in <code>regeln.md</code> festhalten: «Bei Änderungen an Gesuchen: zuerst die betroffenen Stellen mit Vorschlag zeigen, ich entscheide, dann umsetzen.»</p></div>
+  </li>
+
+  <li>
+    <h3>PDF und Beilagen</h3>
+    <div class="prompt">
+      <div class="ptitle">Prompt 3 · Abschluss <button class="copy" type="button">Kopieren</button></div>
+<pre>OK. Erzeuge gesuch.pdf (schlichtes Brieflayout, Datum oben rechts, Platzhalter lassen). Erzeuge beilagen.pdf aus beilagen.md.
+
+Fasse in log.md zusammen: Gesuch an Stiftung 1 erstellt, fehlende Beilage (Bestätigung Arbeitstraining) offen, Versand per Post geplant.
+
+Erstelle zusätzlich nachfassen.md: wann ich ohne Antwort nachfragen sollte (Erfahrungswerte: 4–6 Wochen) und ein kurzer Text für die Nachfrage.</pre>
+    </div>
+    <p>Marco druckt Gesuch und Beilagen, setzt Adresse und Unterschrift von Hand ein und schickt es per Post. Datum und Frist stehen in <code>log.md</code>.</p>
+  </li>
+</ol>
+
+<h2>Gesuch anpassen, wenn eine zweite Stiftung dazukommt</h2>
+<p>Das war bei mir der häufigste Fall: Dasselbe Gesuch, aber anderer Empfänger mit anderen Anforderungen. Der Prompt dafür ist kurz:</p>
+<div class="prompt">
+  <div class="ptitle">Prompt 4 · Gesuch für zweite Stiftung anpassen <button class="copy" type="button">Kopieren</button></div>
+<pre>Nimm gesuche/2026-09-16_stiftung-1/gesuch.md als Grundlage und erstelle ein angepasstes Gesuch für Stiftung Nr. 2 aus stiftungen.md in einem neuen Ordner.
+
+Zeig mir zuerst nur die Stellen, die sich ändern müssen (Anrede, Anforderungen, verlangte Beilagen, Betrag falls die Stiftung Obergrenzen hat), mit deinem Vorschlag. Ich entscheide, dann setzt du um.
+
+Ergänze beilagen.md entsprechend und sag mir, was für Stiftung 2 zusätzlich fehlt.</pre>
+</div>
+
+<h2>Was ich gelernt habe</h2>
+<ul>
+  <li><strong>Kürzer ist besser.</strong> Mein erstes Gesuch war zwei Seiten. Die Sachbearbeiterin liest fünfzig davon pro Woche. Eine Seite, Betrag im Betreff, Beilagen vollständig.</li>
+  <li><strong>Nicht erklären, was der Empfänger besser weiss.</strong> Wie die Krankenkasse funktioniert, weiss die Stiftung. Was sie nicht weiss, ist deine Situation.</li>
+  <li><strong>Sensible Angaben dosieren.</strong> «Nach einem Klinikaufenthalt» reicht, wenn überhaupt. Diagnosen gehören nicht ins Gesuch, ausser die Stiftung fragt ausdrücklich danach.</li>
+  <li><strong>Fachstellen-Weg nicht scheuen.</strong> Manche Stiftungen zahlen nur über den Sozialdienst. Dann bereitet Claude das Dossier vor, und der Sozialarbeiter reicht es ein. Das ging bei mir schneller als gedacht, weil das Dossier schon fertig war.</li>
+</ul>
+
+<nav class="pager"><a class="prev" href="workflow-bewerbung.html"><small>Zurück</small>← Workflow: Bewerbung</a><a class="next" href="prompts.html"><small>Weiter</small>Weitere Prompts →</a></nav>
+
+    <footer>
+      <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>
+      <div>Stand: September 2026. Preise, Funktionen und Einstellungen der Anbieter ändern sich laufend – im Zweifel die offiziellen Seiten prüfen.</div>
+      <div class="footer-links">
+        <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+          <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+          <span>Erstellt von stayingclean</span>
+        </a>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+          <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+        </a>
+      </div>
+    </footer>
+
+  </main>
+</div>
+<script>
+(function(){
+  var t=document.querySelector('.menu-toggle'), n=document.querySelector('.nav');
+  if(t&&n){ t.addEventListener('click',function(){ n.classList.toggle('open'); t.setAttribute('aria-expanded', n.classList.contains('open')); }); }
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      var pre=b.closest('.prompt').querySelector('pre');
+      var txt=pre.innerText;
+      function done(){ var o=b.textContent; b.textContent='Kopiert ✓'; setTimeout(function(){ b.textContent=o; },1600); }
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ fallback(); }); } else { fallback(); }
+      function fallback(){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); done(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

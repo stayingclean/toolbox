@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abos & Kosten · Mit Claude arbeiten</title>
+  <meta name="description" content="Gratis, Pro, Max – was braucht man wirklich?">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg: #FAF8F5; --card: #FFFFFF; --card-hover: #F5FAFA; --border: #E8E4DF;
+  --text: #1C1C1C; --muted: #7A7268; --accent: #008080; --accent-dark: #006666;
+  --accent-tint: #E6F2F2; --warn-tint: #FFF4E5; --warn: #B45309;
+  --ok-tint: #EAF6EC; --ok: #2F7D3A;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --sidebar: 260px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; font-family: var(--font-body); background: var(--bg); color: var(--text);
+  line-height: 1.55; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 80% 55% at 50% 0%, var(--accent-tint) 0%, transparent 68%);
+  opacity: 0.3; animation: breathe 7s ease-in-out infinite; }
+@keyframes breathe { 0%,100% { opacity: .22; transform: scaleY(1);} 50% { opacity: .40; transform: scaleY(1.05);} }
+a { color: var(--accent-dark); }
+
+/* Layout: Seitenleiste links, Inhalt rechts */
+.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
+.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 28px 18px 28px 22px;
+  border-right: 1px solid var(--border); background: rgba(255,255,255,.55); backdrop-filter: blur(6px); }
+.brand { display: block; text-decoration: none; margin-bottom: 22px; }
+.brand .title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--accent-dark); line-height: 1.2; }
+.brand .back { display: block; font-size: .78rem; color: var(--muted); margin-top: 4px; }
+.brand .back:hover { color: var(--accent); }
+.nav h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 6px; }
+.nav a { display: block; padding: 7px 10px; border-radius: 9px; text-decoration: none; color: var(--text); font-size: .93rem; }
+.nav a:hover { background: var(--card-hover); color: var(--accent-dark); }
+.nav a.active { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; }
+.nav a .n { display: inline-block; width: 1.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.nav a.active .n { color: var(--accent); }
+
+.menu-toggle { display: none; }
+
+main { padding: 44px 48px 64px; max-width: 860px; }
+header.page { margin-bottom: 28px; }
+.kicker { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 6px; }
+h1 { font-family: var(--font-display); font-size: 2.1rem; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; color: var(--accent-dark); }
+.lead { color: var(--muted); font-size: 1.08rem; margin: 0; }
+h2 { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; margin: 40px 0 12px; color: var(--accent-dark); }
+h3 { font-size: 1.05rem; margin: 26px 0 8px; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 6px; }
+li > ul, li > ol { margin-top: 6px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--card); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; }
+pre { background: #1F2A2A; color: #EAF2F2; padding: 16px 18px; border-radius: 12px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: .86rem; line-height: 1.5; margin: 0 0 18px; white-space: pre-wrap; }
+pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin: 0 0 16px; }
+.card h3 { margin-top: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 0 0 18px; }
+.grid .card { margin: 0; }
+a.card { display: block; text-decoration: none; color: var(--text); transition: transform .15s, border-color .15s; }
+a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+a.card .name { font-weight: 600; color: var(--accent-dark); display: block; margin-bottom: 4px; }
+a.card .meta { color: var(--muted); font-size: .88rem; }
+
+.note { border-left: 4px solid var(--accent); background: var(--accent-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.warn { border-left: 4px solid var(--warn); background: var(--warn-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.ok { border-left: 4px solid var(--ok); background: var(--ok-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.note p:last-child, .warn p:last-child, .ok p:last-child { margin-bottom: 0; }
+.label { display: inline-block; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px;
+  border-radius: 999px; background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; vertical-align: middle; }
+.label.warn-l { background: var(--warn-tint); color: var(--warn); }
+.label.ok-l { background: var(--ok-tint); color: var(--ok); }
+
+.summary { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin: 0 0 28px; }
+.summary h2 { margin: 0 0 8px; font-size: 1.1rem; font-family: var(--font-body); color: var(--text); }
+.summary ul { margin-bottom: 0; }
+
+/* Schritte */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 24px; }
+.steps > li { position: relative; padding: 0 0 22px 52px; margin: 0; }
+.steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
+  width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; font-size: .95rem; }
+.steps > li::after { content: ''; position: absolute; left: 17px; top: 40px; bottom: 0; width: 2px; background: var(--border); }
+.steps > li:last-child::after { display: none; }
+.steps > li h3 { margin: 6px 0 8px; }
+
+/* Prompt-Box */
+.prompt { position: relative; border: 1px solid #CDE4E4; background: #F3FAFA; border-radius: 12px; padding: 14px 16px 14px; margin: 0 0 18px; }
+.prompt .ptitle { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent-dark); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.prompt pre { margin: 0; background: #FFFFFF; color: var(--text); border: 1px solid var(--border); font-family: var(--font-body); font-size: .92rem; }
+.copy { font: inherit; font-size: .75rem; letter-spacing: 0; text-transform: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
+  background: #fff; color: var(--accent-dark); cursor: pointer; }
+.copy:hover { border-color: var(--accent); }
+
+/* Tabellen */
+.tablewrap { overflow-x: auto; margin: 0 0 18px; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+tr:last-child td { border-bottom: 0; }
+td.y { color: var(--ok); font-weight: 600; } td.n { color: var(--warn); font-weight: 600; }
+
+/* Ordnerbaum */
+.tree { font-family: var(--font-mono); font-size: .86rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 0 0 18px; white-space: pre; overflow-x: auto; line-height: 1.6; }
+.tree .c { color: var(--muted); }
+
+/* Diagramm (Flow) */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 20px; }
+.flow .box { flex: 1 1 140px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: .9rem; }
+.flow .box b { display: block; color: var(--accent-dark); margin-bottom: 4px; }
+.flow .arrow { align-self: center; color: var(--accent); font-size: 1.3rem; }
+.flow .box.you { border-color: #CDE4E4; background: var(--accent-tint); }
+
+/* Blättern */
+.pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); }
+.pager a { flex: 1; text-decoration: none; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); }
+.pager a:hover { border-color: var(--accent); }
+.pager a small { display: block; color: var(--muted); font-size: .78rem; }
+.pager a.next { text-align: right; }
+
+footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
+footer code { background: var(--card); }
+.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
+.footer-credit { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-credit:hover { color: var(--accent); }
+.footer-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; display: block; }
+.footer-coffee { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-coffee:hover { color: var(--accent); }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); padding: 16px 18px; }
+  .menu-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; font: inherit; font-weight: 600;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; cursor: pointer; color: var(--accent-dark); }
+  .nav { display: none; margin-top: 10px; }
+  .nav.open { display: block; }
+  .brand { margin-bottom: 12px; }
+  main { padding: 28px 18px 48px; }
+  h1 { font-size: 1.7rem; }
+  .footer-sep { display: none; }
+}
+@media print { .sidebar, .pager, .copy { display: none; } .layout { display: block; } main { max-width: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="index.html">
+      <span class="title">Mit Claude arbeiten</span>
+      <span class="back">Anleitung · Toolbox</span>
+    </a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Inhalt <span aria-hidden="true">☰</span></button>
+    <nav class="nav" id="nav">
+<h2>Einstieg</h2>
+<a href="index.html"><span class="n">1</span>Start</a>
+<a href="voraussetzungen.html"><span class="n">2</span>Voraussetzungen</a>
+<a href="abos.html" class="active" aria-current="page"><span class="n">3</span>Abos & Kosten</a>
+<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
+<h2>Arbeitsweise</h2>
+<a href="md-dateien.html"><span class="n">5</span>Markdown-Dateien</a>
+<a href="workflow-bewerbung.html"><span class="n">6</span>Workflow: Bewerbung</a>
+<a href="workflow-gesuch.html"><span class="n">7</span>Workflow: Gesuch</a>
+<h2>Weiterführend</h2>
+<a href="prompts.html"><span class="n">8</span>Weitere Prompts</a>
+<a href="alternativen.html"><span class="n">9</span>ChatGPT & Grok</a>
+    </nav>
+  </aside>
+  <main>
+<header class="page">
+  <p class="kicker">Einstieg</p>
+  <h1>Abos &amp; Kosten</h1>
+  <p class="lead">Was gratis geht, wofür man zahlen muss, und ob sich das in einer knappen Situation überhaupt lohnt.</p>
+</header>
+
+<div class="summary">
+  <h2>Kurzfassung</h2>
+  <ul>
+    <li><strong>Gratis:</strong> Chatten, Texte schreiben, Dateien hochladen, Websuche. Reicht für einzelne Briefe und zum Ausprobieren.</li>
+    <li><strong>Pro (ca. USD 20/Monat, USD 17 im Jahresabo):</strong> schaltet Cowork (Arbeiten im Ordner), die Chrome-Erweiterung und deutlich mehr Nutzung frei. Das ist die Stufe, mit der die Workflows in dieser Anleitung laufen.</li>
+    <li><strong>Max (USD 100 / 200):</strong> für Leute, die den ganzen Tag damit arbeiten. Für Bewerbungen und Gesuche unnötig.</li>
+  </ul>
+</div>
+
+<h2>Die Stufen im Vergleich</h2>
+<p>Stand September 2026. Preise in US-Dollar, die Abrechnung läuft je nach Zahlungsmittel in CHF etwa 1:1. Aktuelle Angaben: <a href="https://claude.com/pricing" target="_blank" rel="noopener">claude.com/pricing</a>.</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Funktion</th><th>Free</th><th>Pro</th><th>Max</th></tr>
+  <tr><td>Chat im Browser, in der App und auf dem Handy</td><td class="y">Ja</td><td class="y">Ja</td><td class="y">Ja</td></tr>
+  <tr><td>Dateien hochladen (PDF, Word, Bilder) und besprechen</td><td class="y">Ja</td><td class="y">Ja</td><td class="y">Ja</td></tr>
+  <tr><td>Websuche</td><td class="y">Ja</td><td class="y">Ja</td><td class="y">Ja</td></tr>
+  <tr><td>Dateien erzeugen (PDF, Word, Excel) zum Herunterladen</td><td class="y">Ja</td><td class="y">Ja</td><td class="y">Ja</td></tr>
+  <tr><td>Erinnerung über Chats hinweg («Memory»)</td><td class="y">Ja</td><td class="y">Ja</td><td class="y">Ja</td></tr>
+  <tr><td><strong>Cowork</strong>: Claude arbeitet direkt in einem Ordner auf deinem Computer</td><td class="n">Nein</td><td class="y">Ja</td><td class="y">Ja</td></tr>
+  <tr><td><strong>Claude in Chrome</strong> (Browser-Erweiterung)</td><td class="n">Nein</td><td class="y">Ja</td><td class="y">Ja</td></tr>
+  <tr><td>Projekte (Chats mit fixen Dateien bündeln)</td><td>begrenzt</td><td class="y">unbegrenzt</td><td class="y">unbegrenzt</td></tr>
+  <tr><td>Nutzungsmenge pro Tag</td><td>klein, oft nach wenigen längeren Antworten erschöpft</td><td>für ein paar Stunden konzentrierte Arbeit pro Tag</td><td>5- bzw. 20-mal Pro</td></tr>
+  <tr><td>Preis pro Monat</td><td>0</td><td>USD 20 (17 im Jahresabo)</td><td>USD 100 / 200</td></tr>
+</table>
+</div>
+
+<h2>Geht es ganz ohne Abo?</h2>
+<p><strong>Ja, mit Abstrichen.</strong> Der Kern der Methode, nämlich deine Fakten in Textdateien zu halten und Claude damit schreiben zu lassen, funktioniert auch im Gratis-Chat. Der Unterschied ist die Handarbeit:</p>
+<div class="grid">
+  <div class="card">
+    <h3>Mit Pro (Cowork)</h3>
+    <p>Ordner verbinden, Auftrag geben, Claude liest deine <code>.md</code>-Dateien selbst, erzeugt das PDF und legt es in den Ordner. Ein Vorgang.</p>
+  </div>
+  <div class="card">
+    <h3>Gratis</h3>
+    <p>Du ziehst deine <code>.md</code>-Dateien und den Lebenslauf per Hand in den Chat, gibst denselben Auftrag, lädst das fertige PDF herunter und speicherst es selbst. Pro Chat neu.</p>
+  </div>
+</div>
+
+<h3>Vorteile des Gratis-Kontos</h3>
+<ul>
+  <li>Keine Kosten, kein Abo, das man in einer knappen Phase kündigen muss.</li>
+  <li>Du gibst Claude nur genau die Dateien, die du hochlädst. Weniger Zugriff, weniger Fragen zum Datenschutz.</li>
+  <li>Zwingt zu kleinen Schritten: Ein Brief, ein Chat. Für manche ist das übersichtlicher als eine lange Cowork-Sitzung.</li>
+</ul>
+
+<h3>Nachteile des Gratis-Kontos</h3>
+<ul>
+  <li><strong>Das Kontingent ist schnell aufgebraucht.</strong> Bei einem Motivationsschreiben mit zwei Überarbeitungen kann Schluss sein, dann heisst es ein paar Stunden warten. An einem Tag mit Bewerbungsfrist ist das bitter.</li>
+  <li>Kein Ordnerzugriff: Claude weiss beim nächsten Chat nichts mehr von deinen Dateien, ausser du lädst sie wieder hoch.</li>
+  <li>Keine Chrome-Erweiterung: Formulare in Portalen füllst du selbst aus.</li>
+  <li>Keine oder wenige Projekte, also kein fixer Ort, an dem Lebenslauf und Profil liegen bleiben.</li>
+  <li>Zu Stosszeiten langsamer.</li>
+</ul>
+
+<h2>Meine Einschätzung</h2>
+<p>Ich habe Pro genommen und würde es wieder tun. Der Monat mit der Wohnungssuche, zwei Gesuchen und den ersten Bewerbungen hätte mich ohne Ordnerzugriff ein Vielfaches an Zeit und Nerven gekostet. Nach der intensiven Phase kann man das Abo monatlich kündigen; es gibt keine Mindestlaufzeit.</p>
+<div class="note">
+  <p><strong>Rechnung, die man ehrlich machen sollte:</strong> USD 20 sind bei einem knappen Budget echtes Geld. Wenn du nur einen einzelnen Brief brauchst, reicht gratis. Wenn du drei Wochen lang jeden Tag Papierkram hast, ist Pro günstig im Vergleich zu dem, was es an Zeit spart. Und: Das Abo lässt sich nach einem Monat wieder abschalten.</p>
+</div>
+
+<h2>Wo du das Abo verwaltest</h2>
+<p>In der App oder im Browser unter <strong>Einstellungen → Abrechnung</strong>. Dort auch kündigen. Es läuft dann bis Ende der bezahlten Periode weiter.</p>
+
+<nav class="pager"><a class="prev" href="voraussetzungen.html"><small>Zurück</small>← Voraussetzungen</a><a class="next" href="datenschutz.html"><small>Weiter</small>Datenschutz →</a></nav>
+
+    <footer>
+      <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>
+      <div>Stand: September 2026. Preise, Funktionen und Einstellungen der Anbieter ändern sich laufend – im Zweifel die offiziellen Seiten prüfen.</div>
+      <div class="footer-links">
+        <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+          <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+          <span>Erstellt von stayingclean</span>
+        </a>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+          <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+        </a>
+      </div>
+    </footer>
+
+  </main>
+</div>
+<script>
+(function(){
+  var t=document.querySelector('.menu-toggle'), n=document.querySelector('.nav');
+  if(t&&n){ t.addEventListener('click',function(){ n.classList.toggle('open'); t.setAttribute('aria-expanded', n.classList.contains('open')); }); }
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      var pre=b.closest('.prompt').querySelector('pre');
+      var txt=pre.innerText;
+      function done(){ var o=b.textContent; b.textContent='Kopiert ✓'; setTimeout(function(){ b.textContent=o; },1600); }
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ fallback(); }); } else { fallback(); }
+      function fallback(){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); done(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
