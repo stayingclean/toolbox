@@ -1,33 +1,29 @@
-# Beispiel-Projekt: Arbeit und Wohnung suchen
+# Beispiel-Projekt: Wohnung und Stelle suchen
 
-Fertiger Ordner nach der Anleitung «Mit Claude arbeiten» (docs/claude-anleitung/).
-Alle Daten sind erfunden (Nadja Keller). Zum Testen so verwenden:
+Fertiger Ordner nach der Anleitung «Mit Claude arbeiten» (stayingclean.github.io/toolbox/claude-anleitung/).
+Alle Daten sind erfunden (Nadja Keller). Zum Testen:
 
-1. Diesen Ordner an einen Ort **ausserhalb** des Repos kopieren, z. B. `Dokumente\Suche`.
-2. Claude Desktop öffnen → Cowork → «Ordner hinzufügen» → den kopierten Ordner wählen.
-3. Als ersten Prompt nur schreiben: `Hallo, was steht an?`
+1. Ordner an einen Ort **ausserhalb** eines Git-Repos kopieren, z. B. `Dokumente\Suche`.
+2. Claude Desktop → Cowork → «Ordner hinzufügen» → diesen Ordner.
+3. Erster Prompt: `Was steht an?`
+   Beginnt die Antwort mit «Kompass», hat Claude CLAUDE.md automatisch gelesen.
+4. Dann: `Führe den Auftrag auftraege/2026-09-16_wohnung-aarau.md aus, Schritte 1 und 2.`
 
-**Test, ob CLAUDE.md gelesen wird:** Die erste Antwort muss mit dem Wort
-«Kompass» beginnen und die offenen Punkte aus aufgaben.md nennen. Beginnt sie
-nicht mit «Kompass», wurde CLAUDE.md nicht automatisch gelesen. Dann im Prompt
-ergänzen: `Lies zuerst CLAUDE.md.` Das Ergebnis bitte in der Anleitung
-(md-dateien.html, Abschnitt CLAUDE.md) nachtragen.
-
-4. Danach die Prompts aus der Anleitung der Reihe nach ausprobieren
-   (Workflow Bewerbung → Prompt 1 usw.). Ergebnisse landen in inserate/,
-   bewerbungen/ und wohnungen/.
-
-Aufbau:
+## Aufbau
 
 ```
-CLAUDE.md          eine Zeile: Lies regeln.md, plus der Kompass-Test
-regeln.md          wie Claude arbeiten soll
-profil.md          Fakten der (fiktiven) Person
-kriterien.md       Stelle und Wohnung: Muss, Wunsch, Ausschluss
-aufgaben.md        offene Punkte, von Claude nachgeführt
-log.md             was wann passiert ist
-unterlagen/        CHECKLISTE.md, später PDFs
-inserate/          Suchergebnisse Stellen
-bewerbungen/       je Bewerbung ein Unterordner
-wohnungen/         Suchergebnisse und Bewerbungen Wohnung
+CLAUDE.md        nur für Claude: «Lies README.md und regeln.md»
+README.md        diese Datei
+regeln.md        der 8-Schritte-Ablauf, für alle Aufträge gleich
+profil.md        Fakten der (fiktiven) Person
+aufgaben.md      offene Punkte, Claude hakt ab
+log.md           was wann passiert ist
+_Dokumente/      DEINE Unterlagen (Claude liest, schreibt nie hinein)
+auftraege/       pro Aufgabe eine Datei
+recherche/       Schritt 1–2: Funde (Claude)
+entwuerfe/       Schritt 4–7: Word-Dateien zum Kommentieren (Claude)
+final/           Schritt 8: PDFs (Claude)
 ```
+
+Für andere KI-Anbieter: alle Dateien ausser CLAUDE.md hochladen und mit
+«Lies README.md und regeln.md» beginnen.

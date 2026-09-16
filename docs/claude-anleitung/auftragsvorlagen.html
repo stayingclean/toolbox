@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Datenschutz · Mit Claude arbeiten</title>
-  <meta name="description" content="Bedenken, Entscheidung, Spielregeln">
+  <title>Auftragsvorlagen · Mit Claude arbeiten</title>
+  <meta name="description" content="Vorlagen für Szenarien aus dem Therapie-Alltag">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -165,7 +165,7 @@ footer code { background: var(--card); }
 <a href="index.html"><span class="n">1</span>Start</a>
 <a href="voraussetzungen.html"><span class="n">2</span>Voraussetzungen</a>
 <a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
-<a href="datenschutz.html" class="active" aria-current="page"><span class="n">4</span>Datenschutz</a>
+<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
 <h2>Arbeitsweise</h2>
 <a href="arbeitsablauf.html"><span class="n">5</span>Der Arbeitsablauf</a>
 <a href="ordner-dateien.html"><span class="n">6</span>Ordner & Dateien</a>
@@ -173,108 +173,322 @@ footer code { background: var(--card); }
 <h2>Beispiele</h2>
 <a href="workflow-bewerbung.html"><span class="n">8</span>Beispiel: Bewerbung</a>
 <a href="workflow-gesuch.html"><span class="n">9</span>Beispiel: Gesuch</a>
-<a href="auftragsvorlagen.html"><span class="n">10</span>Auftragsvorlagen</a>
+<a href="auftragsvorlagen.html" class="active" aria-current="page"><span class="n">10</span>Auftragsvorlagen</a>
 <h2>Weiterführend</h2>
 <a href="alternativen.html"><span class="n">11</span>ChatGPT & Grok</a>
     </nav>
   </aside>
   <main>
 <header class="page">
-  <p class="kicker">Einstieg</p>
-  <h1>Datenschutz</h1>
-  <p class="lead">Was mit deinen Daten passiert, warum ich mich trotzdem für diesen Weg entschieden habe, und welche Regeln ich mir gesetzt habe.</p>
+  <p class="kicker">Beispiele</p>
+  <h1>Auftragsvorlagen</h1>
+  <p class="lead">Fertige Aufträge für Szenarien, die vielen nach der Klinik begegnen. Kopieren, in <code>auftraege/</code> speichern, die Klammern <code>[…]</code> ausfüllen, mit «Führe den Auftrag … aus, Schritte 1 und 2» starten.</p>
 </header>
 
 <div class="summary">
-  <h2>Kurzfassung</h2>
+  <h2>So benutzt du die Vorlagen</h2>
   <ul>
-    <li>Alles, was du Claude gibst (Text, Dateien, Ordnerinhalte), wird an die Server von Anthropic in den USA übertragen und dort verarbeitet.</li>
-    <li>Du kannst in den Einstellungen abschalten, dass deine Chats zum Trainieren der Modelle verwendet werden. <strong>Mach das als Erstes.</strong></li>
-    <li>Meine Entscheidung: Ich nehme die Übertragung in Kauf, weil die Arbeitserleichterung für mich gross ist und weil ich bestimmte Dinge konsequent draussen lasse (AHV-Nummer, Bankdaten, Diagnosen).</li>
-    <li>Das ist meine Abwägung, nicht die einzig richtige. Lies diese Seite und entscheide für dich.</li>
+    <li>Jede Vorlage folgt dem Aufbau aus <a href="auftraege.html">Aufträge schreiben</a>. Abschnitte, die nicht passen, streichst du.</li>
+    <li>Der Ablauf (Word-Entwürfe, Kommentare, pruefung.md, PDF am Schluss) steht in <code>regeln.md</code> und muss hier nicht wiederholt werden.</li>
+    <li>Alle Beispiele sind erfunden. Beträge, Orte, Namen ersetzt du.</li>
   </ul>
 </div>
 
-<h2>Was technisch passiert</h2>
-<p>Claude läuft nicht auf deinem Computer. Jede Nachricht, jede hochgeladene Datei und in Cowork jede Datei, die Claude aus deinem Ordner liest, wird an Anthropic übertragen und dort verarbeitet. Bei Bewerbungen und Gesuchen sind das zwangsläufig persönliche Daten: Name, Adresse, Lebenslauf, deine finanzielle Situation, manchmal Angaben zur Gesundheit.</p>
-<p>Anthropic ist ein Unternehmen in den USA. Es gelten dessen Nutzungsbedingungen und Datenschutzerklärung, nicht das Schweizer Datenschutzgesetz allein. Die Daten liegen für die Dauer, die in der Datenschutzerklärung steht, auf den Servern des Anbieters; gelöschte Chats werden nach einer Frist entfernt.</p>
-
-<h2>Die Bedenken, ehrlich aufgezählt</h2>
-<ul>
-  <li><strong>Kontrollverlust:</strong> Einmal übertragen, kannst du die Daten nicht mehr «zurückholen». Löschen ist möglich, aber du musst dem Anbieter vertrauen, dass es passiert.</li>
-  <li><strong>Training:</strong> Standardmässig können Chats von Privatkonten zum Verbessern der Modelle verwendet werden. Das lässt sich abschalten (siehe unten), aber du musst es aktiv tun.</li>
-  <li><strong>Sensible Kategorien:</strong> Angaben zu Sucht, psychischer Gesundheit oder Schulden sind besonders schützenswert. In einem Gesuch stehen sie teilweise drin, sonst kann die Stiftung nicht entscheiden.</li>
-  <li><strong>Chrome-Erweiterung:</strong> Wenn Claude in deinem Browser arbeitet, sieht er die Seiten, die du freigibst, inklusive eingeloggter Bereiche. Ein falsch gesetztes Häkchen, und er liest mehr, als du wolltest.</li>
-  <li><strong>Dritte:</strong> In den Unterlagen tauchen auch andere Menschen auf (Referenzen, Familie, Vermieter). Deren Daten gibst du mit.</li>
-</ul>
-
-<h2>Warum ich es trotzdem mache</h2>
-<p>Ich habe lange darüber nachgedacht und bin bei zwei Argumenten gelandet:</p>
-<ol>
-  <li><strong>Die Arbeitserleichterung ist für mich gross.</strong> In einer Phase, in der Konzentration und Energie knapp sind, entscheidet die Hürde darüber, ob ein Gesuch überhaupt abgeschickt wird. Ein nicht geschriebenes Gesuch schützt keine Daten, es bringt mich nur nicht weiter.</li>
-  <li><strong>Ein grosser KI-Anbieter hat kaum ein Interesse an meiner Notsituation.</strong> Ich bin einer von Millionen Nutzern. Das Risiko, dass jemand gezielt meine Gesuche liest, halte ich für klein. Das Risiko einer Datenpanne ist nicht null, aber ich nehme es in Kauf.</li>
-</ol>
-<p>Das ist eine Abwägung, kein Freipass. Wer ein höheres Schutzbedürfnis hat, etwa wegen eines laufenden Verfahrens, sollte das mit dem Sozialdienst oder einer Beratungsstelle besprechen, bevor er Dokumente hochlädt.</p>
-
-<h2>Meine Spielregeln</h2>
-<div class="grid">
-  <div class="card">
-    <h3><span class="label warn-l">Nie</span> hochladen oder eintippen</h3>
-    <ul>
-      <li>Passwörter, Login-Daten für Portale (die Chrome-Erweiterung braucht sie nicht, du bist selbst eingeloggt)</li>
-      <li>Kreditkarten- und Debitkartennummern samt Ablaufdatum</li>
-      <li>AHV-Nummer, Pass- oder ID-Nummer: echte Identifikatoren, mit Geburtsdatum kombiniert für Identitätsmissbrauch nutzbar</li>
-      <li>Unterlagen anderer Personen, die es nicht wissen</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3><span class="label">Nur wenn nötig</span></h3>
-    <ul>
-      <li>IBAN: kein Geheimnis (steht auf jeder Rechnung), aber Claude braucht sie zum Schreiben nicht. Platzhalter <code>[IBAN]</code>, am Schluss selbst einsetzen. Siehe Kasten unten.</li>
-      <li>Diagnosen und Klinikberichte: nur, wenn das Gesuch sie tatsächlich verlangt, und dann nur den Satz, den es braucht</li>
-      <li>Betreibungsauszug, Schuldenliste: Beträge ja, Gläubigernamen kürzen</li>
-      <li>Namen von Referenzpersonen: erst im letzten Schritt, wenn der Brief steht</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3><span class="label ok-l">Unproblematisch</span></h3>
-    <ul>
-      <li>Lebenslauf ohne AHV-Nummer</li>
-      <li>Öffentliche Inserate und Stiftungsadressen</li>
-      <li>Deine Ziele, Wünsche, Zeitpläne</li>
-      <li>Alles, was ohnehin im Gesuch oder in der Bewerbung stehen wird</li>
-    </ul>
-  </div>
-</div>
-
-<h3>Warum die IBAN nicht so heikel ist wie die AHV-Nummer</h3>
-<p>Eine berechtigte Frage, die mir gestellt wurde: Was kann jemand mit meiner IBAN anrichten? Ehrliche Antwort: wenig. Mit der IBAN allein kann niemand Geld von deinem Konto holen; sie ist zum Empfangen da, und du gibst sie jedem Arbeitgeber und jeder Stiftung. Die Restrisiken sind indirekt:</p>
-<ul>
-  <li><strong>Lastschriften:</strong> Im EU-Raum kann ein Händler mit einer IBAN eine Lastschrift auslösen, die du acht Wochen lang zurückholen kannst. In der Schweiz braucht jede Belastung (LSV, eBill) deine Zustimmung bei der Bank.</li>
-  <li><strong>Glaubwürdigeres Phishing:</strong> Wer Name, Adresse und IBAN kennt, kann eine täuschend echte Mahnung oder «Rückzahlung» fälschen. Das ist das eigentliche Risiko bei einem Datenleck: die Kombination, nicht die einzelne Nummer.</li>
-  <li><strong>Datensparsamkeit:</strong> Der einfachste Grund für den Platzhalter: Claude braucht die Nummer nicht, um den Brief zu schreiben. Was nicht übertragen wird, kann nicht verloren gehen.</li>
-</ul>
-<p>Die AHV-Nummer ist eine andere Kategorie. Sie identifiziert dich lebenslang gegenüber Ämtern, Versicherungen und Arbeitgebern, und zusammen mit Geburtsdatum und Adresse reicht sie, um in deinem Namen Anträge zu stellen. Darum bleibt sie draussen, auch wenn ein Formular sie verlangt: Feld leer lassen, von Hand ergänzen.</p>
-
-<h3>Platzhalter statt Klarnamen</h3>
-<p>Ein einfacher Trick: In den <code>.md</code>-Dateien stehen Platzhalter wie <code>[AHV]</code> oder <code>[IBAN]</code>. Claude lässt sie im fertigen Dokument stehen, du setzt die echten Werte im letzten Schritt selbst ein. Das kostet zwei Minuten und hält die heikelsten Daten komplett aus dem System.</p>
-
-<h2>Einstellungen, die du am ersten Tag setzen solltest</h2>
-<ol>
-  <li><strong>Modelltraining abschalten:</strong> Einstellungen → Datenschutz → «Zur Verbesserung von Claude beitragen» (oder ähnlich benannt) ausschalten. Die genaue Bezeichnung ändert sich; suche nach «Training».</li>
-  <li><strong>Chrome-Erweiterung:</strong> Berechtigungsmodus «pro Website fragen» belassen. Keine pauschale Freigabe.</li>
-  <li><strong>Alte Chats löschen</strong>, sobald ein Gesuch abgeschickt ist. Was du brauchst, steht ohnehin in deinen Dateien.</li>
-  <li><strong>Erinnerungsfunktion prüfen:</strong> Claude merkt sich Dinge über Chats hinweg. Unter Einstellungen → Erinnerung siehst du, was gespeichert ist, und kannst Einträge löschen.</li>
-</ol>
-
 <div class="warn">
-  <p><strong>Zur Chrome-Erweiterung:</strong> Sie ist bequem, aber die grösste Öffnung nach aussen. Ich benutze sie nur für Bewerbungsportale und Inserate-Seiten, nie parallel zu E-Banking oder Krankenkassen-Login im selben Browserfenster.</p>
+  <p><strong>Wofür Claude nicht da ist:</strong> In einer akuten Krise, bei Suchtdruck oder Suizidgedanken ist ein Chatbot der falsche Ort. Dargebotene Hand <strong>143</strong> (rund um die Uhr), Notfall <strong>144</strong>, oder die Nummer deiner Nachsorgestelle. Die Vorlagen hier sind für den Papierkram.</p>
 </div>
 
-<h2>Und die anderen Anbieter?</h2>
-<p>Bei ChatGPT (OpenAI, USA) und Grok (xAI, USA) ist die Ausgangslage dieselbe: Übertragung ins Ausland, Trainingsnutzung standardmässig an, abschaltbar in den Einstellungen. Ein Anbieter mit Servern in der Schweiz oder der EU wäre aus Datenschutzsicht besser, kann aber die Ordner-Workflows (Stand heute) nicht in dieser Form. Mehr dazu unter <a href="alternativen.html">ChatGPT &amp; Grok</a>.</p>
+<h2>Wohnen</h2>
+<div class="prompt">
+  <div class="ptitle">auftraege/…_wohnung.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Wohnung in [Ort]
 
-<nav class="pager"><a class="prev" href="abos.html"><small>Zurück</small>← Abos & Kosten</a><a class="next" href="arbeitsablauf.html"><small>Weiter</small>Der Arbeitsablauf →</a></nav>
+## Ziel
+Wohnung, Studio oder WG-Zimmer in [Ort] oder [15] km Umkreis, Bezug bis [Datum].
+
+## Schritt 1–2: Suchen
+- Portale: homegate.ch, immoscout24.ch, flatfox.ch, wgzimmer.ch, letzte 14 Tage
+- Muss: Miete max. CHF [600] inkl. NK, ÖV zum Bahnhof max. [15] Min.
+- Wichtig: Distanz zur Nachsorgestelle in [Ort] angeben
+- Ausschluss: Untermiete ohne Vertrag, [Haustiere / Erdgeschoss Hauptstrasse]
+- Ablage: recherche/wohnung/inserate.md + .xlsx, Besichtigungstermine notieren
+
+## Schritt 3: Meine Unterlagen (_Dokumente)
+- betreibungsauszug.pdf (max. 3 Monate alt), einkommensnachweis.pdf, referenz.pdf
+
+## Schritt 4: Dokumente pro Inserat
+- anschreiben_[strasse].docx, halbe Seite: wer ich bin, warum diese Wohnung,
+  wie ich die Miete finanziere ([Einkommen / Unterstützung durch Stelle])
+- Keine Angaben zu Gesundheit oder Klinik
+- beilagen.md nach dem, was das Inserat verlangt
+- Einmal: fragen_besichtigung.md, fünf Fragen für die Besichtigung
+
+## Schritt 8: Final
+- final/wohnung/[datum]_bewerbung_[strasse].pdf + mailtext.md (max. 5 Sätze)
+
+## Frist
+[Datum]</pre>
+</div>
+
+<h2>Arbeit</h2>
+<div class="prompt">
+  <div class="ptitle">auftraege/…_stelle.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Stelle als [Beruf]
+
+## Ziel
+Stelle [60–80] % als [Beruf/Bereich], Region [Ort], Antritt innert [3] Monaten.
+
+## Schritt 1–2: Suchen
+- Portale: jobs.ch, indeed.ch, jobagent.ch, job-room.ch, letzte 30 Tage
+- Muss: ÖV von [Ort] max. [40] Min., [keine Nachtschicht]
+- Ausschluss: [Aussendienst, Temporärbüro, …]
+- Ablage: recherche/stelle/inserate.md + .xlsx
+- Passung 1–5, ehrlich, mit Hauptgrund dagegen; was ich laut profil.md nicht mitbringe, benennen
+
+## Schritt 3: Meine Unterlagen (_Dokumente)
+- Zeugnisse, Diplome, [Bestätigung Arbeitstraining], Foto (freiwillig)
+
+## Schritt 4: Dokumente pro Bewerbung
+- motivationsschreiben.docx, max. 1 Seite, Ich-Form, sachlich, auf das Inserat bezogen
+- lebenslauf.docx aus profil.md, chronologisch rückwärts, Platzhalter [ADRESSE] [TELEFON]
+- Unterbruch [Jahre]: ein Satz «gesundheitlich bedingt», dann Wiedereinstieg
+- beilagen.md, abgeglichen mit dem Inserat
+
+## Schritt 8: Final
+- final/stelle/[datum]_[firma]/ mit beiden PDFs + mailtext.md
+- Zusätzlich: arbeitsbemuehungen.xlsx fortführen (Datum, Firma, Stelle, Art, Ergebnis) fürs RAV
+
+## Frist
+[Datum]</pre>
+</div>
+
+<div class="prompt">
+  <div class="ptitle">auftraege/…_wiedereinstieg.md (bisheriger Arbeitgeber) <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Wiedereinstieg bei [Firma]
+
+## Ziel
+Brief an [Firma, Kontaktperson]: Wiedereinstieg ab [Datum] mit Pensum [..] %,
+gemäss Absprache mit [Arzt / Case Management].
+
+## Schritt 1–2: Suchen
+- Nicht nötig (streichen)
+
+## Schritt 3: Meine Unterlagen (_Dokumente)
+- [Arbeitsvertrag, Schreiben des Case Managements]
+
+## Schritt 4: Dokumente
+- brief_wiedereinstieg.docx, halbe Seite: Dank für Geduld, Vorschlag, Bitte um Gespräch
+- Keine Diagnose, keine Details zum Aufenthalt
+- gespraech_vorbereitung.md: drei Punkte, die ich ansprechen will, drei Fragen, die kommen könnten
+
+## Schritt 8: Final
+- final/wiedereinstieg/[datum]_brief.pdf
+
+## Frist
+[Datum]</pre>
+</div>
+
+<h2>Geld und Schulden</h2>
+<div class="prompt">
+  <div class="ptitle">auftraege/…_schulden.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Schuldenübersicht und erste Schritte
+
+## Ziel
+Überblick über alle offenen Forderungen, Prioritäten, erste Briefe an Gläubiger.
+
+## Schritt 1–2: Suchen
+- Adressen und Einreichwege der Schuldenberatung in [Kanton] (Caritas, Budgetberatung, kantonale Stelle)
+- Ablage: recherche/schulden/beratungsstellen.md
+
+## Schritt 3: Meine Unterlagen (_Dokumente)
+- Alle Mahnungen, Rechnungen, Betreibungsauszug, [Verlustscheine]
+
+## Schritt 4: Dokumente
+- schulden.xlsx aus _Dokumente: Gläubiger | Betrag | fällig seit | Stand | Kontakt | Priorität
+  (1 = Miete, Krankenkasse, Steuern, Alimente; 2 = laufende Betreibungen; 3 = Rest); unklare Dokumente nachfragen, nicht raten
+- Pro Gläubiger mit Priorität 1–2: brief_[gläubiger].docx, halbe Seite,
+  Bitte um [Ratenzahlung CHF … ab … / Stundung bis …], ohne Rechtfertigung,
+  ohne Gesundheit, mit Bitte um schriftliche Bestätigung
+- empfehlung.md: drei erste Schritte und bei welchen ich die Schuldenberatung einbeziehen sollte
+
+## Schritt 8: Final
+- final/schulden/[datum]_brief_[gläubiger].pdf je Gläubiger
+- schulden.xlsx bleibt als Arbeitsdatei in entwuerfe/
+
+## Frist
+[Datum]</pre>
+</div>
+
+<div class="prompt">
+  <div class="ptitle">auftraege/…_steuern.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Steuern [Jahr] – [Erlass / Stundung / Ratenzahlung]
+
+## Ziel
+Gesuch an die Steuerverwaltung [Kanton], Betrag CHF [...].
+
+## Schritt 1–2: Suchen
+- Offizielle Seite der Steuerverwaltung [Kanton]: Formular, Einreichweg, Voraussetzungen, Beilagen
+- Nur offizielle Quellen, mit Link; Formular als PDF nach recherche/steuern/
+
+## Schritt 3: Meine Unterlagen (_Dokumente)
+- Steuerrechnung, budget.pdf, Einkommensnachweis, Betreibungsauszug
+
+## Schritt 4: Dokumente
+- begleitschreiben.docx, 1 Seite, Betrag im Betreff, kein Erklären des Steuersystems
+- Formular ausgefüllt (als .docx-Liste der Antworten, falls kein ausfüllbares PDF)
+- beilagen.md gegen die Anforderungen der Steuerverwaltung
+
+## Schritt 8: Final
+- final/steuern/[datum]_gesuch.pdf mit Beilagen
+
+## Frist
+[Datum, laut Steuerrechnung]</pre>
+</div>
+
+<h2>Versicherungen und Ämter</h2>
+<div class="prompt">
+  <div class="ptitle">auftraege/…_praemienverbilligung.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Prämienverbilligung [Kanton] [Jahr]
+
+## Schritt 1–2: Suchen
+- Kantonale Seite (SVA / Ausgleichskasse): Frist, Formular (Link, PDF ablegen), Beilagen, Einkommensgrenzen
+
+## Schritt 3: Meine Unterlagen (_Dokumente)
+- Letzte Steuerveranlagung, Krankenkassenpolice, Einkommensnachweis
+
+## Schritt 4: Dokumente
+- checkliste.md: was verlangt wird, was in _Dokumente liegt, was fehlt
+- Falls Online-Formular: Antworten als antworten.md vorbereiten; ausfüllen nur mit meinem Chrome-Browser und ohne Absenden
+
+## Schritt 8: Final
+- final/praemienverbilligung/[datum]_antrag.pdf, falls Papierweg
+
+## Frist
+[Datum, kantonal]</pre>
+</div>
+
+<div class="prompt">
+  <div class="ptitle">auftraege/…_kostengutsprache.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Kostengutsprache [Tagesklinik / ambulante Nachsorge]
+
+## Schritt 1–2: Suchen
+- Website der Krankenkasse [Name]: Einreichweg für Kostengutsprachen, wer einreicht (ich oder die Einrichtung), Formular
+
+## Schritt 3: Meine Unterlagen (_Dokumente)
+- Police, [Zuweisung / Schreiben der Einrichtung]
+
+## Schritt 4: Dokumente
+- anfrage_einrichtung.docx: kurze Mail an [Einrichtung], ob sie das Gesuch stellt oder ich
+- merkblatt.md: was ich bereithalten muss, Fristen
+- Keine medizinischen Angaben in meinen Texten; die kommen von der Einrichtung
+
+## Schritt 8: Final
+- final/kostengutsprache/mailtext.md
+
+## Frist
+vor [Startdatum]</pre>
+</div>
+
+<div class="prompt">
+  <div class="ptitle">auftraege/…_rav.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Anmeldung RAV [Ort] am [Datum]
+
+## Schritt 1–2: Suchen
+- arbeit.swiss und kantonale Seite: was mitbringen, Fristen; Merkblatt als PDF ablegen
+
+## Schritt 3: Meine Unterlagen (_Dokumente)
+- ID, Arbeitszeugnisse, [Kündigung / Arbeitsvertrag], AHV-Ausweis (nur mitnehmen, nicht ablegen)
+
+## Schritt 4: Dokumente
+- rav_vorbereitung.md: Checkliste mitbringen, drei Fragen an den Personalberater
+- arbeitsbemuehungen.xlsx aus recherche/stelle/ und log.md: Datum | Firma | Stelle | Art | Ergebnis
+
+## Schritt 8: Final
+- final/rav/arbeitsbemuehungen.pdf zum Ausdrucken
+
+## Frist
+[Datum des Termins]</pre>
+</div>
+
+<h2>Verstehen und vorbereiten</h2>
+<div class="prompt">
+  <div class="ptitle">auftraege/…_brief-verstehen.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Amtlichen Brief verstehen
+
+## Schritt 1–2: Suchen
+- Nur falls der Brief auf ein Gesetz oder Formular verweist: offizielle Quelle dazu
+
+## Schritt 3: Meine Unterlagen (_Dokumente)
+- [brief.pdf]
+
+## Schritt 4: Dokumente
+- erklaerung.md: Wer schreibt, worum geht es (3 Sätze) · Was muss ich tun, bis wann (Liste) ·
+  Was passiert, wenn ich nichts tue · Welche Fachstelle hilft
+- Keine rechtlichen Folgen erfinden, die nicht im Brief stehen; Unsicherheit benennen
+- Fristen in aufgaben.md eintragen
+
+## Schritt 8: Final
+- nicht nötig</pre>
+</div>
+
+<div class="prompt">
+  <div class="ptitle">auftraege/…_gespraech-sozialdienst.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Gespräch mit [Sozialdienst / Beistand / Case Manager] am [Datum]
+
+## Schritt 1–2: Suchen
+- Nicht nötig
+
+## Schritt 3: Meine Unterlagen
+- aufgaben.md, log.md, [schulden.xlsx], Aufträge in auftraege/
+
+## Schritt 4: Dokumente
+- uebersicht.docx, eine Seite zum Ausdrucken: Stand (Wohnung, Arbeit, Finanzen) in je 2 Sätzen ·
+  Erledigt seit dem letzten Gespräch · Wo ich Unterstützung brauche (konkret, mit Betrag oder Frist) · Meine drei Fragen
+- Sachlich, keine Bewertungen, keine medizinischen Angaben
+
+## Schritt 8: Final
+- final/gespraech/[datum]_uebersicht.pdf</pre>
+</div>
+
+<div class="prompt">
+  <div class="ptitle">auftraege/…_wochenplan.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Wochenplan ab Austritt [Datum]
+
+## Fixe Termine
+- [Tagesklinik Mo/Mi/Fr 9–15, Arbeitstraining Di/Do 8–12, Selbsthilfegruppe Do 19 Uhr, Sozialdienst alle 2 Wochen]
+
+## Schritt 4: Dokumente
+- wochenplan.xlsx für vier Wochen: Termine, dazwischen je ein Block Papierkram (max. 90 Min.)
+  und je ein Block für etwas Gutes (siehe Skillsliste der Toolbox). Nichts vor 8, nichts nach 20 Uhr.
+- Offene Punkte aus aufgaben.md auf die Papierkram-Blöcke verteilen
+
+## Schritt 8: Final
+- final/wochenplan/wochenplan.pdf zum Aufhängen</pre>
+</div>
+
+<div class="prompt">
+  <div class="ptitle">auftraege/…_papierchaos.md <button class="copy" type="button">Kopieren</button></div>
+<pre># Auftrag: Papierchaos ordnen
+
+## Schritt 3: Meine Unterlagen
+- _Dokumente/eingang/ mit [ca. 40] unsortierten Scans und Fotos
+
+## Schritt 4: Dokumente
+- sortierung.xlsx: Datei | erkannter Inhalt | vorgeschlagener Ordner (wohnen, arbeit, finanzen, versicherungen, gesundheit) | Frist im Dokument
+- Nichts verschieben, bevor ich die Liste bestätigt habe; unlesbare Dateien markieren
+- Nach Bestätigung: Dateien innerhalb von _Dokumente in die Unterordner verschieben (einzige Ausnahme von «nie in _Dokumente schreiben», ausdrücklich erlaubt)
+- Alle gefundenen Fristen in aufgaben.md</pre>
+</div>
+
+<h2>Wenn eine Vorlage nicht funktioniert</h2>
+<ul>
+  <li><strong>Claude erfindet etwas:</strong> Unter Schritt 4 ergänzen: «Was nicht in profil.md oder _Dokumente steht, als [OFFEN] markieren.»</li>
+  <li><strong>Claude findet nichts im Web:</strong> Portal blockiert. «Nutze dafür meinen Chrome-Browser» oder die Seite selbst öffnen und als PDF in <code>recherche/</code> legen.</li>
+  <li><strong>Der Text klingt nicht nach dir:</strong> Zwei, drei eigene Texte als <code>_Dokumente/stil/</code> ablegen und im Auftrag darauf verweisen.</li>
+  <li><strong>Zu lang:</strong> Kommentar «kürzer» genügt.</li>
+</ul>
+
+<nav class="pager"><a class="prev" href="workflow-gesuch.html"><small>Zurück</small>← Beispiel: Gesuch</a><a class="next" href="alternativen.html"><small>Weiter</small>ChatGPT & Grok →</a></nav>
 
     <footer>
       <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>

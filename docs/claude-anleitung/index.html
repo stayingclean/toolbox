@@ -167,70 +167,93 @@ footer code { background: var(--card); }
 <a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
 <a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
 <h2>Arbeitsweise</h2>
-<a href="md-dateien.html"><span class="n">5</span>Markdown-Dateien</a>
-<a href="workflow-bewerbung.html"><span class="n">6</span>Workflow: Bewerbung</a>
-<a href="workflow-gesuch.html"><span class="n">7</span>Workflow: Gesuch</a>
+<a href="arbeitsablauf.html"><span class="n">5</span>Der Arbeitsablauf</a>
+<a href="ordner-dateien.html"><span class="n">6</span>Ordner & Dateien</a>
+<a href="auftraege.html"><span class="n">7</span>Aufträge schreiben</a>
+<h2>Beispiele</h2>
+<a href="workflow-bewerbung.html"><span class="n">8</span>Beispiel: Bewerbung</a>
+<a href="workflow-gesuch.html"><span class="n">9</span>Beispiel: Gesuch</a>
+<a href="auftragsvorlagen.html"><span class="n">10</span>Auftragsvorlagen</a>
 <h2>Weiterführend</h2>
-<a href="prompts.html"><span class="n">8</span>Weitere Prompts</a>
-<a href="alternativen.html"><span class="n">9</span>ChatGPT & Grok</a>
+<a href="alternativen.html"><span class="n">11</span>ChatGPT & Grok</a>
     </nav>
   </aside>
   <main>
 <header class="page">
   <p class="kicker">Anleitung</p>
   <h1>Mit Claude arbeiten – Bewerbungen, Gesuche, Wohnungssuche</h1>
-  <p class="lead">Ein Erfahrungsbericht aus der Klinik, aufgeschrieben als Schritt-für-Schritt-Anleitung. Für alle, die Papierkram vor sich haben und wenig Energie dafür.</p>
+  <p class="lead">Ein Erfahrungsbericht aus der Klinik, aufgeschrieben als Anleitung. Für alle, die Papierkram vor sich haben und wenig Energie dafür.</p>
 </header>
 
 <div class="summary">
   <h2>Das Wichtigste in Kürze</h2>
   <ul>
-    <li><strong>Was:</strong> Claude ist ein KI-Assistent. Mit der Desktop-App kann er direkt in einem Ordner auf deinem Computer arbeiten: Inserate zusammentragen, Bewerbungen und Gesuche schreiben, PDFs erzeugen.</li>
-    <li><strong>Wie:</strong> Du legst deine Fakten in kleinen Textdateien (<code>.md</code>) ab. Claude liest sie bei jeder Sitzung und schreibt nur mit <em>deinen</em> Angaben.</li>
-    <li><strong>Was es kostet:</strong> Chatten geht gratis. Für das Arbeiten in Ordnern (Cowork) und die Chrome-Erweiterung braucht es ein Pro-Abo (ca. 20 US-Dollar pro Monat). Details unter <a href="abos.html">Abos &amp; Kosten</a>.</li>
-    <li><strong>Datenschutz:</strong> Alles, was du Claude gibst, geht an einen amerikanischen Anbieter. Warum ich es trotzdem so mache und welche Regeln ich mir gesetzt habe: <a href="datenschutz.html">Datenschutz</a>.</li>
+    <li><strong>Was:</strong> Claude ist ein KI-Assistent. Mit der Desktop-App arbeitet er direkt in einem Ordner auf deinem Computer: sucht Inserate und Stiftungen, schreibt Entwürfe als Word-Datei, baut am Ende das PDF.</li>
+    <li><strong>Wie:</strong> Ein <a href="arbeitsablauf.html">Ablauf in acht Schritten</a>, der für jede Aufgabe gleich ist. Du kontrollierst mit Kommentaren in Word, Claude arbeitet sie ein. Was sich pro Aufgabe ändert, steht in einem kurzen <a href="auftraege.html">Auftrag</a>.</li>
+    <li><strong>Kosten:</strong> Chatten geht gratis. Das Arbeiten im Ordner (Cowork) braucht Pro, ca. USD 20 pro Monat, monatlich kündbar. Details: <a href="abos.html">Abos &amp; Kosten</a>.</li>
+    <li><strong>Datenschutz:</strong> Alles geht an einen US-Anbieter. Warum ich es trotzdem so mache und was ich draussen lasse: <a href="datenschutz.html">Datenschutz</a>.</li>
   </ul>
 </div>
 
 <h2>Warum diese Anleitung?</h2>
-<p>Während meines Aufenthalts in der Klinik hatte ich denselben Berg vor mir wie viele hier: Gesuche an Stiftungen, eine Wohnung finden, Bewerbungen schreiben. Jede dieser Aufgaben besteht aus vielen kleinen Schritten, und genau das ist an schlechten Tagen das Problem, nicht die einzelne Aufgabe.</p>
-<p>Ich habe diese Aufgaben in einzelnen Chats mit Claude erledigt: einen für die Anpassungen an einem Gesuch, einen für die Wohnungssuche, einen für die Stellensuche. Was sich dabei bewährt hat, steht hier. Nicht als Werbung, sondern als das, was bei mir funktioniert hat, inklusive der Dinge, die ich anders machen würde.</p>
+<p>Während meines Aufenthalts hatte ich denselben Berg vor mir wie viele hier: Gesuche an Stiftungen, eine Wohnung, Bewerbungen. Jede Aufgabe besteht aus vielen kleinen Schritten, und genau das ist an schlechten Tagen das Problem.</p>
+<p>Ich habe die Aufgaben mit Claude erledigt und dabei gemerkt: Der Ablauf ist immer derselbe. Suchen, ablegen, meine Unterlagen dazu, Entwurf, kommentieren, nachbessern, PDF. Wer den Ablauf einmal hat, braucht für die nächste Aufgabe nur noch zehn Zeilen Auftrag. Das steht hier, inklusive der Dinge, die ich anders machen würde.</p>
+
+<h2>Der Ablauf auf einen Blick</h2>
+<div class="flow">
+  <div class="box"><b>1 Suchen</b>Claude</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>2 Ablegen</b>recherche/</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>3 Unterlagen</b>du, _Dokumente/</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>4 Entwurf</b>.docx</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>5 Kommentieren</b>du, in Word</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>6 Nachliefern</b>falls etwas fehlt</div>
+  <div class="arrow">↻</div>
+  <div class="box"><b>7 Einarbeiten</b>bis es passt</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>8 PDF</b>final/</div>
+</div>
+<p>Ausführlich unter <a href="arbeitsablauf.html">Der Arbeitsablauf</a>. Zwei komplette, erfundene Durchläufe: <a href="workflow-bewerbung.html">Bewerbung</a> und <a href="workflow-gesuch.html">Gesuch</a>.</p>
 
 <h2>Was Claude in diesem Zusammenhang kann</h2>
 <div class="grid">
   <div class="card">
     <h3>Suchen und sammeln</h3>
-    <p>Stelleninserate, Wohnungen, Adressen von Stiftungen, Anforderungen für ein Gesuch. Claude sucht im Web und legt die Treffer strukturiert als Datei ab.</p>
+    <p>Stelleninserate, Wohnungen, Stiftungen, Formulare, Anforderungen einer Behörde. Claude sucht im Web und legt Treffer als Tabelle und PDFs im Ordner ab.</p>
   </div>
   <div class="card">
     <h3>Schreiben, ohne zu erfinden</h3>
-    <p>Motivationsschreiben, Gesuchstexte, Begleitbriefe. Der Trick: Claude bekommt deine Fakten als Datei und darf nur daraus schreiben.</p>
+    <p>Motivationsschreiben, Gesuche, Briefe an Gläubiger. Nur aus deinen Fakten und Unterlagen. Was fehlt, meldet er, statt es zu erfinden.</p>
   </div>
   <div class="card">
-    <h3>Dateien erzeugen</h3>
-    <p>Word zum Überarbeiten, Excel für Listen, PDF zum Versenden, direkt in deinem Ordner. Du musst nichts kopieren und einfügen, und alle können die Dateien öffnen.</p>
+    <h3>Kommentare einarbeiten</h3>
+    <p>Du kommentierst in Word wie bei einem Kollegen. Claude liest die Kommentare, schlägt pro Kommentar eine Änderung vor, du entscheidest.</p>
   </div>
   <div class="card">
     <h3>Den Überblick halten</h3>
-    <p>Eine Datei <code>aufgaben.md</code> im Ordner, in der Claude Erledigtes abhakt und Offenes mit Frist einträgt. Am nächsten Tag liest er sie und sagt dir, was ansteht.</p>
+    <p><code>aufgaben.md</code> mit offenen Punkten und Fristen, <code>log.md</code> mit dem, was passiert ist. Am nächsten Tag: «Was steht an?»</p>
   </div>
 </div>
 
 <h2>Wie du diese Anleitung liest</h2>
-<p>Die Seiten bauen aufeinander auf, du kannst aber überall einsteigen. Wenn du wenig Zeit hast:</p>
 <ol>
   <li><a href="voraussetzungen.html">Voraussetzungen</a>: Was du installieren musst (10 Minuten).</li>
-  <li><a href="md-dateien.html">Markdown-Dateien</a>: Das eine Prinzip, das alles andere einfacher macht.</li>
-  <li><a href="workflow-bewerbung.html">Workflow: Bewerbung</a>: Ein kompletter, erfundener Durchlauf mit Prompt zum Kopieren.</li>
+  <li><a href="arbeitsablauf.html">Der Arbeitsablauf</a>: Die acht Schritte und wer was macht.</li>
+  <li><a href="ordner-dateien.html">Ordner &amp; Dateien</a>: Wie der Ordner aussieht und wie Claude ihn anlegt.</li>
+  <li><a href="auftragsvorlagen.html">Auftragsvorlagen</a>: Eine Vorlage kopieren, drei Zeilen ändern, loslegen.</li>
 </ol>
-<p>Wer lieber gleich loslegt: <a href="beispiel-projekt.zip">beispiel-projekt.zip</a> enthält einen fertigen Ordner mit allen Dateien, zum Entpacken und Verbinden.</p>
+<p>Wer lieber gleich ausprobiert: <a href="beispiel-projekt.zip">beispiel-projekt.zip</a> enthält einen fertigen Ordner mit fiktiven Daten. Entpacken, in Cowork verbinden, «Was steht an?» schreiben.</p>
 
 <div class="note">
   <p><strong>Wichtig:</strong> Claude ersetzt weder Sozialdienst, Beistand noch Therapie. Er hilft dir, Texte und Unterlagen vorzubereiten. Was du abschickst, liest du vorher selbst, und du entscheidest.</p>
 </div>
 
 <h2>Wer hier «ich» sagt</h2>
-<p>Die Anleitung ist aus meiner Sicht geschrieben. Ich arbeite beruflich mit Software und bin darum vielleicht schneller ins Werkzeug reingekommen als andere. Ich habe versucht, alles so zu beschreiben, dass es auch ohne Technik-Hintergrund geht. Wo etwas nur mit Vorwissen klappt, steht das dabei.</p>
+<p>Die Anleitung ist aus meiner Sicht geschrieben. Ich arbeite beruflich mit Software und bin darum vielleicht schneller ins Werkzeug reingekommen als andere. Ich habe versucht, alles so zu beschreiben, dass es ohne Technik-Hintergrund geht. Wo etwas nur mit Vorwissen klappt, steht das dabei.</p>
 
 <nav class="pager"><span></span><a class="next" href="voraussetzungen.html"><small>Weiter</small>Voraussetzungen →</a></nav>
 

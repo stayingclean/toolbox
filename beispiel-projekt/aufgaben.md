@@ -1,13 +1,13 @@
 # Aufgaben
 
 ## Offen
-- [ ] Lebenslauf als PDF in unterlagen/ ablegen — bis 20.09.
-- [ ] Stelleninserate suchen lassen (Prompt 1 aus der Anleitung) — bis 21.09.
-- [ ] Wohnungsinserate suchen lassen — bis 21.09.
-- [ ] Betreibungsauszug bestellen (Betreibungsamt Aarau, CHF 17) — bis 25.09.
+- [ ] _Dokumente füllen: Betreibungsauszug, Einkommensnachweis, Referenz — bis 18.09.
+- [ ] Auftrag Wohnung: Schritte 1–2 ausführen lassen — bis 18.09.
+- [ ] _Dokumente füllen: Zeugnisse, Diplom, Bestätigung Arbeitstraining — bis 22.09.
+- [ ] Auftrag Stelle: Schritte 1–2 ausführen lassen — bis 22.09.
 
 ## Wartet auf Antwort
 - (noch nichts)
 
 ## Erledigt
-- [x] 14.09. Ordnerstruktur angelegt, profil.md und kriterien.md ausgefüllt
+- [x] 16.09. Ordner angelegt, profil.md ausgefüllt, zwei Aufträge geschrieben

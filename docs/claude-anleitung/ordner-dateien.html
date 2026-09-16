@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Datenschutz · Mit Claude arbeiten</title>
-  <meta name="description" content="Bedenken, Entscheidung, Spielregeln">
+  <title>Ordner & Dateien · Mit Claude arbeiten</title>
+  <meta name="description" content="_Dokumente, Regeln, Aufträge, Entwürfe, Final">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -165,10 +165,10 @@ footer code { background: var(--card); }
 <a href="index.html"><span class="n">1</span>Start</a>
 <a href="voraussetzungen.html"><span class="n">2</span>Voraussetzungen</a>
 <a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
-<a href="datenschutz.html" class="active" aria-current="page"><span class="n">4</span>Datenschutz</a>
+<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
 <h2>Arbeitsweise</h2>
 <a href="arbeitsablauf.html"><span class="n">5</span>Der Arbeitsablauf</a>
-<a href="ordner-dateien.html"><span class="n">6</span>Ordner & Dateien</a>
+<a href="ordner-dateien.html" class="active" aria-current="page"><span class="n">6</span>Ordner & Dateien</a>
 <a href="auftraege.html"><span class="n">7</span>Aufträge schreiben</a>
 <h2>Beispiele</h2>
 <a href="workflow-bewerbung.html"><span class="n">8</span>Beispiel: Bewerbung</a>
@@ -180,101 +180,158 @@ footer code { background: var(--card); }
   </aside>
   <main>
 <header class="page">
-  <p class="kicker">Einstieg</p>
-  <h1>Datenschutz</h1>
-  <p class="lead">Was mit deinen Daten passiert, warum ich mich trotzdem für diesen Weg entschieden habe, und welche Regeln ich mir gesetzt habe.</p>
+  <p class="kicker">Arbeitsweise</p>
+  <h1>Ordner &amp; Dateien</h1>
+  <p class="lead">Ein Hauptordner pro Thema. Deine Unterlagen in <code>_Dokumente</code>, Claudes Arbeit daneben. Ein paar kleine Textdateien halten Regeln, Fakten und den Stand.</p>
 </header>
 
 <div class="summary">
   <h2>Kurzfassung</h2>
   <ul>
-    <li>Alles, was du Claude gibst (Text, Dateien, Ordnerinhalte), wird an die Server von Anthropic in den USA übertragen und dort verarbeitet.</li>
-    <li>Du kannst in den Einstellungen abschalten, dass deine Chats zum Trainieren der Modelle verwendet werden. <strong>Mach das als Erstes.</strong></li>
-    <li>Meine Entscheidung: Ich nehme die Übertragung in Kauf, weil die Arbeitserleichterung für mich gross ist und weil ich bestimmte Dinge konsequent draussen lasse (AHV-Nummer, Bankdaten, Diagnosen).</li>
-    <li>Das ist meine Abwägung, nicht die einzig richtige. Lies diese Seite und entscheide für dich.</li>
+    <li><strong>Eingaben</strong> von dir: <code>_Dokumente/</code> (PDFs, Scans) und <code>profil.md</code> (deine Fakten als Text).</li>
+    <li><strong>Steuerung:</strong> <code>regeln.md</code> (der Ablauf, einmal geschrieben) und <code>auftraege/</code> (eine kurze Datei pro Aufgabe).</li>
+    <li><strong>Ausgaben</strong> von Claude: <code>recherche/</code>, <code>entwuerfe/</code> (Word), <code>final/</code> (PDF).</li>
+    <li><strong>Stand:</strong> <code>aufgaben.md</code> (offene Punkte, abhaken) und <code>log.md</code> (was wann passiert ist).</li>
+    <li>Claude legt die ganze Struktur an. Du musst keinen Ordner selbst erstellen, nur <code>_Dokumente</code> füllen.</li>
   </ul>
 </div>
 
-<h2>Was technisch passiert</h2>
-<p>Claude läuft nicht auf deinem Computer. Jede Nachricht, jede hochgeladene Datei und in Cowork jede Datei, die Claude aus deinem Ordner liest, wird an Anthropic übertragen und dort verarbeitet. Bei Bewerbungen und Gesuchen sind das zwangsläufig persönliche Daten: Name, Adresse, Lebenslauf, deine finanzielle Situation, manchmal Angaben zur Gesundheit.</p>
-<p>Anthropic ist ein Unternehmen in den USA. Es gelten dessen Nutzungsbedingungen und Datenschutzerklärung, nicht das Schweizer Datenschutzgesetz allein. Die Daten liegen für die Dauer, die in der Datenschutzerklärung steht, auf den Servern des Anbieters; gelöschte Chats werden nach einer Frist entfernt.</p>
-
-<h2>Die Bedenken, ehrlich aufgezählt</h2>
-<ul>
-  <li><strong>Kontrollverlust:</strong> Einmal übertragen, kannst du die Daten nicht mehr «zurückholen». Löschen ist möglich, aber du musst dem Anbieter vertrauen, dass es passiert.</li>
-  <li><strong>Training:</strong> Standardmässig können Chats von Privatkonten zum Verbessern der Modelle verwendet werden. Das lässt sich abschalten (siehe unten), aber du musst es aktiv tun.</li>
-  <li><strong>Sensible Kategorien:</strong> Angaben zu Sucht, psychischer Gesundheit oder Schulden sind besonders schützenswert. In einem Gesuch stehen sie teilweise drin, sonst kann die Stiftung nicht entscheiden.</li>
-  <li><strong>Chrome-Erweiterung:</strong> Wenn Claude in deinem Browser arbeitet, sieht er die Seiten, die du freigibst, inklusive eingeloggter Bereiche. Ein falsch gesetztes Häkchen, und er liest mehr, als du wolltest.</li>
-  <li><strong>Dritte:</strong> In den Unterlagen tauchen auch andere Menschen auf (Referenzen, Familie, Vermieter). Deren Daten gibst du mit.</li>
-</ul>
-
-<h2>Warum ich es trotzdem mache</h2>
-<p>Ich habe lange darüber nachgedacht und bin bei zwei Argumenten gelandet:</p>
-<ol>
-  <li><strong>Die Arbeitserleichterung ist für mich gross.</strong> In einer Phase, in der Konzentration und Energie knapp sind, entscheidet die Hürde darüber, ob ein Gesuch überhaupt abgeschickt wird. Ein nicht geschriebenes Gesuch schützt keine Daten, es bringt mich nur nicht weiter.</li>
-  <li><strong>Ein grosser KI-Anbieter hat kaum ein Interesse an meiner Notsituation.</strong> Ich bin einer von Millionen Nutzern. Das Risiko, dass jemand gezielt meine Gesuche liest, halte ich für klein. Das Risiko einer Datenpanne ist nicht null, aber ich nehme es in Kauf.</li>
-</ol>
-<p>Das ist eine Abwägung, kein Freipass. Wer ein höheres Schutzbedürfnis hat, etwa wegen eines laufenden Verfahrens, sollte das mit dem Sozialdienst oder einer Beratungsstelle besprechen, bevor er Dokumente hochlädt.</p>
-
-<h2>Meine Spielregeln</h2>
-<div class="grid">
-  <div class="card">
-    <h3><span class="label warn-l">Nie</span> hochladen oder eintippen</h3>
-    <ul>
-      <li>Passwörter, Login-Daten für Portale (die Chrome-Erweiterung braucht sie nicht, du bist selbst eingeloggt)</li>
-      <li>Kreditkarten- und Debitkartennummern samt Ablaufdatum</li>
-      <li>AHV-Nummer, Pass- oder ID-Nummer: echte Identifikatoren, mit Geburtsdatum kombiniert für Identitätsmissbrauch nutzbar</li>
-      <li>Unterlagen anderer Personen, die es nicht wissen</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3><span class="label">Nur wenn nötig</span></h3>
-    <ul>
-      <li>IBAN: kein Geheimnis (steht auf jeder Rechnung), aber Claude braucht sie zum Schreiben nicht. Platzhalter <code>[IBAN]</code>, am Schluss selbst einsetzen. Siehe Kasten unten.</li>
-      <li>Diagnosen und Klinikberichte: nur, wenn das Gesuch sie tatsächlich verlangt, und dann nur den Satz, den es braucht</li>
-      <li>Betreibungsauszug, Schuldenliste: Beträge ja, Gläubigernamen kürzen</li>
-      <li>Namen von Referenzpersonen: erst im letzten Schritt, wenn der Brief steht</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3><span class="label ok-l">Unproblematisch</span></h3>
-    <ul>
-      <li>Lebenslauf ohne AHV-Nummer</li>
-      <li>Öffentliche Inserate und Stiftungsadressen</li>
-      <li>Deine Ziele, Wünsche, Zeitpläne</li>
-      <li>Alles, was ohnehin im Gesuch oder in der Bewerbung stehen wird</li>
-    </ul>
-  </div>
-</div>
-
-<h3>Warum die IBAN nicht so heikel ist wie die AHV-Nummer</h3>
-<p>Eine berechtigte Frage, die mir gestellt wurde: Was kann jemand mit meiner IBAN anrichten? Ehrliche Antwort: wenig. Mit der IBAN allein kann niemand Geld von deinem Konto holen; sie ist zum Empfangen da, und du gibst sie jedem Arbeitgeber und jeder Stiftung. Die Restrisiken sind indirekt:</p>
-<ul>
-  <li><strong>Lastschriften:</strong> Im EU-Raum kann ein Händler mit einer IBAN eine Lastschrift auslösen, die du acht Wochen lang zurückholen kannst. In der Schweiz braucht jede Belastung (LSV, eBill) deine Zustimmung bei der Bank.</li>
-  <li><strong>Glaubwürdigeres Phishing:</strong> Wer Name, Adresse und IBAN kennt, kann eine täuschend echte Mahnung oder «Rückzahlung» fälschen. Das ist das eigentliche Risiko bei einem Datenleck: die Kombination, nicht die einzelne Nummer.</li>
-  <li><strong>Datensparsamkeit:</strong> Der einfachste Grund für den Platzhalter: Claude braucht die Nummer nicht, um den Brief zu schreiben. Was nicht übertragen wird, kann nicht verloren gehen.</li>
-</ul>
-<p>Die AHV-Nummer ist eine andere Kategorie. Sie identifiziert dich lebenslang gegenüber Ämtern, Versicherungen und Arbeitgebern, und zusammen mit Geburtsdatum und Adresse reicht sie, um in deinem Namen Anträge zu stellen. Darum bleibt sie draussen, auch wenn ein Formular sie verlangt: Feld leer lassen, von Hand ergänzen.</p>
-
-<h3>Platzhalter statt Klarnamen</h3>
-<p>Ein einfacher Trick: In den <code>.md</code>-Dateien stehen Platzhalter wie <code>[AHV]</code> oder <code>[IBAN]</code>. Claude lässt sie im fertigen Dokument stehen, du setzt die echten Werte im letzten Schritt selbst ein. Das kostet zwei Minuten und hält die heikelsten Daten komplett aus dem System.</p>
-
-<h2>Einstellungen, die du am ersten Tag setzen solltest</h2>
-<ol>
-  <li><strong>Modelltraining abschalten:</strong> Einstellungen → Datenschutz → «Zur Verbesserung von Claude beitragen» (oder ähnlich benannt) ausschalten. Die genaue Bezeichnung ändert sich; suche nach «Training».</li>
-  <li><strong>Chrome-Erweiterung:</strong> Berechtigungsmodus «pro Website fragen» belassen. Keine pauschale Freigabe.</li>
-  <li><strong>Alte Chats löschen</strong>, sobald ein Gesuch abgeschickt ist. Was du brauchst, steht ohnehin in deinen Dateien.</li>
-  <li><strong>Erinnerungsfunktion prüfen:</strong> Claude merkt sich Dinge über Chats hinweg. Unter Einstellungen → Erinnerung siehst du, was gespeichert ist, und kannst Einträge löschen.</li>
-</ol>
+<h2>So sieht ein Hauptordner aus</h2>
+<div class="tree">Wohnung-und-Stelle/            <span class="c">← mit Cowork verbunden</span>
+├── CLAUDE.md                  <span class="c">← nur für Claude: «Lies README.md»</span>
+├── README.md                  <span class="c">← was dieser Ordner ist, wie man weitermacht</span>
+├── regeln.md                  <span class="c">← der Ablauf, für alle Aufgaben gleich</span>
+├── profil.md                  <span class="c">← deine Fakten (ohne AHV, IBAN)</span>
+├── aufgaben.md                <span class="c">← offene Punkte, Claude hakt ab</span>
+├── log.md                     <span class="c">← Tagebuch</span>
+│
+├── _Dokumente/                <span class="c">← DEINE Unterlagen. Claude liest, schreibt nie hinein</span>
+│   ├── lebenslauf.pdf
+│   ├── zeugnis_denner.pdf
+│   ├── betreibungsauszug.pdf
+│   └── budget.pdf
+│
+├── auftraege/                 <span class="c">← pro Aufgabe eine kurze Datei</span>
+│   ├── 2026-09-16_wohnung-aarau.md
+│   └── 2026-09-18_stelle-detailhandel.md
+│
+├── recherche/                 <span class="c">← Schritt 1–2: was Claude gefunden hat</span>
+│   ├── wohnung-aarau/
+│   │   ├── inserate.md
+│   │   ├── inserate.xlsx
+│   │   └── merkblatt_mieterverband.pdf
+│   └── stelle-detailhandel/
+│       └── inserate.md
+│
+├── entwuerfe/                 <span class="c">← Schritt 4–7: Word-Dateien, du kommentierst</span>
+│   └── wohnung-aarau/
+│       ├── pruefung.md            <span class="c">← was in _Dokumente fehlt</span>
+│       ├── anschreiben_bahnhofstr.docx
+│       ├── anschreiben_bahnhofstr_v2.docx
+│       └── beilagen.md
+│
+└── final/                     <span class="c">← Schritt 8: PDFs zum Versenden</span>
+    └── wohnung-aarau/
+        ├── 2026-09-20_bewerbung_bahnhofstr.pdf
+        └── mailtext.md</div>
 
 <div class="warn">
-  <p><strong>Zur Chrome-Erweiterung:</strong> Sie ist bequem, aber die grösste Öffnung nach aussen. Ich benutze sie nur für Bewerbungsportale und Inserate-Seiten, nie parallel zu E-Banking oder Krankenkassen-Login im selben Browserfenster.</p>
+  <p><strong>Der Unterstrich in <code>_Dokumente</code> ist Absicht.</strong> Er sortiert den Ordner nach oben und markiert: Das hier ist meins. Claude bekommt in <code>regeln.md</code> die Anweisung, dort nie zu schreiben. Wenn du Dateien verlierst, dann nicht in diesem Ordner.</p>
 </div>
 
-<h2>Und die anderen Anbieter?</h2>
-<p>Bei ChatGPT (OpenAI, USA) und Grok (xAI, USA) ist die Ausgangslage dieselbe: Übertragung ins Ausland, Trainingsnutzung standardmässig an, abschaltbar in den Einstellungen. Ein Anbieter mit Servern in der Schweiz oder der EU wäre aus Datenschutzsicht besser, kann aber die Ordner-Workflows (Stand heute) nicht in dieser Form. Mehr dazu unter <a href="alternativen.html">ChatGPT &amp; Grok</a>.</p>
+<h2>Die Steuerdateien</h2>
+<div class="grid">
+  <div class="card">
+    <h3>regeln.md</h3>
+    <p>Die acht Schritte, die Ordnerregeln, die Schreibregeln. Einmal geschrieben, für alle Aufgaben gleich. Inhalt weiter unten.</p>
+  </div>
+  <div class="card">
+    <h3>profil.md</h3>
+    <p>Wer du bist, in Stichworten: Ausbildung, Stationen, Stärken mit Beleg, Einkommen für Wohnungsbewerbungen. Ohne AHV-Nummer, ohne IBAN, Platzhalter stattdessen.</p>
+  </div>
+  <div class="card">
+    <h3>auftraege/*.md</h3>
+    <p>Pro Aufgabe 10–20 Zeilen: Ziel, Suchkriterien, gewünschte Dokumente, Empfänger, Frist. Siehe <a href="auftraege.html">Aufträge schreiben</a>.</p>
+  </div>
+  <div class="card">
+    <h3>aufgaben.md</h3>
+    <p>Offen / Wartet / Erledigt, mit Kästchen und Fristen. Claude führt nach, du liest morgens.</p>
+  </div>
+  <div class="card">
+    <h3>log.md</h3>
+    <p>Was wann gemacht wurde. Für dich, für den Sozialdienst, für den Tag, an dem du nicht mehr weisst, ob du das Gesuch schon geschickt hast.</p>
+  </div>
+  <div class="card">
+    <h3>README.md und CLAUDE.md</h3>
+    <p><code>README.md</code> erklärt jedem (Mensch oder KI), was der Ordner ist. <code>CLAUDE.md</code> enthält nur «Lies README.md und regeln.md» und wird nur angelegt, wenn Claude im Spiel ist, damit der Ordner mit anderen Anbietern weiter funktioniert.</p>
+  </div>
+</div>
 
-<nav class="pager"><a class="prev" href="abos.html"><small>Zurück</small>← Abos & Kosten</a><a class="next" href="arbeitsablauf.html"><small>Weiter</small>Der Arbeitsablauf →</a></nav>
+<h3>regeln.md, wie ich sie verwende</h3>
+<pre><code># Regeln für die Zusammenarbeit
+
+## Ablauf (immer gleich, Details im jeweiligen Auftrag)
+1. Suchen: Web durchsuchen nach den Kriterien im Auftrag.
+2. Ablegen: Funde unter recherche/&lt;auftrag&gt;/ als .md und .xlsx, Formulare als PDF.
+3. Unterlagen: Ich lege meine Dokumente in _Dokumente/. Du liest dort, schreibst dort NIE.
+4. Entwerfen: Dokumente als .docx unter entwuerfe/&lt;auftrag&gt;/. Vorher _Dokumente
+   gegen die Anforderungen prüfen und pruefung.md schreiben (fehlt / widersprüchlich).
+5. Ich kommentiere in Word.
+6. Ich passe _Dokumente an, wenn pruefung.md etwas meldet.
+7. «Kommentare einarbeiten»: pro Kommentar deinen Vorschlag zeigen, ich entscheide,
+   dann neue Fassung als _v2, _v3 … Alte Fassung nie überschreiben.
+8. «Fertig»: PDFs nach final/&lt;auftrag&gt;/, aus der letzten .docx, plus Beilagen
+   in Reihenfolge und mailtext.md.
+
+## Schreiben
+- Nur Fakten aus profil.md, dem Auftrag und _Dokumente. Fehlt etwas: fragen, nicht erfinden.
+- Kurz, sachlich, Schweizer Rechtschreibung (ss). Keine Floskeln, keine Ausrufezeichen.
+- Gesuche: eine Seite, Betrag im Betreff, dem Empfänger keine Systeme erklären.
+- Keine Angaben zu Gesundheit oder Klinik, ausser der Auftrag verlangt es ausdrücklich.
+- Platzhalter [ADRESSE] [TELEFON] [EMAIL] [AHV] [IBAN] stehen lassen.
+
+## Nachführen
+- Nach jedem Schritt: aufgaben.md (abhaken, Neues mit Frist) und log.md (Datum, was).
+- Beim Start jeder Sitzung: zuerst die offenen Punkte aus aufgaben.md nennen.</code></pre>
+
+<h2>Dateiformate: wer welches braucht</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>Format</th><th>Wofür</th><th>Wer öffnet es</th></tr>
+  <tr><td><strong>.md</strong> (Markdown)</td><td>Regeln, Profil, Aufträge, Aufgaben, Log, Prüfliste: alles, was Claude wieder lesen soll</td><td>Du (Editor) und Claude</td></tr>
+  <tr><td><strong>.docx</strong> (Word)</td><td>Entwürfe. Du kommentierst, Claude arbeitet ein</td><td>Du in Word oder LibreOffice, Claude</td></tr>
+  <tr><td><strong>.xlsx</strong> (Excel)</td><td>Übersichten zum Ergänzen: Inserate, Stiftungen, Schulden, Arbeitsbemühungen fürs RAV</td><td>Du, Sozialdienst, RAV</td></tr>
+  <tr><td><strong>.pdf</strong></td><td>Final. Sieht überall gleich aus, wird nicht mehr verändert</td><td>Empfänger</td></tr>
+</table>
+</div>
+
+<h2>Markdown in zwei Minuten</h2>
+<p>Die <code>.md</code>-Dateien sind reiner Text mit ein paar Zeichen für Struktur. Mehr musst du nicht wissen:</p>
+<pre><code># Überschrift
+## Kleinere Überschrift
+- Aufzählung
+- [ ] offener Punkt   - [x] erledigt
+**fett**  [Link](https://beispiel.ch)</code></pre>
+<p>Zum Bearbeiten reicht Notepad. Angenehmer, alle gratis: <a href="https://code.visualstudio.com" target="_blank" rel="noopener">VS Code</a> (ganzer Ordner links, Vorschau mit <kbd>Ctrl+Shift+V</kbd>), <a href="https://obsidian.md" target="_blank" rel="noopener">Obsidian</a> (wie ein Notizbuch), <a href="https://notepad-plus-plus.org" target="_blank" rel="noopener">Notepad++</a> (schlicht). Oder du sagst es Claude: «Ändere in profil.md den Wohnort auf Lenzburg.»</p>
+
+<h2>Claude legt die Struktur an, nicht du</h2>
+<p>Leeren Ordner verbinden, dann:</p>
+<div class="prompt">
+  <div class="ptitle">Prompt · Struktur anlegen <button class="copy" type="button">Kopieren</button></div>
+<pre>Lege in diesem leeren Ordner die Struktur nach der Anleitung «Mit Claude arbeiten» an: README.md, regeln.md (mit dem 8-Schritte-Ablauf), profil.md (leer, mit Vorlage), aufgaben.md, log.md, die Ordner _Dokumente, auftraege, recherche, entwuerfe, final. Wenn du Claude bist und direkt in diesen Ordner schreiben kannst, zusätzlich CLAUDE.md mit «Lies README.md und regeln.md».
+
+Dann stell mir nacheinander höchstens sechs Fragen, um profil.md zu füllen. Schreib nach jeder Antwort sofort in die Datei. Sag mir vorher, welche Angaben du NICHT willst (AHV, IBAN, Diagnosen) und dass ich dafür Platzhalter lassen soll.
+
+Am Ende: Liste, was ich in _Dokumente legen sollte, als aufgaben.md-Einträge.</pre>
+</div>
+<div class="ok">
+  <p>Wer lieber einen fertigen Ordner anschaut: <a href="beispiel-projekt.zip">beispiel-projekt.zip</a> (fiktive Daten, Wohnung und Stelle). Entpacken, verbinden, «Hallo, was steht an?» schreiben.</p>
+</div>
+
+<h2>Zur Datei CLAUDE.md</h2>
+<p>Claude Cowork liest eine Datei namens <code>CLAUDE.md</code> im verbundenen Ordner automatisch beim Start (getestet). Darum steht dort nur «Lies README.md und regeln.md»: Die eigentlichen Regeln bleiben in Dateien mit neutralen Namen, die auch ChatGPT oder Grok verstehen, wenn man sie hochlädt. Andere Anbieter ignorieren <code>CLAUDE.md</code> einfach.</p>
+
+<nav class="pager"><a class="prev" href="arbeitsablauf.html"><small>Zurück</small>← Der Arbeitsablauf</a><a class="next" href="auftraege.html"><small>Weiter</small>Aufträge schreiben →</a></nav>
 
     <footer>
       <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>

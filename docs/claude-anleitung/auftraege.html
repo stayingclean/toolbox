@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Datenschutz · Mit Claude arbeiten</title>
-  <meta name="description" content="Bedenken, Entscheidung, Spielregeln">
+  <title>Aufträge schreiben · Mit Claude arbeiten</title>
+  <meta name="description" content="Ein Ablauf, viele Aufgaben: der Auftrag als Datei">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -165,11 +165,11 @@ footer code { background: var(--card); }
 <a href="index.html"><span class="n">1</span>Start</a>
 <a href="voraussetzungen.html"><span class="n">2</span>Voraussetzungen</a>
 <a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
-<a href="datenschutz.html" class="active" aria-current="page"><span class="n">4</span>Datenschutz</a>
+<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
 <h2>Arbeitsweise</h2>
 <a href="arbeitsablauf.html"><span class="n">5</span>Der Arbeitsablauf</a>
 <a href="ordner-dateien.html"><span class="n">6</span>Ordner & Dateien</a>
-<a href="auftraege.html"><span class="n">7</span>Aufträge schreiben</a>
+<a href="auftraege.html" class="active" aria-current="page"><span class="n">7</span>Aufträge schreiben</a>
 <h2>Beispiele</h2>
 <a href="workflow-bewerbung.html"><span class="n">8</span>Beispiel: Bewerbung</a>
 <a href="workflow-gesuch.html"><span class="n">9</span>Beispiel: Gesuch</a>
@@ -180,101 +180,107 @@ footer code { background: var(--card); }
   </aside>
   <main>
 <header class="page">
-  <p class="kicker">Einstieg</p>
-  <h1>Datenschutz</h1>
-  <p class="lead">Was mit deinen Daten passiert, warum ich mich trotzdem für diesen Weg entschieden habe, und welche Regeln ich mir gesetzt habe.</p>
+  <p class="kicker">Arbeitsweise</p>
+  <h1>Aufträge schreiben</h1>
+  <p class="lead">Ein Ablauf für alles, aber jede Aufgabe ist anders. Der Unterschied passt in eine kleine Datei: den Auftrag.</p>
 </header>
 
 <div class="summary">
   <h2>Kurzfassung</h2>
   <ul>
-    <li>Alles, was du Claude gibst (Text, Dateien, Ordnerinhalte), wird an die Server von Anthropic in den USA übertragen und dort verarbeitet.</li>
-    <li>Du kannst in den Einstellungen abschalten, dass deine Chats zum Trainieren der Modelle verwendet werden. <strong>Mach das als Erstes.</strong></li>
-    <li>Meine Entscheidung: Ich nehme die Übertragung in Kauf, weil die Arbeitserleichterung für mich gross ist und weil ich bestimmte Dinge konsequent draussen lasse (AHV-Nummer, Bankdaten, Diagnosen).</li>
-    <li>Das ist meine Abwägung, nicht die einzig richtige. Lies diese Seite und entscheide für dich.</li>
+    <li>Ein Auftrag ist eine Textdatei mit 10–20 Zeilen in <code>auftraege/</code>: Ziel, Suchkriterien, gewünschte Dokumente, Empfänger, Frist.</li>
+    <li>Der Chat-Prompt ist immer derselbe Satz: «Führe den Auftrag … aus, Schritte 1–2.» Die Arbeit steckt in <code>regeln.md</code> und im Auftrag, nicht im Prompt.</li>
+    <li>Du kannst den Auftrag selbst schreiben, eine <a href="auftragsvorlagen.html">Vorlage</a> anpassen oder Claude ihn aus einem Gespräch erstellen lassen.</li>
   </ul>
 </div>
 
-<h2>Was technisch passiert</h2>
-<p>Claude läuft nicht auf deinem Computer. Jede Nachricht, jede hochgeladene Datei und in Cowork jede Datei, die Claude aus deinem Ordner liest, wird an Anthropic übertragen und dort verarbeitet. Bei Bewerbungen und Gesuchen sind das zwangsläufig persönliche Daten: Name, Adresse, Lebenslauf, deine finanzielle Situation, manchmal Angaben zur Gesundheit.</p>
-<p>Anthropic ist ein Unternehmen in den USA. Es gelten dessen Nutzungsbedingungen und Datenschutzerklärung, nicht das Schweizer Datenschutzgesetz allein. Die Daten liegen für die Dauer, die in der Datenschutzerklärung steht, auf den Servern des Anbieters; gelöschte Chats werden nach einer Frist entfernt.</p>
+<h2>Warum kein Mega-Prompt und keine Prompt-Sammlung</h2>
+<p>Ich habe beides probiert. Ein einziger langer Prompt, der alle Fälle abdeckt, wird unlesbar und ist trotzdem nie vollständig. Viele Spezial-Prompts muss man pflegen, und man weiss nie, welcher gerade passt. Die Trennung löst das:</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Teil</th><th>Wo</th><th>Ändert sich</th></tr>
+  <tr><td><strong>Ablauf</strong>: acht Schritte, Ordnerregeln, Word vor PDF, Kommentare einarbeiten, aufgaben.md führen</td><td><code>regeln.md</code></td><td>nie</td></tr>
+  <tr><td><strong>Auftrag</strong>: was gesucht wird, was entstehen soll, für wen, bis wann</td><td><code>auftraege/&lt;datum&gt;_&lt;name&gt;.md</code></td><td>pro Aufgabe</td></tr>
+  <tr><td><strong>Chat-Prompt</strong>: Zeiger auf den Auftrag und die Schritte</td><td>im Chat, ein Satz</td><td>nie</td></tr>
+</table>
+</div>
+<p>Nebeneffekt: Der Auftrag ist gleichzeitig die Dokumentation. In drei Monaten weisst du noch, was du bei welcher Stiftung mit welchen Kriterien beantragt hast.</p>
 
-<h2>Die Bedenken, ehrlich aufgezählt</h2>
-<ul>
-  <li><strong>Kontrollverlust:</strong> Einmal übertragen, kannst du die Daten nicht mehr «zurückholen». Löschen ist möglich, aber du musst dem Anbieter vertrauen, dass es passiert.</li>
-  <li><strong>Training:</strong> Standardmässig können Chats von Privatkonten zum Verbessern der Modelle verwendet werden. Das lässt sich abschalten (siehe unten), aber du musst es aktiv tun.</li>
-  <li><strong>Sensible Kategorien:</strong> Angaben zu Sucht, psychischer Gesundheit oder Schulden sind besonders schützenswert. In einem Gesuch stehen sie teilweise drin, sonst kann die Stiftung nicht entscheiden.</li>
-  <li><strong>Chrome-Erweiterung:</strong> Wenn Claude in deinem Browser arbeitet, sieht er die Seiten, die du freigibst, inklusive eingeloggter Bereiche. Ein falsch gesetztes Häkchen, und er liest mehr, als du wolltest.</li>
-  <li><strong>Dritte:</strong> In den Unterlagen tauchen auch andere Menschen auf (Referenzen, Familie, Vermieter). Deren Daten gibst du mit.</li>
-</ul>
+<h2>Aufbau eines Auftrags</h2>
+<pre><code># Auftrag: Wohnung in Aarau
 
-<h2>Warum ich es trotzdem mache</h2>
-<p>Ich habe lange darüber nachgedacht und bin bei zwei Argumenten gelandet:</p>
-<ol>
-  <li><strong>Die Arbeitserleichterung ist für mich gross.</strong> In einer Phase, in der Konzentration und Energie knapp sind, entscheidet die Hürde darüber, ob ein Gesuch überhaupt abgeschickt wird. Ein nicht geschriebenes Gesuch schützt keine Daten, es bringt mich nur nicht weiter.</li>
-  <li><strong>Ein grosser KI-Anbieter hat kaum ein Interesse an meiner Notsituation.</strong> Ich bin einer von Millionen Nutzern. Das Risiko, dass jemand gezielt meine Gesuche liest, halte ich für klein. Das Risiko einer Datenpanne ist nicht null, aber ich nehme es in Kauf.</li>
-</ol>
-<p>Das ist eine Abwägung, kein Freipass. Wer ein höheres Schutzbedürfnis hat, etwa wegen eines laufenden Verfahrens, sollte das mit dem Sozialdienst oder einer Beratungsstelle besprechen, bevor er Dokumente hochlädt.</p>
+## Ziel
+Eine Wohnung oder ein WG-Zimmer in Aarau oder 15 km Umkreis, Bezug bis 31.12.2026.
 
-<h2>Meine Spielregeln</h2>
+## Schritt 1–2: Suchen
+- Portale: homegate.ch, immoscout24.ch, flatfox.ch, wgzimmer.ch
+- Muss: Miete max. CHF 600 inkl. NK, ÖV zum Bahnhof max. 15 Min.
+- Ausschluss: Untermiete ohne Vertrag, Erdgeschoss an Hauptstrasse
+- Ablage: recherche/wohnung-aarau/inserate.md + .xlsx
+- Bewertung 1–5 mit Begründung, Fristen für Besichtigungen notieren
+
+## Schritt 3: Meine Unterlagen (in _Dokumente)
+- betreibungsauszug.pdf (nicht älter als 3 Monate)
+- einkommensnachweis.pdf
+- referenz_institution.pdf
+
+## Schritt 4: Dokumente
+- Pro ausgewähltem Inserat: anschreiben_&lt;strasse&gt;.docx (halbe Seite,
+  wer ich bin, warum diese Wohnung, wie ich die Miete finanziere)
+- Einmal: beilagen.md, abgeglichen mit dem, was das Inserat verlangt
+- Keine Angaben zu Gesundheit oder Klinik
+
+## Schritt 8: Final
+- final/wohnung-aarau/&lt;datum&gt;_bewerbung_&lt;strasse&gt;.pdf (Anschreiben + Beilagen)
+- mailtext.md, 3 Sätze
+
+## Frist
+Erste Anfragen bis 20.09.2026</code></pre>
+
+<h2>Drei Wege zu einem Auftrag</h2>
 <div class="grid">
   <div class="card">
-    <h3><span class="label warn-l">Nie</span> hochladen oder eintippen</h3>
-    <ul>
-      <li>Passwörter, Login-Daten für Portale (die Chrome-Erweiterung braucht sie nicht, du bist selbst eingeloggt)</li>
-      <li>Kreditkarten- und Debitkartennummern samt Ablaufdatum</li>
-      <li>AHV-Nummer, Pass- oder ID-Nummer: echte Identifikatoren, mit Geburtsdatum kombiniert für Identitätsmissbrauch nutzbar</li>
-      <li>Unterlagen anderer Personen, die es nicht wissen</li>
-    </ul>
+    <h3>Vorlage anpassen</h3>
+    <p>Unter <a href="auftragsvorlagen.html">Auftragsvorlagen</a> gibt es fertige Aufträge für die häufigsten Fälle. Kopieren, drei Zeilen ändern (Ort, Betrag, Frist), in <code>auftraege/</code> speichern.</p>
   </div>
   <div class="card">
-    <h3><span class="label">Nur wenn nötig</span></h3>
-    <ul>
-      <li>IBAN: kein Geheimnis (steht auf jeder Rechnung), aber Claude braucht sie zum Schreiben nicht. Platzhalter <code>[IBAN]</code>, am Schluss selbst einsetzen. Siehe Kasten unten.</li>
-      <li>Diagnosen und Klinikberichte: nur, wenn das Gesuch sie tatsächlich verlangt, und dann nur den Satz, den es braucht</li>
-      <li>Betreibungsauszug, Schuldenliste: Beträge ja, Gläubigernamen kürzen</li>
-      <li>Namen von Referenzpersonen: erst im letzten Schritt, wenn der Brief steht</li>
-    </ul>
+    <h3>Selbst schreiben</h3>
+    <p>Die Überschriften aus dem Beispiel übernehmen und ausfüllen. Was du nicht weisst, lässt du weg; Claude fragt dann in Schritt 1 nach.</p>
   </div>
   <div class="card">
-    <h3><span class="label ok-l">Unproblematisch</span></h3>
-    <ul>
-      <li>Lebenslauf ohne AHV-Nummer</li>
-      <li>Öffentliche Inserate und Stiftungsadressen</li>
-      <li>Deine Ziele, Wünsche, Zeitpläne</li>
-      <li>Alles, was ohnehin im Gesuch oder in der Bewerbung stehen wird</li>
-    </ul>
+    <h3>Von Claude erstellen lassen</h3>
+    <p>Wenn du nicht weisst, wo anfangen: Claude interviewt dich und schreibt den Auftrag. Prompt unten.</p>
   </div>
 </div>
 
-<h3>Warum die IBAN nicht so heikel ist wie die AHV-Nummer</h3>
-<p>Eine berechtigte Frage, die mir gestellt wurde: Was kann jemand mit meiner IBAN anrichten? Ehrliche Antwort: wenig. Mit der IBAN allein kann niemand Geld von deinem Konto holen; sie ist zum Empfangen da, und du gibst sie jedem Arbeitgeber und jeder Stiftung. Die Restrisiken sind indirekt:</p>
+<div class="prompt">
+  <div class="ptitle">Prompt · Auftrag im Gespräch erstellen <button class="copy" type="button">Kopieren</button></div>
+<pre>Ich will [eine Wohnung finden / mich auf Stellen bewerben / ein Gesuch an eine Stiftung stellen / …].
+
+Stell mir nacheinander höchstens sechs Fragen, um daraus einen Auftrag nach dem Aufbau in regeln.md zu machen (Ziel, Suchkriterien, meine Unterlagen, gewünschte Dokumente, Final, Frist). Eine Frage pro Nachricht. «Weiss nicht» ist eine gültige Antwort; trag dann «offen» ein.
+
+Speichere den Auftrag als auftraege/[DATUM]_[kurzname].md und zeig ihn mir. Beginne NICHT mit Schritt 1, bevor ich den Auftrag gelesen und «los» gesagt habe.</pre>
+</div>
+
+<h2>Einen Auftrag ausführen</h2>
+<p>Immer derselbe Satz, mit Schrittnummern, damit Claude an der richtigen Stelle anhält:</p>
+<div class="prompt">
+  <div class="ptitle">Prompt · Auftrag starten <button class="copy" type="button">Kopieren</button></div>
+<pre>Führe den Auftrag auftraege/2026-09-16_wohnung-aarau.md aus, Schritte 1 und 2. Halte danach an und zeig mir die Übersicht mit deiner Bewertung.</pre>
+</div>
+<p>Danach entscheidest du, welche Treffer weitergehen, und sagst «Weiter mit Schritt 4 für Nr. 2 und 5». Der Rest läuft wie im <a href="arbeitsablauf.html">Arbeitsablauf</a> beschrieben.</p>
+
+<h2>Mehrere Aufträge gleichzeitig</h2>
+<p>Wohnung und Stelle parallel, oder vier Gesuche an vier Stiftungen: pro Auftrag eine Datei, pro Auftrag ein Unterordner in <code>recherche/</code>, <code>entwuerfe/</code>, <code>final/</code>. Claude kann mehrere Aufträge in einem Durchgang bearbeiten («Führe alle Aufträge in auftraege/ aus, die in aufgaben.md als offen stehen, Schritte 1–2»). Mehr als drei bis vier gleichzeitig lohnt sich nicht: Der Engpass ist deine Kontrolle in Schritt 5, nicht Claudes Tempo.</p>
+
+<h2>Wenn der Auftrag nicht funktioniert</h2>
 <ul>
-  <li><strong>Lastschriften:</strong> Im EU-Raum kann ein Händler mit einer IBAN eine Lastschrift auslösen, die du acht Wochen lang zurückholen kannst. In der Schweiz braucht jede Belastung (LSV, eBill) deine Zustimmung bei der Bank.</li>
-  <li><strong>Glaubwürdigeres Phishing:</strong> Wer Name, Adresse und IBAN kennt, kann eine täuschend echte Mahnung oder «Rückzahlung» fälschen. Das ist das eigentliche Risiko bei einem Datenleck: die Kombination, nicht die einzelne Nummer.</li>
-  <li><strong>Datensparsamkeit:</strong> Der einfachste Grund für den Platzhalter: Claude braucht die Nummer nicht, um den Brief zu schreiben. Was nicht übertragen wird, kann nicht verloren gehen.</li>
+  <li><strong>Claude findet nichts:</strong> Kriterien zu eng, oder das Portal blockiert. Kriterien lockern oder «Nutze dafür meinen Chrome-Browser» ergänzen (siehe <a href="voraussetzungen.html">Voraussetzungen</a>).</li>
+  <li><strong>Claude erfindet Angaben:</strong> Im Auftrag unter Schritt 4 ergänzen: «Was nicht in profil.md oder _Dokumente steht, als [OFFEN] markieren.»</li>
+  <li><strong>Zu viel auf einmal:</strong> Auftrag teilen. Ein Auftrag «Wohnung suchen», ein zweiter «Bewerbung Bahnhofstrasse». Kleine Aufträge sind leichter zu kontrollieren.</li>
 </ul>
-<p>Die AHV-Nummer ist eine andere Kategorie. Sie identifiziert dich lebenslang gegenüber Ämtern, Versicherungen und Arbeitgebern, und zusammen mit Geburtsdatum und Adresse reicht sie, um in deinem Namen Anträge zu stellen. Darum bleibt sie draussen, auch wenn ein Formular sie verlangt: Feld leer lassen, von Hand ergänzen.</p>
 
-<h3>Platzhalter statt Klarnamen</h3>
-<p>Ein einfacher Trick: In den <code>.md</code>-Dateien stehen Platzhalter wie <code>[AHV]</code> oder <code>[IBAN]</code>. Claude lässt sie im fertigen Dokument stehen, du setzt die echten Werte im letzten Schritt selbst ein. Das kostet zwei Minuten und hält die heikelsten Daten komplett aus dem System.</p>
-
-<h2>Einstellungen, die du am ersten Tag setzen solltest</h2>
-<ol>
-  <li><strong>Modelltraining abschalten:</strong> Einstellungen → Datenschutz → «Zur Verbesserung von Claude beitragen» (oder ähnlich benannt) ausschalten. Die genaue Bezeichnung ändert sich; suche nach «Training».</li>
-  <li><strong>Chrome-Erweiterung:</strong> Berechtigungsmodus «pro Website fragen» belassen. Keine pauschale Freigabe.</li>
-  <li><strong>Alte Chats löschen</strong>, sobald ein Gesuch abgeschickt ist. Was du brauchst, steht ohnehin in deinen Dateien.</li>
-  <li><strong>Erinnerungsfunktion prüfen:</strong> Claude merkt sich Dinge über Chats hinweg. Unter Einstellungen → Erinnerung siehst du, was gespeichert ist, und kannst Einträge löschen.</li>
-</ol>
-
-<div class="warn">
-  <p><strong>Zur Chrome-Erweiterung:</strong> Sie ist bequem, aber die grösste Öffnung nach aussen. Ich benutze sie nur für Bewerbungsportale und Inserate-Seiten, nie parallel zu E-Banking oder Krankenkassen-Login im selben Browserfenster.</p>
-</div>
-
-<h2>Und die anderen Anbieter?</h2>
-<p>Bei ChatGPT (OpenAI, USA) und Grok (xAI, USA) ist die Ausgangslage dieselbe: Übertragung ins Ausland, Trainingsnutzung standardmässig an, abschaltbar in den Einstellungen. Ein Anbieter mit Servern in der Schweiz oder der EU wäre aus Datenschutzsicht besser, kann aber die Ordner-Workflows (Stand heute) nicht in dieser Form. Mehr dazu unter <a href="alternativen.html">ChatGPT &amp; Grok</a>.</p>
-
-<nav class="pager"><a class="prev" href="abos.html"><small>Zurück</small>← Abos & Kosten</a><a class="next" href="arbeitsablauf.html"><small>Weiter</small>Der Arbeitsablauf →</a></nav>
+<nav class="pager"><a class="prev" href="ordner-dateien.html"><small>Zurück</small>← Ordner & Dateien</a><a class="next" href="workflow-bewerbung.html"><small>Weiter</small>Beispiel: Bewerbung →</a></nav>
 
     <footer>
       <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>

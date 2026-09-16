@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weitere Prompts · Mit Claude arbeiten</title>
-  <meta name="description" content="Szenarien aus dem Therapie-Alltag">
+  <title>Der Arbeitsablauf · Mit Claude arbeiten</title>
+  <meta name="description" content="Acht Schritte, die für jede Aufgabe gleich sind">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -167,185 +167,128 @@ footer code { background: var(--card); }
 <a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
 <a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
 <h2>Arbeitsweise</h2>
-<a href="md-dateien.html"><span class="n">5</span>Markdown-Dateien</a>
-<a href="workflow-bewerbung.html"><span class="n">6</span>Workflow: Bewerbung</a>
-<a href="workflow-gesuch.html"><span class="n">7</span>Workflow: Gesuch</a>
+<a href="arbeitsablauf.html" class="active" aria-current="page"><span class="n">5</span>Der Arbeitsablauf</a>
+<a href="ordner-dateien.html"><span class="n">6</span>Ordner & Dateien</a>
+<a href="auftraege.html"><span class="n">7</span>Aufträge schreiben</a>
+<h2>Beispiele</h2>
+<a href="workflow-bewerbung.html"><span class="n">8</span>Beispiel: Bewerbung</a>
+<a href="workflow-gesuch.html"><span class="n">9</span>Beispiel: Gesuch</a>
+<a href="auftragsvorlagen.html"><span class="n">10</span>Auftragsvorlagen</a>
 <h2>Weiterführend</h2>
-<a href="prompts.html" class="active" aria-current="page"><span class="n">8</span>Weitere Prompts</a>
-<a href="alternativen.html"><span class="n">9</span>ChatGPT & Grok</a>
+<a href="alternativen.html"><span class="n">11</span>ChatGPT & Grok</a>
     </nav>
   </aside>
   <main>
 <header class="page">
-  <p class="kicker">Weiterführend</p>
-  <h1>Weitere Prompts für den Alltag nach der Klinik</h1>
-  <p class="lead">Szenarien, die vielen in einer Suchttherapie begegnen. Jeder Prompt geht davon aus, dass ein Ordner mit <code>regeln.md</code> und den nötigen Unterlagen verbunden ist. Im Gratis-Chat: Dateien stattdessen hochladen.</p>
+  <p class="kicker">Arbeitsweise</p>
+  <h1>Der Arbeitsablauf: acht Schritte, immer gleich</h1>
+  <p class="lead">Ob Wohnung, Stelle oder Gesuch: Der Weg von der Suche zum fertigen PDF ist derselbe. Wer ihn einmal verstanden hat, braucht für eine neue Aufgabe nur noch einen kurzen Auftrag.</p>
 </header>
 
 <div class="summary">
-  <h2>Wie du die Prompts benutzt</h2>
+  <h2>Kurzfassung</h2>
   <ul>
-    <li>Kopieren, in Cowork einfügen, die Klammern <code>[…]</code> durch deine Angaben ersetzen.</li>
-    <li>Jeder Prompt endet mit einer Rückfrage-Schleife: Claude zeigt, du entscheidest. Lass das drin.</li>
-    <li>Alle Beispiele sind erfunden. Beträge, Namen und Orte ersetzt du durch deine.</li>
+    <li>Claude sucht, sammelt, schreibt Entwürfe und baut am Ende das PDF. Du lieferst deine Unterlagen, kontrollierst und entscheidest.</li>
+    <li>Die Kontrolle läuft über <strong>Kommentare in Word-Dateien</strong>, nicht über den Chat. Claude liest die Kommentare und arbeitet sie ein.</li>
+    <li>Deine eigenen Dokumente liegen in <code>_Dokumente</code>. Alles, was Claude erzeugt, liegt daneben in eigenen Ordnern. So ist immer klar, was von wem stammt.</li>
+    <li>Was sich pro Aufgabe ändert, steht in einer kleinen Datei, dem <a href="auftraege.html">Auftrag</a>. Der Ablauf selbst steht einmal in <code>regeln.md</code>.</li>
   </ul>
 </div>
 
-<div class="warn">
-  <p><strong>Wofür Claude nicht da ist:</strong> In einer akuten Krise, bei Suchtdruck oder Suizidgedanken ist ein Chatbot der falsche Ort. Dargebotene Hand <strong>143</strong> (rund um die Uhr), Notfall <strong>144</strong>, oder die Nummer deiner Nachsorgestelle. Die Prompts hier sind für den Papierkram, nicht für den Notfall.</p>
+<h2>Die acht Schritte</h2>
+<div class="flow">
+  <div class="box"><b>1 Suchen</b>Claude durchsucht das Web</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>2 Ablegen</b>Funde in recherche/</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>3 Unterlagen</b>Du füllst _Dokumente/</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>4 Entwerfen</b>.docx in entwuerfe/</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>5 Kommentieren</b>Du, in Word</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>6 Unterlagen anpassen</b>falls Claude Lücken meldet</div>
+  <div class="arrow">↻</div>
+  <div class="box"><b>7 Wiederholen</b>4–6 bis es passt</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>8 Final</b>PDF in final/</div>
 </div>
 
-<h2>Wohnen</h2>
+<ol class="steps">
+  <li>
+    <h3>Claude durchsucht das Internet <span class="label">Claude</span></h3>
+    <p>Wohnungen, Stellen, Stiftungen, Formulare, Anforderungen einer Behörde. Was gesucht wird und nach welchen Kriterien, steht im Auftrag. Claude fragt nach, wenn der Auftrag unklar ist, statt zu raten.</p>
+  </li>
+  <li>
+    <h3>Claude legt die Funde ab <span class="label">Claude</span></h3>
+    <p>Unter <code>recherche/</code> in einer Struktur, die zur Aufgabe passt: eine Übersichtstabelle (<code>.md</code> und <code>.xlsx</code>), heruntergeladene Formulare und Merkblätter als PDF, pro Fund eine Zeile mit Link, Frist und Bewertung. Claude erfindet keine Angaben; was er nicht findet, steht als «unklar» drin.</p>
+  </li>
+  <li>
+    <h3>Du legst deine Unterlagen in <code>_Dokumente</code> <span class="label ok-l">Du</span></h3>
+    <p>Lebenslauf, Zeugnisse, Betreibungsauszug, Budget, Rechnungen, Absagen der Krankenkasse. Alles, was Claude zum Schreiben braucht und was von dir kommt. Dieser Ordner gehört dir: Claude liest ihn, schreibt aber nie hinein. Was fehlt, sagt dir Claude in <code>pruefung.md</code> (Schritt 6).</p>
+  </li>
+  <li>
+    <h3>Claude erstellt die Dokumente <span class="label">Claude</span></h3>
+    <p>Motivationsschreiben, Gesuch, Lebenslauf, Beilagenverzeichnis, Begleitmail. Immer als <strong>Word-Datei</strong> in <code>entwuerfe/</code>, nur aus den Fakten in <code>profil.md</code>, dem Auftrag und <code>_Dokumente</code>. Platzhalter wie <code>[ADRESSE]</code> bleiben stehen.</p>
+  </li>
+  <li>
+    <h3>Du kontrollierst und kommentierst <span class="label ok-l">Du</span></h3>
+    <p>Word öffnen, lesen, bei jeder Stelle, die nicht passt, einen Kommentar setzen (rechte Maustaste → «Neuer Kommentar»): «kürzer», «stimmt nicht, war 2017», «zu förmlich», «Betrag fehlt». Du kannst auch direkt im Text ändern. Speichern, fertig. Kein Abtippen in den Chat.</p>
+    <div class="note"><p><strong>Warum Kommentare statt Chat?</strong> Der Kommentar steht genau an der Stelle, um die es geht. Claude sieht Textstelle und Anmerkung zusammen und muss nicht raten, welchen Satz du meinst. Und die Anmerkungen bleiben in der Datei, auch wenn der Chat weg ist.</p></div>
+  </li>
+  <li>
+    <h3>Du passt <code>_Dokumente</code> an, wenn Claude Lücken meldet <span class="label ok-l">Du</span></h3>
+    <p>Claude schreibt pro Auftrag eine <code>pruefung.md</code>: Was fehlt (Bestätigung Arbeitstraining), was widersprüchlich ist (Lebenslauf sagt 2016, Zeugnis 2017), was die Stiftung zusätzlich verlangt. Du besorgst oder korrigierst die Unterlagen und legst sie wieder in <code>_Dokumente</code>.</p>
+  </li>
+  <li>
+    <h3>Wiederholen, bis es passt <span class="label">Claude</span> <span class="label ok-l">Du</span></h3>
+    <p>Du schreibst im Chat: «Kommentare einarbeiten.» Claude liest die Kommentare aus den Word-Dateien, zeigt dir zuerst pro Kommentar seinen Änderungsvorschlag, du sagst ja oder nein, dann schreibt er eine neue Fassung (<code>_v2.docx</code>). Zwei bis drei Runden sind normal.</p>
+  </li>
+  <li>
+    <h3>Claude erstellt die finalen Dokumente <span class="label">Claude</span></h3>
+    <p>Wenn du «fertig» sagst: PDFs in <code>final/</code>, sauber benannt, mit Beilagen in der richtigen Reihenfolge, dazu ein kurzer Mailtext. Zum Ausdrucken oder Anhängen. Platzhalter setzt du im letzten Schritt selbst ein.</p>
+  </li>
+</ol>
 
+<h2>Wer macht was</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>Claude</th><th>Du</th></tr>
+  <tr><td>Suchen, sammeln, bewerten</td><td>Entscheiden, welche Treffer weiterverfolgt werden</td></tr>
+  <tr><td>Entwürfe schreiben, nur aus deinen Fakten</td><td>Fakten liefern (<code>profil.md</code>, <code>_Dokumente</code>)</td></tr>
+  <tr><td>Lücken und Widersprüche melden (<code>pruefung.md</code>)</td><td>Unterlagen besorgen oder korrigieren</td></tr>
+  <tr><td>Kommentare einarbeiten, neue Fassung ablegen</td><td>Kommentieren, freigeben («fertig»)</td></tr>
+  <tr><td>PDFs bauen, <code>aufgaben.md</code> und <code>log.md</code> nachführen</td><td>Platzhalter einsetzen, unterschreiben, versenden</td></tr>
+</table>
+</div>
+
+<h2>Wie eine Sitzung aussieht</h2>
+<p>Weil der Ablauf in <code>regeln.md</code> steht und die Aufgabe im Auftrag, ist der Chat selbst kurz. Drei Sätze reichen für einen ganzen Durchgang:</p>
 <div class="prompt">
-  <div class="ptitle">Wohnungssuche: Inserate finden und bewerten <button class="copy" type="button">Kopieren</button></div>
-<pre>Lies regeln.md und kriterien.md (Region [Aarau, 15 km Umkreis], Miete max. CHF [600] inkl. NK, auch WG-Zimmer, keine Haustiere).
-
-Suche auf homegate.ch, immoscout24.ch, flatfox.ch, wgzimmer.ch und in den Facebook-Marketplace-Treffern, die öffentlich zugänglich sind, nach Angeboten der letzten 14 Tage.
-
-Erstelle inserate/[DATUM]_wohnungen.md: Ort | Typ | Miete | Verfügbar ab | Link | Besichtigung | Passung 1–5 | Bemerkung.
-Bewerte streng: ÖV-Anbindung, Distanz zur Nachsorgestelle in [Ort], Lärm.
-
-Nenne mir die drei besten und schlag mir für jedes eine kurze, freundliche Anfrage-Nachricht vor (max. 5 Sätze, ohne Angaben zu Gesundheit oder Klinik).</pre>
+  <div class="ptitle">Schritte 1–2 · Suchen und ablegen <button class="copy" type="button">Kopieren</button></div>
+<pre>Führe den Auftrag auftraege/2026-09-16_wohnung-aarau.md aus, Schritte 1 und 2. Halte dann an und zeig mir die Übersicht.</pre>
 </div>
-
 <div class="prompt">
-  <div class="ptitle">Bewerbungsdossier für Vermieter <button class="copy" type="button">Kopieren</button></div>
-<pre>Erstelle aus profil.md ein Bewerbungsdossier für die Wohnung [Adresse/Link]:
-1. Ein Anschreiben (halbe A4-Seite): wer ich bin, warum diese Wohnung, wie ich die Miete finanziere (Einkommen [CHF …], allenfalls Unterstützung durch [Stelle]). Keine Angaben zu Diagnosen oder Klinikaufenthalt.
-2. Eine Checkliste der üblichen Beilagen (Betreibungsauszug, Kopie ID, Lohnnachweis, Referenz) und was davon in unterlagen/ schon liegt.
-3. Fünf Fragen, die ich an der Besichtigung stellen sollte.
-Zeig mir alles hier, dann PDF.</pre>
+  <div class="ptitle">Schritt 4 · Entwerfen <button class="copy" type="button">Kopieren</button></div>
+<pre>Weiter mit Schritt 4 für die Treffer Nr. 2 und 5. Prüfe vorher _Dokumente gegen die Anforderungen und schreib pruefung.md.</pre>
 </div>
-
-<h2>Geld und Schulden</h2>
-
 <div class="prompt">
-  <div class="ptitle">Schuldenübersicht erstellen <button class="copy" type="button">Kopieren</button></div>
-<pre>In unterlagen/ liegen Mahnungen, Rechnungen und ein Betreibungsauszug. Lies alle und erstelle schulden.md:
-
-Gläubiger | Betrag | Fällig seit | Stand (Mahnung / Betreibung / Verlustschein) | Kontakt | Priorität
-
-Priorität nach diesen Regeln: 1 = Miete, Krankenkasse, Steuern, Alimente; 2 = laufende Betreibungen; 3 = Rest.
-Summe pro Priorität. Wenn ein Dokument unklar ist, frag mich, statt zu raten.
-
-Dann: Welche drei Schritte würdest du als Erstes vorschlagen, und bei welchen davon sollte ich die Schuldenberatung ([Stelle, z. B. Caritas oder Budgetberatung]) einbeziehen?</pre>
+  <div class="ptitle">Schritt 7 · Kommentare einarbeiten <button class="copy" type="button">Kopieren</button></div>
+<pre>Kommentare einarbeiten. Zeig mir zuerst pro Kommentar deinen Vorschlag, ich entscheide, dann neue Fassung.</pre>
 </div>
-
 <div class="prompt">
-  <div class="ptitle">Brief an einen Gläubiger: Ratenzahlung oder Stundung <button class="copy" type="button">Kopieren</button></div>
-<pre>Schreib einen Brief an [Gläubiger] wegen der Rechnung [Nr., Betrag]. Ich bitte um [Ratenzahlung von CHF … pro Monat ab … / Stundung bis …].
-
-Regeln: höchstens eine halbe Seite, sachlich, ohne Rechtfertigung, ohne Angaben zu Gesundheit. Ein Satz zur Situation («Mein Einkommen ist zurzeit reduziert»), ein Satz zum Vorschlag, ein Satz mit der Bitte um schriftliche Bestätigung.
-
-Zeig mir den Text, dann als PDF nach briefe/[DATUM]_[gläubiger].pdf. Trag in log.md ein, bis wann ich mit einer Antwort rechnen sollte.</pre>
+  <div class="ptitle">Schritt 8 · Final <button class="copy" type="button">Kopieren</button></div>
+<pre>Fertig. Erstelle die finalen PDFs in final/ inklusive Beilagen und Mailtext. Führe aufgaben.md und log.md nach.</pre>
 </div>
 
-<div class="prompt">
-  <div class="ptitle">Gesuch um Steuererlass oder Stundung vorbereiten <button class="copy" type="button">Kopieren</button></div>
-<pre>Ich möchte bei der Steuerverwaltung [Kanton] ein Gesuch um [Erlass / Stundung / Ratenzahlung] für die Steuern [Jahr] stellen. Betrag CHF [...].
-
-1. Suche die offizielle Seite der Steuerverwaltung [Kanton] und fasse zusammen: Wo reicht man ein, welches Formular, welche Beilagen, welche Voraussetzungen. Nur Angaben von der offiziellen Website, mit Link.
-2. Vergleiche die Anforderungen mit unterlagen/ und sag mir, was fehlt.
-3. Erstelle einen Entwurf für das Begleitschreiben (max. 1 Seite) aus sachverhalt.md und budget.pdf. Kurz, keine Erklärung des Steuersystems, Betrag im Betreff.
-Zeig mir den Entwurf, ich entscheide.</pre>
-</div>
-
-<div class="prompt">
-  <div class="ptitle">Amtlichen Brief verstehen <button class="copy" type="button">Kopieren</button></div>
-<pre>In unterlagen/ liegt [brief.pdf]. Erkläre mir in einfachen Worten:
-1. Wer schreibt und worum geht es? (3 Sätze)
-2. Was muss ich tun, und bis wann? (Liste mit Fristen)
-3. Was passiert, wenn ich nichts tue?
-4. Welche Fachstelle könnte mir hier helfen?
-Wenn eine Frist im Brief steht, trag sie in log.md ein. Erfinde keine rechtlichen Folgen, die nicht im Brief stehen; sag mir, wenn du unsicher bist.</pre>
-</div>
-
-<h2>Versicherungen und Ämter</h2>
-
-<div class="prompt">
-  <div class="ptitle">Prämienverbilligung beantragen <button class="copy" type="button">Kopieren</button></div>
-<pre>Ich wohne im Kanton [...] und möchte Prämienverbilligung für die Krankenkasse beantragen.
-Suche die offizielle kantonale Seite (SVA / Ausgleichskasse) und erstelle checkliste_praemienverbilligung.md: Frist, Formular (Link), nötige Beilagen, Einkommensgrenzen soweit publiziert.
-Vergleiche mit unterlagen/ und sag mir, was fehlt. Wenn das Formular online ausfüllbar ist und ich dir den Browser freigebe, fülle es aus meinen Angaben in profil.md aus, aber sende nicht ab.</pre>
-</div>
-
-<div class="prompt">
-  <div class="ptitle">Kostengutsprache für die Nachsorge <button class="copy" type="button">Kopieren</button></div>
-<pre>Ich brauche von meiner Krankenkasse [Name] eine Kostengutsprache für [Tagesklinik / ambulante Nachsorge] bei [Einrichtung] ab [Datum].
-1. Suche auf der Website der Krankenkasse, wie Kostengutsprachen eingereicht werden (Formular, Adresse, wer einreicht: ich oder die Einrichtung).
-2. Erstelle eine kurze Anfrage-Mail an die Einrichtung, ob sie das Gesuch stellt oder ich.
-3. Erstelle ein Merkblatt für mich: Was muss ich bereithalten, welche Fristen.
-Keine medizinischen Angaben in den Texten; die kommen von der Einrichtung.</pre>
-</div>
-
-<div class="prompt">
-  <div class="ptitle">Anmeldung beim RAV vorbereiten <button class="copy" type="button">Kopieren</button></div>
-<pre>Ich melde mich am [Datum] beim RAV [Ort] an. Erstelle rav_vorbereitung.md:
-1. Was muss ich mitbringen (offizielle Liste von arbeit.swiss oder der kantonalen Seite, mit Link).
-2. Meine Arbeitsbemühungen der letzten Wochen aus log.md und inserate/ als Tabelle, so wie das RAV sie will (Datum, Firma, Stelle, Art der Bewerbung, Ergebnis).
-3. Drei Fragen, die ich dem Personalberater stellen sollte.
-Was fehlt, markiere mit «offen».</pre>
-</div>
-
-<h2>Arbeit und Wiedereinstieg</h2>
-
-<div class="prompt">
-  <div class="ptitle">Lücke im Lebenslauf: Formulierungen <button class="copy" type="button">Kopieren</button></div>
-<pre>In meinem Lebenslauf gibt es eine Lücke von [Monat Jahr] bis [Monat Jahr] wegen eines Klinikaufenthalts. Schlag mir drei Varianten vor, wie ich das im Lebenslauf und im Bewerbungsgespräch formuliere:
-a) so knapp wie möglich,
-b) mit dem Hinweis «gesundheitlich bedingt»,
-c) mit einem positiven Dreh (Arbeitstraining, Weiterbildung), falls das in profil.md belegt ist.
-Sag mir zu jeder Variante, was ein Arbeitgeber daraus schliessen könnte. Keine Empfehlung, die mich zum Lügen bringt.</pre>
-</div>
-
-<div class="prompt">
-  <div class="ptitle">Brief an den bisherigen Arbeitgeber (Wiedereinstieg) <button class="copy" type="button">Kopieren</button></div>
-<pre>Schreib einen Brief an meinen Arbeitgeber [Firma, Kontaktperson], dass ich ab [Datum] mit einem Pensum von [...] wieder einsteigen möchte, gemäss Absprache mit [Arzt / Case Management].
-Regeln: sachlich, kurz, keine Diagnose, keine Details zum Aufenthalt. Ein Satz Dank für die Geduld, ein Satz zum Vorschlag, ein Satz mit der Bitte um ein Gespräch.
-Zeig mir den Text, dann PDF.</pre>
-</div>
-
-<div class="prompt">
-  <div class="ptitle">Bewerbungsgespräch üben <button class="copy" type="button">Kopieren</button></div>
-<pre>Lies profil.md und das Inserat in inserate/[datei].md, Nr. [...].
-Spiel den Personalverantwortlichen. Stell mir eine Frage nach der anderen, warte jeweils auf meine Antwort, und gib mir danach ein kurzes Feedback (was war gut, was würdest du anders sagen). Nimm auch eine Frage zur Lücke im Lebenslauf. Insgesamt 6 Fragen. Sei fair, nicht schonend.</pre>
-</div>
-
-<h2>Alltag und Struktur</h2>
-
-<div class="prompt">
-  <div class="ptitle">Wochenplan nach dem Austritt <button class="copy" type="button">Kopieren</button></div>
-<pre>Ich trete am [Datum] aus. Fixe Termine: [Tagesklinik Mo/Mi/Fr 9–15, Arbeitstraining Di/Do 8–12, Selbsthilfegruppe Do 19 Uhr, Sozialdienst alle 2 Wochen].
-Erstelle wochenplan.md für die ersten vier Wochen: Termine, dazwischen je einen Block für Papierkram (max. 90 Minuten) und je einen Block für etwas, das mir guttut (siehe Skillsliste der Toolbox). Nichts vor 8 Uhr, nichts nach 20 Uhr.
-Ausserdem eine kurze Liste offener Punkte aus log.md mit Fristen, verteilt auf die Papierkram-Blöcke.</pre>
-</div>
-
-<div class="prompt">
-  <div class="ptitle">Gespräch mit Sozialdienst oder Beistand vorbereiten <button class="copy" type="button">Kopieren</button></div>
-<pre>Am [Datum] habe ich ein Gespräch mit [Sozialdienst / Beistand / Case Manager]. Erstelle aus log.md, schulden.md und sachverhalt.md eine einseitige Übersicht zum Ausdrucken:
-1. Stand der Dinge (Wohnung, Arbeit, Finanzen) in je 2 Sätzen.
-2. Was ich seit dem letzten Gespräch erledigt habe.
-3. Wo ich Unterstützung brauche (konkret, mit Betrag oder Frist).
-4. Meine drei Fragen.
-Sachlich, keine Bewertungen, keine medizinischen Angaben.</pre>
-</div>
-
-<div class="prompt">
-  <div class="ptitle">Papierchaos ordnen <button class="copy" type="button">Kopieren</button></div>
-<pre>Im Ordner eingang/ liegen [ca. 40] Dateien (Scans, PDFs, Fotos von Briefen), unsortiert. Lies jede Datei und schlag mir eine Ordnerstruktur vor (z. B. wohnen/, arbeit/, finanzen/, versicherungen/, gesundheit/). Erstelle sortierung.md mit: Datei | erkannter Inhalt | vorgeschlagener Ordner | Frist, falls eine im Dokument steht.
-Verschiebe nichts, bevor ich die Liste bestätigt habe. Dateien, die du nicht lesen kannst, markiere.</pre>
-</div>
-
-<h2>Wenn ein Prompt nicht funktioniert</h2>
+<h2>Drei Dinge, die den Ablauf kippen</h2>
 <ul>
-  <li><strong>Claude erfindet etwas:</strong> Regel in <code>regeln.md</code> verschärfen («Wenn eine Angabe fehlt, schreib [OFFEN] und frag mich») und den Chat neu starten.</li>
-  <li><strong>Claude findet nichts im Web:</strong> Die Seite blockiert vermutlich den Zugriff. Chrome-Erweiterung verwenden oder die Seite selbst öffnen und den Text als Datei in den Ordner legen.</li>
-  <li><strong>Der Text klingt nicht nach dir:</strong> Gib Claude zwei, drei Texte, die du selbst geschrieben hast, als <code>stil.md</code> und verweise darauf. Oder schreib einen Rohentwurf in Stichworten und lass Claude nur glätten.</li>
-  <li><strong>Zu lang, zu viel:</strong> «Kürzer. Nur die Kernaussage zuerst, Details danach.» funktioniert erstaunlich gut.</li>
+  <li><strong>Claude fängt ohne Auftrag an zu schreiben.</strong> Dann fehlt die Grundlage und er erfindet. Regel: kein Schritt 4 ohne Auftrag und ohne Blick in <code>_Dokumente</code>.</li>
+  <li><strong>Du korrigierst im Chat statt in der Datei.</strong> Geht, aber beim dritten Durchgang weiss niemand mehr, welche Fassung gilt. Kommentare in der Datei sind die Wahrheit.</li>
+  <li><strong>Die finale PDF wird zu früh gebaut.</strong> Danach ändert man in der PDF herum. Regel: PDF erst auf «fertig», und dann nur aus der letzten <code>.docx</code>.</li>
 </ul>
 
-<nav class="pager"><a class="prev" href="workflow-gesuch.html"><small>Zurück</small>← Workflow: Gesuch</a><a class="next" href="alternativen.html"><small>Weiter</small>ChatGPT & Grok →</a></nav>
+<nav class="pager"><a class="prev" href="datenschutz.html"><small>Zurück</small>← Datenschutz</a><a class="next" href="ordner-dateien.html"><small>Weiter</small>Ordner & Dateien →</a></nav>
 
     <footer>
       <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>

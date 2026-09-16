@@ -18,11 +18,14 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/asrs-v1-1.html` = ASRS v1.1 (ADHS-Selbstbeurteilung, WHO – frei nutzbar).
 - `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
 - `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
-- `docs/claude-anleitung/` = Mehrseiten-Anleitung „Mit Claude arbeiten" (9 Seiten,
+- `docs/claude-anleitung/` = Mehrseiten-Anleitung „Mit Claude arbeiten" (11 Seiten,
   Seitenleiste als Navigation). Jede Seite hat das CSS eingebettet; der Ordner
   ist bewusst getrennt, damit die Seiten untereinander verlinken können.
   Fusszeile mit Credit in jeder Datei. Inhalte sind fiktive Beispiele
   (Nadja Keller, Marco Brunner) – keine echten Personendaten eintragen.
+  Kern: 8-Schritte-Ablauf (regeln.md) + Auftrag pro Aufgabe (auftraege/*.md);
+  Quelle der Seiten ist ein Generator ausserhalb des Repos, die HTML-Dateien
+  sind das Ergebnis.
 - `beispiel-projekt/` = Vorlage-Ordner zur Anleitung (fiktive Daten). Wird als
   `docs/claude-anleitung/beispiel-projekt.zip` zum Download angeboten; nach
   Änderungen an der Vorlage das Zip neu bauen:
