@@ -26,7 +26,12 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
   Kern: 8-Schritte-Ablauf (regeln.md) + Auftrag pro Aufgabe (auftraege/*.md);
   Quelle der Seiten ist ein Generator ausserhalb des Repos, die HTML-Dateien
   sind das Ergebnis.
-- `beispiel-projekt/` = Vorlage-Ordner zur Anleitung (fiktive Daten). Wird als
+- Die **leeren Startordner** (Grundgerüst + Aufgabe) liegen im eigenen Repo
+  `stayingclean/ki-tasks` und werden dort per Action nach
+  `stayingclean.github.io/ki-tasks/<aufgabe>.zip` gebaut. Die Anleitung verlinkt
+  dorthin (Seiten index, ordner-dateien, auftragsvorlagen). Änderungen am Ablauf
+  müssen in beiden Repos nachgezogen werden (dort `grundgeruest/regeln.md`).
+- `beispiel-projekt/` = ausgefüllter Beispiel-Ordner zur Anleitung (fiktive Daten). Wird als
   `docs/claude-anleitung/beispiel-projekt.zip` zum Download angeboten; nach
   Änderungen an der Vorlage das Zip neu bauen:
   `cd beispiel-projekt && zip -r ../docs/claude-anleitung/beispiel-projekt.zip . -x .gitkeep`
