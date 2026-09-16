@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ordner & Dateien · Mit Claude arbeiten</title>
-  <meta name="description" content="_Dokumente, Regeln, Aufträge, Entwürfe, Final">
+  <meta name="description" content="00_Auftraege bis 04_Final, Regeln, Profil, Aufgaben">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -182,40 +182,29 @@ footer code { background: var(--card); }
 <header class="page">
   <p class="kicker">Arbeitsweise</p>
   <h1>Ordner &amp; Dateien</h1>
-  <p class="lead">Ein Hauptordner pro Thema. Deine Unterlagen in <code>_Dokumente</code>, Claudes Arbeit daneben. Ein paar kleine Textdateien halten Regeln, Fakten und den Stand.</p>
+  <p class="lead">Ein Hauptordner pro Thema, die Unterordner nummeriert in der Reihenfolge des Ablaufs. Deine Unterlagen in <code>02_Unterlagen</code>, Claudes Arbeit daneben. Ein paar kleine Textdateien halten Regeln, Fakten und den Stand.</p>
 </header>
 
 <div class="summary">
   <h2>Kurzfassung</h2>
   <ul>
-    <li><strong>Eingaben</strong> von dir: <code>_Dokumente/</code> (PDFs, Scans) und <code>profil.md</code> (deine Fakten als Text).</li>
-    <li><strong>Steuerung:</strong> <code>regeln.md</code> (der Ablauf, einmal geschrieben) und <code>auftraege/</code> (eine kurze Datei pro Aufgabe).</li>
-    <li><strong>Ausgaben</strong> von Claude: <code>recherche/</code>, <code>entwuerfe/</code> (Word), <code>final/</code> (PDF).</li>
+    <li><strong>Eingaben</strong> von dir: <code>02_Unterlagen/</code> (PDFs, Scans) und <code>profil.md</code> (deine Fakten als Text).</li>
+    <li><strong>Reihenfolge:</strong> Die Ordner sind nummeriert wie der Ablauf: <code>00_Auftraege</code>, <code>01_Recherche</code>, <code>02_Unterlagen</code>, <code>03_Entwuerfe</code>, <code>04_Final</code>.</li>
+    <li><strong>Steuerung:</strong> <code>regeln.md</code> (der Ablauf, einmal geschrieben) und <code>00_Auftraege/</code> (eine kurze Datei pro Aufgabe).</li>
+    <li><strong>Ausgaben</strong> von Claude: <code>01_Recherche/</code>, <code>03_Entwuerfe/</code> (Word), <code>04_Final/</code> (PDF).</li>
     <li><strong>Stand:</strong> <code>aufgaben.md</code> (offene Punkte, abhaken) und <code>log.md</code> (was wann passiert ist).</li>
-    <li>Claude legt die ganze Struktur an. Du musst keinen Ordner selbst erstellen, nur <code>_Dokumente</code> füllen.</li>
+    <li>Claude legt die ganze Struktur an. Du musst keinen Ordner selbst erstellen, nur <code>02_Unterlagen</code> füllen.</li>
   </ul>
 </div>
 
 <h2>So sieht ein Hauptordner aus</h2>
 <div class="tree">Wohnung-und-Stelle/            <span class="c">← mit Cowork verbunden</span>
-├── CLAUDE.md                  <span class="c">← nur für Claude: «Lies README.md»</span>
-├── README.md                  <span class="c">← was dieser Ordner ist, wie man weitermacht</span>
-├── regeln.md                  <span class="c">← der Ablauf, für alle Aufgaben gleich</span>
-├── profil.md                  <span class="c">← deine Fakten (ohne AHV, IBAN)</span>
-├── aufgaben.md                <span class="c">← offene Punkte, Claude hakt ab</span>
-├── log.md                     <span class="c">← Tagebuch</span>
 │
-├── _Dokumente/                <span class="c">← DEINE Unterlagen. Claude liest, schreibt nie hinein</span>
-│   ├── lebenslauf.pdf
-│   ├── zeugnis_denner.pdf
-│   ├── betreibungsauszug.pdf
-│   └── budget.pdf
-│
-├── auftraege/                 <span class="c">← pro Aufgabe eine kurze Datei</span>
+├── 00_Auftraege/              <span class="c">← pro Aufgabe eine kurze Datei</span>
 │   ├── 2026-09-16_wohnung-aarau.md
 │   └── 2026-09-18_stelle-detailhandel.md
 │
-├── recherche/                 <span class="c">← Schritt 1–2: was Claude gefunden hat</span>
+├── 01_Recherche/              <span class="c">← Schritt 1–2: was Claude gefunden hat</span>
 │   ├── wohnung-aarau/
 │   │   ├── inserate.md
 │   │   ├── inserate.xlsx
@@ -223,20 +212,34 @@ footer code { background: var(--card); }
 │   └── stelle-detailhandel/
 │       └── inserate.md
 │
-├── entwuerfe/                 <span class="c">← Schritt 4–7: Word-Dateien, du kommentierst</span>
+├── 02_Unterlagen/             <span class="c">← Schritt 3: DEINE Unterlagen. Claude liest, schreibt nie hinein</span>
+│   ├── LIESMICH.md            <span class="c">← was für welche Aufgabe gebraucht wird</span>
+│   ├── lebenslauf.pdf
+│   ├── zeugnis_denner.pdf
+│   ├── betreibungsauszug.pdf
+│   └── budget.pdf
+│
+├── 03_Entwuerfe/              <span class="c">← Schritt 4–7: Word-Dateien, du kommentierst</span>
 │   └── wohnung-aarau/
-│       ├── pruefung.md            <span class="c">← was in _Dokumente fehlt</span>
+│       ├── pruefung.md            <span class="c">← was in 02_Unterlagen fehlt</span>
 │       ├── anschreiben_bahnhofstr.docx
 │       ├── anschreiben_bahnhofstr_v2.docx
 │       └── beilagen.md
 │
-└── final/                     <span class="c">← Schritt 8: PDFs zum Versenden</span>
-    └── wohnung-aarau/
-        ├── 2026-09-20_bewerbung_bahnhofstr.pdf
-        └── mailtext.md</div>
+├── 04_Final/                  <span class="c">← Schritt 8: PDFs zum Versenden</span>
+│   └── wohnung-aarau/
+│       ├── 2026-09-20_bewerbung_bahnhofstr.pdf
+│       └── mailtext.md
+│
+├── CLAUDE.md                  <span class="c">← nur für Claude: «Lies README.md»</span>
+├── README.md                  <span class="c">← was dieser Ordner ist, wie man weitermacht</span>
+├── regeln.md                  <span class="c">← der Ablauf, für alle Aufgaben gleich</span>
+├── profil.md                  <span class="c">← deine Fakten (ohne AHV, IBAN)</span>
+├── aufgaben.md                <span class="c">← offene Punkte, Claude hakt ab</span>
+└── log.md                     <span class="c">← Tagebuch</span></div>
 
 <div class="warn">
-  <p><strong>Der Unterstrich in <code>_Dokumente</code> ist Absicht.</strong> Er sortiert den Ordner nach oben und markiert: Das hier ist meins. Claude bekommt in <code>regeln.md</code> die Anweisung, dort nie zu schreiben. Wenn du Dateien verlierst, dann nicht in diesem Ordner.</p>
+  <p><strong>Die Nummern sind die Reihenfolge des Ablaufs.</strong> 00 Auftrag, 01 Suchen, 02 deine Unterlagen, 03 Entwürfe, 04 Final; so liegt der Ordner im Explorer wie der Arbeitsweg. Die Namen sind Deutsch ohne Umlaute (<code>Auftraege</code>, <code>Entwuerfe</code>), damit sie auf jedem System und in jedem Zip funktionieren. <code>02_Unterlagen</code> gehört dir: Claude bekommt in <code>regeln.md</code> die Anweisung, dort nie zu schreiben.</p>
 </div>
 
 <h2>Die Steuerdateien</h2>
@@ -250,7 +253,7 @@ footer code { background: var(--card); }
     <p>Wer du bist, in Stichworten: Ausbildung, Stationen, Stärken mit Beleg, Einkommen für Wohnungsbewerbungen. Ohne AHV-Nummer, ohne IBAN, Platzhalter stattdessen.</p>
   </div>
   <div class="card">
-    <h3>auftraege/*.md</h3>
+    <h3>00_Auftraege/*.md</h3>
     <p>Pro Aufgabe 10–20 Zeilen: Ziel, Suchkriterien, gewünschte Dokumente, Empfänger, Frist. Siehe <a href="auftraege.html">Aufträge schreiben</a>.</p>
   </div>
   <div class="card">
@@ -272,19 +275,19 @@ footer code { background: var(--card); }
 
 ## Ablauf (immer gleich, Details im jeweiligen Auftrag)
 1. Suchen: Web durchsuchen nach den Kriterien im Auftrag.
-2. Ablegen: Funde unter recherche/&lt;auftrag&gt;/ als .md und .xlsx, Formulare als PDF.
-3. Unterlagen: Ich lege meine Dokumente in _Dokumente/. Du liest dort, schreibst dort NIE.
-4. Entwerfen: Dokumente als .docx unter entwuerfe/&lt;auftrag&gt;/. Vorher _Dokumente
+2. Ablegen: Funde unter 01_Recherche/&lt;auftrag&gt;/ als .md und .xlsx, Formulare als PDF.
+3. Unterlagen: Ich lege meine Dokumente in 02_Unterlagen/. Du liest dort, schreibst dort NIE.
+4. Entwerfen: Dokumente als .docx unter 03_Entwuerfe/&lt;auftrag&gt;/. Vorher 02_Unterlagen
    gegen die Anforderungen prüfen und pruefung.md schreiben (fehlt / widersprüchlich).
 5. Ich kommentiere in Word.
-6. Ich passe _Dokumente an, wenn pruefung.md etwas meldet.
+6. Ich passe 02_Unterlagen an, wenn pruefung.md etwas meldet.
 7. «Kommentare einarbeiten»: pro Kommentar deinen Vorschlag zeigen, ich entscheide,
    dann neue Fassung als _v2, _v3 … Alte Fassung nie überschreiben.
-8. «Fertig»: PDFs nach final/&lt;auftrag&gt;/, aus der letzten .docx, plus Beilagen
+8. «Fertig»: PDFs nach 04_Final/&lt;auftrag&gt;/, aus der letzten .docx, plus Beilagen
    in Reihenfolge und mailtext.md.
 
 ## Schreiben
-- Nur Fakten aus profil.md, dem Auftrag und _Dokumente. Fehlt etwas: fragen, nicht erfinden.
+- Nur Fakten aus profil.md, dem Auftrag und 02_Unterlagen. Fehlt etwas: fragen, nicht erfinden.
 - Kurz, sachlich, Schweizer Rechtschreibung (ss). Keine Floskeln, keine Ausrufezeichen.
 - Gesuche: eine Seite, Betrag im Betreff, dem Empfänger keine Systeme erklären.
 - Keine Angaben zu Gesundheit oder Klinik, ausser der Auftrag verlangt es ausdrücklich.
@@ -323,11 +326,11 @@ footer code { background: var(--card); }
 <p>Wenn du lieber nichts herunterlädst: leeren Ordner verbinden, dann:</p>
 <div class="prompt">
   <div class="ptitle">Prompt · Struktur anlegen <button class="copy" type="button">Kopieren</button></div>
-<pre>Lege in diesem leeren Ordner die Struktur nach der Anleitung «Mit Claude arbeiten» an: README.md, regeln.md (mit dem 8-Schritte-Ablauf), profil.md (leer, mit Vorlage), aufgaben.md, log.md, die Ordner _Dokumente, auftraege, recherche, entwuerfe, final. Wenn du Claude bist und direkt in diesen Ordner schreiben kannst, zusätzlich CLAUDE.md mit «Lies README.md und regeln.md».
+<pre>Lege in diesem leeren Ordner die Struktur nach der Anleitung «Mit Claude arbeiten» an: README.md, regeln.md (mit dem 8-Schritte-Ablauf), profil.md (leer, mit Vorlage), aufgaben.md, log.md, die Ordner 00_Auftraege, 01_Recherche, 02_Unterlagen, 03_Entwuerfe, 04_Final. Wenn du Claude bist und direkt in diesen Ordner schreiben kannst, zusätzlich CLAUDE.md mit «Lies README.md und regeln.md».
 
 Dann stell mir nacheinander höchstens sechs Fragen, um profil.md zu füllen. Schreib nach jeder Antwort sofort in die Datei. Sag mir vorher, welche Angaben du NICHT willst (AHV, IBAN, Diagnosen) und dass ich dafür Platzhalter lassen soll.
 
-Am Ende: Liste, was ich in _Dokumente legen sollte, als aufgaben.md-Einträge.</pre>
+Am Ende: Liste, was ich in 02_Unterlagen legen sollte, als aufgaben.md-Einträge.</pre>
 </div>
 <div class="note">
   <p>Zum Anschauen, wie ein <em>ausgefüllter</em> Ordner aussieht: <a href="beispiel-projekt.zip">beispiel-projekt.zip</a> mit den erfundenen Daten von Nadja Keller (Wohnung und Stelle).</p>

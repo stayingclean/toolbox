@@ -23,7 +23,7 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
   ist bewusst getrennt, damit die Seiten untereinander verlinken können.
   Fusszeile mit Credit in jeder Datei. Inhalte sind fiktive Beispiele
   (Nadja Keller, Marco Brunner) – keine echten Personendaten eintragen.
-  Kern: 8-Schritte-Ablauf (regeln.md) + Auftrag pro Aufgabe (auftraege/*.md);
+  Kern: 8-Schritte-Ablauf (regeln.md) + Auftrag pro Aufgabe (00_Auftraege/*.md);
   Quelle der Seiten ist ein Generator ausserhalb des Repos, die HTML-Dateien
   sind das Ergebnis.
 - Die **leeren Startordner** (Grundgerüst + Aufgabe) liegen im eigenen Repo

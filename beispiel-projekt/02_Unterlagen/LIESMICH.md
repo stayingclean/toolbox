@@ -1,8 +1,8 @@
-# _Dokumente
+# 02_Unterlagen
 
 Hier liegen DEINE Unterlagen (PDF, Scans). Claude liest sie, schreibt aber nie hinein.
 
-Für die beiden Aufträge in auftraege/ brauchst du:
+Für die beiden Aufträge in 00_Auftraege/ brauchst du:
 - betreibungsauszug.pdf (max. 3 Monate alt, Betreibungsamt, ca. CHF 17)
 - einkommensnachweis.pdf
 - referenz_institution.pdf

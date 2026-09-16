@@ -7,10 +7,10 @@ Wohnung, Studio oder WG-Zimmer in Aarau oder 15 km Umkreis, Bezug bis 31.12.2026
 - Portale: homegate.ch, immoscout24.ch, flatfox.ch, wgzimmer.ch, letzte 14 Tage
 - Muss: Miete max. CHF 600 inkl. NK, ÖV zum Bahnhof Aarau max. 15 Min.
 - Ausschluss: Untermiete ohne Vertrag
-- Ablage: recherche/wohnung-aarau/inserate.md + .xlsx, Besichtigungstermine notieren
+- Ablage: 01_Recherche/wohnung-aarau/inserate.md + .xlsx, Besichtigungstermine notieren
 - Bewertung 1–5 mit Begründung
 
-## Schritt 3: Meine Unterlagen (_Dokumente)
+## Schritt 3: Meine Unterlagen (02_Unterlagen)
 - betreibungsauszug.pdf, einkommensnachweis.pdf, referenz_institution.pdf
 
 ## Schritt 4: Dokumente pro Inserat
@@ -20,7 +20,7 @@ Wohnung, Studio oder WG-Zimmer in Aarau oder 15 km Umkreis, Bezug bis 31.12.2026
 - Einmal: fragen_besichtigung.md, fünf Fragen
 
 ## Schritt 8: Final
-- final/wohnung-aarau/<datum>_bewerbung_<strasse>.pdf + mailtext.md (max. 5 Sätze)
+- 04_Final/wohnung-aarau/<datum>_bewerbung_<strasse>.pdf + mailtext.md (max. 5 Sätze)
 
 ## Frist
 Erste Anfragen bis 20.09.2026

@@ -25,7 +25,7 @@
 
 ## Finanzen (für Wohnungsbewerbungen)
 - Einkommen: CHF 1 900 netto (Arbeitstraining), ab Stellenantritt entsprechend höher
-- Betreibungsauszug: ohne Einträge (liegt in _Dokumente)
+- Betreibungsauszug: ohne Einträge (liegt in 02_Unterlagen)
 
 ## Platzhalter (setze ich selbst ein)
 - [ADRESSE] [TELEFON] [EMAIL] [AHV] [IBAN]

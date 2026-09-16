@@ -190,7 +190,7 @@ footer code { background: var(--card); }
   <ul>
     <li>Claude sucht, sammelt, schreibt Entwürfe und baut am Ende das PDF. Du lieferst deine Unterlagen, kontrollierst und entscheidest.</li>
     <li>Die Kontrolle läuft über <strong>Kommentare in Word-Dateien</strong>, nicht über den Chat. Claude liest die Kommentare und arbeitet sie ein.</li>
-    <li>Deine eigenen Dokumente liegen in <code>_Dokumente</code>. Alles, was Claude erzeugt, liegt daneben in eigenen Ordnern. So ist immer klar, was von wem stammt.</li>
+    <li>Deine eigenen Dokumente liegen in <code>02_Unterlagen</code>. Alles, was Claude erzeugt, liegt daneben in eigenen Ordnern. So ist immer klar, was von wem stammt.</li>
     <li>Was sich pro Aufgabe ändert, steht in einer kleinen Datei, dem <a href="auftraege.html">Auftrag</a>. Der Ablauf selbst steht einmal in <code>regeln.md</code>.</li>
   </ul>
 </div>
@@ -199,11 +199,11 @@ footer code { background: var(--card); }
 <div class="flow">
   <div class="box"><b>1 Suchen</b>Claude durchsucht das Web</div>
   <div class="arrow">→</div>
-  <div class="box"><b>2 Ablegen</b>Funde in recherche/</div>
+  <div class="box"><b>2 Ablegen</b>Funde in 01_Recherche/</div>
   <div class="arrow">→</div>
-  <div class="box you"><b>3 Unterlagen</b>Du füllst _Dokumente/</div>
+  <div class="box you"><b>3 Unterlagen</b>Du füllst 02_Unterlagen/</div>
   <div class="arrow">→</div>
-  <div class="box"><b>4 Entwerfen</b>.docx in entwuerfe/</div>
+  <div class="box"><b>4 Entwerfen</b>.docx in 03_Entwuerfe/</div>
   <div class="arrow">→</div>
   <div class="box you"><b>5 Kommentieren</b>Du, in Word</div>
   <div class="arrow">→</div>
@@ -211,7 +211,7 @@ footer code { background: var(--card); }
   <div class="arrow">↻</div>
   <div class="box"><b>7 Wiederholen</b>4–6 bis es passt</div>
   <div class="arrow">→</div>
-  <div class="box"><b>8 Final</b>PDF in final/</div>
+  <div class="box"><b>8 Final</b>PDF in 04_Final/</div>
 </div>
 
 <ol class="steps">
@@ -221,15 +221,15 @@ footer code { background: var(--card); }
   </li>
   <li>
     <h3>Claude legt die Funde ab <span class="label">Claude</span></h3>
-    <p>Unter <code>recherche/</code> in einer Struktur, die zur Aufgabe passt: eine Übersichtstabelle (<code>.md</code> und <code>.xlsx</code>), heruntergeladene Formulare und Merkblätter als PDF, pro Fund eine Zeile mit Link, Frist und Bewertung. Claude erfindet keine Angaben; was er nicht findet, steht als «unklar» drin.</p>
+    <p>Unter <code>01_Recherche/</code> in einer Struktur, die zur Aufgabe passt: eine Übersichtstabelle (<code>.md</code> und <code>.xlsx</code>), heruntergeladene Formulare und Merkblätter als PDF, pro Fund eine Zeile mit Link, Frist und Bewertung. Claude erfindet keine Angaben; was er nicht findet, steht als «unklar» drin.</p>
   </li>
   <li>
-    <h3>Du legst deine Unterlagen in <code>_Dokumente</code> <span class="label ok-l">Du</span></h3>
+    <h3>Du legst deine Unterlagen in <code>02_Unterlagen</code> <span class="label ok-l">Du</span></h3>
     <p>Lebenslauf, Zeugnisse, Betreibungsauszug, Budget, Rechnungen, Absagen der Krankenkasse. Alles, was Claude zum Schreiben braucht und was von dir kommt. Dieser Ordner gehört dir: Claude liest ihn, schreibt aber nie hinein. Was fehlt, sagt dir Claude in <code>pruefung.md</code> (Schritt 6).</p>
   </li>
   <li>
     <h3>Claude erstellt die Dokumente <span class="label">Claude</span></h3>
-    <p>Motivationsschreiben, Gesuch, Lebenslauf, Beilagenverzeichnis, Begleitmail. Immer als <strong>Word-Datei</strong> in <code>entwuerfe/</code>, nur aus den Fakten in <code>profil.md</code>, dem Auftrag und <code>_Dokumente</code>. Platzhalter wie <code>[ADRESSE]</code> bleiben stehen.</p>
+    <p>Motivationsschreiben, Gesuch, Lebenslauf, Beilagenverzeichnis, Begleitmail. Immer als <strong>Word-Datei</strong> in <code>03_Entwuerfe/</code>, nur aus den Fakten in <code>profil.md</code>, dem Auftrag und <code>02_Unterlagen</code>. Platzhalter wie <code>[ADRESSE]</code> bleiben stehen.</p>
   </li>
   <li>
     <h3>Du kontrollierst und kommentierst <span class="label ok-l">Du</span></h3>
@@ -237,8 +237,8 @@ footer code { background: var(--card); }
     <div class="note"><p><strong>Warum Kommentare statt Chat?</strong> Der Kommentar steht genau an der Stelle, um die es geht. Claude sieht Textstelle und Anmerkung zusammen und muss nicht raten, welchen Satz du meinst. Und die Anmerkungen bleiben in der Datei, auch wenn der Chat weg ist.</p></div>
   </li>
   <li>
-    <h3>Du passt <code>_Dokumente</code> an, wenn Claude Lücken meldet <span class="label ok-l">Du</span></h3>
-    <p>Claude schreibt pro Auftrag eine <code>pruefung.md</code>: Was fehlt (Bestätigung Arbeitstraining), was widersprüchlich ist (Lebenslauf sagt 2016, Zeugnis 2017), was die Stiftung zusätzlich verlangt. Du besorgst oder korrigierst die Unterlagen und legst sie wieder in <code>_Dokumente</code>.</p>
+    <h3>Du passt <code>02_Unterlagen</code> an, wenn Claude Lücken meldet <span class="label ok-l">Du</span></h3>
+    <p>Claude schreibt pro Auftrag eine <code>pruefung.md</code>: Was fehlt (Bestätigung Arbeitstraining), was widersprüchlich ist (Lebenslauf sagt 2016, Zeugnis 2017), was die Stiftung zusätzlich verlangt. Du besorgst oder korrigierst die Unterlagen und legst sie wieder in <code>02_Unterlagen</code>.</p>
   </li>
   <li>
     <h3>Wiederholen, bis es passt <span class="label">Claude</span> <span class="label ok-l">Du</span></h3>
@@ -246,7 +246,7 @@ footer code { background: var(--card); }
   </li>
   <li>
     <h3>Claude erstellt die finalen Dokumente <span class="label">Claude</span></h3>
-    <p>Wenn du «fertig» sagst: PDFs in <code>final/</code>, sauber benannt, mit Beilagen in der richtigen Reihenfolge, dazu ein kurzer Mailtext. Zum Ausdrucken oder Anhängen. Platzhalter setzt du im letzten Schritt selbst ein.</p>
+    <p>Wenn du «fertig» sagst: PDFs in <code>04_Final/</code>, sauber benannt, mit Beilagen in der richtigen Reihenfolge, dazu ein kurzer Mailtext. Zum Ausdrucken oder Anhängen. Platzhalter setzt du im letzten Schritt selbst ein.</p>
   </li>
 </ol>
 
@@ -255,7 +255,7 @@ footer code { background: var(--card); }
 <table>
   <tr><th>Claude</th><th>Du</th></tr>
   <tr><td>Suchen, sammeln, bewerten</td><td>Entscheiden, welche Treffer weiterverfolgt werden</td></tr>
-  <tr><td>Entwürfe schreiben, nur aus deinen Fakten</td><td>Fakten liefern (<code>profil.md</code>, <code>_Dokumente</code>)</td></tr>
+  <tr><td>Entwürfe schreiben, nur aus deinen Fakten</td><td>Fakten liefern (<code>profil.md</code>, <code>02_Unterlagen</code>)</td></tr>
   <tr><td>Lücken und Widersprüche melden (<code>pruefung.md</code>)</td><td>Unterlagen besorgen oder korrigieren</td></tr>
   <tr><td>Kommentare einarbeiten, neue Fassung ablegen</td><td>Kommentieren, freigeben («fertig»)</td></tr>
   <tr><td>PDFs bauen, <code>aufgaben.md</code> und <code>log.md</code> nachführen</td><td>Platzhalter einsetzen, unterschreiben, versenden</td></tr>
@@ -266,11 +266,11 @@ footer code { background: var(--card); }
 <p>Weil der Ablauf in <code>regeln.md</code> steht und die Aufgabe im Auftrag, ist der Chat selbst kurz. Drei Sätze reichen für einen ganzen Durchgang:</p>
 <div class="prompt">
   <div class="ptitle">Schritte 1–2 · Suchen und ablegen <button class="copy" type="button">Kopieren</button></div>
-<pre>Führe den Auftrag auftraege/2026-09-16_wohnung-aarau.md aus, Schritte 1 und 2. Halte dann an und zeig mir die Übersicht.</pre>
+<pre>Führe den Auftrag 00_Auftraege/2026-09-16_wohnung-aarau.md aus, Schritte 1 und 2. Halte dann an und zeig mir die Übersicht.</pre>
 </div>
 <div class="prompt">
   <div class="ptitle">Schritt 4 · Entwerfen <button class="copy" type="button">Kopieren</button></div>
-<pre>Weiter mit Schritt 4 für die Treffer Nr. 2 und 5. Prüfe vorher _Dokumente gegen die Anforderungen und schreib pruefung.md.</pre>
+<pre>Weiter mit Schritt 4 für die Treffer Nr. 2 und 5. Prüfe vorher 02_Unterlagen gegen die Anforderungen und schreib pruefung.md.</pre>
 </div>
 <div class="prompt">
   <div class="ptitle">Schritt 7 · Kommentare einarbeiten <button class="copy" type="button">Kopieren</button></div>
@@ -278,12 +278,12 @@ footer code { background: var(--card); }
 </div>
 <div class="prompt">
   <div class="ptitle">Schritt 8 · Final <button class="copy" type="button">Kopieren</button></div>
-<pre>Fertig. Erstelle die finalen PDFs in final/ inklusive Beilagen und Mailtext. Führe aufgaben.md und log.md nach.</pre>
+<pre>Fertig. Erstelle die finalen PDFs in 04_Final/ inklusive Beilagen und Mailtext. Führe aufgaben.md und log.md nach.</pre>
 </div>
 
 <h2>Drei Dinge, die den Ablauf kippen</h2>
 <ul>
-  <li><strong>Claude fängt ohne Auftrag an zu schreiben.</strong> Dann fehlt die Grundlage und er erfindet. Regel: kein Schritt 4 ohne Auftrag und ohne Blick in <code>_Dokumente</code>.</li>
+  <li><strong>Claude fängt ohne Auftrag an zu schreiben.</strong> Dann fehlt die Grundlage und er erfindet. Regel: kein Schritt 4 ohne Auftrag und ohne Blick in <code>02_Unterlagen</code>.</li>
   <li><strong>Du korrigierst im Chat statt in der Datei.</strong> Geht, aber beim dritten Durchgang weiss niemand mehr, welche Fassung gilt. Kommentare in der Datei sind die Wahrheit.</li>
   <li><strong>Die finale PDF wird zu früh gebaut.</strong> Danach ändert man in der PDF herum. Regel: PDF erst auf «fertig», und dann nur aus der letzten <code>.docx</code>.</li>
 </ul>

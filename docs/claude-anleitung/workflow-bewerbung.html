@@ -197,7 +197,7 @@ footer code { background: var(--card); }
 <ol class="steps">
   <li>
     <h3>Vorbereitung: Ordner und Auftrag</h3>
-    <p>Nadja lässt Claude in einem leeren Ordner <code>Stellensuche</code> die Struktur anlegen (Prompt unter <a href="ordner-dateien.html">Ordner &amp; Dateien</a>) und beantwortet sechs Fragen für <code>profil.md</code>. In <code>_Dokumente</code> legt sie ihren alten Lebenslauf, zwei Arbeitszeugnisse und das EFZ-Diplom. Dann kopiert sie die <a href="auftragsvorlagen.html">Vorlage «Stelle»</a> nach <code>auftraege/2026-09-16_stelle-detailhandel.md</code> und ändert Region, Pensum und Ausschlüsse.</p>
+    <p>Nadja lässt Claude in einem leeren Ordner <code>Stellensuche</code> die Struktur anlegen (Prompt unter <a href="ordner-dateien.html">Ordner &amp; Dateien</a>) und beantwortet sechs Fragen für <code>profil.md</code>. In <code>02_Unterlagen</code> legt sie ihren alten Lebenslauf, zwei Arbeitszeugnisse und das EFZ-Diplom. Dann kopiert sie die <a href="auftragsvorlagen.html">Vorlage «Stelle»</a> nach <code>00_Auftraege/2026-09-16_stelle-detailhandel.md</code> und ändert Region, Pensum und Ausschlüsse.</p>
 <pre><code># Auftrag: Stelle im Detailhandel
 
 ## Ziel
@@ -207,10 +207,10 @@ Stelle 60–80 % im Detailhandel oder Lager, Region Aarau, Antritt innert 3 Mona
 - Portale: jobs.ch, indeed.ch, jobagent.ch, job-room.ch, letzte 30 Tage
 - Muss: ÖV von Aarau max. 40 Min., keine Nachtschicht
 - Ausschluss: Aussendienst, reine Kassenstelle, Temporärbüro
-- Ablage: recherche/stelle-detailhandel/inserate.md + .xlsx
+- Ablage: 01_Recherche/stelle-detailhandel/inserate.md + .xlsx
 - Passung 1–5, ehrlich, mit dem Hauptgrund dagegen
 
-## Schritt 3: Meine Unterlagen (_Dokumente)
+## Schritt 3: Meine Unterlagen (02_Unterlagen)
 - lebenslauf_alt.pdf, zeugnis_denner.pdf, zeugnis_coop.pdf, diplom_efz.pdf
 
 ## Schritt 4: Dokumente pro Bewerbung
@@ -220,7 +220,7 @@ Stelle 60–80 % im Detailhandel oder Lager, Region Aarau, Antritt innert 3 Mona
 - beilagen.md, abgeglichen mit dem Inserat
 
 ## Schritt 8: Final
-- final/stelle-detailhandel/&lt;datum&gt;_&lt;firma&gt;/ mit beiden PDFs und mailtext.md
+- 04_Final/stelle-detailhandel/&lt;datum&gt;_&lt;firma&gt;/ mit beiden PDFs und mailtext.md
 
 ## Frist
 Erste Bewerbung bis 20.09.2026</code></pre>
@@ -230,7 +230,7 @@ Erste Bewerbung bis 20.09.2026</code></pre>
     <h3>Schritte 1–2: Suchen und ablegen <span class="label">Claude</span></h3>
     <div class="prompt">
       <div class="ptitle">Prompt <button class="copy" type="button">Kopieren</button></div>
-<pre>Führe den Auftrag auftraege/2026-09-16_stelle-detailhandel.md aus, Schritte 1 und 2. Halte danach an und zeig mir die Übersicht.</pre>
+<pre>Führe den Auftrag 00_Auftraege/2026-09-16_stelle-detailhandel.md aus, Schritte 1 und 2. Halte danach an und zeig mir die Übersicht.</pre>
     </div>
     <p>Claude fragt einmal nach («Zählt Lenzburg zur Region?»), durchsucht die Portale und legt <code>inserate.md</code> und <code>inserate.xlsx</code> ab: zwölf Treffer, drei mit Passung 4 oder 5, bei jedem der Hauptgrund dagegen. In <code>aufgaben.md</code> stehen jetzt die drei mit Frist.</p>
     <div class="warn"><p><strong>Chrome-Erweiterung:</strong> Wenn ein Portal ohne Browser nichts liefert oder Nadja ihr Job-Room-Konto (RAV) durchsuchen lassen will, ergänzt sie: «Nutze dafür meinen Chrome-Browser.» Sie ist dort selbst eingeloggt, Claude fragt pro Website um Erlaubnis.</p></div>
@@ -238,12 +238,12 @@ Erste Bewerbung bis 20.09.2026</code></pre>
 
   <li>
     <h3>Schritt 3: Unterlagen prüfen <span class="label ok-l">Du</span></h3>
-    <p>Nadja liest die Tabelle, öffnet die drei Links selbst und entscheidet sich für Nr. 3, stellvertretende Teamleiterin Frische in Lenzburg, 70 %. Das ist die Entscheidung, die nur sie treffen kann. Sie prüft kurz, ob alles in <code>_Dokumente</code> liegt, und schreibt: «Weiter mit Schritt 4 für Nr. 3.»</p>
+    <p>Nadja liest die Tabelle, öffnet die drei Links selbst und entscheidet sich für Nr. 3, stellvertretende Teamleiterin Frische in Lenzburg, 70 %. Das ist die Entscheidung, die nur sie treffen kann. Sie prüft kurz, ob alles in <code>02_Unterlagen</code> liegt, und schreibt: «Weiter mit Schritt 4 für Nr. 3.»</p>
   </li>
 
   <li>
     <h3>Schritt 4: Entwerfen <span class="label">Claude</span></h3>
-    <p>Claude vergleicht zuerst <code>_Dokumente</code> mit dem Inserat und schreibt <code>entwuerfe/stelle-detailhandel/lenzburg/pruefung.md</code>: Das Inserat verlangt einen aktuellen Lebenslauf mit Foto; das Zeugnis Coop endet 2016, der Lebenslauf sagt 2017. Dann legt er <code>motivationsschreiben.docx</code>, <code>lebenslauf.docx</code> und <code>beilagen.md</code> ab und zeigt beide Texte im Chat.</p>
+    <p>Claude vergleicht zuerst <code>02_Unterlagen</code> mit dem Inserat und schreibt <code>03_Entwuerfe/stelle-detailhandel/lenzburg/pruefung.md</code>: Das Inserat verlangt einen aktuellen Lebenslauf mit Foto; das Zeugnis Coop endet 2016, der Lebenslauf sagt 2017. Dann legt er <code>motivationsschreiben.docx</code>, <code>lebenslauf.docx</code> und <code>beilagen.md</code> ab und zeigt beide Texte im Chat.</p>
   </li>
 
   <li>
@@ -254,7 +254,7 @@ Erste Bewerbung bis 20.09.2026</code></pre>
 
   <li>
     <h3>Schritt 6: Unterlagen anpassen <span class="label ok-l">Du</span></h3>
-    <p>Wegen <code>pruefung.md</code>: Nadja legt ein aktuelles Foto in <code>_Dokumente</code> und ersetzt <code>lebenslauf_alt.pdf</code> durch nichts; der neue Lebenslauf kommt ohnehin von Claude. Den Widerspruch beim Jahr hat sie im Entwurf schon korrigiert.</p>
+    <p>Wegen <code>pruefung.md</code>: Nadja legt ein aktuelles Foto in <code>02_Unterlagen</code> und ersetzt <code>lebenslauf_alt.pdf</code> durch nichts; der neue Lebenslauf kommt ohnehin von Claude. Den Widerspruch beim Jahr hat sie im Entwurf schon korrigiert.</p>
   </li>
 
   <li>
@@ -270,9 +270,9 @@ Erste Bewerbung bis 20.09.2026</code></pre>
     <h3>Schritt 8: Final <span class="label">Claude</span></h3>
     <div class="prompt">
       <div class="ptitle">Prompt <button class="copy" type="button">Kopieren</button></div>
-<pre>Fertig. Erstelle die finalen PDFs in final/ inklusive Beilagen und Mailtext. Führe aufgaben.md und log.md nach.</pre>
+<pre>Fertig. Erstelle die finalen PDFs in 04_Final/ inklusive Beilagen und Mailtext. Führe aufgaben.md und log.md nach.</pre>
     </div>
-    <p>In <code>final/stelle-detailhandel/2026-09-18_lenzburg/</code> liegen <code>motivationsschreiben.pdf</code>, <code>lebenslauf.pdf</code>, <code>beilagen.pdf</code> und <code>mailtext.md</code>. Nadja setzt Adresse und Telefon ein (Platzhalter, siehe <a href="datenschutz.html">Datenschutz</a>), hängt die PDFs an die Mail und schickt sie ab. Bei einem Portal-Formular füllt Claude über die Chrome-Erweiterung aus, sie klickt selbst auf «Senden».</p>
+    <p>In <code>04_Final/stelle-detailhandel/2026-09-18_lenzburg/</code> liegen <code>motivationsschreiben.pdf</code>, <code>lebenslauf.pdf</code>, <code>beilagen.pdf</code> und <code>mailtext.md</code>. Nadja setzt Adresse und Telefon ein (Platzhalter, siehe <a href="datenschutz.html">Datenschutz</a>), hängt die PDFs an die Mail und schickt sie ab. Bei einem Portal-Formular füllt Claude über die Chrome-Erweiterung aus, sie klickt selbst auf «Senden».</p>
   </li>
 </ol>
 
