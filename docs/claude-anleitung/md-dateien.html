@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown-Dateien · Mit Claude arbeiten</title>
+  <meta name="description" content="Warum .md-Dateien das Herzstück sind">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg: #FAF8F5; --card: #FFFFFF; --card-hover: #F5FAFA; --border: #E8E4DF;
+  --text: #1C1C1C; --muted: #7A7268; --accent: #008080; --accent-dark: #006666;
+  --accent-tint: #E6F2F2; --warn-tint: #FFF4E5; --warn: #B45309;
+  --ok-tint: #EAF6EC; --ok: #2F7D3A;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --sidebar: 260px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; font-family: var(--font-body); background: var(--bg); color: var(--text);
+  line-height: 1.55; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 80% 55% at 50% 0%, var(--accent-tint) 0%, transparent 68%);
+  opacity: 0.3; animation: breathe 7s ease-in-out infinite; }
+@keyframes breathe { 0%,100% { opacity: .22; transform: scaleY(1);} 50% { opacity: .40; transform: scaleY(1.05);} }
+a { color: var(--accent-dark); }
+
+/* Layout: Seitenleiste links, Inhalt rechts */
+.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
+.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 28px 18px 28px 22px;
+  border-right: 1px solid var(--border); background: rgba(255,255,255,.55); backdrop-filter: blur(6px); }
+.brand { display: block; text-decoration: none; margin-bottom: 22px; }
+.brand .title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--accent-dark); line-height: 1.2; }
+.brand .back { display: block; font-size: .78rem; color: var(--muted); margin-top: 4px; }
+.brand .back:hover { color: var(--accent); }
+.nav h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 6px; }
+.nav a { display: block; padding: 7px 10px; border-radius: 9px; text-decoration: none; color: var(--text); font-size: .93rem; }
+.nav a:hover { background: var(--card-hover); color: var(--accent-dark); }
+.nav a.active { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; }
+.nav a .n { display: inline-block; width: 1.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.nav a.active .n { color: var(--accent); }
+
+.menu-toggle { display: none; }
+
+main { padding: 44px 48px 64px; max-width: 860px; }
+header.page { margin-bottom: 28px; }
+.kicker { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 6px; }
+h1 { font-family: var(--font-display); font-size: 2.1rem; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; color: var(--accent-dark); }
+.lead { color: var(--muted); font-size: 1.08rem; margin: 0; }
+h2 { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; margin: 40px 0 12px; color: var(--accent-dark); }
+h3 { font-size: 1.05rem; margin: 26px 0 8px; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 6px; }
+li > ul, li > ol { margin-top: 6px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--card); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; }
+pre { background: #1F2A2A; color: #EAF2F2; padding: 16px 18px; border-radius: 12px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: .86rem; line-height: 1.5; margin: 0 0 18px; white-space: pre-wrap; }
+pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin: 0 0 16px; }
+.card h3 { margin-top: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 0 0 18px; }
+.grid .card { margin: 0; }
+a.card { display: block; text-decoration: none; color: var(--text); transition: transform .15s, border-color .15s; }
+a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+a.card .name { font-weight: 600; color: var(--accent-dark); display: block; margin-bottom: 4px; }
+a.card .meta { color: var(--muted); font-size: .88rem; }
+
+.note { border-left: 4px solid var(--accent); background: var(--accent-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.warn { border-left: 4px solid var(--warn); background: var(--warn-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.ok { border-left: 4px solid var(--ok); background: var(--ok-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.note p:last-child, .warn p:last-child, .ok p:last-child { margin-bottom: 0; }
+.label { display: inline-block; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px;
+  border-radius: 999px; background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; vertical-align: middle; }
+.label.warn-l { background: var(--warn-tint); color: var(--warn); }
+.label.ok-l { background: var(--ok-tint); color: var(--ok); }
+
+.summary { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin: 0 0 28px; }
+.summary h2 { margin: 0 0 8px; font-size: 1.1rem; font-family: var(--font-body); color: var(--text); }
+.summary ul { margin-bottom: 0; }
+
+/* Schritte */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 24px; }
+.steps > li { position: relative; padding: 0 0 22px 52px; margin: 0; }
+.steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
+  width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; font-size: .95rem; }
+.steps > li::after { content: ''; position: absolute; left: 17px; top: 40px; bottom: 0; width: 2px; background: var(--border); }
+.steps > li:last-child::after { display: none; }
+.steps > li h3 { margin: 6px 0 8px; }
+
+/* Prompt-Box */
+.prompt { position: relative; border: 1px solid #CDE4E4; background: #F3FAFA; border-radius: 12px; padding: 14px 16px 14px; margin: 0 0 18px; }
+.prompt .ptitle { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent-dark); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.prompt pre { margin: 0; background: #FFFFFF; color: var(--text); border: 1px solid var(--border); font-family: var(--font-body); font-size: .92rem; }
+.copy { font: inherit; font-size: .75rem; letter-spacing: 0; text-transform: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
+  background: #fff; color: var(--accent-dark); cursor: pointer; }
+.copy:hover { border-color: var(--accent); }
+
+/* Tabellen */
+.tablewrap { overflow-x: auto; margin: 0 0 18px; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+tr:last-child td { border-bottom: 0; }
+td.y { color: var(--ok); font-weight: 600; } td.n { color: var(--warn); font-weight: 600; }
+
+/* Ordnerbaum */
+.tree { font-family: var(--font-mono); font-size: .86rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 0 0 18px; white-space: pre; overflow-x: auto; line-height: 1.6; }
+.tree .c { color: var(--muted); }
+
+/* Diagramm (Flow) */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 20px; }
+.flow .box { flex: 1 1 140px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: .9rem; }
+.flow .box b { display: block; color: var(--accent-dark); margin-bottom: 4px; }
+.flow .arrow { align-self: center; color: var(--accent); font-size: 1.3rem; }
+.flow .box.you { border-color: #CDE4E4; background: var(--accent-tint); }
+
+/* Blättern */
+.pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); }
+.pager a { flex: 1; text-decoration: none; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); }
+.pager a:hover { border-color: var(--accent); }
+.pager a small { display: block; color: var(--muted); font-size: .78rem; }
+.pager a.next { text-align: right; }
+
+footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
+footer code { background: var(--card); }
+.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
+.footer-credit { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-credit:hover { color: var(--accent); }
+.footer-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; display: block; }
+.footer-coffee { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-coffee:hover { color: var(--accent); }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); padding: 16px 18px; }
+  .menu-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; font: inherit; font-weight: 600;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; cursor: pointer; color: var(--accent-dark); }
+  .nav { display: none; margin-top: 10px; }
+  .nav.open { display: block; }
+  .brand { margin-bottom: 12px; }
+  main { padding: 28px 18px 48px; }
+  h1 { font-size: 1.7rem; }
+  .footer-sep { display: none; }
+}
+@media print { .sidebar, .pager, .copy { display: none; } .layout { display: block; } main { max-width: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="index.html">
+      <span class="title">Mit Claude arbeiten</span>
+      <span class="back">Anleitung · Toolbox</span>
+    </a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Inhalt <span aria-hidden="true">☰</span></button>
+    <nav class="nav" id="nav">
+<h2>Einstieg</h2>
+<a href="index.html"><span class="n">1</span>Start</a>
+<a href="voraussetzungen.html"><span class="n">2</span>Voraussetzungen</a>
+<a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
+<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
+<h2>Arbeitsweise</h2>
+<a href="md-dateien.html" class="active" aria-current="page"><span class="n">5</span>Markdown-Dateien</a>
+<a href="workflow-bewerbung.html"><span class="n">6</span>Workflow: Bewerbung</a>
+<a href="workflow-gesuch.html"><span class="n">7</span>Workflow: Gesuch</a>
+<h2>Weiterführend</h2>
+<a href="prompts.html"><span class="n">8</span>Weitere Prompts</a>
+<a href="alternativen.html"><span class="n">9</span>ChatGPT & Grok</a>
+    </nav>
+  </aside>
+  <main>
+<header class="page">
+  <p class="kicker">Arbeitsweise</p>
+  <h1>Markdown-Dateien: das Herzstück</h1>
+  <p class="lead">Ein Prinzip, das alle Workflows einfacher macht: Deine Fakten stehen in kleinen Textdateien, nicht im Chat.</p>
+</header>
+
+<div class="summary">
+  <h2>Kurzfassung</h2>
+  <ul>
+    <li>Eine <code>.md</code>-Datei ist eine reine Textdatei mit ein paar Zeichen für Überschriften und Listen. Öffnen mit jedem Editor (Notepad, TextEdit), lesbar für Menschen und für Claude.</li>
+    <li>Du schreibst deine Fakten <strong>einmal</strong> hinein (Profil, Ziele, Stand der Dinge). Claude liest sie bei jeder Sitzung und schreibt nur damit.</li>
+    <li>Ergebnis: weniger Wiederholen, weniger erfundene Angaben, und du hast auch ohne Claude alles beisammen.</li>
+    <li><strong>Wichtige Abgrenzung:</strong> <code>.md</code> ist für das, was <em>hinein</em>geht (Fakten, Regeln, Stand). Was <em>heraus</em>kommt (Brief, Gesuch, Tabelle), lässt du als PDF, Word oder Excel erzeugen. Das können alle öffnen, auch der Sozialdienst oder die Stiftung.</li>
+  </ul>
+</div>
+
+<h2>Warum nicht einfach alles in den Chat tippen?</h2>
+<p>Das habe ich anfangs gemacht. Drei Probleme:</p>
+<ul>
+  <li><strong>Der Chat vergisst.</strong> Jeder neue Chat fängt bei null an. Du erzählst zum vierten Mal, wo du gearbeitet hast.</li>
+  <li><strong>Claude füllt Lücken.</strong> Wenn eine Angabe fehlt, erfindet ein KI-Modell gern etwas Plausibles. Bei einem Gesuch ist das gefährlich.</li>
+  <li><strong>Du verlierst den Überblick.</strong> Nach zwei Wochen weisst du nicht mehr, in welchem Chat die gute Version des Motivationsschreibens war.</li>
+</ul>
+<p>Mit Dateien im Ordner drehst du das um: Die Wahrheit steht in der Datei, der Chat ist nur das Werkzeug.</p>
+
+<h2>Was Markdown ist, in zwei Minuten</h2>
+<p>Markdown ist Text mit ein paar Zeichen für die Struktur. Mehr musst du nicht wissen:</p>
+<pre><code># Grosse Überschrift
+## Kleinere Überschrift
+
+Normaler Text. **fett** und *kursiv*.
+
+- Aufzählung
+- noch ein Punkt
+
+1. Nummerierte Liste
+2. zweiter Punkt
+
+[Ein Link](https://beispiel.ch)</code></pre>
+<p>Die Datei speicherst du mit der Endung <code>.md</code>, zum Beispiel <code>profil.md</code>. Unter Windows: Notepad öffnen, Text schreiben, «Speichern unter», als Dateityp «Alle Dateien» wählen und <code>profil.md</code> eintippen. Oder du lässt Claude die erste Datei anlegen und bearbeitest sie danach.</p>
+
+<div class="note">
+  <p><strong>Warum nicht Word für die Fakten?</strong> Word-Dateien enthalten viel unsichtbare Formatierung; Claude kann sie lesen, aber nicht so sauber bearbeiten. Eine <code>.md</code>-Datei ist klein, überall zu öffnen, und Änderungen sind eindeutig. Für die fertigen Dokumente erzeugt Claude dann das Format, das du brauchst (siehe unten).</p>
+</div>
+
+<h3>Programme, mit denen sich .md-Dateien angenehm bearbeiten lassen</h3>
+<p>Notepad reicht, aber komfortabler geht es mit einem Programm, das die Struktur farbig anzeigt und eine Vorschau bietet. Alle hier sind gratis:</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Programm</th><th>Für wen</th><th>Bemerkung</th></tr>
+  <tr><td><a href="https://code.visualstudio.com" target="_blank" rel="noopener">VS Code</a> (Microsoft)</td><td>Wer einen ganzen Ordner im Blick haben will</td><td>Ordner öffnen, links alle Dateien, rechts der Text; <kbd>Ctrl+Shift+V</kbd> zeigt die Vorschau. Windows, Mac, Linux.</td></tr>
+  <tr><td><a href="https://obsidian.md" target="_blank" rel="noopener">Obsidian</a></td><td>Wer es wie ein Notizbuch will</td><td>Ordner als «Vault» öffnen, Vorschau beim Tippen, verlinkt Dateien untereinander. Privat gratis.</td></tr>
+  <tr><td><a href="https://notepad-plus-plus.org" target="_blank" rel="noopener">Notepad++</a></td><td>Wer nur Windows und etwas Schlichtes will</td><td>Leichtgewichtig, keine Vorschau, aber Farben für Überschriften.</td></tr>
+  <tr><td>Claude selbst</td><td>Wer nichts installieren will</td><td>«Öffne profil.md und ändere den Wohnort auf …» funktioniert in Cowork genauso. Zum Lesen zeigt dir Claude die Datei im Chat.</td></tr>
+</table>
+</div>
+
+<h3>Die Datei CLAUDE.md: Regeln, die Claude von selbst liest</h3>
+<p>Claude sucht beim Start einer Cowork-Sitzung im verbundenen Ordner nach einer Datei namens <code>CLAUDE.md</code> und liest sie automatisch. Wenn du deine <code>regeln.md</code> so nennst, musst du nicht in jedem Prompt «Lies zuerst regeln.md» schreiben. Inhalt und Aufbau sind identisch; nur der Dateiname ist die Verabredung.</p>
+<div class="warn">
+  <p><strong>Nur für Claude.</strong> Der Name <code>CLAUDE.md</code> ist eine Konvention von Anthropic. ChatGPT, Grok oder andere Programme ignorieren die Datei; dort lädst du sie wie jede andere hoch. Ich halte die Regeln darum in <code>regeln.md</code> und lege daneben eine <code>CLAUDE.md</code> mit nur einer Zeile an: «Lies regeln.md und halte dich daran.» So bleibt die Datei anbieterneutral.</p>
+</div>
+
+<h2>Fertiger Beispiel-Ordner zum Ausprobieren</h2>
+<div class="ok">
+  <p><strong><a href="beispiel-projekt.zip">beispiel-projekt.zip herunterladen</a></strong> (6 KB): ein kompletter Ordner für Stellen- und Wohnungssuche mit allen Dateien dieser Seite, gefüllt mit den erfundenen Daten von Nadja Keller. Entpacken, in Cowork verbinden, «Hallo, was steht an?» schreiben. Wenn die Antwort mit «Kompass» beginnt, hat Claude die <code>CLAUDE.md</code> von selbst gelesen. Danach die eigenen Daten eintragen und die Prompts aus den Workflows durchspielen.</p>
+</div>
+
+<h2>Du musst die Struktur nicht selbst erfinden</h2>
+<p>Der einfachste Einstieg: Claude die Struktur vorschlagen lassen. Er kennt die üblichen Anforderungen für Bewerbungen und Gesuche und legt Ordner und Dateien an, die du dann füllst.</p>
+<div class="prompt">
+  <div class="ptitle">Prompt · Struktur anlegen lassen <button class="copy" type="button">Kopieren</button></div>
+<pre>Ich will in diesem Ordner [Bewerbungen für Stellen im Detailhandel / Gesuche an Stiftungen wegen Zahnarztkosten] vorbereiten.
+
+Schlag mir eine Ordnerstruktur vor und lege sie an:
+- Welche Textdateien (.md) ich brauche, mit einer kurzen Vorlage und Beispielzeilen in jeder Datei, damit ich weiss, was hineingehört.
+- Welche Unterlagen (PDF, Scans) ich typischerweise brauche, als Checkliste in unterlagen/CHECKLISTE.md mit Kästchen zum Abhaken.
+- Eine Datei aufgaben.md mit den nächsten Schritten, die du ab jetzt nachführst.
+
+Stell mir danach 5–8 Fragen und fülle aus meinen Antworten profil.md.</pre>
+</div>
+
+<h2>Die fünf Dateien, die sich bewährt haben</h2>
+<div class="grid">
+  <div class="card">
+    <h3>profil.md</h3>
+    <p>Wer du bist, in Stichworten: Ausbildung, Stationen, Fähigkeiten, was du suchst. Ohne AHV-Nummer, ohne Bankdaten. Wird einmal geschrieben, selten geändert.</p>
+  </div>
+  <div class="card">
+    <h3>kriterien.md</h3>
+    <p>Was du willst und was nicht: Region, Pensum, Lohnuntergrenze, Miete maximal, keine Nachtarbeit. Claude filtert damit die Suche.</p>
+  </div>
+  <div class="card">
+    <h3>log.md</h3>
+    <p>Das Tagebuch des Projekts. Claude trägt nach jedem Schritt ein, was erledigt ist, was offen ist, welche Fristen laufen. Beim nächsten Start liest er zuerst diese Datei.</p>
+  </div>
+  <div class="card">
+    <h3>aufgaben.md</h3>
+    <p>Die offene Liste mit Kästchen. Claude hakt ab, was erledigt ist, und trägt neue Punkte mit Frist ein. Das Erste, was du morgens anschaust.</p>
+  </div>
+  <div class="card">
+    <h3>regeln.md</h3>
+    <p>Wie Claude arbeiten soll: «Nur Fakten aus profil.md verwenden. Bei fehlenden Angaben fragen, nichts erfinden. Schweizer Rechtschreibung (ss statt ß). Vor dem Schreiben eines PDFs den Text zeigen. aufgaben.md nachführen.»</p>
+  </div>
+</div>
+
+<h3>Beispiel: aufgaben.md (von Claude gepflegt)</h3>
+<pre><code># Aufgaben
+
+## Offen
+- [ ] Bestätigung Arbeitstraining bei Frau [Name] anfordern — bis 18.09.
+- [ ] Gesuch Stiftung 1 ausdrucken, unterschreiben, Post — bis 20.09.
+- [ ] Bewerbung Lenzburg: Nachfassen, falls bis 30.09. keine Antwort
+- [ ] Inserat Nr. 7 (Aarau, 60 %) prüfen, Frist 25.09.
+
+## Wartet auf Antwort
+- Bewerbung Lenzburg, versendet 15.09.
+- Krankenkasse, Anfrage Kostengutsprache, 12.09.
+
+## Erledigt
+- [x] 14.09. Inserate gesucht (12 Treffer, 3 passend)
+- [x] 15.09. Bewerbung Lenzburg als PDF erstellt und versendet
+- [x] 16.09. Gesuch Stiftung 1 Entwurf, Beilagen geprüft</code></pre>
+<p>Der Satz in <code>regeln.md</code>, der das auslöst: «Führe aufgaben.md nach: Erledigtes abhaken und mit Datum nach unten verschieben, Neues mit Frist unter Offen eintragen. Bei jedem Start zuerst die offenen Punkte nennen.»</p>
+
+<h3>Beispiel: profil.md (fiktiv)</h3>
+<pre><code># Profil
+
+## Person
+- Name: Nadja Keller
+- Wohnort: Region Aarau (Umzug bis Ende Jahr geplant)
+- Geboren: 1991
+- Sprachen: Deutsch (Muttersprache), Englisch (gut), Italienisch (Grundkenntnisse)
+
+## Ausbildung
+- 2007–2010 Detailhandelsfachfrau EFZ, Lebensmittel, Coop Aarau
+- 2019 Zertifikat Kassenverantwortliche (intern)
+
+## Berufliche Stationen
+- 2010–2016 Detailhandelsfachfrau, Coop Aarau (Frische, Kasse)
+- 2016–2023 Stellvertretende Filialleiterin, Denner Lenzburg
+  - Team von 6 Personen, Bestellwesen, Inventur
+- 2023–2025 Unterbruch (gesundheitlich)
+- seit 2025 Wiedereinstieg vorbereitet, Arbeitstraining 50 %
+
+## Stärken (Beispiele)
+- Zuverlässig im Bestellwesen, Fehlbestände in Lenzburg um einen Drittel gesenkt
+- Ruhig im Kundenkontakt, auch bei Reklamationen
+
+## Platzhalter (setze ich selbst ein)
+- [ADRESSE], [TELEFON], [AHV]</code></pre>
+
+<h3>Beispiel: regeln.md</h3>
+<pre><code># Regeln für die Zusammenarbeit
+
+- Lies zuerst log.md, dann profil.md und kriterien.md.
+- Verwende nur Fakten aus diesen Dateien. Fehlt etwas, frag mich. Erfinde nichts.
+- Schweizer Rechtschreibung: ss statt ß. Kein Gendersternchen.
+- Zeig mir jeden Text, bevor du ein PDF oder Word-Dokument erzeugst.
+- Halte Briefe kurz und sachlich. Keine Floskeln, keine Ausrufezeichen.
+- Nach jedem grösseren Schritt: log.md ergänzen (Datum, was erledigt, was offen).
+- Führe aufgaben.md nach: Erledigtes abhaken, Neues mit Frist eintragen.
+  Bei jedem Start zuerst die offenen Punkte nennen.
+- Entwürfe als Word-Datei (.docx) ablegen, damit ich sie mit Kommentaren
+  überarbeiten kann. Erst auf mein Kommando das fertige PDF erzeugen.
+- Lücken im Lebenslauf: nur als «Unterbruch (gesundheitlich)» erwähnen, keine Details.</code></pre>
+
+<h2>Ausgabeformate: Word und Excel zum Überarbeiten, PDF zum Versenden</h2>
+<p>Claude kann Ergebnisse in jedem gängigen Format ablegen. Welches sinnvoll ist, hängt davon ab, was du damit noch tun willst:</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Format</th><th>Wann</th><th>Typisch</th></tr>
+  <tr><td><strong>Word (.docx)</strong></td><td>Solange der Text noch nicht fertig ist. Du kannst selbst tippen oder mit «Kommentar einfügen» Anmerkungen setzen, die Claude beim nächsten Durchgang liest und umsetzt.</td><td>Gesuchsentwurf, Motivationsschreiben, Brief an Gläubiger</td></tr>
+  <tr><td><strong>Excel (.xlsx)</strong></td><td>Für Listen, die du selbst ergänzen willst: Inserate, Schulden, Bewerbungsübersicht fürs RAV.</td><td>inserate.xlsx, schulden.xlsx, arbeitsbemuehungen.xlsx</td></tr>
+  <tr><td><strong>PDF</strong></td><td>Ganz am Schluss. Sieht überall gleich aus, lässt sich nicht aus Versehen verändern, ist das Format für Mail und Post.</td><td>gesuch.pdf, bewerbung_komplett.pdf</td></tr>
+  <tr><td><strong>HTML / Link</strong></td><td>Für Übersichten, die du auf dem Handy anschauen willst. Eine HTML-Datei öffnet jeder Browser, auch ohne Internet.</td><td>Wochenplan, Kontaktliste</td></tr>
+  <tr><td><strong>Markdown (.md)</strong></td><td>Für alles, was Claude wieder lesen soll: Fakten, Regeln, Log, Aufgaben.</td><td>profil.md, log.md, aufgaben.md</td></tr>
+</table>
+</div>
+
+<h3>Der Kreislauf bei Gesuchen: Word mit Anmerkungen → PDF</h3>
+<div class="flow">
+  <div class="box"><b>Entwurf als .docx</b>Claude schreibt aus deinen Dateien</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>Du in Word</b>Text ändern oder Kommentare setzen («kürzer», «Betrag falsch»)</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>Claude arbeitet ein</b>liest Kommentare, setzt um, neue .docx</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>PDF</b>erst wenn du «fertig» sagst</div>
+</div>
+<div class="prompt">
+  <div class="ptitle">Prompt · Kommentare aus Word einarbeiten <button class="copy" type="button">Kopieren</button></div>
+<pre>Ich habe gesuch.docx in Word überarbeitet und Kommentare eingefügt. Lies die Datei inklusive Kommentare.
+
+Zeig mir zuerst jede Anmerkung mit deinem Änderungsvorschlag als Liste. Ich sage dir, welche du umsetzt. Dann speichere die neue Fassung als gesuch_v2.docx und trag in log.md ein, was sich geändert hat.</pre>
+</div>
+<div class="prompt">
+  <div class="ptitle">Prompt · Aus allen Dateien das fertige PDF für den Versand <button class="copy" type="button">Kopieren</button></div>
+<pre>Das Gesuch ist fertig. Erstelle aus gesuch_v2.docx, beilagen.md und den Dateien in unterlagen/ ein einziges versandfertiges PDF: versand/2026-09-20_gesuch_stiftung-1.pdf.
+
+Reihenfolge: Gesuch, Beilagenverzeichnis, dann die Beilagen in der Reihenfolge des Verzeichnisses. Jede Beilage mit einer Kopfzeile «Beilage 1: Rechnung Zahnarzt» usw. Platzhalter [ADRESSE] und [IBAN] lassen, die setze ich selbst ein.
+
+Erstelle daneben versand/mailtext.md mit einem kurzen Begleittext (3 Sätze) für den Versand per E-Mail, und hake in aufgaben.md «Gesuch Stiftung 1 erstellen» ab. Neuer Punkt: «Versand bis 22.09.».</pre>
+</div>
+<p>Der Vorteil dieses Weges: Bis zum letzten Schritt liegt alles als bearbeitbare Datei da. Wenn die Stiftung nachfragt oder du ein zweites Gesuch brauchst, änderst du die <code>.docx</code> und lässt das PDF neu bauen.</p>
+
+<h2>Wie ein Ordner dann aussieht</h2>
+<div class="tree">Bewerbungen/
+├── CLAUDE.md            <span class="c">← eine Zeile: «Lies regeln.md»</span>
+├── regeln.md            <span class="c">← wie Claude arbeiten soll</span>
+├── profil.md            <span class="c">← deine Fakten</span>
+├── kriterien.md         <span class="c">← was du suchst</span>
+├── aufgaben.md          <span class="c">← offene Punkte, von Claude nachgeführt</span>
+├── log.md               <span class="c">← was wann passiert ist</span>
+├── unterlagen/
+│   ├── CHECKLISTE.md    <span class="c">← was noch fehlt, zum Abhaken</span>
+│   ├── lebenslauf.pdf
+│   ├── zeugnis_denner.pdf
+│   └── diplom_efz.pdf
+├── inserate/
+│   ├── 2026-09-14_inserate.md     <span class="c">← Suchergebnis, bewertet</span>
+│   └── 2026-09-14_inserate.xlsx   <span class="c">← dasselbe als Tabelle zum Ergänzen</span>
+└── bewerbungen/
+    ├── 2026-09-15_lenzburg/
+    │   ├── motivationsschreiben.docx   <span class="c">← Entwurf zum Überarbeiten</span>
+    │   ├── motivationsschreiben.pdf    <span class="c">← fertig, zum Versenden</span>
+    │   └── lebenslauf.pdf
+    └── …</div>
+
+<h2>Der Nebeneffekt, der mir am meisten gebracht hat</h2>
+<p>Die Dateien gehören dir und funktionieren ohne Claude. Wenn das Abo ausläuft, wenn du den Anbieter wechselst oder wenn du einfach einen Tag ohne Bildschirm brauchst: <code>profil.md</code> und <code>log.md</code> sind trotzdem da, lesbar, ausdruckbar. Ich habe den Sozialdienst mit einem ausgedruckten <code>log.md</code> auf den Stand gebracht. Das ging schneller als jede Erklärung.</p>
+
+<nav class="pager"><a class="prev" href="datenschutz.html"><small>Zurück</small>← Datenschutz</a><a class="next" href="workflow-bewerbung.html"><small>Weiter</small>Workflow: Bewerbung →</a></nav>
+
+    <footer>
+      <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>
+      <div>Stand: September 2026. Preise, Funktionen und Einstellungen der Anbieter ändern sich laufend – im Zweifel die offiziellen Seiten prüfen.</div>
+      <div class="footer-links">
+        <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+          <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+          <span>Erstellt von stayingclean</span>
+        </a>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+          <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+        </a>
+      </div>
+    </footer>
+
+  </main>
+</div>
+<script>
+(function(){
+  var t=document.querySelector('.menu-toggle'), n=document.querySelector('.nav');
+  if(t&&n){ t.addEventListener('click',function(){ n.classList.toggle('open'); t.setAttribute('aria-expanded', n.classList.contains('open')); }); }
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      var pre=b.closest('.prompt').querySelector('pre');
+      var txt=pre.innerText;
+      function done(){ var o=b.textContent; b.textContent='Kopiert ✓'; setTimeout(function(){ b.textContent=o; },1600); }
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ fallback(); }); } else { fallback(); }
+      function fallback(){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); done(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ordner & Dateien · Mit Claude arbeiten</title>
+  <meta name="description" content="00_Auftraege bis 04_Final, Regeln, Profil, Aufgaben">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg: #FAF8F5; --card: #FFFFFF; --card-hover: #F5FAFA; --border: #E8E4DF;
+  --text: #1C1C1C; --muted: #7A7268; --accent: #008080; --accent-dark: #006666;
+  --accent-tint: #E6F2F2; --warn-tint: #FFF4E5; --warn: #B45309;
+  --ok-tint: #EAF6EC; --ok: #2F7D3A;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --sidebar: 260px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; font-family: var(--font-body); background: var(--bg); color: var(--text);
+  line-height: 1.55; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 80% 55% at 50% 0%, var(--accent-tint) 0%, transparent 68%);
+  opacity: 0.3; animation: breathe 7s ease-in-out infinite; }
+@keyframes breathe { 0%,100% { opacity: .22; transform: scaleY(1);} 50% { opacity: .40; transform: scaleY(1.05);} }
+a { color: var(--accent-dark); }
+
+/* Layout: Seitenleiste links, Inhalt rechts */
+.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
+.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 28px 18px 28px 22px;
+  border-right: 1px solid var(--border); background: rgba(255,255,255,.55); backdrop-filter: blur(6px); }
+.brand { display: block; text-decoration: none; margin-bottom: 22px; }
+.brand .title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--accent-dark); line-height: 1.2; }
+.brand .back { display: block; font-size: .78rem; color: var(--muted); margin-top: 4px; }
+.brand .back:hover { color: var(--accent); }
+.nav h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 6px; }
+.nav a { display: block; padding: 7px 10px; border-radius: 9px; text-decoration: none; color: var(--text); font-size: .93rem; }
+.nav a:hover { background: var(--card-hover); color: var(--accent-dark); }
+.nav a.active { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; }
+.nav a .n { display: inline-block; width: 1.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.nav a.active .n { color: var(--accent); }
+
+.menu-toggle { display: none; }
+
+main { padding: 44px 48px 64px; max-width: 860px; }
+header.page { margin-bottom: 28px; }
+.kicker { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 6px; }
+h1 { font-family: var(--font-display); font-size: 2.1rem; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; color: var(--accent-dark); }
+.lead { color: var(--muted); font-size: 1.08rem; margin: 0; }
+h2 { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; margin: 40px 0 12px; color: var(--accent-dark); }
+h3 { font-size: 1.05rem; margin: 26px 0 8px; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 6px; }
+li > ul, li > ol { margin-top: 6px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--card); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; }
+pre { background: #1F2A2A; color: #EAF2F2; padding: 16px 18px; border-radius: 12px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: .86rem; line-height: 1.5; margin: 0 0 18px; white-space: pre-wrap; }
+pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin: 0 0 16px; }
+.card h3 { margin-top: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 0 0 18px; }
+.grid .card { margin: 0; }
+a.card { display: block; text-decoration: none; color: var(--text); transition: transform .15s, border-color .15s; }
+a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+a.card .name { font-weight: 600; color: var(--accent-dark); display: block; margin-bottom: 4px; }
+a.card .meta { color: var(--muted); font-size: .88rem; }
+
+.note { border-left: 4px solid var(--accent); background: var(--accent-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.warn { border-left: 4px solid var(--warn); background: var(--warn-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.ok { border-left: 4px solid var(--ok); background: var(--ok-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.note p:last-child, .warn p:last-child, .ok p:last-child { margin-bottom: 0; }
+.label { display: inline-block; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px;
+  border-radius: 999px; background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; vertical-align: middle; }
+.label.warn-l { background: var(--warn-tint); color: var(--warn); }
+.label.ok-l { background: var(--ok-tint); color: var(--ok); }
+
+.summary { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin: 0 0 28px; }
+.summary h2 { margin: 0 0 8px; font-size: 1.1rem; font-family: var(--font-body); color: var(--text); }
+.summary ul { margin-bottom: 0; }
+
+/* Schritte */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 24px; }
+.steps > li { position: relative; padding: 0 0 22px 52px; margin: 0; }
+.steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
+  width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; font-size: .95rem; }
+.steps > li::after { content: ''; position: absolute; left: 17px; top: 40px; bottom: 0; width: 2px; background: var(--border); }
+.steps > li:last-child::after { display: none; }
+.steps > li h3 { margin: 6px 0 8px; }
+
+/* Prompt-Box */
+.prompt { position: relative; border: 1px solid #CDE4E4; background: #F3FAFA; border-radius: 12px; padding: 14px 16px 14px; margin: 0 0 18px; }
+.prompt .ptitle { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent-dark); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.prompt pre { margin: 0; background: #FFFFFF; color: var(--text); border: 1px solid var(--border); font-family: var(--font-body); font-size: .92rem; }
+.copy { font: inherit; font-size: .75rem; letter-spacing: 0; text-transform: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
+  background: #fff; color: var(--accent-dark); cursor: pointer; }
+.copy:hover { border-color: var(--accent); }
+
+/* Tabellen */
+.tablewrap { overflow-x: auto; margin: 0 0 18px; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+tr:last-child td { border-bottom: 0; }
+td.y { color: var(--ok); font-weight: 600; } td.n { color: var(--warn); font-weight: 600; }
+
+/* Ordnerbaum */
+.tree { font-family: var(--font-mono); font-size: .86rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 0 0 18px; white-space: pre; overflow-x: auto; line-height: 1.6; }
+.tree .c { color: var(--muted); }
+
+/* Diagramm (Flow) */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 20px; }
+.flow .box { flex: 1 1 140px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: .9rem; }
+.flow .box b { display: block; color: var(--accent-dark); margin-bottom: 4px; }
+.flow .arrow { align-self: center; color: var(--accent); font-size: 1.3rem; }
+.flow .box.you { border-color: #CDE4E4; background: var(--accent-tint); }
+
+/* Blättern */
+.pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); }
+.pager a { flex: 1; text-decoration: none; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); }
+.pager a:hover { border-color: var(--accent); }
+.pager a small { display: block; color: var(--muted); font-size: .78rem; }
+.pager a.next { text-align: right; }
+
+footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
+footer code { background: var(--card); }
+.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
+.footer-credit { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-credit:hover { color: var(--accent); }
+.footer-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; display: block; }
+.footer-coffee { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-coffee:hover { color: var(--accent); }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); padding: 16px 18px; }
+  .menu-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; font: inherit; font-weight: 600;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; cursor: pointer; color: var(--accent-dark); }
+  .nav { display: none; margin-top: 10px; }
+  .nav.open { display: block; }
+  .brand { margin-bottom: 12px; }
+  main { padding: 28px 18px 48px; }
+  h1 { font-size: 1.7rem; }
+  .footer-sep { display: none; }
+}
+@media print { .sidebar, .pager, .copy { display: none; } .layout { display: block; } main { max-width: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="index.html">
+      <span class="title">Mit Claude arbeiten</span>
+      <span class="back">Anleitung · Toolbox</span>
+    </a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Inhalt <span aria-hidden="true">☰</span></button>
+    <nav class="nav" id="nav">
+<h2>Einstieg</h2>
+<a href="index.html"><span class="n">1</span>Start</a>
+<a href="voraussetzungen.html"><span class="n">2</span>Voraussetzungen</a>
+<a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
+<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
+<h2>Arbeitsweise</h2>
+<a href="arbeitsablauf.html"><span class="n">5</span>Der Arbeitsablauf</a>
+<a href="ordner-dateien.html" class="active" aria-current="page"><span class="n">6</span>Ordner & Dateien</a>
+<a href="auftraege.html"><span class="n">7</span>Aufträge schreiben</a>
+<h2>Beispiele</h2>
+<a href="workflow-bewerbung.html"><span class="n">8</span>Beispiel: Bewerbung</a>
+<a href="workflow-gesuch.html"><span class="n">9</span>Beispiel: Gesuch</a>
+<a href="auftragsvorlagen.html"><span class="n">10</span>Auftragsvorlagen</a>
+<h2>Weiterführend</h2>
+<a href="alternativen.html"><span class="n">11</span>ChatGPT & Grok</a>
+    </nav>
+  </aside>
+  <main>
+<header class="page">
+  <p class="kicker">Arbeitsweise</p>
+  <h1>Ordner &amp; Dateien</h1>
+  <p class="lead">Ein Hauptordner pro Thema, die Unterordner nummeriert in der Reihenfolge des Ablaufs. Deine Unterlagen in <code>02_Unterlagen</code>, Claudes Arbeit daneben. Ein paar kleine Textdateien halten Regeln, Fakten und den Stand.</p>
+</header>
+
+<div class="summary">
+  <h2>Kurzfassung</h2>
+  <ul>
+    <li><strong>Eingaben</strong> von dir: <code>02_Unterlagen/</code> (PDFs, Scans) und <code>profil.md</code> (deine Fakten als Text).</li>
+    <li><strong>Reihenfolge:</strong> Die Ordner sind nummeriert wie der Ablauf: <code>00_Auftraege</code>, <code>01_Recherche</code>, <code>02_Unterlagen</code>, <code>03_Entwuerfe</code>, <code>04_Final</code>.</li>
+    <li><strong>Steuerung:</strong> <code>regeln.md</code> (der Ablauf, einmal geschrieben) und <code>00_Auftraege/</code> (eine kurze Datei pro Aufgabe).</li>
+    <li><strong>Ausgaben</strong> von Claude: <code>01_Recherche/</code>, <code>03_Entwuerfe/</code> (Word), <code>04_Final/</code> (PDF).</li>
+    <li><strong>Stand:</strong> <code>aufgaben.md</code> (offene Punkte, abhaken) und <code>log.md</code> (was wann passiert ist).</li>
+    <li>Claude legt die ganze Struktur an. Du musst keinen Ordner selbst erstellen, nur <code>02_Unterlagen</code> füllen.</li>
+  </ul>
+</div>
+
+<h2>So sieht ein Hauptordner aus</h2>
+<div class="tree">Wohnung-und-Stelle/            <span class="c">← mit Cowork verbunden</span>
+│
+├── 00_Auftraege/              <span class="c">← pro Aufgabe eine kurze Datei</span>
+│   ├── 2026-09-16_wohnung-aarau.md
+│   └── 2026-09-18_stelle-detailhandel.md
+│
+├── 01_Recherche/              <span class="c">← Schritt 1–2: was Claude gefunden hat</span>
+│   ├── wohnung-aarau/
+│   │   ├── inserate.md
+│   │   ├── inserate.xlsx
+│   │   └── merkblatt_mieterverband.pdf
+│   └── stelle-detailhandel/
+│       └── inserate.md
+│
+├── 02_Unterlagen/             <span class="c">← Schritt 3: DEINE Unterlagen. Claude liest, schreibt nie hinein</span>
+│   ├── LIESMICH.md            <span class="c">← was für welche Aufgabe gebraucht wird</span>
+│   ├── lebenslauf.pdf
+│   ├── zeugnis_denner.pdf
+│   ├── betreibungsauszug.pdf
+│   └── budget.pdf
+│
+├── 03_Entwuerfe/              <span class="c">← Schritt 4–7: Word-Dateien, du kommentierst</span>
+│   └── wohnung-aarau/
+│       ├── pruefung.md            <span class="c">← was in 02_Unterlagen fehlt</span>
+│       ├── anschreiben_bahnhofstr.docx
+│       ├── anschreiben_bahnhofstr_v2.docx
+│       └── beilagen.md
+│
+├── 04_Final/                  <span class="c">← Schritt 8: PDFs zum Versenden</span>
+│   └── wohnung-aarau/
+│       ├── 2026-09-20_bewerbung_bahnhofstr.pdf
+│       └── mailtext.md
+│
+├── CLAUDE.md                  <span class="c">← nur für Claude: «Lies README.md»</span>
+├── README.md                  <span class="c">← was dieser Ordner ist, wie man weitermacht</span>
+├── regeln.md                  <span class="c">← der Ablauf, für alle Aufgaben gleich</span>
+├── profil.md                  <span class="c">← deine Fakten (ohne AHV, IBAN)</span>
+├── aufgaben.md                <span class="c">← offene Punkte, Claude hakt ab</span>
+└── log.md                     <span class="c">← Tagebuch</span></div>
+
+<div class="warn">
+  <p><strong>Die Nummern sind die Reihenfolge des Ablaufs.</strong> 00 Auftrag, 01 Suchen, 02 deine Unterlagen, 03 Entwürfe, 04 Final; so liegt der Ordner im Explorer wie der Arbeitsweg. Die Namen sind Deutsch ohne Umlaute (<code>Auftraege</code>, <code>Entwuerfe</code>), damit sie auf jedem System und in jedem Zip funktionieren. <code>02_Unterlagen</code> gehört dir: Claude bekommt in <code>regeln.md</code> die Anweisung, dort nie zu schreiben.</p>
+</div>
+
+<h2>Die Steuerdateien</h2>
+<div class="grid">
+  <div class="card">
+    <h3>regeln.md</h3>
+    <p>Die acht Schritte, die Ordnerregeln, die Schreibregeln. Einmal geschrieben, für alle Aufgaben gleich. Inhalt weiter unten.</p>
+  </div>
+  <div class="card">
+    <h3>profil.md</h3>
+    <p>Wer du bist, in Stichworten: Ausbildung, Stationen, Stärken mit Beleg, Einkommen für Wohnungsbewerbungen. Ohne AHV-Nummer, ohne IBAN, Platzhalter stattdessen.</p>
+  </div>
+  <div class="card">
+    <h3>00_Auftraege/*.md</h3>
+    <p>Pro Aufgabe 10–20 Zeilen: Ziel, Suchkriterien, gewünschte Dokumente, Empfänger, Frist. Siehe <a href="auftraege.html">Aufträge schreiben</a>.</p>
+  </div>
+  <div class="card">
+    <h3>aufgaben.md</h3>
+    <p>Offen / Wartet / Erledigt, mit Kästchen und Fristen. Claude führt nach, du liest morgens.</p>
+  </div>
+  <div class="card">
+    <h3>log.md</h3>
+    <p>Was wann gemacht wurde. Für dich, für den Sozialdienst, für den Tag, an dem du nicht mehr weisst, ob du das Gesuch schon geschickt hast.</p>
+  </div>
+  <div class="card">
+    <h3>README.md und CLAUDE.md</h3>
+    <p><code>README.md</code> erklärt jedem (Mensch oder KI), was der Ordner ist. <code>CLAUDE.md</code> enthält nur «Lies README.md und regeln.md» und wird nur angelegt, wenn Claude im Spiel ist, damit der Ordner mit anderen Anbietern weiter funktioniert.</p>
+  </div>
+</div>
+
+<h3>regeln.md, wie ich sie verwende</h3>
+<pre><code># Regeln für die Zusammenarbeit
+
+## Ablauf (immer gleich, Details im jeweiligen Auftrag)
+1. Suchen: Web durchsuchen nach den Kriterien im Auftrag.
+2. Ablegen: Funde unter 01_Recherche/&lt;auftrag&gt;/ als .md und .xlsx, Formulare als PDF.
+3. Unterlagen: Ich lege meine Dokumente in 02_Unterlagen/. Du liest dort, schreibst dort NIE.
+4. Entwerfen: Dokumente als .docx unter 03_Entwuerfe/&lt;auftrag&gt;/. Vorher 02_Unterlagen
+   gegen die Anforderungen prüfen und pruefung.md schreiben (fehlt / widersprüchlich).
+5. Ich kommentiere in Word.
+6. Ich passe 02_Unterlagen an, wenn pruefung.md etwas meldet.
+7. «Kommentare einarbeiten»: pro Kommentar deinen Vorschlag zeigen, ich entscheide,
+   dann neue Fassung als _v2, _v3 … Alte Fassung nie überschreiben.
+8. «Fertig»: PDFs nach 04_Final/&lt;auftrag&gt;/, aus der letzten .docx, plus Beilagen
+   in Reihenfolge und mailtext.md.
+
+## Schreiben
+- Nur Fakten aus profil.md, dem Auftrag und 02_Unterlagen. Fehlt etwas: fragen, nicht erfinden.
+- Kurz, sachlich, Schweizer Rechtschreibung (ss). Keine Floskeln, keine Ausrufezeichen.
+- Gesuche: eine Seite, Betrag im Betreff, dem Empfänger keine Systeme erklären.
+- Keine Angaben zu Gesundheit oder Klinik, ausser der Auftrag verlangt es ausdrücklich.
+- Platzhalter [ADRESSE] [TELEFON] [EMAIL] [AHV] [IBAN] stehen lassen.
+
+## Nachführen
+- Nach jedem Schritt: aufgaben.md (abhaken, Neues mit Frist) und log.md (Datum, was).
+- Beim Start jeder Sitzung: zuerst die offenen Punkte aus aufgaben.md nennen.</code></pre>
+
+<h2>Dateiformate: wer welches braucht</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>Format</th><th>Wofür</th><th>Wer öffnet es</th></tr>
+  <tr><td><strong>.md</strong> (Markdown)</td><td>Regeln, Profil, Aufträge, Aufgaben, Log, Prüfliste: alles, was Claude wieder lesen soll</td><td>Du (Editor) und Claude</td></tr>
+  <tr><td><strong>.docx</strong> (Word)</td><td>Entwürfe. Du kommentierst, Claude arbeitet ein</td><td>Du in Word oder LibreOffice, Claude</td></tr>
+  <tr><td><strong>.xlsx</strong> (Excel)</td><td>Übersichten zum Ergänzen: Inserate, Stiftungen, Schulden, Arbeitsbemühungen fürs RAV</td><td>Du, Sozialdienst, RAV</td></tr>
+  <tr><td><strong>.pdf</strong></td><td>Final. Sieht überall gleich aus, wird nicht mehr verändert</td><td>Empfänger</td></tr>
+</table>
+</div>
+
+<h2>Markdown in zwei Minuten</h2>
+<p>Die <code>.md</code>-Dateien sind reiner Text mit ein paar Zeichen für Struktur. Mehr musst du nicht wissen:</p>
+<pre><code># Überschrift
+## Kleinere Überschrift
+- Aufzählung
+- [ ] offener Punkt   - [x] erledigt
+**fett**  [Link](https://beispiel.ch)</code></pre>
+<p>Zum Bearbeiten reicht Notepad. Angenehmer, alle gratis: <a href="https://code.visualstudio.com" target="_blank" rel="noopener">VS Code</a> (ganzer Ordner links, Vorschau mit <kbd>Ctrl+Shift+V</kbd>), <a href="https://obsidian.md" target="_blank" rel="noopener">Obsidian</a> (wie ein Notizbuch), <a href="https://notepad-plus-plus.org" target="_blank" rel="noopener">Notepad++</a> (schlicht). Oder du sagst es Claude: «Ändere in profil.md den Wohnort auf Lenzburg.»</p>
+
+<h2>Fertigen Ordner herunterladen</h2>
+<div class="ok">
+  <p><strong><a href="https://stayingclean.github.io/ki-tasks/grundgeruest.zip">grundgeruest.zip</a></strong>: genau diese Struktur, leer, mit <code>regeln.md</code> und Profil-Vorlage. Oder gleich mit Auftrag: <a href="https://stayingclean.github.io/ki-tasks/wohnung.zip">wohnung.zip</a>, <a href="https://stayingclean.github.io/ki-tasks/stelle.zip">stelle.zip</a>. Alle Downloads unter <a href="https://stayingclean.github.io/ki-tasks/" target="_blank" rel="noopener">stayingclean.github.io/ki-tasks/</a>. Entpacken, in Cowork verbinden, «Was steht an?» schreiben. Der Ordner heisst nach dem Entpacken <code>Papierkram</code>; umbenennen ist erlaubt.</p>
+</div>
+
+<h2>Oder: Claude legt die Struktur an</h2>
+<p>Wenn du lieber nichts herunterlädst: leeren Ordner verbinden, dann:</p>
+<div class="prompt">
+  <div class="ptitle">Prompt · Struktur anlegen <button class="copy" type="button">Kopieren</button></div>
+<pre>Lege in diesem leeren Ordner die Struktur nach der Anleitung «Mit Claude arbeiten» an: README.md, regeln.md (mit dem 8-Schritte-Ablauf), profil.md (leer, mit Vorlage), aufgaben.md, log.md, die Ordner 00_Auftraege, 01_Recherche, 02_Unterlagen, 03_Entwuerfe, 04_Final. Wenn du Claude bist und direkt in diesen Ordner schreiben kannst, zusätzlich CLAUDE.md mit «Lies README.md und regeln.md».
+
+Dann stell mir nacheinander höchstens sechs Fragen, um profil.md zu füllen. Schreib nach jeder Antwort sofort in die Datei. Sag mir vorher, welche Angaben du NICHT willst (AHV, IBAN, Diagnosen) und dass ich dafür Platzhalter lassen soll.
+
+Am Ende: Liste, was ich in 02_Unterlagen legen sollte, als aufgaben.md-Einträge.</pre>
+</div>
+<div class="note">
+  <p>Zum Anschauen, wie ein <em>ausgefüllter</em> Ordner aussieht: <a href="beispiel-projekt.zip">beispiel-projekt.zip</a> mit den erfundenen Daten von Nadja Keller (Wohnung und Stelle).</p>
+</div>
+
+<h2>Zur Datei CLAUDE.md</h2>
+<p>Claude Cowork liest eine Datei namens <code>CLAUDE.md</code> im verbundenen Ordner automatisch beim Start (getestet). Darum steht dort nur «Lies README.md und regeln.md»: Die eigentlichen Regeln bleiben in Dateien mit neutralen Namen, die auch ChatGPT oder Grok verstehen, wenn man sie hochlädt. Andere Anbieter ignorieren <code>CLAUDE.md</code> einfach.</p>
+
+<nav class="pager"><a class="prev" href="arbeitsablauf.html"><small>Zurück</small>← Der Arbeitsablauf</a><a class="next" href="auftraege.html"><small>Weiter</small>Aufträge schreiben →</a></nav>
+
+    <footer>
+      <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>
+      <div>Stand: September 2026. Preise, Funktionen und Einstellungen der Anbieter ändern sich laufend – im Zweifel die offiziellen Seiten prüfen.</div>
+      <div class="footer-links">
+        <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+          <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+          <span>Erstellt von stayingclean</span>
+        </a>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+          <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+        </a>
+      </div>
+    </footer>
+
+  </main>
+</div>
+<script>
+(function(){
+  var t=document.querySelector('.menu-toggle'), n=document.querySelector('.nav');
+  if(t&&n){ t.addEventListener('click',function(){ n.classList.toggle('open'); t.setAttribute('aria-expanded', n.classList.contains('open')); }); }
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      var pre=b.closest('.prompt').querySelector('pre');
+      var txt=pre.innerText;
+      function done(){ var o=b.textContent; b.textContent='Kopiert ✓'; setTimeout(function(){ b.textContent=o; },1600); }
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ fallback(); }); } else { fallback(); }
+      function fallback(){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); done(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

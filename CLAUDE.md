@@ -18,6 +18,23 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/asrs-v1-1.html` = ASRS v1.1 (ADHS-Selbstbeurteilung, WHO – frei nutzbar).
 - `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
 - `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
+- `docs/claude-anleitung/` = Mehrseiten-Anleitung „Mit Claude arbeiten" (11 Seiten,
+  Seitenleiste als Navigation). Jede Seite hat das CSS eingebettet; der Ordner
+  ist bewusst getrennt, damit die Seiten untereinander verlinken können.
+  Fusszeile mit Credit in jeder Datei. Inhalte sind fiktive Beispiele
+  (Nadja Keller, Marco Brunner) – keine echten Personendaten eintragen.
+  Kern: 8-Schritte-Ablauf (regeln.md) + Auftrag pro Aufgabe (00_Auftraege/*.md);
+  Quelle der Seiten ist ein Generator ausserhalb des Repos, die HTML-Dateien
+  sind das Ergebnis.
+- Die **leeren Startordner** (Grundgerüst + Aufgabe) liegen im eigenen Repo
+  `stayingclean/ki-tasks` und werden dort per Action nach
+  `stayingclean.github.io/ki-tasks/<aufgabe>.zip` gebaut. Die Anleitung verlinkt
+  dorthin (Seiten index, ordner-dateien, auftragsvorlagen). Änderungen am Ablauf
+  müssen in beiden Repos nachgezogen werden (dort `grundgeruest/regeln.md`).
+- `beispiel-projekt/` = ausgefüllter Beispiel-Ordner zur Anleitung (fiktive Daten). Wird als
+  `docs/claude-anleitung/beispiel-projekt.zip` zum Download angeboten; nach
+  Änderungen an der Vorlage das Zip neu bauen:
+  `cd beispiel-projekt && zip -r ../docs/claude-anleitung/beispiel-projekt.zip . -x .gitkeep`
 - `docs/plakat.html` = Plakat zur Skillsliste zum Herunterladen (PNG und PDF in
   A5/A4/A3). Das PDF baut die Seite selbst; die Bildpunkte des PNG wandern dabei
   unverändert ins PDF. Das Plakat liegt in **zwei** Dateien daneben:

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Der Arbeitsablauf · Mit Claude arbeiten</title>
+  <meta name="description" content="Acht Schritte, die für jede Aufgabe gleich sind">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg: #FAF8F5; --card: #FFFFFF; --card-hover: #F5FAFA; --border: #E8E4DF;
+  --text: #1C1C1C; --muted: #7A7268; --accent: #008080; --accent-dark: #006666;
+  --accent-tint: #E6F2F2; --warn-tint: #FFF4E5; --warn: #B45309;
+  --ok-tint: #EAF6EC; --ok: #2F7D3A;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --sidebar: 260px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; font-family: var(--font-body); background: var(--bg); color: var(--text);
+  line-height: 1.55; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 80% 55% at 50% 0%, var(--accent-tint) 0%, transparent 68%);
+  opacity: 0.3; animation: breathe 7s ease-in-out infinite; }
+@keyframes breathe { 0%,100% { opacity: .22; transform: scaleY(1);} 50% { opacity: .40; transform: scaleY(1.05);} }
+a { color: var(--accent-dark); }
+
+/* Layout: Seitenleiste links, Inhalt rechts */
+.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
+.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 28px 18px 28px 22px;
+  border-right: 1px solid var(--border); background: rgba(255,255,255,.55); backdrop-filter: blur(6px); }
+.brand { display: block; text-decoration: none; margin-bottom: 22px; }
+.brand .title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--accent-dark); line-height: 1.2; }
+.brand .back { display: block; font-size: .78rem; color: var(--muted); margin-top: 4px; }
+.brand .back:hover { color: var(--accent); }
+.nav h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 6px; }
+.nav a { display: block; padding: 7px 10px; border-radius: 9px; text-decoration: none; color: var(--text); font-size: .93rem; }
+.nav a:hover { background: var(--card-hover); color: var(--accent-dark); }
+.nav a.active { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; }
+.nav a .n { display: inline-block; width: 1.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.nav a.active .n { color: var(--accent); }
+
+.menu-toggle { display: none; }
+
+main { padding: 44px 48px 64px; max-width: 860px; }
+header.page { margin-bottom: 28px; }
+.kicker { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 6px; }
+h1 { font-family: var(--font-display); font-size: 2.1rem; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; color: var(--accent-dark); }
+.lead { color: var(--muted); font-size: 1.08rem; margin: 0; }
+h2 { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; margin: 40px 0 12px; color: var(--accent-dark); }
+h3 { font-size: 1.05rem; margin: 26px 0 8px; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 6px; }
+li > ul, li > ol { margin-top: 6px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--card); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; }
+pre { background: #1F2A2A; color: #EAF2F2; padding: 16px 18px; border-radius: 12px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: .86rem; line-height: 1.5; margin: 0 0 18px; white-space: pre-wrap; }
+pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin: 0 0 16px; }
+.card h3 { margin-top: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 0 0 18px; }
+.grid .card { margin: 0; }
+a.card { display: block; text-decoration: none; color: var(--text); transition: transform .15s, border-color .15s; }
+a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+a.card .name { font-weight: 600; color: var(--accent-dark); display: block; margin-bottom: 4px; }
+a.card .meta { color: var(--muted); font-size: .88rem; }
+
+.note { border-left: 4px solid var(--accent); background: var(--accent-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.warn { border-left: 4px solid var(--warn); background: var(--warn-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.ok { border-left: 4px solid var(--ok); background: var(--ok-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
+.note p:last-child, .warn p:last-child, .ok p:last-child { margin-bottom: 0; }
+.label { display: inline-block; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px;
+  border-radius: 999px; background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; vertical-align: middle; }
+.label.warn-l { background: var(--warn-tint); color: var(--warn); }
+.label.ok-l { background: var(--ok-tint); color: var(--ok); }
+
+.summary { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin: 0 0 28px; }
+.summary h2 { margin: 0 0 8px; font-size: 1.1rem; font-family: var(--font-body); color: var(--text); }
+.summary ul { margin-bottom: 0; }
+
+/* Schritte */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 24px; }
+.steps > li { position: relative; padding: 0 0 22px 52px; margin: 0; }
+.steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
+  width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; font-size: .95rem; }
+.steps > li::after { content: ''; position: absolute; left: 17px; top: 40px; bottom: 0; width: 2px; background: var(--border); }
+.steps > li:last-child::after { display: none; }
+.steps > li h3 { margin: 6px 0 8px; }
+
+/* Prompt-Box */
+.prompt { position: relative; border: 1px solid #CDE4E4; background: #F3FAFA; border-radius: 12px; padding: 14px 16px 14px; margin: 0 0 18px; }
+.prompt .ptitle { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent-dark); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.prompt pre { margin: 0; background: #FFFFFF; color: var(--text); border: 1px solid var(--border); font-family: var(--font-body); font-size: .92rem; }
+.copy { font: inherit; font-size: .75rem; letter-spacing: 0; text-transform: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
+  background: #fff; color: var(--accent-dark); cursor: pointer; }
+.copy:hover { border-color: var(--accent); }
+
+/* Tabellen */
+.tablewrap { overflow-x: auto; margin: 0 0 18px; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+tr:last-child td { border-bottom: 0; }
+td.y { color: var(--ok); font-weight: 600; } td.n { color: var(--warn); font-weight: 600; }
+
+/* Ordnerbaum */
+.tree { font-family: var(--font-mono); font-size: .86rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 0 0 18px; white-space: pre; overflow-x: auto; line-height: 1.6; }
+.tree .c { color: var(--muted); }
+
+/* Diagramm (Flow) */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 20px; }
+.flow .box { flex: 1 1 140px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: .9rem; }
+.flow .box b { display: block; color: var(--accent-dark); margin-bottom: 4px; }
+.flow .arrow { align-self: center; color: var(--accent); font-size: 1.3rem; }
+.flow .box.you { border-color: #CDE4E4; background: var(--accent-tint); }
+
+/* Blättern */
+.pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); }
+.pager a { flex: 1; text-decoration: none; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); }
+.pager a:hover { border-color: var(--accent); }
+.pager a small { display: block; color: var(--muted); font-size: .78rem; }
+.pager a.next { text-align: right; }
+
+footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
+footer code { background: var(--card); }
+.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
+.footer-credit { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-credit:hover { color: var(--accent); }
+.footer-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; display: block; }
+.footer-coffee { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
+.footer-coffee:hover { color: var(--accent); }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); padding: 16px 18px; }
+  .menu-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; font: inherit; font-weight: 600;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; cursor: pointer; color: var(--accent-dark); }
+  .nav { display: none; margin-top: 10px; }
+  .nav.open { display: block; }
+  .brand { margin-bottom: 12px; }
+  main { padding: 28px 18px 48px; }
+  h1 { font-size: 1.7rem; }
+  .footer-sep { display: none; }
+}
+@media print { .sidebar, .pager, .copy { display: none; } .layout { display: block; } main { max-width: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="index.html">
+      <span class="title">Mit Claude arbeiten</span>
+      <span class="back">Anleitung · Toolbox</span>
+    </a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Inhalt <span aria-hidden="true">☰</span></button>
+    <nav class="nav" id="nav">
+<h2>Einstieg</h2>
+<a href="index.html"><span class="n">1</span>Start</a>
+<a href="voraussetzungen.html"><span class="n">2</span>Voraussetzungen</a>
+<a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
+<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
+<h2>Arbeitsweise</h2>
+<a href="arbeitsablauf.html" class="active" aria-current="page"><span class="n">5</span>Der Arbeitsablauf</a>
+<a href="ordner-dateien.html"><span class="n">6</span>Ordner & Dateien</a>
+<a href="auftraege.html"><span class="n">7</span>Aufträge schreiben</a>
+<h2>Beispiele</h2>
+<a href="workflow-bewerbung.html"><span class="n">8</span>Beispiel: Bewerbung</a>
+<a href="workflow-gesuch.html"><span class="n">9</span>Beispiel: Gesuch</a>
+<a href="auftragsvorlagen.html"><span class="n">10</span>Auftragsvorlagen</a>
+<h2>Weiterführend</h2>
+<a href="alternativen.html"><span class="n">11</span>ChatGPT & Grok</a>
+    </nav>
+  </aside>
+  <main>
+<header class="page">
+  <p class="kicker">Arbeitsweise</p>
+  <h1>Der Arbeitsablauf: acht Schritte, immer gleich</h1>
+  <p class="lead">Ob Wohnung, Stelle oder Gesuch: Der Weg von der Suche zum fertigen PDF ist derselbe. Wer ihn einmal verstanden hat, braucht für eine neue Aufgabe nur noch einen kurzen Auftrag.</p>
+</header>
+
+<div class="summary">
+  <h2>Kurzfassung</h2>
+  <ul>
+    <li>Claude sucht, sammelt, schreibt Entwürfe und baut am Ende das PDF. Du lieferst deine Unterlagen, kontrollierst und entscheidest.</li>
+    <li>Die Kontrolle läuft über <strong>Kommentare in Word-Dateien</strong>, nicht über den Chat. Claude liest die Kommentare und arbeitet sie ein.</li>
+    <li>Deine eigenen Dokumente liegen in <code>02_Unterlagen</code>. Alles, was Claude erzeugt, liegt daneben in eigenen Ordnern. So ist immer klar, was von wem stammt.</li>
+    <li>Was sich pro Aufgabe ändert, steht in einer kleinen Datei, dem <a href="auftraege.html">Auftrag</a>. Der Ablauf selbst steht einmal in <code>regeln.md</code>.</li>
+  </ul>
+</div>
+
+<h2>Die acht Schritte</h2>
+<div class="flow">
+  <div class="box"><b>1 Suchen</b>Claude durchsucht das Web</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>2 Ablegen</b>Funde in 01_Recherche/</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>3 Unterlagen</b>Du füllst 02_Unterlagen/</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>4 Entwerfen</b>.docx in 03_Entwuerfe/</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>5 Kommentieren</b>Du, in Word</div>
+  <div class="arrow">→</div>
+  <div class="box you"><b>6 Unterlagen anpassen</b>falls Claude Lücken meldet</div>
+  <div class="arrow">↻</div>
+  <div class="box"><b>7 Wiederholen</b>4–6 bis es passt</div>
+  <div class="arrow">→</div>
+  <div class="box"><b>8 Final</b>PDF in 04_Final/</div>
+</div>
+
+<ol class="steps">
+  <li>
+    <h3>Claude durchsucht das Internet <span class="label">Claude</span></h3>
+    <p>Wohnungen, Stellen, Stiftungen, Formulare, Anforderungen einer Behörde. Was gesucht wird und nach welchen Kriterien, steht im Auftrag. Claude fragt nach, wenn der Auftrag unklar ist, statt zu raten.</p>
+  </li>
+  <li>
+    <h3>Claude legt die Funde ab <span class="label">Claude</span></h3>
+    <p>Unter <code>01_Recherche/</code> in einer Struktur, die zur Aufgabe passt: eine Übersichtstabelle (<code>.md</code> und <code>.xlsx</code>), heruntergeladene Formulare und Merkblätter als PDF, pro Fund eine Zeile mit Link, Frist und Bewertung. Claude erfindet keine Angaben; was er nicht findet, steht als «unklar» drin.</p>
+  </li>
+  <li>
+    <h3>Du legst deine Unterlagen in <code>02_Unterlagen</code> <span class="label ok-l">Du</span></h3>
+    <p>Lebenslauf, Zeugnisse, Betreibungsauszug, Budget, Rechnungen, Absagen der Krankenkasse. Alles, was Claude zum Schreiben braucht und was von dir kommt. Dieser Ordner gehört dir: Claude liest ihn, schreibt aber nie hinein. Was fehlt, sagt dir Claude in <code>pruefung.md</code> (Schritt 6).</p>
+  </li>
+  <li>
+    <h3>Claude erstellt die Dokumente <span class="label">Claude</span></h3>
+    <p>Motivationsschreiben, Gesuch, Lebenslauf, Beilagenverzeichnis, Begleitmail. Immer als <strong>Word-Datei</strong> in <code>03_Entwuerfe/</code>, nur aus den Fakten in <code>profil.md</code>, dem Auftrag und <code>02_Unterlagen</code>. Platzhalter wie <code>[ADRESSE]</code> bleiben stehen.</p>
+  </li>
+  <li>
+    <h3>Du kontrollierst und kommentierst <span class="label ok-l">Du</span></h3>
+    <p>Word öffnen, lesen, bei jeder Stelle, die nicht passt, einen Kommentar setzen (rechte Maustaste → «Neuer Kommentar»): «kürzer», «stimmt nicht, war 2017», «zu förmlich», «Betrag fehlt». Du kannst auch direkt im Text ändern. Speichern, fertig. Kein Abtippen in den Chat.</p>
+    <div class="note"><p><strong>Warum Kommentare statt Chat?</strong> Der Kommentar steht genau an der Stelle, um die es geht. Claude sieht Textstelle und Anmerkung zusammen und muss nicht raten, welchen Satz du meinst. Und die Anmerkungen bleiben in der Datei, auch wenn der Chat weg ist.</p></div>
+  </li>
+  <li>
+    <h3>Du passt <code>02_Unterlagen</code> an, wenn Claude Lücken meldet <span class="label ok-l">Du</span></h3>
+    <p>Claude schreibt pro Auftrag eine <code>pruefung.md</code>: Was fehlt (Bestätigung Arbeitstraining), was widersprüchlich ist (Lebenslauf sagt 2016, Zeugnis 2017), was die Stiftung zusätzlich verlangt. Du besorgst oder korrigierst die Unterlagen und legst sie wieder in <code>02_Unterlagen</code>.</p>
+  </li>
+  <li>
+    <h3>Wiederholen, bis es passt <span class="label">Claude</span> <span class="label ok-l">Du</span></h3>
+    <p>Du schreibst im Chat: «Kommentare einarbeiten.» Claude liest die Kommentare aus den Word-Dateien, zeigt dir zuerst pro Kommentar seinen Änderungsvorschlag, du sagst ja oder nein, dann schreibt er eine neue Fassung (<code>_v2.docx</code>). Zwei bis drei Runden sind normal.</p>
+  </li>
+  <li>
+    <h3>Claude erstellt die finalen Dokumente <span class="label">Claude</span></h3>
+    <p>Wenn du «fertig» sagst: PDFs in <code>04_Final/</code>, sauber benannt, mit Beilagen in der richtigen Reihenfolge, dazu ein kurzer Mailtext. Zum Ausdrucken oder Anhängen. Platzhalter setzt du im letzten Schritt selbst ein.</p>
+  </li>
+</ol>
+
+<h2>Wer macht was</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>Claude</th><th>Du</th></tr>
+  <tr><td>Suchen, sammeln, bewerten</td><td>Entscheiden, welche Treffer weiterverfolgt werden</td></tr>
+  <tr><td>Entwürfe schreiben, nur aus deinen Fakten</td><td>Fakten liefern (<code>profil.md</code>, <code>02_Unterlagen</code>)</td></tr>
+  <tr><td>Lücken und Widersprüche melden (<code>pruefung.md</code>)</td><td>Unterlagen besorgen oder korrigieren</td></tr>
+  <tr><td>Kommentare einarbeiten, neue Fassung ablegen</td><td>Kommentieren, freigeben («fertig»)</td></tr>
+  <tr><td>PDFs bauen, <code>aufgaben.md</code> und <code>log.md</code> nachführen</td><td>Platzhalter einsetzen, unterschreiben, versenden</td></tr>
+</table>
+</div>
+
+<h2>Wie eine Sitzung aussieht</h2>
+<p>Weil der Ablauf in <code>regeln.md</code> steht und die Aufgabe im Auftrag, ist der Chat selbst kurz. Drei Sätze reichen für einen ganzen Durchgang:</p>
+<div class="prompt">
+  <div class="ptitle">Schritte 1–2 · Suchen und ablegen <button class="copy" type="button">Kopieren</button></div>
+<pre>Führe den Auftrag 00_Auftraege/2026-09-16_wohnung-aarau.md aus, Schritte 1 und 2. Halte dann an und zeig mir die Übersicht.</pre>
+</div>
+<div class="prompt">
+  <div class="ptitle">Schritt 4 · Entwerfen <button class="copy" type="button">Kopieren</button></div>
+<pre>Weiter mit Schritt 4 für die Treffer Nr. 2 und 5. Prüfe vorher 02_Unterlagen gegen die Anforderungen und schreib pruefung.md.</pre>
+</div>
+<div class="prompt">
+  <div class="ptitle">Schritt 7 · Kommentare einarbeiten <button class="copy" type="button">Kopieren</button></div>
+<pre>Kommentare einarbeiten. Zeig mir zuerst pro Kommentar deinen Vorschlag, ich entscheide, dann neue Fassung.</pre>
+</div>
+<div class="prompt">
+  <div class="ptitle">Schritt 8 · Final <button class="copy" type="button">Kopieren</button></div>
+<pre>Fertig. Erstelle die finalen PDFs in 04_Final/ inklusive Beilagen und Mailtext. Führe aufgaben.md und log.md nach.</pre>
+</div>
+
+<h2>Drei Dinge, die den Ablauf kippen</h2>
+<ul>
+  <li><strong>Claude fängt ohne Auftrag an zu schreiben.</strong> Dann fehlt die Grundlage und er erfindet. Regel: kein Schritt 4 ohne Auftrag und ohne Blick in <code>02_Unterlagen</code>.</li>
+  <li><strong>Du korrigierst im Chat statt in der Datei.</strong> Geht, aber beim dritten Durchgang weiss niemand mehr, welche Fassung gilt. Kommentare in der Datei sind die Wahrheit.</li>
+  <li><strong>Die finale PDF wird zu früh gebaut.</strong> Danach ändert man in der PDF herum. Regel: PDF erst auf «fertig», und dann nur aus der letzten <code>.docx</code>.</li>
+</ul>
+
+<nav class="pager"><a class="prev" href="datenschutz.html"><small>Zurück</small>← Datenschutz</a><a class="next" href="ordner-dateien.html"><small>Weiter</small>Ordner & Dateien →</a></nav>
+
+    <footer>
+      <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>
+      <div>Stand: September 2026. Preise, Funktionen und Einstellungen der Anbieter ändern sich laufend – im Zweifel die offiziellen Seiten prüfen.</div>
+      <div class="footer-links">
+        <a class="footer-credit" href="https://github.com/stayingclean" target="_blank" rel="noopener">
+          <img class="footer-avatar" src="https://github.com/stayingclean.png?size=80" alt="stayingclean" loading="lazy" width="28" height="28">
+          <span>Erstellt von stayingclean</span>
+        </a>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <a class="footer-coffee" href="https://buymeacoffee.com/stayingclean" target="_blank" rel="noopener">
+          <span aria-hidden="true">☕</span><span>Kaffee spendieren</span>
+        </a>
+      </div>
+    </footer>
+
+  </main>
+</div>
+<script>
+(function(){
+  var t=document.querySelector('.menu-toggle'), n=document.querySelector('.nav');
+  if(t&&n){ t.addEventListener('click',function(){ n.classList.toggle('open'); t.setAttribute('aria-expanded', n.classList.contains('open')); }); }
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      var pre=b.closest('.prompt').querySelector('pre');
+      var txt=pre.innerText;
+      function done(){ var o=b.textContent; b.textContent='Kopiert ✓'; setTimeout(function(){ b.textContent=o; },1600); }
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ fallback(); }); } else { fallback(); }
+      function fallback(){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); done(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
