@@ -17,23 +17,18 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/flyer-editor.html` = Flyer-Editor (self-contained, Bilder eingebettet).
 - `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
 - `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
-- `docs/claude-anleitung/` = Mehrseiten-Anleitung „Mit Claude arbeiten" (11 Seiten,
-  Seitenleiste als Navigation). Jede Seite hat das CSS eingebettet; der Ordner
-  ist bewusst getrennt, damit die Seiten untereinander verlinken können.
-  Fusszeile mit Credit in jeder Datei. Inhalte sind fiktive Beispiele
-  (Nadja Keller, Marco Brunner) – keine echten Personendaten eintragen.
-  Kern: 8-Schritte-Ablauf (regeln.md) + Auftrag pro Aufgabe (00_Auftraege/*.md);
-  Quelle der Seiten ist ein Generator ausserhalb des Repos, die HTML-Dateien
-  sind das Ergebnis.
+- `docs/claude-anleitung/` = Mehrseiten-Anleitung „Mit Claude arbeiten",
+  Seitenleiste als Navigation. Die Seiten teilen sich `stil.css` und
+  `anleitung.js`; ein Teil von ihnen kommt beim Deployment aus einem zweiten
+  Repo. Eigener Abschnitt weiter unten — **vor einer Änderung dort lesen.**
+  Inhalte sind fiktive Beispiele (Nadja Keller, Marco Brunner) – keine echten
+  Personendaten eintragen.
 - Die **leeren Startordner** (Grundgerüst + Aufgabe) liegen im eigenen Repo
   `stayingclean/ki-tasks` und werden dort per Action nach
   `stayingclean.github.io/ki-tasks/<aufgabe>.zip` gebaut. Die Anleitung verlinkt
-  dorthin (Seiten index, ordner-dateien, auftragsvorlagen). Änderungen am Ablauf
-  müssen in beiden Repos nachgezogen werden (dort `grundgeruest/regeln.md`).
-- `beispiel-projekt/` = ausgefüllter Beispiel-Ordner zur Anleitung (fiktive Daten). Wird als
-  `docs/claude-anleitung/beispiel-projekt.zip` zum Download angeboten; nach
-  Änderungen an der Vorlage das Zip neu bauen:
-  `cd beispiel-projekt && zip -r ../docs/claude-anleitung/beispiel-projekt.zip . -x .gitkeep`
+  dorthin und holt den Aufgabenkatalog aus `aufgaben.json` desselben Repos.
+  Der Ablauf selbst wird **nur noch dort** beschrieben (`grundgeruest/CLAUDE.md`
+  und `START-HIER.txt`), damit er nicht an zwei Orten auseinanderläuft.
 - `docs/plakat.html` = Plakat zur Skillsliste zum Herunterladen (PNG und PDF in
   A5/A4/A3). Das PDF baut die Seite selbst; die Bildpunkte des PNG wandern dabei
   unverändert ins PDF. Das Plakat liegt in **zwei** Dateien daneben:
@@ -77,9 +72,52 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    da `docs/` **öffentlich** publiziert wird.
 3. **CSS muss in der Datei eingebettet bleiben** (kein externes Stylesheet), damit
    die Seite auch lokal ohne Server/Internet funktioniert.
+
+   **Ausnahme: `docs/claude-anleitung/`.** Dort teilen sich alle Seiten
+   `stil.css` und `anleitung.js`. Die Regel zielt auf Seiten, die jemand
+   einzeln herunterlädt und weitergibt (Budgetvorlage, Flyer, ASRS). Die
+   Anleitung ist ein zusammenhängender Mehrseiten-Ordner mit gemeinsamer
+   Navigation, den niemand seitenweise verschickt; ein relatives `stil.css`
+   daneben funktioniert auch per `file://`. Sie lädt ohnehin Schriften von
+   Google Fonts und ist damit schon heute nicht netzunabhängig. Siehe den
+   eigenen Abschnitt unten.
 4. Die Fusszeile muss den Urheber-Credit und den Kaffee-Link enthalten (siehe
    Konvention unten).
 5. In `docs/index.html` (Übersicht) eine Karte ergänzen (Link + Kurzbeschreibung).
+
+## Anleitung `docs/claude-anleitung/` — zwei Repos, eine Seitenliste
+
+Die Anleitung entsteht aus **zwei** Repos. Seiten über Claude im Allgemeinen
+(Einstieg, Abos, Datenschutz, Prompts, Alternativen) liegen hier. Seiten, die
+den **ki-tasks-Ordner** beschreiben, liegen in `stayingclean/ki-tasks` unter
+`anleitung/`, weil sie sich mit jenem Ordner zusammen ändern müssen. Beim
+Deployment kopiert `.github/workflows/deploy.yml` sie darüber. Die URL
+`stayingclean.github.io/toolbox/claude-anleitung/` bleibt dieselbe.
+
+Daraus folgen vier Dinge, die keine Sperre meldet:
+
+- **`stil.css` und `anleitung.js` gehören der Toolbox.** Die ki-tasks-Seiten
+  verweisen nur darauf. Liegt drüben eine gleichnamige Datei, überschreibt das
+  `cp` die hiesige — also dort **keine** mitliefern.
+- **`SEITEN` in `anleitung.js` ist die einzige Stelle mit der Seitenfolge.**
+  Daraus entstehen Seitenleiste, Nummerierung und das Zurück/Weiter. Eine Seite
+  dort einzutragen, die es nicht gibt, ergibt einen toten Link; eine
+  wegzulassen macht sie unerreichbar. Beides fällt sonst niemandem auf — genau
+  so waren `md-dateien.html` und `prompts.html` über Monate verwaist, mit einer
+  eingefrorenen älteren Navigation.
+- **Eine Seite aus ki-tasks darf erst in `SEITEN` stehen, wenn sie drüben
+  existiert.** Sonst zeigt die Navigation ins Leere, bis der nächste Lauf drüben
+  durch ist.
+- **Ein Push in ki-tasks löst hier nichts aus.** Darum der `schedule`-Auslöser:
+  eine Änderung drüben ist spätestens am nächsten Morgen online. Wer nicht
+  warten will, startet den Workflow von Hand (`workflow_dispatch`).
+
+Der Aufgabenkatalog auf `index.html` wird **nicht** von Hand gepflegt: Die
+Kurzbeschriebe holt `anleitung.js` aus
+`https://stayingclean.github.io/ki-tasks/aufgaben.json`, gespeist aus den
+`INFO.md` der Aufgaben. Eine zweite Kopie im HTML veraltet — davor stand sie
+hartcodiert in `auftragsvorlagen.html`, samt einem Download-Link auf ein Zip,
+das es nicht mehr gab.
 
 ## Skillsliste pflegen (nicht von Hand editieren!)
 

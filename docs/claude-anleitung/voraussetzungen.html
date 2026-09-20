@@ -8,149 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-  <style>
-:root {
-  --bg: #FAF8F5; --card: #FFFFFF; --card-hover: #F5FAFA; --border: #E8E4DF;
-  --text: #1C1C1C; --muted: #7A7268; --accent: #008080; --accent-dark: #006666;
-  --accent-tint: #E6F2F2; --warn-tint: #FFF4E5; --warn: #B45309;
-  --ok-tint: #EAF6EC; --ok: #2F7D3A;
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
-  --sidebar: 260px;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; font-family: var(--font-body); background: var(--bg); color: var(--text);
-  line-height: 1.55; -webkit-font-smoothing: antialiased; }
-body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: radial-gradient(ellipse 80% 55% at 50% 0%, var(--accent-tint) 0%, transparent 68%);
-  opacity: 0.3; animation: breathe 7s ease-in-out infinite; }
-@keyframes breathe { 0%,100% { opacity: .22; transform: scaleY(1);} 50% { opacity: .40; transform: scaleY(1.05);} }
-a { color: var(--accent-dark); }
-
-/* Layout: Seitenleiste links, Inhalt rechts */
-.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
-.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 28px 18px 28px 22px;
-  border-right: 1px solid var(--border); background: rgba(255,255,255,.55); backdrop-filter: blur(6px); }
-.brand { display: block; text-decoration: none; margin-bottom: 22px; }
-.brand .title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--accent-dark); line-height: 1.2; }
-.brand .back { display: block; font-size: .78rem; color: var(--muted); margin-top: 4px; }
-.brand .back:hover { color: var(--accent); }
-.nav h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 6px; }
-.nav a { display: block; padding: 7px 10px; border-radius: 9px; text-decoration: none; color: var(--text); font-size: .93rem; }
-.nav a:hover { background: var(--card-hover); color: var(--accent-dark); }
-.nav a.active { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; }
-.nav a .n { display: inline-block; width: 1.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
-.nav a.active .n { color: var(--accent); }
-
-.menu-toggle { display: none; }
-
-main { padding: 44px 48px 64px; max-width: 860px; }
-header.page { margin-bottom: 28px; }
-.kicker { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 6px; }
-h1 { font-family: var(--font-display); font-size: 2.1rem; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; color: var(--accent-dark); }
-.lead { color: var(--muted); font-size: 1.08rem; margin: 0; }
-h2 { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; margin: 40px 0 12px; color: var(--accent-dark); }
-h3 { font-size: 1.05rem; margin: 26px 0 8px; }
-p { margin: 0 0 14px; }
-ul, ol { margin: 0 0 16px; padding-left: 22px; }
-li { margin-bottom: 6px; }
-li > ul, li > ol { margin-top: 6px; }
-code { font-family: var(--font-mono); font-size: .88em; background: var(--card); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; }
-pre { background: #1F2A2A; color: #EAF2F2; padding: 16px 18px; border-radius: 12px; overflow-x: auto;
-  font-family: var(--font-mono); font-size: .86rem; line-height: 1.5; margin: 0 0 18px; white-space: pre-wrap; }
-pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
-
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin: 0 0 16px; }
-.card h3 { margin-top: 0; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 0 0 18px; }
-.grid .card { margin: 0; }
-a.card { display: block; text-decoration: none; color: var(--text); transition: transform .15s, border-color .15s; }
-a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
-a.card .name { font-weight: 600; color: var(--accent-dark); display: block; margin-bottom: 4px; }
-a.card .meta { color: var(--muted); font-size: .88rem; }
-
-.note { border-left: 4px solid var(--accent); background: var(--accent-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
-.warn { border-left: 4px solid var(--warn); background: var(--warn-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
-.ok { border-left: 4px solid var(--ok); background: var(--ok-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
-.note p:last-child, .warn p:last-child, .ok p:last-child { margin-bottom: 0; }
-.label { display: inline-block; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px;
-  border-radius: 999px; background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; vertical-align: middle; }
-.label.warn-l { background: var(--warn-tint); color: var(--warn); }
-.label.ok-l { background: var(--ok-tint); color: var(--ok); }
-
-.summary { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin: 0 0 28px; }
-.summary h2 { margin: 0 0 8px; font-size: 1.1rem; font-family: var(--font-body); color: var(--text); }
-.summary ul { margin-bottom: 0; }
-
-/* Schritte */
-.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 24px; }
-.steps > li { position: relative; padding: 0 0 22px 52px; margin: 0; }
-.steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
-  width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; font-size: .95rem; }
-.steps > li::after { content: ''; position: absolute; left: 17px; top: 40px; bottom: 0; width: 2px; background: var(--border); }
-.steps > li:last-child::after { display: none; }
-.steps > li h3 { margin: 6px 0 8px; }
-
-/* Prompt-Box */
-.prompt { position: relative; border: 1px solid #CDE4E4; background: #F3FAFA; border-radius: 12px; padding: 14px 16px 14px; margin: 0 0 18px; }
-.prompt .ptitle { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent-dark); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.prompt pre { margin: 0; background: #FFFFFF; color: var(--text); border: 1px solid var(--border); font-family: var(--font-body); font-size: .92rem; }
-.copy { font: inherit; font-size: .75rem; letter-spacing: 0; text-transform: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
-  background: #fff; color: var(--accent-dark); cursor: pointer; }
-.copy:hover { border-color: var(--accent); }
-
-/* Tabellen */
-.tablewrap { overflow-x: auto; margin: 0 0 18px; }
-table { border-collapse: collapse; width: 100%; font-size: .92rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
-tr:last-child td { border-bottom: 0; }
-td.y { color: var(--ok); font-weight: 600; } td.n { color: var(--warn); font-weight: 600; }
-
-/* Ordnerbaum */
-.tree { font-family: var(--font-mono); font-size: .86rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 0 0 18px; white-space: pre; overflow-x: auto; line-height: 1.6; }
-.tree .c { color: var(--muted); }
-
-/* Diagramm (Flow) */
-.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 20px; }
-.flow .box { flex: 1 1 140px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: .9rem; }
-.flow .box b { display: block; color: var(--accent-dark); margin-bottom: 4px; }
-.flow .arrow { align-self: center; color: var(--accent); font-size: 1.3rem; }
-.flow .box.you { border-color: #CDE4E4; background: var(--accent-tint); }
-
-/* Blättern */
-.pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); }
-.pager a { flex: 1; text-decoration: none; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); }
-.pager a:hover { border-color: var(--accent); }
-.pager a small { display: block; color: var(--muted); font-size: .78rem; }
-.pager a.next { text-align: right; }
-
-footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
-footer code { background: var(--card); }
-.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
-.footer-credit { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
-.footer-credit:hover { color: var(--accent); }
-.footer-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; display: block; }
-.footer-coffee { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
-.footer-coffee:hover { color: var(--accent); }
-
-@media (max-width: 860px) {
-  .layout { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); padding: 16px 18px; }
-  .menu-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; font: inherit; font-weight: 600;
-    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; cursor: pointer; color: var(--accent-dark); }
-  .nav { display: none; margin-top: 10px; }
-  .nav.open { display: block; }
-  .brand { margin-bottom: 12px; }
-  main { padding: 28px 18px 48px; }
-  h1 { font-size: 1.7rem; }
-  .footer-sep { display: none; }
-}
-@media print { .sidebar, .pager, .copy { display: none; } .layout { display: block; } main { max-width: none; padding: 0; } }
-</style>
+  <link rel="stylesheet" href="stil.css">
 </head>
 <body>
 <div class="layout">
@@ -160,42 +18,26 @@ footer code { background: var(--card); }
       <span class="back">Anleitung · Toolbox</span>
     </a>
     <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Inhalt <span aria-hidden="true">☰</span></button>
-    <nav class="nav" id="nav">
-<h2>Einstieg</h2>
-<a href="index.html"><span class="n">1</span>Start</a>
-<a href="voraussetzungen.html" class="active" aria-current="page"><span class="n">2</span>Voraussetzungen</a>
-<a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
-<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
-<h2>Arbeitsweise</h2>
-<a href="arbeitsablauf.html"><span class="n">5</span>Der Arbeitsablauf</a>
-<a href="ordner-dateien.html"><span class="n">6</span>Ordner & Dateien</a>
-<a href="auftraege.html"><span class="n">7</span>Aufträge schreiben</a>
-<h2>Beispiele</h2>
-<a href="workflow-bewerbung.html"><span class="n">8</span>Beispiel: Bewerbung</a>
-<a href="workflow-gesuch.html"><span class="n">9</span>Beispiel: Gesuch</a>
-<a href="auftragsvorlagen.html"><span class="n">10</span>Auftragsvorlagen</a>
-<h2>Weiterführend</h2>
-<a href="alternativen.html"><span class="n">11</span>ChatGPT & Grok</a>
-    </nav>
+    <nav class="nav" id="nav"></nav>
   </aside>
   <main>
 <header class="page">
   <p class="kicker">Einstieg</p>
   <h1>Voraussetzungen</h1>
-  <p class="lead">Was du brauchst, bevor der erste Workflow losgeht. Und was du bewusst weglassen kannst.</p>
+  <p class="lead">Was du brauchst, bevor es losgeht. Und was du bewusst weglassen kannst.</p>
 </header>
 
 <div class="summary">
   <h2>Kurzfassung</h2>
   <ul>
     <li><strong>Zwingend:</strong> ein Claude-Konto, die Claude-Desktop-App (Windows oder Mac) und ein Ordner auf dem Computer, in dem deine Unterlagen liegen.</li>
-    <li><strong>Für die Workflows hier:</strong> das Pro-Abo, weil «Cowork» (Arbeiten in deinem Ordner) nur damit freigeschaltet ist.</li>
+    <li><strong>Für die Arbeit im Ordner:</strong> das Pro-Abo, weil «Cowork» nur damit freigeschaltet ist.</li>
     <li><strong>Optional:</strong> die Chrome-Erweiterung «Claude in Chrome». Nur nötig, wenn Claude auf Websites klicken und Formulare ausfüllen soll, zum Beispiel im Bewerbungsportal.</li>
   </ul>
 </div>
 
 <h2>1. Ein Claude-Konto</h2>
-<p>Registrieren auf <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> mit E-Mail-Adresse oder Google-Konto. Das Gratis-Konto reicht zum Ausprobieren und für einzelne Texte. Für die Ordner-Workflows brauchst du Pro (siehe <a href="abos.html">Abos &amp; Kosten</a>).</p>
+<p>Registrieren auf <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> mit E-Mail-Adresse oder Google-Konto. Das Gratis-Konto reicht zum Ausprobieren und für einzelne Texte. Für die Arbeit im Ordner brauchst du Pro (siehe <a href="abos.html">Abos &amp; Kosten</a>).</p>
 <div class="note">
   <p><strong>Tipp:</strong> Nimm eine E-Mail-Adresse, die du auch in einem Jahr noch hast. Die Chats und die Erinnerungsfunktion hängen am Konto.</p>
 </div>
@@ -205,19 +47,19 @@ footer code { background: var(--card); }
 <p>In Cowork verbindest du einen Ordner deines Computers mit dem Chat. Claude kann dann die Dateien darin lesen, neue Dateien schreiben (zum Beispiel ein fertiges PDF) und Notizen ablegen. Alles bleibt in diesem einen Ordner; auf den Rest des Computers hat Claude keinen Zugriff.</p>
 
 <div class="flow">
-  <div class="box you"><b>Dein Ordner</b>02_Unterlagen, profil.md, Aufträge</div>
+  <div class="box you"><b>Dein Ordner</b>1_Meine-Unterlagen (deine PDF)</div>
   <div class="arrow">⇄</div>
   <div class="box"><b>Claude Desktop (Cowork)</b>liest, sucht im Web, schreibt Dateien</div>
   <div class="arrow">→</div>
-  <div class="box"><b>Ergebnis</b>01_Recherche/, 03_Entwuerfe/ (Word), 04_Final/ (PDF)</div>
+  <div class="box"><b>Ergebnis</b>2_Arbeitsstand (Word), 3_Zum-Versenden (PDF)</div>
 </div>
 
 <h3>So sieht der Einstieg aus</h3>
 <ol>
   <li>App starten, anmelden, links auf <strong>Cowork</strong> wechseln.</li>
-  <li>Bei «Ordner hinzufügen» den Ordner wählen, den du für diese Aufgabe angelegt hast (z. B. <code>Bewerbungen</code>).</li>
-  <li>Deinen Auftrag als Text eingeben. Claude fragt bei Unklarheiten nach, bevor er loslegt.</li>
-  <li>Claude arbeitet Schritt für Schritt, zeigt eine Aufgabenliste und legt die Ergebnisse im Ordner ab.</li>
+  <li>Bei «Ordner hinzufügen» den entpackten Ordner der Aufgabe wählen (z. B. <code>stelle</code>).</li>
+  <li><code>Was steht an?</code> schreiben. Mehr nicht. Claude fragt alles Weitere.</li>
+  <li>Claude arbeitet Schritt für Schritt und legt die Ergebnisse im Ordner ab.</li>
 </ol>
 
 <div class="warn">
@@ -225,7 +67,8 @@ footer code { background: var(--card); }
 </div>
 
 <h2>3. Der Ordner mit deinen Unterlagen</h2>
-<p>Ein normaler Ordner auf deinem Computer. Er darf auch in OneDrive oder Google Drive liegen, solange die Dateien lokal heruntergeladen sind. Was hineingehört, steht unter <a href="ordner-dateien.html">Ordner &amp; Dateien</a>.</p>
+<p>Den Ordner legst du nicht selber an: Du lädst ihn für deine Aufgabe unter <a href="https://stayingclean.github.io/ki-tasks/" target="_blank" rel="noopener">stayingclean.github.io/ki-tasks/</a> herunter und entpackst ihn. Darin liegt eine <code>START-HIER.txt</code> mit den vier Schritten von oben.</p>
+<p>Er darf auch in OneDrive oder Google Drive liegen, solange die Dateien lokal heruntergeladen sind. Deine eigenen PDF und Scans legst du in <code>1_Meine-Unterlagen</code>; welche das für deine Aufgabe sind, sagt dir Claude im Gespräch. Was nie hineingehört, steht unter <a href="datenschutz.html">Datenschutz</a>.</p>
 
 <h2>4. Optional: die Chrome-Erweiterung</h2>
 <p><strong>«Claude in Chrome»</strong> ist eine Erweiterung für den Chrome-Browser. Damit kann Claude in deinem Browser Seiten öffnen, lesen, klicken und Formulare ausfüllen, während du zuschaust. Sie ist in allen bezahlten Abos enthalten und wird aus dem Chrome Web Store installiert.</p>
@@ -258,7 +101,7 @@ footer code { background: var(--card); }
   <li>Kein Acrobat. Zum Kommentieren der Entwürfe brauchst du Word oder das gratis LibreOffice; zum Lesen der PDFs reicht der Browser.</li>
 </ul>
 
-<nav class="pager"><a class="prev" href="index.html"><small>Zurück</small>← Start</a><a class="next" href="abos.html"><small>Weiter</small>Abos & Kosten →</a></nav>
+<nav class="pager"></nav>
 
     <footer>
       <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>
@@ -277,20 +120,6 @@ footer code { background: var(--card); }
 
   </main>
 </div>
-<script>
-(function(){
-  var t=document.querySelector('.menu-toggle'), n=document.querySelector('.nav');
-  if(t&&n){ t.addEventListener('click',function(){ n.classList.toggle('open'); t.setAttribute('aria-expanded', n.classList.contains('open')); }); }
-  document.querySelectorAll('.copy').forEach(function(b){
-    b.addEventListener('click',function(){
-      var pre=b.closest('.prompt').querySelector('pre');
-      var txt=pre.innerText;
-      function done(){ var o=b.textContent; b.textContent='Kopiert ✓'; setTimeout(function(){ b.textContent=o; },1600); }
-      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ fallback(); }); } else { fallback(); }
-      function fallback(){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); done(); }
-    });
-  });
-})();
-</script>
+<script src="anleitung.js"></script>
 </body>
 </html>
