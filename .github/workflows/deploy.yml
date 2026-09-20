@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - master
+  # Die Anleitungsseiten kommen aus stayingclean/ki-tasks (siehe unten). Ein
+  # Push dort loest hier nichts aus, darum einmal taeglich nachziehen. Bewusst
+  # kein repository_dispatch mit PAT: ein Token, das ablaeuft, ist mehr Risiko
+  # als ein Tag Verzoegerung.
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -26,6 +33,38 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      # Die Seiten, die den ki-tasks-Ordner beschreiben, liegen in jenem Repo,
+      # weil sie sich mit ihm zusammen aendern muessen. ki-tasks ist oeffentlich,
+      # darum braucht dieser Checkout kein Token.
+      - name: Anleitung aus ki-tasks holen
+        uses: actions/checkout@v4
+        with:
+          repository: stayingclean/ki-tasks
+          path: _ki-tasks
+
+      # Der Ordner anleitung/ entsteht erst in einem spaeteren Durchgang drueben.
+      # Solange er fehlt, laeuft das Deployment mit den Toolbox-Seiten weiter,
+      # statt an einem `cp` ohne Quelle zu scheitern.
+      - name: Einsetzen
+        run: |
+          if [ -d _ki-tasks/anleitung ]; then
+            cp -r _ki-tasks/anleitung/. docs/claude-anleitung/
+            echo "Anleitungsseiten aus ki-tasks uebernommen:"
+            ls -1 _ki-tasks/anleitung
+          else
+            echo "::notice::_ki-tasks/anleitung fehlt noch - nur die Toolbox-Seiten werden veroeffentlicht."
+          fi
+
+      # _ki-tasks liegt im Wurzelverzeichnis, hochgeladen wird nur ./docs.
+      # Der Checkout kann also nicht ins Artefakt geraten; die Zeile prueft es.
+      - name: Pruefen, dass _ki-tasks nicht im Artefakt liegt
+        run: |
+          if find docs -name '_ki-tasks' -print -quit | grep -q .; then
+            echo "::error::_ki-tasks liegt unter docs/ und wuerde veroeffentlicht."
+            exit 1
+          fi
+          echo "OK: docs/ enthaelt kein _ki-tasks."
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

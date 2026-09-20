@@ -8,149 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-  <style>
-:root {
-  --bg: #FAF8F5; --card: #FFFFFF; --card-hover: #F5FAFA; --border: #E8E4DF;
-  --text: #1C1C1C; --muted: #7A7268; --accent: #008080; --accent-dark: #006666;
-  --accent-tint: #E6F2F2; --warn-tint: #FFF4E5; --warn: #B45309;
-  --ok-tint: #EAF6EC; --ok: #2F7D3A;
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
-  --sidebar: 260px;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; font-family: var(--font-body); background: var(--bg); color: var(--text);
-  line-height: 1.55; -webkit-font-smoothing: antialiased; }
-body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: radial-gradient(ellipse 80% 55% at 50% 0%, var(--accent-tint) 0%, transparent 68%);
-  opacity: 0.3; animation: breathe 7s ease-in-out infinite; }
-@keyframes breathe { 0%,100% { opacity: .22; transform: scaleY(1);} 50% { opacity: .40; transform: scaleY(1.05);} }
-a { color: var(--accent-dark); }
-
-/* Layout: Seitenleiste links, Inhalt rechts */
-.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
-.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 28px 18px 28px 22px;
-  border-right: 1px solid var(--border); background: rgba(255,255,255,.55); backdrop-filter: blur(6px); }
-.brand { display: block; text-decoration: none; margin-bottom: 22px; }
-.brand .title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--accent-dark); line-height: 1.2; }
-.brand .back { display: block; font-size: .78rem; color: var(--muted); margin-top: 4px; }
-.brand .back:hover { color: var(--accent); }
-.nav h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 6px; }
-.nav a { display: block; padding: 7px 10px; border-radius: 9px; text-decoration: none; color: var(--text); font-size: .93rem; }
-.nav a:hover { background: var(--card-hover); color: var(--accent-dark); }
-.nav a.active { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; }
-.nav a .n { display: inline-block; width: 1.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
-.nav a.active .n { color: var(--accent); }
-
-.menu-toggle { display: none; }
-
-main { padding: 44px 48px 64px; max-width: 860px; }
-header.page { margin-bottom: 28px; }
-.kicker { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 6px; }
-h1 { font-family: var(--font-display); font-size: 2.1rem; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; color: var(--accent-dark); }
-.lead { color: var(--muted); font-size: 1.08rem; margin: 0; }
-h2 { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; margin: 40px 0 12px; color: var(--accent-dark); }
-h3 { font-size: 1.05rem; margin: 26px 0 8px; }
-p { margin: 0 0 14px; }
-ul, ol { margin: 0 0 16px; padding-left: 22px; }
-li { margin-bottom: 6px; }
-li > ul, li > ol { margin-top: 6px; }
-code { font-family: var(--font-mono); font-size: .88em; background: var(--card); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; }
-pre { background: #1F2A2A; color: #EAF2F2; padding: 16px 18px; border-radius: 12px; overflow-x: auto;
-  font-family: var(--font-mono); font-size: .86rem; line-height: 1.5; margin: 0 0 18px; white-space: pre-wrap; }
-pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
-
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin: 0 0 16px; }
-.card h3 { margin-top: 0; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 0 0 18px; }
-.grid .card { margin: 0; }
-a.card { display: block; text-decoration: none; color: var(--text); transition: transform .15s, border-color .15s; }
-a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
-a.card .name { font-weight: 600; color: var(--accent-dark); display: block; margin-bottom: 4px; }
-a.card .meta { color: var(--muted); font-size: .88rem; }
-
-.note { border-left: 4px solid var(--accent); background: var(--accent-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
-.warn { border-left: 4px solid var(--warn); background: var(--warn-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
-.ok { border-left: 4px solid var(--ok); background: var(--ok-tint); padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 0 0 18px; }
-.note p:last-child, .warn p:last-child, .ok p:last-child { margin-bottom: 0; }
-.label { display: inline-block; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px;
-  border-radius: 999px; background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; vertical-align: middle; }
-.label.warn-l { background: var(--warn-tint); color: var(--warn); }
-.label.ok-l { background: var(--ok-tint); color: var(--ok); }
-
-.summary { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin: 0 0 28px; }
-.summary h2 { margin: 0 0 8px; font-size: 1.1rem; font-family: var(--font-body); color: var(--text); }
-.summary ul { margin-bottom: 0; }
-
-/* Schritte */
-.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 24px; }
-.steps > li { position: relative; padding: 0 0 22px 52px; margin: 0; }
-.steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
-  width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; font-size: .95rem; }
-.steps > li::after { content: ''; position: absolute; left: 17px; top: 40px; bottom: 0; width: 2px; background: var(--border); }
-.steps > li:last-child::after { display: none; }
-.steps > li h3 { margin: 6px 0 8px; }
-
-/* Prompt-Box */
-.prompt { position: relative; border: 1px solid #CDE4E4; background: #F3FAFA; border-radius: 12px; padding: 14px 16px 14px; margin: 0 0 18px; }
-.prompt .ptitle { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent-dark); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.prompt pre { margin: 0; background: #FFFFFF; color: var(--text); border: 1px solid var(--border); font-family: var(--font-body); font-size: .92rem; }
-.copy { font: inherit; font-size: .75rem; letter-spacing: 0; text-transform: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
-  background: #fff; color: var(--accent-dark); cursor: pointer; }
-.copy:hover { border-color: var(--accent); }
-
-/* Tabellen */
-.tablewrap { overflow-x: auto; margin: 0 0 18px; }
-table { border-collapse: collapse; width: 100%; font-size: .92rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
-tr:last-child td { border-bottom: 0; }
-td.y { color: var(--ok); font-weight: 600; } td.n { color: var(--warn); font-weight: 600; }
-
-/* Ordnerbaum */
-.tree { font-family: var(--font-mono); font-size: .86rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 0 0 18px; white-space: pre; overflow-x: auto; line-height: 1.6; }
-.tree .c { color: var(--muted); }
-
-/* Diagramm (Flow) */
-.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 20px; }
-.flow .box { flex: 1 1 140px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: .9rem; }
-.flow .box b { display: block; color: var(--accent-dark); margin-bottom: 4px; }
-.flow .arrow { align-self: center; color: var(--accent); font-size: 1.3rem; }
-.flow .box.you { border-color: #CDE4E4; background: var(--accent-tint); }
-
-/* Blättern */
-.pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); }
-.pager a { flex: 1; text-decoration: none; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); }
-.pager a:hover { border-color: var(--accent); }
-.pager a small { display: block; color: var(--muted); font-size: .78rem; }
-.pager a.next { text-align: right; }
-
-footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
-footer code { background: var(--card); }
-.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
-.footer-credit { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
-.footer-credit:hover { color: var(--accent); }
-.footer-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; display: block; }
-.footer-coffee { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; transition: color .15s ease; }
-.footer-coffee:hover { color: var(--accent); }
-
-@media (max-width: 860px) {
-  .layout { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); padding: 16px 18px; }
-  .menu-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; font: inherit; font-weight: 600;
-    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; cursor: pointer; color: var(--accent-dark); }
-  .nav { display: none; margin-top: 10px; }
-  .nav.open { display: block; }
-  .brand { margin-bottom: 12px; }
-  main { padding: 28px 18px 48px; }
-  h1 { font-size: 1.7rem; }
-  .footer-sep { display: none; }
-}
-@media print { .sidebar, .pager, .copy { display: none; } .layout { display: block; } main { max-width: none; padding: 0; } }
-</style>
+  <link rel="stylesheet" href="stil.css">
 </head>
 <body>
 <div class="layout">
@@ -160,26 +18,13 @@ footer code { background: var(--card); }
       <span class="back">Anleitung · Toolbox</span>
     </a>
     <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Inhalt <span aria-hidden="true">☰</span></button>
-    <nav class="nav" id="nav">
-<h2>Einstieg</h2>
-<a href="index.html"><span class="n">1</span>Start</a>
-<a href="voraussetzungen.html"><span class="n">2</span>Voraussetzungen</a>
-<a href="abos.html"><span class="n">3</span>Abos & Kosten</a>
-<a href="datenschutz.html"><span class="n">4</span>Datenschutz</a>
-<h2>Arbeitsweise</h2>
-<a href="md-dateien.html"><span class="n">5</span>Markdown-Dateien</a>
-<a href="workflow-bewerbung.html"><span class="n">6</span>Workflow: Bewerbung</a>
-<a href="workflow-gesuch.html"><span class="n">7</span>Workflow: Gesuch</a>
-<h2>Weiterführend</h2>
-<a href="prompts.html" class="active" aria-current="page"><span class="n">8</span>Weitere Prompts</a>
-<a href="alternativen.html"><span class="n">9</span>ChatGPT & Grok</a>
-    </nav>
+    <nav class="nav" id="nav"></nav>
   </aside>
   <main>
 <header class="page">
   <p class="kicker">Weiterführend</p>
   <h1>Weitere Prompts für den Alltag nach der Klinik</h1>
-  <p class="lead">Szenarien, die vielen in einer Suchttherapie begegnen. Jeder Prompt geht davon aus, dass ein Ordner mit <code>regeln.md</code> und den nötigen Unterlagen verbunden ist. Im Gratis-Chat: Dateien stattdessen hochladen.</p>
+  <p class="lead">Szenarien, die vielen in einer Suchttherapie begegnen — für alles, wofür es keinen fertigen Aufgaben-Ordner gibt. Jeder Prompt geht davon aus, dass ein Ordner mit deinen Unterlagen in Cowork verbunden ist. Im Gratis-Chat: Dateien stattdessen hochladen.</p>
 </header>
 
 <div class="summary">
@@ -199,11 +44,11 @@ footer code { background: var(--card); }
 
 <div class="prompt">
   <div class="ptitle">Wohnungssuche: Inserate finden und bewerten <button class="copy" type="button">Kopieren</button></div>
-<pre>Lies regeln.md und kriterien.md (Region [Aarau, 15 km Umkreis], Miete max. CHF [600] inkl. NK, auch WG-Zimmer, keine Haustiere).
+<pre>Suche mir eine Wohnung: Region [Aarau, 15 km Umkreis], Miete max. CHF [600] inkl. NK, auch WG-Zimmer, keine Haustiere.
 
 Suche auf homegate.ch, immoscout24.ch, flatfox.ch, wgzimmer.ch und in den Facebook-Marketplace-Treffern, die öffentlich zugänglich sind, nach Angeboten der letzten 14 Tage.
 
-Erstelle inserate/[DATUM]_wohnungen.md: Ort | Typ | Miete | Verfügbar ab | Link | Besichtigung | Passung 1–5 | Bemerkung.
+Erstelle 2_Arbeitsstand/[DATUM]_wohnungen.md: Ort | Typ | Miete | Verfügbar ab | Link | Besichtigung | Passung 1–5 | Bemerkung.
 Bewerte streng: ÖV-Anbindung, Distanz zur Nachsorgestelle in [Ort], Lärm.
 
 Nenne mir die drei besten und schlag mir für jedes eine kurze, freundliche Anfrage-Nachricht vor (max. 5 Sätze, ohne Angaben zu Gesundheit oder Klinik).</pre>
@@ -211,9 +56,9 @@ Nenne mir die drei besten und schlag mir für jedes eine kurze, freundliche Anfr
 
 <div class="prompt">
   <div class="ptitle">Bewerbungsdossier für Vermieter <button class="copy" type="button">Kopieren</button></div>
-<pre>Erstelle aus profil.md ein Bewerbungsdossier für die Wohnung [Adresse/Link]:
+<pre>Erstelle aus meinen Unterlagen ein Bewerbungsdossier für die Wohnung [Adresse/Link]:
 1. Ein Anschreiben (halbe A4-Seite): wer ich bin, warum diese Wohnung, wie ich die Miete finanziere (Einkommen [CHF …], allenfalls Unterstützung durch [Stelle]). Keine Angaben zu Diagnosen oder Klinikaufenthalt.
-2. Eine Checkliste der üblichen Beilagen (Betreibungsauszug, Kopie ID, Lohnnachweis, Referenz) und was davon in unterlagen/ schon liegt.
+2. Eine Checkliste der üblichen Beilagen (Betreibungsauszug, Kopie ID, Lohnnachweis, Referenz) und was davon in 1_Meine-Unterlagen/ schon liegt.
 3. Fünf Fragen, die ich an der Besichtigung stellen sollte.
 Zeig mir alles hier, dann PDF.</pre>
 </div>
@@ -222,7 +67,7 @@ Zeig mir alles hier, dann PDF.</pre>
 
 <div class="prompt">
   <div class="ptitle">Schuldenübersicht erstellen <button class="copy" type="button">Kopieren</button></div>
-<pre>In unterlagen/ liegen Mahnungen, Rechnungen und ein Betreibungsauszug. Lies alle und erstelle schulden.md:
+<pre>In 1_Meine-Unterlagen/ liegen Mahnungen, Rechnungen und ein Betreibungsauszug. Lies alle und erstelle 2_Arbeitsstand/schulden.md:
 
 Gläubiger | Betrag | Fällig seit | Stand (Mahnung / Betreibung / Verlustschein) | Kontakt | Priorität
 
@@ -238,7 +83,7 @@ Dann: Welche drei Schritte würdest du als Erstes vorschlagen, und bei welchen d
 
 Regeln: höchstens eine halbe Seite, sachlich, ohne Rechtfertigung, ohne Angaben zu Gesundheit. Ein Satz zur Situation («Mein Einkommen ist zurzeit reduziert»), ein Satz zum Vorschlag, ein Satz mit der Bitte um schriftliche Bestätigung.
 
-Zeig mir den Text, dann als PDF nach briefe/[DATUM]_[gläubiger].pdf. Trag in log.md ein, bis wann ich mit einer Antwort rechnen sollte.</pre>
+Zeig mir den Text, dann als PDF nach 3_Zum-Versenden/[DATUM]_[gläubiger].pdf. Trag in 9_Claude/stand.md ein, bis wann ich mit einer Antwort rechnen sollte.</pre>
 </div>
 
 <div class="prompt">
@@ -246,19 +91,19 @@ Zeig mir den Text, dann als PDF nach briefe/[DATUM]_[gläubiger].pdf. Trag in lo
 <pre>Ich möchte bei der Steuerverwaltung [Kanton] ein Gesuch um [Erlass / Stundung / Ratenzahlung] für die Steuern [Jahr] stellen. Betrag CHF [...].
 
 1. Suche die offizielle Seite der Steuerverwaltung [Kanton] und fasse zusammen: Wo reicht man ein, welches Formular, welche Beilagen, welche Voraussetzungen. Nur Angaben von der offiziellen Website, mit Link.
-2. Vergleiche die Anforderungen mit unterlagen/ und sag mir, was fehlt.
-3. Erstelle einen Entwurf für das Begleitschreiben (max. 1 Seite) aus sachverhalt.md und budget.pdf. Kurz, keine Erklärung des Steuersystems, Betrag im Betreff.
+2. Vergleiche die Anforderungen mit 1_Meine-Unterlagen/ und sag mir, was fehlt.
+3. Erstelle einen Entwurf für das Begleitschreiben (max. 1 Seite) aus 2_Arbeitsstand/sachverhalt.md und budget.pdf. Kurz, keine Erklärung des Steuersystems, Betrag im Betreff.
 Zeig mir den Entwurf, ich entscheide.</pre>
 </div>
 
 <div class="prompt">
   <div class="ptitle">Amtlichen Brief verstehen <button class="copy" type="button">Kopieren</button></div>
-<pre>In unterlagen/ liegt [brief.pdf]. Erkläre mir in einfachen Worten:
+<pre>In 1_Meine-Unterlagen/ liegt [brief.pdf]. Erkläre mir in einfachen Worten:
 1. Wer schreibt und worum geht es? (3 Sätze)
 2. Was muss ich tun, und bis wann? (Liste mit Fristen)
 3. Was passiert, wenn ich nichts tue?
 4. Welche Fachstelle könnte mir hier helfen?
-Wenn eine Frist im Brief steht, trag sie in log.md ein. Erfinde keine rechtlichen Folgen, die nicht im Brief stehen; sag mir, wenn du unsicher bist.</pre>
+Wenn eine Frist im Brief steht, trag sie in 9_Claude/stand.md ein. Erfinde keine rechtlichen Folgen, die nicht im Brief stehen; sag mir, wenn du unsicher bist.</pre>
 </div>
 
 <h2>Versicherungen und Ämter</h2>
@@ -267,7 +112,7 @@ Wenn eine Frist im Brief steht, trag sie in log.md ein. Erfinde keine rechtliche
   <div class="ptitle">Prämienverbilligung beantragen <button class="copy" type="button">Kopieren</button></div>
 <pre>Ich wohne im Kanton [...] und möchte Prämienverbilligung für die Krankenkasse beantragen.
 Suche die offizielle kantonale Seite (SVA / Ausgleichskasse) und erstelle checkliste_praemienverbilligung.md: Frist, Formular (Link), nötige Beilagen, Einkommensgrenzen soweit publiziert.
-Vergleiche mit unterlagen/ und sag mir, was fehlt. Wenn das Formular online ausfüllbar ist und ich dir den Browser freigebe, fülle es aus meinen Angaben in profil.md aus, aber sende nicht ab.</pre>
+Vergleiche mit 1_Meine-Unterlagen/ und sag mir, was fehlt. Wenn das Formular online ausfüllbar ist und ich dir den Browser freigebe, fülle es aus meinen Unterlagen aus, aber sende nicht ab.</pre>
 </div>
 
 <div class="prompt">
@@ -283,7 +128,7 @@ Keine medizinischen Angaben in den Texten; die kommen von der Einrichtung.</pre>
   <div class="ptitle">Anmeldung beim RAV vorbereiten <button class="copy" type="button">Kopieren</button></div>
 <pre>Ich melde mich am [Datum] beim RAV [Ort] an. Erstelle rav_vorbereitung.md:
 1. Was muss ich mitbringen (offizielle Liste von arbeit.swiss oder der kantonalen Seite, mit Link).
-2. Meine Arbeitsbemühungen der letzten Wochen aus log.md und inserate/ als Tabelle, so wie das RAV sie will (Datum, Firma, Stelle, Art der Bewerbung, Ergebnis).
+2. Meine Arbeitsbemühungen der letzten Wochen aus 9_Claude/stand.md und 2_Arbeitsstand/ als Tabelle, so wie das RAV sie will (Datum, Firma, Stelle, Art der Bewerbung, Ergebnis).
 3. Drei Fragen, die ich dem Personalberater stellen sollte.
 Was fehlt, markiere mit «offen».</pre>
 </div>
@@ -295,7 +140,7 @@ Was fehlt, markiere mit «offen».</pre>
 <pre>In meinem Lebenslauf gibt es eine Lücke von [Monat Jahr] bis [Monat Jahr] wegen eines Klinikaufenthalts. Schlag mir drei Varianten vor, wie ich das im Lebenslauf und im Bewerbungsgespräch formuliere:
 a) so knapp wie möglich,
 b) mit dem Hinweis «gesundheitlich bedingt»,
-c) mit einem positiven Dreh (Arbeitstraining, Weiterbildung), falls das in profil.md belegt ist.
+c) mit einem positiven Dreh (Arbeitstraining, Weiterbildung), falls das in meinen Unterlagen belegt ist.
 Sag mir zu jeder Variante, was ein Arbeitgeber daraus schliessen könnte. Keine Empfehlung, die mich zum Lügen bringt.</pre>
 </div>
 
@@ -308,7 +153,7 @@ Zeig mir den Text, dann PDF.</pre>
 
 <div class="prompt">
   <div class="ptitle">Bewerbungsgespräch üben <button class="copy" type="button">Kopieren</button></div>
-<pre>Lies profil.md und das Inserat in inserate/[datei].md, Nr. [...].
+<pre>Lies meine Unterlagen und das Inserat in 2_Arbeitsstand/[datei].md, Nr. [...].
 Spiel den Personalverantwortlichen. Stell mir eine Frage nach der anderen, warte jeweils auf meine Antwort, und gib mir danach ein kurzes Feedback (was war gut, was würdest du anders sagen). Nimm auch eine Frage zur Lücke im Lebenslauf. Insgesamt 6 Fragen. Sei fair, nicht schonend.</pre>
 </div>
 
@@ -318,12 +163,12 @@ Spiel den Personalverantwortlichen. Stell mir eine Frage nach der anderen, warte
   <div class="ptitle">Wochenplan nach dem Austritt <button class="copy" type="button">Kopieren</button></div>
 <pre>Ich trete am [Datum] aus. Fixe Termine: [Tagesklinik Mo/Mi/Fr 9–15, Arbeitstraining Di/Do 8–12, Selbsthilfegruppe Do 19 Uhr, Sozialdienst alle 2 Wochen].
 Erstelle wochenplan.md für die ersten vier Wochen: Termine, dazwischen je einen Block für Papierkram (max. 90 Minuten) und je einen Block für etwas, das mir guttut (siehe Skillsliste der Toolbox). Nichts vor 8 Uhr, nichts nach 20 Uhr.
-Ausserdem eine kurze Liste offener Punkte aus log.md mit Fristen, verteilt auf die Papierkram-Blöcke.</pre>
+Ausserdem eine kurze Liste offener Punkte aus 9_Claude/stand.md mit Fristen, verteilt auf die Papierkram-Blöcke.</pre>
 </div>
 
 <div class="prompt">
   <div class="ptitle">Gespräch mit Sozialdienst oder Beistand vorbereiten <button class="copy" type="button">Kopieren</button></div>
-<pre>Am [Datum] habe ich ein Gespräch mit [Sozialdienst / Beistand / Case Manager]. Erstelle aus log.md, schulden.md und sachverhalt.md eine einseitige Übersicht zum Ausdrucken:
+<pre>Am [Datum] habe ich ein Gespräch mit [Sozialdienst / Beistand / Case Manager]. Erstelle aus 9_Claude/stand.md, 2_Arbeitsstand/schulden.md und 2_Arbeitsstand/sachverhalt.md eine einseitige Übersicht zum Ausdrucken:
 1. Stand der Dinge (Wohnung, Arbeit, Finanzen) in je 2 Sätzen.
 2. Was ich seit dem letzten Gespräch erledigt habe.
 3. Wo ich Unterstützung brauche (konkret, mit Betrag oder Frist).
@@ -339,13 +184,13 @@ Verschiebe nichts, bevor ich die Liste bestätigt habe. Dateien, die du nicht le
 
 <h2>Wenn ein Prompt nicht funktioniert</h2>
 <ul>
-  <li><strong>Claude erfindet etwas:</strong> Regel in <code>regeln.md</code> verschärfen («Wenn eine Angabe fehlt, schreib [OFFEN] und frag mich») und den Chat neu starten.</li>
+  <li><strong>Claude erfindet etwas:</strong> «Erfinde nichts. Fehlt dir eine Angabe, frag mich, statt zu raten.» In den Aufgaben-Ordnern steht diese Leitplanke schon in der <code>CLAUDE.md</code>; hat Claude sie aus dem Blick verloren, hilft ein neuer Chat.</li>
   <li><strong>Claude findet nichts im Web:</strong> Die Seite blockiert vermutlich den Zugriff. Chrome-Erweiterung verwenden oder die Seite selbst öffnen und den Text als Datei in den Ordner legen.</li>
   <li><strong>Der Text klingt nicht nach dir:</strong> Gib Claude zwei, drei Texte, die du selbst geschrieben hast, als <code>stil.md</code> und verweise darauf. Oder schreib einen Rohentwurf in Stichworten und lass Claude nur glätten.</li>
   <li><strong>Zu lang, zu viel:</strong> «Kürzer. Nur die Kernaussage zuerst, Details danach.» funktioniert erstaunlich gut.</li>
 </ul>
 
-<nav class="pager"><a class="prev" href="workflow-gesuch.html"><small>Zurück</small>← Workflow: Gesuch</a><a class="next" href="alternativen.html"><small>Weiter</small>ChatGPT & Grok →</a></nav>
+<nav class="pager"></nav>
 
     <footer>
       <div>Teil der Toolbox · <a href="../index.html">Zur Übersicht</a> · gehostet via GitHub Pages unter <code>stayingclean.github.io/toolbox/</code></div>
@@ -364,20 +209,6 @@ Verschiebe nichts, bevor ich die Liste bestätigt habe. Dateien, die du nicht le
 
   </main>
 </div>
-<script>
-(function(){
-  var t=document.querySelector('.menu-toggle'), n=document.querySelector('.nav');
-  if(t&&n){ t.addEventListener('click',function(){ n.classList.toggle('open'); t.setAttribute('aria-expanded', n.classList.contains('open')); }); }
-  document.querySelectorAll('.copy').forEach(function(b){
-    b.addEventListener('click',function(){
-      var pre=b.closest('.prompt').querySelector('pre');
-      var txt=pre.innerText;
-      function done(){ var o=b.textContent; b.textContent='Kopiert ✓'; setTimeout(function(){ b.textContent=o; },1600); }
-      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){ fallback(); }); } else { fallback(); }
-      function fallback(){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); done(); }
-    });
-  });
-})();
-</script>
+<script src="anleitung.js"></script>
 </body>
 </html>
