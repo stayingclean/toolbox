@@ -94,12 +94,15 @@ den **ki-tasks-Ordner** beschreiben, liegen in `stayingclean/ki-tasks` unter
 Deployment kopiert `.github/workflows/deploy.yml` sie darüber. Die URL
 `stayingclean.github.io/toolbox/claude-anleitung/` bleibt dieselbe.
 
-Heute kommen von drüben: **`der-ordner.html`** und **`platzhalter.html`**
-(Gruppe „Arbeitsweise"). Sie liegen **nicht** in diesem Repo — wer den Ordner
-`docs/claude-anleitung/` lokal öffnet, findet sie nicht, und die beiden
-Navigationseinträge zeigen dort ins Leere. Das ist kein Fehler, sondern der
-Preis dafür, dass sie sich mit dem Ordner zusammen ändern. Geprüft wird die
-Anleitung darum am **zusammenkopierten** Stand, nicht am Repo allein.
+Heute kommen von drüben sechs Seiten: **`der-ordner.html`** und
+**`platzhalter.html`** (Gruppe „Arbeitsweise") sowie **`aufgaben.html`**,
+**`wohnung.html`**, **`stelle.html`** und **`gesuch-krankheitskosten.html`**
+(Gruppe „Aufgaben" — je eine Seite pro Aufgabenordner, dazu die Übersicht).
+Sie liegen **nicht** in diesem Repo — wer den Ordner `docs/claude-anleitung/`
+lokal öffnet, findet sie nicht, und ihre Navigationseinträge zeigen dort ins
+Leere. Das ist kein Fehler, sondern der Preis dafür, dass sie sich mit dem
+Ordner zusammen ändern. Geprüft wird die Anleitung darum am
+**zusammenkopierten** Stand, nicht am Repo allein.
 
 Daraus folgen vier Dinge, die keine Sperre meldet:
 
