@@ -38,7 +38,13 @@ a { color: var(--accent-dark); }
 
 .menu-toggle { display: none; }
 
-main { padding: 44px 48px 64px; max-width: 860px; }
+/* min-width:0 ist noetig, nicht kosmetisch: main ist ein Grid-Element und
+   schrumpft ohne diese Zeile nicht unter sein breitestes Kind. Eine breite
+   Tabelle oder ein .tree-Block scrollt dann nicht in sich, sondern schiebt
+   die ganze Seite seitwaerts. Auf dem Handy (375 px) betraf das abos,
+   voraussetzungen, prompts und alternativen mit bis zu 219 px Ueberlauf.
+   Am Desktop aendert die Zeile nichts. */
+main { padding: 44px 48px 64px; max-width: 860px; min-width: 0; }
 header.page { margin-bottom: 28px; }
 .kicker { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 6px; }
 h1 { font-family: var(--font-display); font-size: 2.1rem; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; color: var(--accent-dark); }

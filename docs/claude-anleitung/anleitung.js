@@ -12,8 +12,9 @@
    Deployment aus stayingclean/ki-tasks (siehe .github/workflows/deploy.yml).
    Sie duerfen erst hier eingetragen werden, wenn sie dort auch liegen.
 
-   Umlaute stehen als \u-Folge, damit die Datei unabhaengig davon richtig
-   ankommt, mit welcher Kodierung der Browser eine externe .js-Datei liest. */
+   Diese Datei ist UTF-8. GitHub Pages liefert .js mit charset=utf-8 aus, und
+   lokal per file:// erbt ein externes Skript die Kodierung der Seite, die
+   ebenfalls UTF-8 deklariert. Darum stehen Umlaute hier unverschluesselt. */
 
 var SEITEN = [
   { gruppe: 'Einstieg', seiten: [
@@ -23,8 +24,13 @@ var SEITEN = [
     { href: 'datenschutz.html',     titel: 'Datenschutz' }
   ]},
 
-  /* Gruppe "Arbeitsweise" folgt aus ki-tasks/anleitung/, sobald sie dort
-     angelegt ist. Bis dahin verweisen die Seiten auf den Aufgabenkatalog. */
+  /* Diese beiden Seiten liegen NICHT in diesem Repo. Sie kommen aus
+     stayingclean/ki-tasks unter anleitung/ und werden beim Deployment
+     darueberkopiert. Lokal fehlen sie darum — das ist kein Fehler. */
+  { gruppe: 'Arbeitsweise', seiten: [
+    { href: 'der-ordner.html',  titel: 'Der Ordner' },
+    { href: 'platzhalter.html', titel: 'Platzhalter einsetzen' }
+  ]},
 
   { gruppe: 'Weiterführend', seiten: [
     { href: 'prompts.html',      titel: 'Weitere Prompts' },
