@@ -15,7 +15,6 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/skillsliste.html` = die generierte Skillsliste.
 - `docs/budgetvorlage.html` = eigenständige Budget-Seite (neutrale Vorlage).
 - `docs/flyer-editor.html` = Flyer-Editor (self-contained, Bilder eingebettet).
-- `docs/asrs-v1-1.html` = ASRS v1.1 (ADHS-Selbstbeurteilung, WHO – frei nutzbar).
 - `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
 - `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
 - `docs/claude-anleitung/` = Mehrseiten-Anleitung „Mit Claude arbeiten" (11 Seiten,
