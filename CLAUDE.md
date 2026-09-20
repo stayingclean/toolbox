@@ -102,6 +102,28 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    **Die Beschriftung pflegt nur die Betreuung.** Das Formular sendet ausschliesslich
    Adressen — ohne Domain im Knopftext fiele eine irreführende Beschriftung kaum auf.
 
+   **Beschriftet wird dort, wo zwei Knöpfe desselben Skills sonst gleich hiessen.**
+   Zeigen zwei Links auf denselben Shop, stünde ohne Text zweimal `skills-king.ch`
+   nebeneinander und niemand sähe, was dahinter liegt. Der Shop bleibt am Symbol
+   erkennbar, der Text nennt darum das Produkt („Akupressur-Ring", „Massage-Armband").
+   Sind die Hostnamen dagegen verschieden, **bleibt die Beschriftung leer** — der
+   Hostname ist dann die nützlichere Angabe, weil er die Wahl zwischen den Shops zeigt.
+
+   **Welche Händler verlinkt werden:** zuerst die beiden Skills-Shops
+   (`skills-box.ch`, `skills-king.ch`), danach `migros.ch` und `coop.ch` — und
+   zwar nur für Alltagsartikel, die kein Skills-Shop führt (Zitronen, Senf,
+   Notizhefte, Eiswürfelformen). Denner, Aldi, Lidl und Galaxus sind bewusst
+   **nicht** mehr dabei: Galaxus liess sich durchweg ersetzen, und bei Denner
+   lieferte die Suche nach „chili" chilenischen Wein.
+
+   **Bei Coop ist die Kategorieseite der Suche vorzuziehen**
+   (`/de/lebensmittel/…/c/m_0049`). Die Coop-Suche ist unscharf: „peperoncini"
+   bringt Chips, Ketchup und Salami. Die Migros-Suche ist umgekehrt streng —
+   alle Wörter müssen passen —, dort führen enge Begriffe zum Ziel. Leerzeichen
+   in einer Suchadresse gehören als `%20` hinein; ein `%2B` ist ein wörtliches
+   Pluszeichen und findet nichts. **Skills King immer ohne `www.`** schreiben,
+   `www.skills-king.ch` leitet sonst um.
+
    **Wechselt bei einer Übernahme die Adresse, wird ihre Beschriftung geleert**
    (`tools/vorschlaege_holen.py`, `zeile_ersetzen`). Sonst beschriebe sie ein anderes
    Produkt, und das sähe niemand. Die Text-Spalten fehlen bewusst in
@@ -160,7 +182,7 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
 
 `assets/favicons/<hostname>.png` (32 × 32, Hostname ohne `www.`). `build.py`
 bettet sie als `data:`-URI ein — **einmal je Hostname** in der Tabelle `ICONS`,
-nicht je Link: 49 der heutigen Links zeigen auf denselben Shop.
+nicht je Link: 40 der heutigen Links zeigen auf denselben Shop.
 
 **Fehlt eine Datei, gibt es kein Symbol und der Build läuft weiter.** Diese
 Eigenschaft muss jeder Umbau erhalten: sonst legte eine Bezugsquelle bei einem
@@ -170,11 +192,17 @@ unbekannten Händler die ganze Website lahm.
 meldete beim Öffnen eines Skill-Dialogs an Coop, dass jemand genau diesen Skill
 angeschaut hat — ohne Klick. Neues Symbol holen: `uv run tools/favicon_holen.py <domain>`.
 
-**Alle sieben heutigen Symbole liegen vor.** `lidl.ch` blockiert den
-automatischen Abruf; das Symbol wurde darum aus `assets/favicons/lidl.svg`
-gerendert. Bei jedem weiteren Händler, der sperrt, gibt `favicon_holen.py` beim
-Scheitern die Anleitung von Hand aus. Der Build läuft unverändert durch, der
-betroffene Knopf zeigt bis dahin nur den Hostnamen.
+**Alle vier heutigen Symbole liegen vor** (`skills-box.ch`, `skills-king.ch`,
+`migros.ch`, `coop.ch`). Bei einem Händler, der den Abruf sperrt, gibt
+`favicon_holen.py` beim Scheitern die Anleitung von Hand aus. Der Build läuft
+unverändert durch, der betroffene Knopf zeigt bis dahin nur den Hostnamen.
+
+Im Ordner liegen ausserdem `denner.ch`, `aldi-suisse.ch`, `lidl.ch` und
+`galaxus.ch` — diese Händler werden seit dem Umbau der Bezugsquellen nicht mehr
+verlinkt (siehe „Welche Händler verlinkt werden" weiter oben). Die Dateien stören
+nicht: `build.py` bettet nur ein, was
+in der Excel wirklich vorkommt. `lidl.ch.png` wurde aus `assets/favicons/lidl.svg`
+gerendert, weil `lidl.ch` den automatischen Abruf blockiert.
 
 **Aus einem SVG wird ein Symbol so:** gross rendern, dann auf 32 × 32 herunter-
 rechnen — direkt auf 32 px gerendert zermatscht die Schrift.
