@@ -23,15 +23,11 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/search?q=Tiger+Balm",
-        "t": ""
+        "t": "Tiger Balm"
        },
        {
         "u": "https://www.skills-box.ch/products/ammola-riechstaebchen",
-        "t": ""
-       },
-       {
-        "u": "https://www.coop.ch/de/search/?text=tiger%2Bbalm",
-        "t": ""
+        "t": "AmmoLa Riechstäbchen"
        }
       ]
      },
@@ -45,7 +41,15 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/search?q=Brause",
-        "t": ""
+        "t": "Brausepulver"
+       },
+       {
+        "u": "https://skills-king.ch/p/pop-rocks/",
+        "t": "Pop Rocks"
+       },
+       {
+        "u": "https://skills-king.ch/p/center-shock-mix/",
+        "t": "Center Shock"
        }
       ]
      },
@@ -58,15 +62,15 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.denner.ch/de/search?q=chili",
+        "u": "https://skills-king.ch/c/skills-zum-essen/chili-scharf-sussigkeit/",
         "t": ""
        },
        {
-        "u": "https://www.migros.ch/de/search?query=peperoncini",
+        "u": "https://www.migros.ch/de/search?query=chilis",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=peperoncini",
+        "u": "https://www.coop.ch/de/lebensmittel/fruechte-gemuese/frische-kraeuter-frische-gewuerze/chili-zitronengras-ingwer/c/m_0049",
         "t": ""
        }
       ]
@@ -80,12 +84,16 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.skills-box.ch/search?q=Riechstift",
-        "t": ""
+        "u": "https://skills-king.ch/c/aromatherapie/",
+        "t": "Aromatherapie"
        },
        {
-        "u": "https://www.migros.ch/de/search?query=%C3%A4therisches+%C3%B6l",
-        "t": ""
+        "u": "https://skills-king.ch/c/aromatherapie/roll-ons/",
+        "t": "Duft-Roll-Ons"
+       },
+       {
+        "u": "https://www.skills-box.ch/search?q=Riechstift",
+        "t": "Riechstifte"
        }
       ]
      },
@@ -99,15 +107,15 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/search?q=Toxic+Waste",
-        "t": ""
+        "t": "Toxic Waste"
        },
        {
-        "u": "https://www.skills-box.ch/products/death-balls-todesmutig-sauere-apfel-limette",
-        "t": ""
+        "u": "https://skills-king.ch/c/skills-zum-essen/sauer-suessigkeit/",
+        "t": "Saure Süssigkeiten"
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=saure+bonbons",
-        "t": ""
+        "u": "https://skills-king.ch/p/warheads-extreme-sour-56g/",
+        "t": "Warheads"
        }
       ]
      },
@@ -120,15 +128,11 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.lidl.ch/q/de-CH/search?q=zitronen",
-        "t": ""
-       },
-       {
         "u": "https://www.migros.ch/de/search?query=zitronen",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=zitronen",
+        "u": "https://www.coop.ch/de/lebensmittel/fruechte-gemuese/fruechte/zitrusfruechte/zitronen-limetten/c/m_5471",
         "t": ""
        }
       ]
@@ -142,15 +146,11 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.aldi-suisse.ch/de/ergebnisse?q=glace",
+        "u": "https://www.migros.ch/de/search?query=rahmglace",
         "t": ""
        },
        {
-        "u": "https://www.migros.ch/de/search?query=glace",
-        "t": ""
-       },
-       {
-        "u": "https://www.coop.ch/de/search/?text=glace",
+        "u": "https://www.coop.ch/de/lebensmittel/tiefgekuehlte-produkte/glace-dessert/glace-in-portionen/c/m_0671",
         "t": ""
        }
       ]
@@ -164,16 +164,38 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.skills-box.ch/search?q=Hand+Grip",
-        "t": ""
+        "u": "https://www.skills-box.ch/products/hand-presse",
+        "t": "Hand Grip"
        },
        {
         "u": "https://www.skills-box.ch/products/flexbar-1",
-        "t": ""
+        "t": "Flexbar"
        },
        {
-        "u": "https://www.skills-box.ch/products/wrist-ball",
-        "t": ""
+        "u": "https://skills-king.ch/c/anti-stress-ball/",
+        "t": "Anti-Stress-Bälle"
+       }
+      ]
+     },
+     {
+      "e": "🫚",
+      "t": "Ingwer kauen",
+      "b": "Kandierter oder frischer Ingwer brennt scharf und lange im Mund. Der Reiz ist stark, aber weniger aggressiv als Chili und lässt sich unterwegs unauffällig einsetzen.",
+      "tip": "💡 Kandierte Ingwerstücke in einer kleinen Dose mitnehmen. Wer es milder mag: Ingwer-Zitrone-Bonbons.",
+      "von": "",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://skills-king.ch/p/ingwerstuecke/",
+        "t": "Ingwerstücke"
+       },
+       {
+        "u": "https://skills-king.ch/c/skills-zum-essen/ingwer-sussigkeit/",
+        "t": "Ingwer-Süssigkeiten"
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=ingwer",
+        "t": "Ingwer frisch"
        }
       ]
      },
@@ -204,11 +226,15 @@
       "erg": "",
       "links": [
        {
+        "u": "https://skills-king.ch/p/erdbeer-pfeffer-bonbons/",
+        "t": ""
+       },
+       {
         "u": "https://www.migros.ch/de/search?query=gew%C3%BCrznelken",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=pfefferk%C3%B6rner",
+        "u": "https://www.coop.ch/de/lebensmittel/vorraete/bouillons-gewuerze/salz-pfeffer/pfeffer/c/m_0531",
         "t": ""
        }
       ]
@@ -223,15 +249,33 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/search?q=Riechstift",
-        "t": ""
+        "t": "Riechstifte"
        },
        {
         "u": "https://www.skills-box.ch/products/ammola-riechstaebchen",
-        "t": ""
+        "t": "AmmoLa Riechstäbchen"
        },
        {
         "u": "https://www.skills-box.ch/products/riechstigte",
-        "t": ""
+        "t": "Riechstifte Einweg"
+       }
+      ]
+     },
+     {
+      "e": "🖤",
+      "t": "Salmiak-Lakritz",
+      "b": "Extrem salziges Lakritz überflutet den Geschmackssinn und zieht die Aufmerksamkeit sofort in den Mund. Wirkt bei vielen stärker als Saures.",
+      "tip": "💡 Nur ein Stück auf einmal. Nicht für Kinder und nicht bei hohem Blutdruck — Lakritz treibt ihn zusätzlich hoch.",
+      "von": "",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://skills-king.ch/p/ultra-salz-lakritz/",
+        "t": "Ultra Salz Lakritz"
+       },
+       {
+        "u": "https://skills-king.ch/p/chili-lakritz-bonbon/",
+        "t": "Chili-Salmiak-Lakritz"
        }
       ]
      },
@@ -244,15 +288,11 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.denner.ch/de/search?q=senf",
+        "u": "https://www.migros.ch/de/search?query=senf%20scharf",
         "t": ""
        },
        {
-        "u": "https://www.migros.ch/de/search?query=senf%2Bscharf",
-        "t": ""
-       },
-       {
-        "u": "https://www.coop.ch/de/search/?text=senf",
+        "u": "https://www.coop.ch/de/search/?text=senf%20scharf",
         "t": ""
        }
       ]
@@ -267,11 +307,15 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/search?q=Chili",
-        "t": ""
+        "t": "Chili-Bonbons"
        },
        {
-        "u": "https://www.skills-box.ch/search?q=Toxic+Waste",
-        "t": ""
+        "u": "https://skills-king.ch/c/skills-zum-essen/chili-scharf-sussigkeit/",
+        "t": "Chili & Scharfes"
+       },
+       {
+        "u": "https://www.skills-box.ch/products/fishermans-s-friend",
+        "t": "Fisherman's Friend"
        }
       ]
      },
@@ -284,16 +328,16 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.skills-box.ch/search?q=Massage",
-        "t": ""
-       },
-       {
-        "u": "https://www.skills-box.ch/products/igelball",
-        "t": ""
-       },
-       {
         "u": "https://www.skills-box.ch/products/magnetische-akupressurkugeln",
-        "t": ""
+        "t": "Magnet-Akupressurkugeln"
+       },
+       {
+        "u": "https://skills-king.ch/p/akupressurkugeln/",
+        "t": "Akupressurkugeln"
+       },
+       {
+        "u": "https://skills-king.ch/s/akupressur-zubehoer/",
+        "t": "Akupressur-Zubehör"
        }
       ]
      },
@@ -315,12 +359,16 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.migros.ch/de/search?query=tabasco",
-        "t": ""
+        "u": "https://skills-king.ch/p/tabasco-mini/",
+        "t": "Tabasco Mini"
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=tabasco",
-        "t": ""
+        "u": "https://skills-king.ch/p/scovillas-dragonfire-extreme-hot-sauce/",
+        "t": "Dragonfire Extreme Hot"
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=tabasco",
+        "t": "Tabasco"
        }
       ]
      },
@@ -333,15 +381,11 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.aldi-suisse.ch/de/ergebnisse?q=wasabi",
-        "t": ""
-       },
-       {
         "u": "https://www.migros.ch/de/search?query=wasabi",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=wasabi",
+        "u": "https://www.coop.ch/de/search/?text=wasabipaste",
         "t": ""
        }
       ]
@@ -380,16 +424,16 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.skills-box.ch/search?q=Massage",
-        "t": ""
-       },
-       {
         "u": "https://www.skills-box.ch/products/massage-ball",
-        "t": ""
+        "t": "Massageball"
        },
        {
-        "u": "https://www.galaxus.ch/de/s6/producttype/faszienball-faszienrolle-3965",
-        "t": ""
+        "u": "https://skills-king.ch/p/massage-erdnuss/",
+        "t": "Massage-Erdnuss"
+       },
+       {
+        "u": "https://skills-king.ch/s/massage-zubehoer/",
+        "t": "Massage-Zubehör"
        }
       ]
      },
@@ -458,11 +502,11 @@
         "t": ""
        },
        {
-        "u": "https://www.galaxus.ch/de/s12/producttype/notizbuch-1673?tagIds=1230",
+        "u": "https://www.migros.ch/de/search?query=notizbuch",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=notizbuch",
+        "u": "https://www.coop.ch/de/haushalt-tier/buero-papeterie/papier-bloecke-hefte/hefte/c/m_9043",
         "t": ""
        }
       ]
@@ -483,7 +527,16 @@
       "tip": "💡 In ruhigem Zustand schreiben, nie in der Krise. Fünf bis zehn Karten genügen — immer griffbereit halten.",
       "von": "skills-box",
       "erg": "",
-      "links": []
+      "links": [
+       {
+        "u": "https://skills-king.ch/p/lebenskarten/",
+        "t": "Lebenskarten"
+       },
+       {
+        "u": "https://skills-king.ch/p/lebenskarten-kinder/",
+        "t": "Lebenskarten für Kinder"
+       }
+      ]
      },
      {
       "e": "🧘",
@@ -504,15 +557,15 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/search?q=Box",
-        "t": ""
+        "t": "Skills-Boxen"
        },
        {
         "u": "https://www.skills-box.ch/products/taeschli",
-        "t": ""
+        "t": "Täschli"
        },
        {
-        "u": "https://www.skills-box.ch/products/sackli",
-        "t": ""
+        "u": "https://skills-king.ch/c/notfall-skills/",
+        "t": "Notfall-Skills"
        }
       ]
      },
@@ -544,11 +597,11 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/products/schluesselanhaenger",
-        "t": ""
+        "t": "Schlüsselanhänger"
        },
        {
         "u": "https://www.skills-box.ch/products/keycup-schluesselanhaenger",
-        "t": ""
+        "t": "Keycup-Anhänger"
        }
       ]
      }
@@ -571,6 +624,28 @@
     "icon": "🎯",
     "skills": [
      {
+      "e": "💍",
+      "t": "Akupressur-Ring über die Finger rollen",
+      "b": "Der Federring wird über jeden Finger auf- und abgerollt und reizt die Akupressurpunkte. Unauffällig, ohne Schmerz, jederzeit in der Hosentasche.",
+      "tip": "💡 Jeden Finger 10 – 20 Sekunden rollen, bis er kribbelt. Für den ganzen Arm gibt es die grosse Variante als Armband.",
+      "von": "",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://skills-king.ch/p/akupressur-ring/",
+        "t": "Akupressur-Ring"
+       },
+       {
+        "u": "https://skills-king.ch/p/massage-armband/",
+        "t": "Massage-Armband"
+       },
+       {
+        "u": "https://www.skills-box.ch/products/fingermassage-yin-yang",
+        "t": "Finger-Massageringe"
+       }
+      ]
+     },
+     {
       "e": "🦷",
       "t": "Auf etwas Festes kauen",
       "b": "Die Kaubewegung liefert dem Gehirn kräftige Rückmeldung aus dem Kiefer und wirkt regulierend, ohne von aussen sichtbar zu sein.",
@@ -580,11 +655,15 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/products/beisskette",
-        "t": ""
+        "t": "Beisskette"
        },
        {
-        "u": "https://www.migros.ch/de/search?query=kaugummi",
-        "t": ""
+        "u": "https://www.skills-box.ch/products/suessholz-stange",
+        "t": "Süssholz-Stange"
+       },
+       {
+        "u": "https://skills-king.ch/p/ingwerstuecke/",
+        "t": "Ingwerstücke"
        }
       ]
      },
@@ -606,15 +685,15 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.galaxus.ch/de/s5/producttype/malset-1708/subtype/malsettyp-malen-nach-zahlen-2909",
-        "t": ""
-       },
-       {
         "u": "https://www.skills-box.ch/products/malen-und-entspannen-achtsamkeit",
         "t": ""
        },
        {
-        "u": "https://www.skills-box.ch/products/ausmal-postkarten",
+        "u": "https://skills-king.ch/p/iotobo-magnet-mandala/",
+        "t": ""
+       },
+       {
+        "u": "https://www.migros.ch/de/search?query=malen%20nach%20zahlen",
         "t": ""
        }
       ]
@@ -668,7 +747,7 @@
         "t": ""
        },
        {
-        "u": "https://www.galaxus.ch/de/s2/producttype/eisformen-3900/subtype/eisformtyp-eiswuerfelform-6926",
+        "u": "https://www.coop.ch/de/search/?text=eisw%C3%BCrfel",
         "t": ""
        }
       ]
@@ -683,15 +762,15 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/search?q=Fidget",
-        "t": ""
+        "t": "Fidgets"
+       },
+       {
+        "u": "https://skills-king.ch/c/fidget-toys/",
+        "t": "Fidget Toys"
        },
        {
         "u": "https://www.skills-box.ch/products/fidget-cube",
-        "t": ""
-       },
-       {
-        "u": "https://www.skills-box.ch/products/pop-it",
-        "t": ""
+        "t": "Fidget Cube"
        }
       ]
      },
@@ -714,14 +793,6 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/products/gummiband",
-        "t": ""
-       },
-       {
-        "u": "https://www.migros.ch/de/search?query=gummib%C3%A4nder",
-        "t": ""
-       },
-       {
-        "u": "https://www.coop.ch/de/search/?text=gummib%C3%A4nder",
         "t": ""
        }
       ]
@@ -762,7 +833,7 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.galaxus.ch/de/s3/producttype/yogamatte-1238",
+        "u": "https://www.migros.ch/de/search?query=yogamatte",
         "t": ""
        }
       ]
@@ -776,16 +847,16 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.skills-box.ch/search?q=Massage",
-        "t": ""
-       },
-       {
         "u": "https://www.skills-box.ch/products/massageholz-dreipunkt",
-        "t": ""
+        "t": "Massageholz Dreipunkt"
        },
        {
-        "u": "https://www.galaxus.ch/de/s6/producttype/faszienball-faszienrolle-3965",
-        "t": ""
+        "u": "https://skills-king.ch/p/hand-roller-holz/",
+        "t": "Hand-Roller aus Holz"
+       },
+       {
+        "u": "https://skills-king.ch/p/fidget-roller/",
+        "t": "Fidget Roller"
        }
       ]
      },
@@ -879,11 +950,7 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.galaxus.ch/de/s2/producttype/garn-wolle-2752",
-        "t": ""
-       },
-       {
-        "u": "https://www.coop.ch/de/search/?text=wolle",
+        "u": "https://www.migros.ch/de/search?query=wolle",
         "t": ""
        }
       ]
@@ -932,6 +999,10 @@
       "von": "",
       "erg": "",
       "links": [
+       {
+        "u": "https://skills-king.ch/p/akupressur-clip/",
+        "t": ""
+       },
        {
         "u": "https://www.migros.ch/de/search?query=w%C3%A4scheklammern",
         "t": ""
@@ -982,11 +1053,11 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/products/gefuehl-squishy",
-        "t": ""
+        "t": "Gefühl-Squishy"
        },
        {
         "u": "https://www.skills-box.ch/products/dein-wut-weg-buch",
-        "t": ""
+        "t": "Wut-weg-Buch"
        }
       ]
      },
@@ -1026,7 +1097,7 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.galaxus.ch/de/s3/producttype/yogamatte-1238",
+        "u": "https://www.migros.ch/de/search?query=yogamatte",
         "t": ""
        }
       ]
@@ -1069,11 +1140,11 @@
         "t": ""
        },
        {
-        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "u": "https://www.migros.ch/de/search?query=notizbuch",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=notizheft",
+        "u": "https://www.coop.ch/de/haushalt-tier/buero-papeterie/papier-bloecke-hefte/hefte/c/m_9043",
         "t": ""
        }
       ]
@@ -1109,11 +1180,11 @@
         "t": ""
        },
        {
-        "u": "https://www.galaxus.ch/de/s12/producttype/notizbuch-1673?tagIds=1230",
+        "u": "https://www.migros.ch/de/search?query=notizbuch",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=notizbuch",
+        "u": "https://www.coop.ch/de/haushalt-tier/buero-papeterie/papier-bloecke-hefte/hefte/c/m_9043",
         "t": ""
        }
       ]
@@ -1127,11 +1198,11 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "u": "https://www.migros.ch/de/search?query=notizbuch",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=notizblock",
+        "u": "https://www.coop.ch/de/haushalt-tier/buero-papeterie/papier-bloecke-hefte/hefte/c/m_9043",
         "t": ""
        }
       ]
@@ -1173,11 +1244,11 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/products/mokuru",
-        "t": ""
+        "t": "Mokuru"
        },
        {
         "u": "https://www.skills-box.ch/products/wrist-ball",
-        "t": ""
+        "t": "Wrist Ball"
        }
       ]
      },
@@ -1208,16 +1279,16 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.skills-box.ch/search?q=Cube",
-        "t": ""
-       },
-       {
         "u": "https://www.skills-box.ch/products/megaminx",
-        "t": ""
+        "t": "Megaminx"
        },
        {
-        "u": "https://www.skills-box.ch/products/labyrinth",
-        "t": ""
+        "u": "https://www.skills-box.ch/products/crazy-cube",
+        "t": "Crazy Cube"
+       },
+       {
+        "u": "https://skills-king.ch/p/magnetwuerfel-24/",
+        "t": "Magnetwürfel"
        }
       ]
      },
@@ -1257,11 +1328,11 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
+        "u": "https://www.migros.ch/de/search?query=notizbuch",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=notizheft",
+        "u": "https://www.coop.ch/de/haushalt-tier/buero-papeterie/papier-bloecke-hefte/hefte/c/m_9043",
         "t": ""
        }
       ]
@@ -1283,6 +1354,28 @@
       "von": "",
       "erg": "",
       "links": []
+     },
+     {
+      "e": "🧲",
+      "t": "Magnetkugeln und Magnetsteine formen",
+      "b": "Aus hunderten kleinen Magneten Formen bauen bindet Hände und Augen gleichzeitig. Das leise Klicken und der Widerstand der Magnete wirken beruhigend.",
+      "tip": "💡 Mit einem einfachen Würfel oder Ring beginnen. Nicht für Kleinkinder — verschluckte Magnete sind lebensgefährlich.",
+      "von": "",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://skills-king.ch/c/magnete/",
+        "t": "Magnete"
+       },
+       {
+        "u": "https://skills-king.ch/p/speks/",
+        "t": "Speks Magnetkugeln"
+       },
+       {
+        "u": "https://skills-king.ch/p/magnetsteine-100/",
+        "t": "Magnetsteine"
+       }
+      ]
      },
      {
       "e": "✍️",
@@ -1320,11 +1413,15 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.galaxus.ch/de/s5/producttype/puzzle-622",
+        "u": "https://skills-king.ch/p/holz-puzzle-180/",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=puzzle",
+        "u": "https://www.migros.ch/de/search?query=puzzle",
+        "t": ""
+       },
+       {
+        "u": "https://www.coop.ch/de/baby-kind/spielwaren/puzzle/c/m_9493",
         "t": ""
        }
       ]
@@ -1339,15 +1436,15 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/products/metall-puzzle",
-        "t": ""
+        "t": "Metall-Puzzle"
        },
        {
         "u": "https://www.skills-box.ch/products/mini-knobel-spiele",
-        "t": ""
+        "t": "Mini-Knobelspiele"
        },
        {
-        "u": "https://www.skills-box.ch/products/wooden-intellegence",
-        "t": ""
+        "u": "https://skills-king.ch/c/holz/",
+        "t": "Holz-Knobelspiele"
        }
       ]
      },
@@ -1379,10 +1476,6 @@
       "links": [
        {
         "u": "https://www.skills-box.ch/products/sudoku",
-        "t": ""
-       },
-       {
-        "u": "https://www.galaxus.ch/de/s12/producttype/heft-block-1673",
         "t": ""
        }
       ]
@@ -1453,15 +1546,25 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.denner.ch/de/search?q=kr%C3%A4uter",
-        "t": ""
-       },
-       {
         "u": "https://www.migros.ch/de/search?query=kr%C3%A4utertopf",
         "t": ""
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=frische+kr%C3%A4uter",
+        "u": "https://www.coop.ch/de/lebensmittel/fruechte-gemuese/frische-kraeuter-frische-gewuerze/frische-kraeuter/c/m_0045",
+        "t": ""
+       }
+      ]
+     },
+     {
+      "e": "🕷️",
+      "t": "Kopfmassage mit der Kopfspinne",
+      "b": "Die feinen Drahtnoppen streichen über die Kopfhaut und lösen ein Gänsehaut-Gefühl aus, das viele als sofort entspannend erleben.",
+      "tip": "💡 Langsam von oben nach unten ziehen, Augen schliessen. Funktioniert auch bei sich selbst.",
+      "von": "",
+      "erg": "",
+      "links": [
+       {
+        "u": "https://skills-king.ch/p/kopfspinne/",
         "t": ""
        }
       ]
@@ -1509,16 +1612,7 @@
       "tip": "💡 Metronom-App auf 60 BPM einstellen. Die Synchronisierung der eigenen Atmung verstärkt den Effekt.",
       "von": "",
       "erg": "",
-      "links": [
-       {
-        "u": "https://www.galaxus.ch/de/s1/product/wittner-maelzel-serie-810k-metronom-zubehoer-instrumente-12496767",
-        "t": ""
-       },
-       {
-        "u": "https://www.galaxus.ch/de/s1/product/korg-metronom-ma-2-stimmgeraet-11249498",
-        "t": ""
-       }
-      ]
+      "links": []
      }
     ]
    },
@@ -1536,16 +1630,16 @@
       "erg": "",
       "links": [
        {
-        "u": "https://www.denner.ch/de/search?q=fr%C3%BCchte",
-        "t": ""
+        "u": "https://www.coop.ch/de/lebensmittel/fruechte-gemuese/fruechte/c/m_0002",
+        "t": "Frische Früchte"
        },
        {
         "u": "https://www.migros.ch/de/search?query=fr%C3%BCchte",
-        "t": ""
+        "t": "Früchte"
        },
        {
-        "u": "https://www.coop.ch/de/search/?text=fr%C3%BCchte",
-        "t": ""
+        "u": "https://www.coop.ch/de/search/?text=blumenstrauss",
+        "t": "Blumensträusse"
        }
       ]
      },
