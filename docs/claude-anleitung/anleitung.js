@@ -32,6 +32,16 @@ var SEITEN = [
     { href: 'platzhalter.html', titel: 'Platzhalter einsetzen' }
   ]},
 
+  /* Ebenfalls aus stayingclean/ki-tasks: eine Seite je Aufgabe, dazu die
+     Uebersicht. Sie gehoeren zu den Aufgabenordnern und aendern sich mit
+     ihnen, darum liegen sie drueben und fehlen hier lokal. */
+  { gruppe: 'Aufgaben', seiten: [
+    { href: 'aufgaben.html',                titel: 'Übersicht' },
+    { href: 'wohnung.html',                 titel: 'Wohnung suchen' },
+    { href: 'stelle.html',                  titel: 'Stelle suchen' },
+    { href: 'gesuch-krankheitskosten.html', titel: 'Gesuche für Krankheitskosten' }
+  ]},
+
   { gruppe: 'Weiterführend', seiten: [
     { href: 'prompts.html',      titel: 'Weitere Prompts' },
     { href: 'alternativen.html', titel: 'ChatGPT & Grok' }
