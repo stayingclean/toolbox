@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weitere Prompts · Mit Claude arbeiten</title>
-  <meta name="description" content="Szenarien aus dem Therapie-Alltag">
+  <meta name="description" content="Prompts für Papierkram ohne eigene Aufgabe">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -23,44 +23,35 @@
   <main>
 <header class="page">
   <p class="kicker">Weiterführend</p>
-  <h1>Weitere Prompts für den Alltag nach der Klinik</h1>
-  <p class="lead">Szenarien, die vielen in einer Suchttherapie begegnen — für alles, wofür es keinen fertigen Aufgaben-Ordner gibt. Jeder Prompt geht davon aus, dass ein Ordner mit deinen Unterlagen in Cowork verbunden ist. Im Gratis-Chat: Dateien stattdessen hochladen.</p>
+  <h1>Weitere Prompts für den Alltag</h1>
+  <p class="lead">Für Papierkram, der keine eigene Aufgabe hat: Schulden, Briefe von Ämtern, Wiedereinstieg, ein Wochenplan. Jeder Prompt geht davon aus, dass ein Ordner mit deinen Unterlagen in Cowork verbunden ist. Im Gratis-Chat: Dateien stattdessen hochladen.</p>
 </header>
 
 <div class="summary">
   <h2>Wie du die Prompts benutzt</h2>
   <ul>
-    <li>Kopieren, in Cowork einfügen, die Klammern <code>[…]</code> durch deine Angaben ersetzen.</li>
+    <li>Zuerst schauen, ob es eine fertige Aufgabe gibt (Kasten unten). Die ist gründlicher als jeder Prompt, weil sie das Fachwissen mitbringt.</li>
+    <li>Sonst <code>grundgeruest.zip</code> von <a href="https://stayingclean.github.io/ki-tasks/" target="_blank" rel="noopener">stayingclean.github.io/ki-tasks</a> entpacken und in Cowork verbinden. Die Ordnernamen in den Prompts (<code>1_Meine-Unterlagen</code>, <code>2_Arbeitsstand</code>, <code>3_Zum-Versenden</code>, <code>9_Claude</code>) stammen von dort.</li>
+    <li>Kopieren, einfügen, die Klammern <code>[…]</code> durch deine Angaben ersetzen.</li>
     <li>Jeder Prompt endet mit einer Rückfrage-Schleife: Claude zeigt, du entscheidest. Lass das drin.</li>
     <li>Alle Beispiele sind erfunden. Beträge, Namen und Orte ersetzt du durch deine.</li>
   </ul>
 </div>
 
+<div class="note">
+  <p><strong>Dafür gibt es inzwischen eine eigene Aufgabe</strong>, darum stehen hier keine Prompts mehr dazu:</p>
+  <ul>
+    <li><a href="wohnung.html">Wohnung suchen</a>: Inserate finden und bewerten, Anschreiben an Vermieter, Dossier als PDF.</li>
+    <li><a href="stelle.html">Stelle suchen</a>: Stellen suchen und bewerten, Motivationsschreiben, Arbeitsbemühungen und Monatsnachweis fürs RAV.</li>
+    <li><a href="praemienverbilligung.html">Prämienverbilligung beantragen</a>: Frist, Anmeldeweg, Belegliste, Ausfüllhilfe.</li>
+    <li><a href="krankenkasse.html">Krankenkasse wählen</a>: Franchise und Modell durchrechnen, Kündigung und Fristen.</li>
+    <li><a href="gesuch-krankheitskosten.html">Gesuche für Krankheitskosten</a>: Stiftungen finden, versandfertige Gesuche.</li>
+  </ul>
+  <p>Alle Aufgaben mit Download: <a href="aufgaben.html">Die Aufgaben</a>.</p>
+</div>
+
 <div class="warn">
-  <p><strong>Wofür Claude nicht da ist:</strong> In einer akuten Krise, bei Suchtdruck oder Suizidgedanken ist ein Chatbot der falsche Ort. Dargebotene Hand <strong>143</strong> (rund um die Uhr), Notfall <strong>144</strong>, oder die Nummer deiner Nachsorgestelle. Die Prompts hier sind für den Papierkram, nicht für den Notfall.</p>
-</div>
-
-<h2>Wohnen</h2>
-
-<div class="prompt">
-  <div class="ptitle">Wohnungssuche: Inserate finden und bewerten <button class="copy" type="button">Kopieren</button></div>
-<pre>Suche mir eine Wohnung: Region [Aarau, 15 km Umkreis], Miete max. CHF [600] inkl. NK, auch WG-Zimmer, keine Haustiere.
-
-Suche auf homegate.ch, immoscout24.ch, flatfox.ch, wgzimmer.ch und in den Facebook-Marketplace-Treffern, die öffentlich zugänglich sind, nach Angeboten der letzten 14 Tage.
-
-Erstelle 2_Arbeitsstand/[DATUM]_wohnungen.md: Ort | Typ | Miete | Verfügbar ab | Link | Besichtigung | Passung 1–5 | Bemerkung.
-Bewerte streng: ÖV-Anbindung, Distanz zur Nachsorgestelle in [Ort], Lärm.
-
-Nenne mir die drei besten und schlag mir für jedes eine kurze, freundliche Anfrage-Nachricht vor (max. 5 Sätze, ohne Angaben zu Gesundheit oder Klinik).</pre>
-</div>
-
-<div class="prompt">
-  <div class="ptitle">Bewerbungsdossier für Vermieter <button class="copy" type="button">Kopieren</button></div>
-<pre>Erstelle aus meinen Unterlagen ein Bewerbungsdossier für die Wohnung [Adresse/Link]:
-1. Ein Anschreiben (halbe A4-Seite): wer ich bin, warum diese Wohnung, wie ich die Miete finanziere (Einkommen [CHF …], allenfalls Unterstützung durch [Stelle]). Keine Angaben zu Diagnosen oder Klinikaufenthalt.
-2. Eine Checkliste der üblichen Beilagen (Betreibungsauszug, Kopie ID, Lohnnachweis, Referenz) und was davon in 1_Meine-Unterlagen/ schon liegt.
-3. Fünf Fragen, die ich an der Besichtigung stellen sollte.
-Zeig mir alles hier, dann PDF.</pre>
+  <p><strong>Wofür Claude nicht da ist:</strong> In einer akuten Krise oder bei Suizidgedanken ist ein Chatbot der falsche Ort. Dargebotene Hand <strong>143</strong> (rund um die Uhr), Notfall <strong>144</strong>, oder eine Fachperson, die dich begleitet. Die Prompts hier sind für den Papierkram, nicht für den Notfall.</p>
 </div>
 
 <h2>Geld und Schulden</h2>
@@ -92,7 +83,7 @@ Zeig mir den Text, dann als PDF nach 3_Zum-Versenden/[DATUM]_[gläubiger].pdf. T
 
 1. Suche die offizielle Seite der Steuerverwaltung [Kanton] und fasse zusammen: Wo reicht man ein, welches Formular, welche Beilagen, welche Voraussetzungen. Nur Angaben von der offiziellen Website, mit Link.
 2. Vergleiche die Anforderungen mit 1_Meine-Unterlagen/ und sag mir, was fehlt.
-3. Erstelle einen Entwurf für das Begleitschreiben (max. 1 Seite) aus 2_Arbeitsstand/sachverhalt.md und budget.pdf. Kurz, keine Erklärung des Steuersystems, Betrag im Betreff.
+3. Erstelle einen Entwurf für das Begleitschreiben (max. 1 Seite) aus meinen Unterlagen und meinem Budget. Kurz, keine Erklärung des Steuersystems, Betrag im Betreff.
 Zeig mir den Entwurf, ich entscheide.</pre>
 </div>
 
@@ -109,66 +100,61 @@ Wenn eine Frist im Brief steht, trag sie in 9_Claude/stand.md ein. Erfinde keine
 <h2>Versicherungen und Ämter</h2>
 
 <div class="prompt">
-  <div class="ptitle">Prämienverbilligung beantragen <button class="copy" type="button">Kopieren</button></div>
-<pre>Ich wohne im Kanton [...] und möchte Prämienverbilligung für die Krankenkasse beantragen.
-Suche die offizielle kantonale Seite (SVA / Ausgleichskasse) und erstelle checkliste_praemienverbilligung.md: Frist, Formular (Link), nötige Beilagen, Einkommensgrenzen soweit publiziert.
-Vergleiche mit 1_Meine-Unterlagen/ und sag mir, was fehlt. Wenn das Formular online ausfüllbar ist und ich dir den Browser freigebe, fülle es aus meinen Unterlagen aus, aber sende nicht ab.</pre>
-</div>
-
-<div class="prompt">
-  <div class="ptitle">Kostengutsprache für die Nachsorge <button class="copy" type="button">Kopieren</button></div>
-<pre>Ich brauche von meiner Krankenkasse [Name] eine Kostengutsprache für [Tagesklinik / ambulante Nachsorge] bei [Einrichtung] ab [Datum].
+  <div class="ptitle">Kostengutsprache der Krankenkasse <button class="copy" type="button">Kopieren</button></div>
+<pre>Ich brauche von meiner Krankenkasse [Name] eine Kostengutsprache für [Behandlung, z. B. Physiotherapie, Reha, ambulante Therapie] bei [Einrichtung / Praxis] ab [Datum].
 1. Suche auf der Website der Krankenkasse, wie Kostengutsprachen eingereicht werden (Formular, Adresse, wer einreicht: ich oder die Einrichtung).
 2. Erstelle eine kurze Anfrage-Mail an die Einrichtung, ob sie das Gesuch stellt oder ich.
 3. Erstelle ein Merkblatt für mich: Was muss ich bereithalten, welche Fristen.
-Keine medizinischen Angaben in den Texten; die kommen von der Einrichtung.</pre>
+Keine Angaben zur Gesundheit in meinen Texten; was die Kasse medizinisch braucht, schickt ihr die Einrichtung direkt.</pre>
 </div>
 
 <div class="prompt">
-  <div class="ptitle">Anmeldung beim RAV vorbereiten <button class="copy" type="button">Kopieren</button></div>
-<pre>Ich melde mich am [Datum] beim RAV [Ort] an. Erstelle rav_vorbereitung.md:
+  <div class="ptitle">Erstgespräch beim RAV vorbereiten <button class="copy" type="button">Kopieren</button></div>
+<pre>Ich habe am [Datum] das Erstgespräch beim RAV [Ort]. Erstelle 2_Arbeitsstand/rav_vorbereitung.md:
 1. Was muss ich mitbringen (offizielle Liste von arbeit.swiss oder der kantonalen Seite, mit Link).
-2. Meine Arbeitsbemühungen der letzten Wochen aus 9_Claude/stand.md und 2_Arbeitsstand/ als Tabelle, so wie das RAV sie will (Datum, Firma, Stelle, Art der Bewerbung, Ergebnis).
-3. Drei Fragen, die ich dem Personalberater stellen sollte.
+2. Was ab der Anmeldung von mir erwartet wird (Arbeitsbemühungen, Fristen, Termine), in einfachen Worten.
+3. Drei Fragen, die ich der Personalberatung stellen sollte.
 Was fehlt, markiere mit «offen».</pre>
 </div>
+<p>Die Arbeitsbemühungen selbst und den Monatsnachweis führt danach die Aufgabe <a href="stelle.html">Stelle suchen</a>.</p>
 
 <h2>Arbeit und Wiedereinstieg</h2>
 
 <div class="prompt">
   <div class="ptitle">Lücke im Lebenslauf: Formulierungen <button class="copy" type="button">Kopieren</button></div>
-<pre>In meinem Lebenslauf gibt es eine Lücke von [Monat Jahr] bis [Monat Jahr] wegen eines Klinikaufenthalts. Schlag mir drei Varianten vor, wie ich das im Lebenslauf und im Bewerbungsgespräch formuliere:
+<pre>In meinem Lebenslauf gibt es eine Lücke von [Monat Jahr] bis [Monat Jahr] wegen [Grund, z. B. Betreuung von Angehörigen, Weiterbildung, Auszeit]. Schlag mir drei Varianten vor, wie ich das im Lebenslauf und im Bewerbungsgespräch formuliere:
 a) so knapp wie möglich,
-b) mit dem Hinweis «gesundheitlich bedingt»,
+b) mit einem kurzen, allgemeinen Grund (z. B. «familiär bedingt», «persönliche Gründe»),
 c) mit einem positiven Dreh (Arbeitstraining, Weiterbildung), falls das in meinen Unterlagen belegt ist.
 Sag mir zu jeder Variante, was ein Arbeitgeber daraus schliessen könnte. Keine Empfehlung, die mich zum Lügen bringt.</pre>
 </div>
 
 <div class="prompt">
   <div class="ptitle">Brief an den bisherigen Arbeitgeber (Wiedereinstieg) <button class="copy" type="button">Kopieren</button></div>
-<pre>Schreib einen Brief an meinen Arbeitgeber [Firma, Kontaktperson], dass ich ab [Datum] mit einem Pensum von [...] wieder einsteigen möchte, gemäss Absprache mit [Arzt / Case Management].
-Regeln: sachlich, kurz, keine Diagnose, keine Details zum Aufenthalt. Ein Satz Dank für die Geduld, ein Satz zum Vorschlag, ein Satz mit der Bitte um ein Gespräch.
+<pre>Schreib einen Brief an meinen Arbeitgeber [Firma, Kontaktperson], dass ich ab [Datum] mit einem Pensum von [...] wieder einsteigen möchte[, gemäss Absprache mit … — falls es eine gibt].
+Regeln: sachlich, kurz, keine Angaben zur Gesundheit, keine Details zur Abwesenheit. Ein Satz Dank für die Geduld, ein Satz zum Vorschlag, ein Satz mit der Bitte um ein Gespräch.
 Zeig mir den Text, dann PDF.</pre>
 </div>
 
 <div class="prompt">
   <div class="ptitle">Bewerbungsgespräch üben <button class="copy" type="button">Kopieren</button></div>
-<pre>Lies meine Unterlagen und das Inserat in 2_Arbeitsstand/[datei].md, Nr. [...].
-Spiel den Personalverantwortlichen. Stell mir eine Frage nach der anderen, warte jeweils auf meine Antwort, und gib mir danach ein kurzes Feedback (was war gut, was würdest du anders sagen). Nimm auch eine Frage zur Lücke im Lebenslauf. Insgesamt 6 Fragen. Sei fair, nicht schonend.</pre>
+<pre>Lies meinen Lebenslauf und das Inserat [Datei oder Link].
+Spiel den Personalverantwortlichen. Stell mir eine Frage nach der anderen, warte jeweils auf meine Antwort, und gib mir danach ein kurzes Feedback (was war gut, was würdest du anders sagen). Nimm auch eine unangenehme Frage dazu, etwa zu einer Lücke im Lebenslauf oder einem Stellenwechsel. Insgesamt 6 Fragen. Sei fair, nicht schonend.</pre>
 </div>
+<p>Nutzt du die Aufgabe <a href="stelle.html">Stelle suchen</a>, funktioniert dieser Prompt auch in deren Ordner: Das Inserat liegt dort schon bei der Bewerbung.</p>
 
 <h2>Alltag und Struktur</h2>
 
 <div class="prompt">
-  <div class="ptitle">Wochenplan nach dem Austritt <button class="copy" type="button">Kopieren</button></div>
-<pre>Ich trete am [Datum] aus. Fixe Termine: [Tagesklinik Mo/Mi/Fr 9–15, Arbeitstraining Di/Do 8–12, Selbsthilfegruppe Do 19 Uhr, Sozialdienst alle 2 Wochen].
-Erstelle wochenplan.md für die ersten vier Wochen: Termine, dazwischen je einen Block für Papierkram (max. 90 Minuten) und je einen Block für etwas, das mir guttut (siehe Skillsliste der Toolbox). Nichts vor 8 Uhr, nichts nach 20 Uhr.
+  <div class="ptitle">Wochenplan für einen Neuanfang <button class="copy" type="button">Kopieren</button></div>
+<pre>Ab [Datum] ändert sich mein Alltag [z. B. neue Stelle, Wiedereinstieg, Umzug]. Fixe Termine: [Arbeitstraining Di/Do 8–12, Kurs Mi 14–16, Sport Do 19 Uhr, Sozialdienst alle 2 Wochen].
+Erstelle 2_Arbeitsstand/wochenplan.md für die ersten vier Wochen: Termine, dazwischen je einen Block für Papierkram (max. 90 Minuten) und je einen Block für etwas, das mir guttut (siehe Skillsliste der Toolbox). Nichts vor 8 Uhr, nichts nach 20 Uhr.
 Ausserdem eine kurze Liste offener Punkte aus 9_Claude/stand.md mit Fristen, verteilt auf die Papierkram-Blöcke.</pre>
 </div>
 
 <div class="prompt">
   <div class="ptitle">Gespräch mit Sozialdienst oder Beistand vorbereiten <button class="copy" type="button">Kopieren</button></div>
-<pre>Am [Datum] habe ich ein Gespräch mit [Sozialdienst / Beistand / Case Manager]. Erstelle aus 9_Claude/stand.md, 2_Arbeitsstand/schulden.md und 2_Arbeitsstand/sachverhalt.md eine einseitige Übersicht zum Ausdrucken:
+<pre>Am [Datum] habe ich ein Gespräch mit [Sozialdienst / Beistand / Case Manager]. Erstelle aus 9_Claude/stand.md und meinen Unterlagen eine einseitige Übersicht zum Ausdrucken:
 1. Stand der Dinge (Wohnung, Arbeit, Finanzen) in je 2 Sätzen.
 2. Was ich seit dem letzten Gespräch erledigt habe.
 3. Wo ich Unterstützung brauche (konkret, mit Betrag oder Frist).
@@ -178,7 +164,7 @@ Sachlich, keine Bewertungen, keine medizinischen Angaben.</pre>
 
 <div class="prompt">
   <div class="ptitle">Papierchaos ordnen <button class="copy" type="button">Kopieren</button></div>
-<pre>Im Ordner eingang/ liegen [ca. 40] Dateien (Scans, PDFs, Fotos von Briefen), unsortiert. Lies jede Datei und schlag mir eine Ordnerstruktur vor (z. B. wohnen/, arbeit/, finanzen/, versicherungen/, gesundheit/). Erstelle sortierung.md mit: Datei | erkannter Inhalt | vorgeschlagener Ordner | Frist, falls eine im Dokument steht.
+<pre>In 1_Meine-Unterlagen/ liegen [ca. 40] Dateien (Scans, PDFs, Fotos von Briefen), unsortiert. Lies jede Datei und schlag mir eine Unterteilung vor (z. B. wohnen/, arbeit/, finanzen/, versicherungen/, steuern/). Erstelle 2_Arbeitsstand/sortierung.md mit: Datei | erkannter Inhalt | vorgeschlagener Ordner | Frist, falls eine im Dokument steht.
 Verschiebe nichts, bevor ich die Liste bestätigt habe. Dateien, die du nicht lesen kannst, markiere.</pre>
 </div>
 
