@@ -39,6 +39,8 @@ var SEITEN = [
     { href: 'aufgaben.html',                titel: 'Übersicht' },
     { href: 'wohnung.html',                 titel: 'Wohnung suchen' },
     { href: 'stelle.html',                  titel: 'Stelle suchen' },
+    { href: 'praemienverbilligung.html',    titel: 'Prämienverbilligung beantragen' },
+    { href: 'krankenkasse.html',            titel: 'Krankenkasse wählen' },
     { href: 'gesuch-krankheitskosten.html', titel: 'Gesuche für Krankheitskosten' }
   ]},
 
