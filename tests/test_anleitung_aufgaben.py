@@ -40,11 +40,13 @@ def repos(tmp_path):
     (ki / "anleitung").mkdir(parents=True)
     ziel.mkdir()
 
-    def aufgabe(name, titel, lead, reihenfolge=None, mit_seite=True):
+    def aufgabe(name, titel, lead, reihenfolge=None, mit_seite=True, navtitel=None):
         (ki / "aufgaben" / name).mkdir(parents=True)
         info = f"titel: {titel} lang\ngruppe: X\nkurz: k\n"
         if reihenfolge is not None:
             info += f"reihenfolge: {reihenfolge}\n"
+        if navtitel is not None:
+            info += f"navtitel: {navtitel}\n"
         (ki / "aufgaben" / name / "INFO.md").write_text(info, encoding="utf-8")
         if mit_seite:
             (ki / "anleitung" / f"{name}.html").write_text(seite(titel, lead), encoding="utf-8")
@@ -136,3 +138,21 @@ def test_uebersicht_ohne_marker_bleibt_stehen(repos):
     _, meldungen = aa.einsetzen(ki, ziel)
     assert (ziel / "aufgaben.html").read_text(encoding="utf-8") == "<p>von Hand</p>"
     assert any("ohne Marker" in z for z in meldungen)
+
+
+def test_navtitel_wird_kurz_fuer_die_seitenleiste(repos):
+    ki, ziel, aufgabe = repos
+    aufgabe("baer", "Bär beantragen", "B.", reihenfolge=30, navtitel="Bär")
+    aa.einsetzen(ki, ziel)
+    js = (ziel / "anleitung.js").read_text(encoding="utf-8")
+    assert "titel: 'Bär beantragen', kurz: 'Bär' }" in js
+    # Ohne navtitel kein kurz, sonst stünde in der Leiste ein leerer Eintrag
+    assert "titel: 'Zebra zähmen' }," in js
+
+
+def test_karten_behalten_den_langen_titel(repos):
+    ki, ziel, aufgabe = repos
+    aufgabe("baer", "Bär beantragen", "B.", navtitel="Bär")
+    aa.einsetzen(ki, ziel)
+    html = (ziel / "aufgaben.html").read_text(encoding="utf-8")
+    assert '<a href="baer.html">Bär beantragen</a>' in html

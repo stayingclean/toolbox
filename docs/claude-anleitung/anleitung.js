@@ -2,8 +2,7 @@
    Herausgeloest aus den 13 damals identischen <script>-Bloecken.
 
    SEITEN ist die einzige Stelle, an der die Reihenfolge der Anleitung steht.
-   Daraus entstehen die Seitenleiste, die Nummern und das Zurueck/Weiter am
-   Seitenende. Eine Seite, die hier fehlt, taucht nirgends auf; eine, die hier
+   Daraus entstehen die Seitenleiste und das Zurueck/Weiter am Seitenende. Eine Seite, die hier fehlt, taucht nirgends auf; eine, die hier
    steht, aber nicht existiert, ist ein toter Link. Beides faellt sonst
    niemandem auf, darum: beim Hinzufuegen oder Loeschen einer Seite NUR diese
    Liste anfassen.
@@ -11,6 +10,12 @@
    Achtung, zwei Repos: Die Seiten der Gruppe "Arbeitsweise" kommen beim
    Deployment aus stayingclean/ki-tasks (siehe .github/workflows/deploy.yml).
    Sie duerfen erst hier eingetragen werden, wenn sie dort auch liegen.
+
+   Ein Eintrag kann neben `titel` ein `kurz` tragen: Das steht dann in der
+   Seitenleiste, der lange Titel im Zurueck/Weiter. Die Leiste ist schmal,
+   und ein Titel ueber zwei Zeilen macht sie unruhig. Nummern gibt es dort
+   bewusst keine mehr: Die Aufgaben arbeitet niemand der Reihe nach ab, und
+   jede neue Aufgabe haette alle Nummern dahinter verschoben.
 
    Diese Datei ist UTF-8. GitHub Pages liefert .js mit charset=utf-8 aus, und
    lokal per file:// erbt ein externes Skript die Kodierung der Seite, die
@@ -33,7 +38,7 @@ var SEITEN = [
   ]},
 
   /* Ebenfalls aus stayingclean/ki-tasks: eine Seite je Aufgabe, dazu die
-     Uebersicht. Sie gehoeren zu den Aufgabenordnern und aendern sich mit
+     Uebersicht. `kurz` kommt aus `navtitel:` in der INFO.md. Sie gehoeren zu den Aufgabenordnern und aendern sich mit
      ihnen, darum liegen sie drueben und fehlen hier lokal.
 
      Zwischen den beiden Markern NICHT von Hand pflegen: Der Deploy ersetzt
@@ -43,11 +48,11 @@ var SEITEN = [
   { gruppe: 'Aufgaben', seiten: [
     { href: 'aufgaben.html', titel: 'Übersicht' },
     /* AUFGABEN-ANFANG */
-    { href: 'wohnung.html',                 titel: 'Wohnung suchen' },
-    { href: 'stelle.html',                  titel: 'Stelle suchen' },
-    { href: 'praemienverbilligung.html',    titel: 'Prämienverbilligung beantragen' },
-    { href: 'krankenkasse.html',            titel: 'Krankenkasse wählen' },
-    { href: 'gesuch-krankheitskosten.html', titel: 'Gesuche für Krankheitskosten' }
+    { href: 'wohnung.html',                 titel: 'Wohnung suchen', kurz: 'Wohnung' },
+    { href: 'stelle.html',                  titel: 'Stelle suchen', kurz: 'Stelle' },
+    { href: 'praemienverbilligung.html',    titel: 'Prämienverbilligung beantragen', kurz: 'Prämienverbilligung' },
+    { href: 'krankenkasse.html',            titel: 'Krankenkasse wählen', kurz: 'Krankenkasse' },
+    { href: 'gesuch-krankheitskosten.html', titel: 'Gesuche für Krankheitskosten', kurz: 'Krankheitskosten' }
     /* AUFGABEN-ENDE */
   ]},
 
@@ -75,16 +80,15 @@ var SEITEN = [
   var nav = document.querySelector('.nav');
   if (nav) {
     var teile = [];
-    var n = 0;
     SEITEN.forEach(function (g) {
       teile.push('<h2>' + schuetze(g.gruppe) + '</h2>');
       g.seiten.forEach(function (s) {
-        n += 1;
         var aktiv = (s.href === datei);
         teile.push(
           '<a href="' + s.href + '"' +
-          (aktiv ? ' class="active" aria-current="page"' : '') + '>' +
-          '<span class="n">' + n + '</span>' + schuetze(s.titel) + '</a>'
+          (aktiv ? ' class="active" aria-current="page"' : '') +
+          (s.kurz ? ' title="' + schuetze(s.titel).replace(/"/g, '&quot;') + '"' : '') + '>' +
+          schuetze(s.kurz || s.titel) + '</a>'
         );
       });
     });

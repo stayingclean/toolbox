@@ -9,7 +9,7 @@
   --font-display: 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
-  --sidebar: 260px;
+  --sidebar: 280px;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -33,8 +33,6 @@ a { color: var(--accent-dark); }
 .nav a { display: block; padding: 7px 10px; border-radius: 9px; text-decoration: none; color: var(--text); font-size: .93rem; }
 .nav a:hover { background: var(--card-hover); color: var(--accent-dark); }
 .nav a.active { background: var(--accent-tint); color: var(--accent-dark); font-weight: 600; }
-.nav a .n { display: inline-block; width: 1.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
-.nav a.active .n { color: var(--accent); }
 
 .menu-toggle { display: none; }
 
