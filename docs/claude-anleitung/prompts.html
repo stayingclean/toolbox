@@ -24,7 +24,7 @@
 <header class="page">
   <p class="kicker">Weiterführend</p>
   <h1>Weitere Prompts für den Alltag</h1>
-  <p class="lead">Für Papierkram, der keine eigene Aufgabe hat: Schulden, Briefe von Ämtern, Wiedereinstieg, ein Wochenplan. Jeder Prompt geht davon aus, dass ein Ordner mit deinen Unterlagen in Cowork verbunden ist. Im Gratis-Chat: Dateien stattdessen hochladen.</p>
+  <p class="lead">Für Papierkram, der keine eigene Aufgabe hat: Schulden, Briefe von Ämtern, Bewerbungsgespräch, ein Wochenplan. Jeder Prompt geht davon aus, dass ein Ordner mit deinen Unterlagen in Cowork verbunden ist. Im Gratis-Chat: Dateien stattdessen hochladen.</p>
 </header>
 
 <div class="summary">
@@ -50,10 +50,6 @@
   <p>Alle Aufgaben mit Download: <a href="aufgaben.html">Die Aufgaben</a>.</p>
 </div>
 
-<div class="warn">
-  <p><strong>Wofür Claude nicht da ist:</strong> In einer akuten Krise oder bei Suizidgedanken ist ein Chatbot der falsche Ort. Dargebotene Hand <strong>143</strong> (rund um die Uhr), Notfall <strong>144</strong>, oder eine Fachperson, die dich begleitet. Die Prompts hier sind für den Papierkram, nicht für den Notfall.</p>
-</div>
-
 <h2>Geld und Schulden</h2>
 
 <div class="prompt">
@@ -72,7 +68,7 @@ Dann: Welche drei Schritte würdest du als Erstes vorschlagen, und bei welchen d
   <div class="ptitle">Brief an einen Gläubiger: Ratenzahlung oder Stundung <button class="copy" type="button">Kopieren</button></div>
 <pre>Schreib einen Brief an [Gläubiger] wegen der Rechnung [Nr., Betrag]. Ich bitte um [Ratenzahlung von CHF … pro Monat ab … / Stundung bis …].
 
-Regeln: höchstens eine halbe Seite, sachlich, ohne Rechtfertigung, ohne Angaben zu Gesundheit. Ein Satz zur Situation («Mein Einkommen ist zurzeit reduziert»), ein Satz zum Vorschlag, ein Satz mit der Bitte um schriftliche Bestätigung.
+Regeln: höchstens eine halbe Seite, sachlich, ohne Rechtfertigung, ohne persönliche Details. Ein Satz zur Situation («Mein Einkommen ist zurzeit reduziert»), ein Satz zum Vorschlag, ein Satz mit der Bitte um schriftliche Bestätigung.
 
 Zeig mir den Text, dann als PDF nach 3_Zum-Versenden/[DATUM]_[gläubiger].pdf. Trag in 9_Claude/stand.md ein, bis wann ich mit einer Antwort rechnen sollte.</pre>
 </div>
@@ -118,21 +114,21 @@ Was fehlt, markiere mit «offen».</pre>
 </div>
 <p>Die Arbeitsbemühungen selbst und den Monatsnachweis führt danach die Aufgabe <a href="stelle.html">Stelle suchen</a>.</p>
 
-<h2>Arbeit und Wiedereinstieg</h2>
+<h2>Arbeit</h2>
 
 <div class="prompt">
   <div class="ptitle">Lücke im Lebenslauf: Formulierungen <button class="copy" type="button">Kopieren</button></div>
 <pre>In meinem Lebenslauf gibt es eine Lücke von [Monat Jahr] bis [Monat Jahr] wegen [Grund, z. B. Betreuung von Angehörigen, Weiterbildung, Auszeit]. Schlag mir drei Varianten vor, wie ich das im Lebenslauf und im Bewerbungsgespräch formuliere:
 a) so knapp wie möglich,
 b) mit einem kurzen, allgemeinen Grund (z. B. «familiär bedingt», «persönliche Gründe»),
-c) mit einem positiven Dreh (Arbeitstraining, Weiterbildung), falls das in meinen Unterlagen belegt ist.
+c) mit einem positiven Dreh (Weiterbildung, Kurse, Freiwilligenarbeit), falls das in meinen Unterlagen belegt ist.
 Sag mir zu jeder Variante, was ein Arbeitgeber daraus schliessen könnte. Keine Empfehlung, die mich zum Lügen bringt.</pre>
 </div>
 
 <div class="prompt">
-  <div class="ptitle">Brief an den bisherigen Arbeitgeber (Wiedereinstieg) <button class="copy" type="button">Kopieren</button></div>
-<pre>Schreib einen Brief an meinen Arbeitgeber [Firma, Kontaktperson], dass ich ab [Datum] mit einem Pensum von [...] wieder einsteigen möchte[, gemäss Absprache mit … — falls es eine gibt].
-Regeln: sachlich, kurz, keine Angaben zur Gesundheit, keine Details zur Abwesenheit. Ein Satz Dank für die Geduld, ein Satz zum Vorschlag, ein Satz mit der Bitte um ein Gespräch.
+  <div class="ptitle">Brief an den bisherigen Arbeitgeber (Rückkehr nach einer Pause) <button class="copy" type="button">Kopieren</button></div>
+<pre>Schreib einen Brief an meinen Arbeitgeber [Firma, Kontaktperson], dass ich nach [z. B. Elternzeit, Weiterbildung, unbezahltem Urlaub] ab [Datum] mit einem Pensum von [...] wieder einsteigen möchte.
+Regeln: sachlich, kurz, keine Details zur Abwesenheit. Ein Satz Dank, ein Satz zum Vorschlag, ein Satz mit der Bitte um ein Gespräch.
 Zeig mir den Text, dann PDF.</pre>
 </div>
 
@@ -147,19 +143,19 @@ Spiel den Personalverantwortlichen. Stell mir eine Frage nach der anderen, warte
 
 <div class="prompt">
   <div class="ptitle">Wochenplan für einen Neuanfang <button class="copy" type="button">Kopieren</button></div>
-<pre>Ab [Datum] ändert sich mein Alltag [z. B. neue Stelle, Wiedereinstieg, Umzug]. Fixe Termine: [Arbeitstraining Di/Do 8–12, Kurs Mi 14–16, Sport Do 19 Uhr, Sozialdienst alle 2 Wochen].
-Erstelle 2_Arbeitsstand/wochenplan.md für die ersten vier Wochen: Termine, dazwischen je einen Block für Papierkram (max. 90 Minuten) und je einen Block für etwas, das mir guttut (siehe Skillsliste der Toolbox). Nichts vor 8 Uhr, nichts nach 20 Uhr.
+<pre>Ab [Datum] ändert sich mein Alltag [z. B. neue Stelle, Umzug, Weiterbildung]. Fixe Termine: [Arbeit Mo–Mi 8–17, Kurs Do 14–16, Sport Do 19 Uhr, Termin beim RAV alle 4 Wochen].
+Erstelle 2_Arbeitsstand/wochenplan.md für die ersten vier Wochen: Termine, dazwischen je einen Block für Papierkram (max. 90 Minuten) und je einen Block für etwas, das mir Freude macht (Bewegung, Freunde, Hobby). Nichts vor 8 Uhr, nichts nach 20 Uhr.
 Ausserdem eine kurze Liste offener Punkte aus 9_Claude/stand.md mit Fristen, verteilt auf die Papierkram-Blöcke.</pre>
 </div>
 
 <div class="prompt">
-  <div class="ptitle">Gespräch mit Sozialdienst oder Beistand vorbereiten <button class="copy" type="button">Kopieren</button></div>
-<pre>Am [Datum] habe ich ein Gespräch mit [Sozialdienst / Beistand / Case Manager]. Erstelle aus 9_Claude/stand.md und meinen Unterlagen eine einseitige Übersicht zum Ausdrucken:
+  <div class="ptitle">Gespräch mit einer Beratungsstelle vorbereiten <button class="copy" type="button">Kopieren</button></div>
+<pre>Am [Datum] habe ich ein Gespräch mit [Sozialdienst / RAV / Schulden- oder Budgetberatung]. Erstelle aus 9_Claude/stand.md und meinen Unterlagen eine einseitige Übersicht zum Ausdrucken:
 1. Stand der Dinge (Wohnung, Arbeit, Finanzen) in je 2 Sätzen.
 2. Was ich seit dem letzten Gespräch erledigt habe.
 3. Wo ich Unterstützung brauche (konkret, mit Betrag oder Frist).
 4. Meine drei Fragen.
-Sachlich, keine Bewertungen, keine medizinischen Angaben.</pre>
+Sachlich, keine Bewertungen.</pre>
 </div>
 
 <div class="prompt">
