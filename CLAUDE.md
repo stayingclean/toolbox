@@ -94,10 +94,14 @@ den **ki-tasks-Ordner** beschreiben, liegen in `stayingclean/ki-tasks` unter
 Deployment kopiert `.github/workflows/deploy.yml` sie darüber. Die URL
 `stayingclean.github.io/toolbox/claude-anleitung/` bleibt dieselbe.
 
-Heute kommen von drüben sechs Seiten: **`der-ordner.html`** und
+Heute kommen von drüben acht Seiten: **`der-ordner.html`** und
 **`platzhalter.html`** (Gruppe „Arbeitsweise") sowie **`aufgaben.html`**,
-**`wohnung.html`**, **`stelle.html`** und **`gesuch-krankheitskosten.html`**
-(Gruppe „Aufgaben" — je eine Seite pro Aufgabenordner, dazu die Übersicht).
+**`wohnung.html`**, **`stelle.html`**, **`praemienverbilligung.html`**,
+**`krankenkasse.html`** und **`gesuch-krankheitskosten.html`** (Gruppe
+„Aufgaben" — je eine Seite pro Aufgabenordner, dazu die Übersicht). Die drei
+Geld-Aufgaben stehen in der Reihenfolge, in der man sie angeht: erst die
+Prämienverbilligung, dann Kasse und Franchise, zuletzt Gesuche für die Kosten,
+die danach noch bleiben.
 Sie liegen **nicht** in diesem Repo — wer den Ordner `docs/claude-anleitung/`
 lokal öffnet, findet sie nicht, und ihre Navigationseinträge zeigen dort ins
 Leere. Das ist kein Fehler, sondern der Preis dafür, dass sie sich mit dem
