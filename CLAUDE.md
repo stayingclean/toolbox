@@ -26,7 +26,7 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - Die **leeren Startordner** (Grundgerüst + Aufgabe) liegen im eigenen Repo
   `stayingclean/ki-tasks` und werden dort per Action nach
   `stayingclean.github.io/ki-tasks/<aufgabe>.zip` gebaut. Die Anleitung verlinkt
-  dorthin und holt den Aufgabenkatalog aus `aufgaben.json` desselben Repos.
+  über ihre Aufgabenseiten dorthin.
   Der Ablauf selbst wird **nur noch dort** beschrieben (`grundgeruest/CLAUDE.md`
   und `START-HIER.txt`), damit er nicht an zwei Orten auseinanderläuft.
 - `docs/plakat.html` = Plakat zur Skillsliste zum Herunterladen (PNG und PDF in
@@ -139,14 +139,13 @@ Daraus folgen vier Dinge, die keine Sperre meldet:
   Tagen ohne Commit ab. Wer nicht warten will, startet den Workflow von Hand
   (`workflow_dispatch`).
 
-Der Aufgabenkatalog auf `index.html` wird **nicht** von Hand gepflegt: Die
-Karten führen zur Aufgabenseite (`<name>.html`), sobald `aufgaben.json` für die
-Aufgabe ein Feld `seite` meldet, sonst direkt aufs Zip. Die
-Kurzbeschriebe holt `anleitung.js` aus
-`https://stayingclean.github.io/ki-tasks/aufgaben.json`, gespeist aus den
-`INFO.md` der Aufgaben. Eine zweite Kopie im HTML veraltet — davor stand sie
-hartcodiert in `auftragsvorlagen.html`, samt einem Download-Link auf ein Zip,
-das es nicht mehr gab.
+**Die Startseite `index.html` listet keine Aufgaben auf**, sie verweist nur
+auf die Übersicht `aufgaben.html`. Die Aufgaben stehen damit an genau einer
+Stelle: den Karten dort, die der Deploy aus den `INFO.md` drüben einsetzt
+(`tools/anleitung_aufgaben.py`). Früher holte `anleitung.js` einen zweiten
+Katalog aus `aufgaben.json` — mit eigener Reihenfolge und eigenen Texten, die
+von der Übersicht abwichen. Keine Aufgabenliste auf der Startseite wieder
+einführen.
 
 ## Skillsliste pflegen (nicht von Hand editieren!)
 

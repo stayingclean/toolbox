@@ -116,38 +116,6 @@ var SEITEN = [
     });
   }
 
-  /* Aufgabenkatalog.
-
-     Die Kurzbeschriebe stehen in ki-tasks/aufgaben/<name>/INFO.md und werden
-     dort nach aufgaben.json veroeffentlicht. Sie werden hier NICHT noch einmal
-     hingeschrieben: eine zweite Kopie veraltet, sobald jemand drueben etwas
-     aendert. Kommt eine Aufgabe dazu, erscheint sie hier von selbst.
-
-     Die Karte fuehrt zur Beschreibung der Aufgabe (<name>.html, gleicher
-     Ordner), dort steht der Download. Nur wenn aufgaben.json keine Seite
-     meldet (Feld "seite"), zeigt sie direkt aufs Zip.
-
-     Schlaegt der Abruf fehl (kein Netz, oder die Seite wurde als Datei
-     geoeffnet, wo der Browser den Abruf sperrt), bleibt der Kasten leer. Der
-     Link auf den Katalog steht als Satz daneben und traegt den Fall. */
-  var katalog = document.getElementById('aufgaben');
-  if (katalog && katalog.dataset.quelle && window.fetch) {
-    fetch(katalog.dataset.quelle)
-      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
-      .then(function (aufgaben) {
-        if (!Array.isArray(aufgaben) || !aufgaben.length) { return; }
-        katalog.innerHTML = aufgaben.map(function (a) {
-          var ziel = a.seite
-            ? encodeURIComponent(a.name) + '.html'
-            : 'https://stayingclean.github.io/ki-tasks/' + encodeURIComponent(a.name) + '.zip';
-          return '<a class="card" href="' + ziel + '">' +
-            '<span class="name">' + schuetze(a.titel) + '</span>' +
-            '<span class="meta">' + schuetze(a.kurz) + '</span></a>';
-        }).join('');
-      })
-      .catch(function () { /* Katalogseite nebenan traegt den Fall */ });
-  }
-
   /* Kopierknoepfe an den Prompt-Kaesten */
   document.querySelectorAll('.copy').forEach(function (b) {
     b.addEventListener('click', function () {
