@@ -9,7 +9,10 @@ Namenskonvention drüben: Zu jedem Ordner aufgaben/<name>/ mit INFO.md gehört
 die Seite anleitung/<name>.html. Aus diesen beiden Dateien entsteht hier:
 
 - die Gruppe «Aufgaben» in SEITEN (anleitung.js), zwischen den Markern
-  AUFGABEN-ANFANG und AUFGABEN-ENDE. Titel = <h1> der Seite.
+  AUFGABEN-ANFANG und AUFGABEN-ENDE. Titel = <h1> der Seite; steht in
+  INFO.md ein `navtitel:`, kommt er als `kurz` dazu und ersetzt den Titel in
+  der Seitenleiste (Zurück/Weiter behält den langen). Die Leiste ist schmal:
+  «Prämienverbilligung beantragen» bräche dort um.
 - die Karten auf aufgaben.html, zwischen <!-- AUFGABEN-KARTEN --> und
   <!-- /AUFGABEN-KARTEN -->. Titel = <h1>, Text = <p class="lead"> der Seite.
 
@@ -75,6 +78,7 @@ def lies_aufgaben(ki_tasks: Path) -> tuple[list[dict[str, str]], list[str]]:
             "href": f"{name}.html",
             "titel": text_aus(quelltext, r"<h1[^>]*>(.*?)</h1>", seite),
             "lead": text_aus(quelltext, r'<p class="lead"[^>]*>(.*?)</p>', seite),
+            "kurz": info.get("navtitel", ""),
             "reihenfolge": info.get("reihenfolge", "1000"),
         })
     aufgaben.sort(key=lambda a: (int(a["reihenfolge"]), a["name"]))
@@ -89,7 +93,9 @@ def seiten_js(aufgaben: list[dict[str, str]], einzug: str) -> str:
     breite = max(len(js_zeichenkette(a["href"])) for a in aufgaben) + 1
     zeilen = [
         f"{einzug}{{ href: {(js_zeichenkette(a['href']) + ',').ljust(breite)} "
-        f"titel: {js_zeichenkette(a['titel'])} }}"
+        f"titel: {js_zeichenkette(a['titel'])}"
+        + (f", kurz: {js_zeichenkette(a['kurz'])}" if a["kurz"] else "")
+        + " }"
         for a in aufgaben
     ]
     return ",\n".join(zeilen)

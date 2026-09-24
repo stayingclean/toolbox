@@ -117,17 +117,25 @@ Daraus folgen vier Dinge, die keine Sperre meldet:
   `tools/anleitung_aufgaben.py`: Zu jedem `aufgaben/<name>/INFO.md` drüben
   gehört `anleitung/<name>.html`. Daraus ersetzt es in `anleitung.js` den Block
   zwischen `/* AUFGABEN-ANFANG */` und `/* AUFGABEN-ENDE */` (Titel = `<h1>` der
-  Seite, Reihenfolge = `reihenfolge:` aus `INFO.md`) und auf `aufgaben.html`
+  Seite, Reihenfolge = `reihenfolge:` aus `INFO.md`, dazu `navtitel:` aus
+  `INFO.md` als `kurz`) und auf `aufgaben.html`
   die Karten zwischen `<!-- AUFGABEN-KARTEN -->`-Markern (Text = `<p
   class="lead">`). Eine Seite drüben, die danach in keiner Navigation steht,
   bricht den Deploy ab. Der Block im Repo ist nur der Stand für die lokale
   Ansicht; wer ihn von Hand ändert, verliert es beim nächsten Deploy.
 - **`SEITEN` in `anleitung.js` ist die einzige Stelle mit der Seitenfolge.**
-  Daraus entstehen Seitenleiste, Nummerierung und das Zurück/Weiter. Eine Seite
+  Daraus entstehen Seitenleiste und das Zurück/Weiter. Eine Seite
   dort einzutragen, die es nicht gibt, ergibt einen toten Link; eine
   wegzulassen macht sie unerreichbar. Beides fällt sonst niemandem auf — genau
   so waren `md-dateien.html` und `prompts.html` über Monate verwaist, mit einer
   eingefrorenen älteren Navigation.
+- **Die Seitenleiste zeigt `kurz`, wo es eines gibt, sonst `titel`.** Das
+  Zurück/Weiter nimmt immer den langen `titel`. Die Leiste ist schmal
+  (`--sidebar` in `stil.css`), und «Prämienverbilligung beantragen» brach dort
+  auf zwei Zeilen um. Bei den Aufgaben steht die Kurzform als `navtitel:` in
+  der `INFO.md` drüben; fehlt sie, bleibt der `<h1>`. Nummern stehen bewusst
+  keine mehr davor: Aufgaben arbeitet niemand der Reihe nach ab, und jede neue
+  hätte alle Nummern dahinter verschoben.
 - **Eine Seite aus ki-tasks, die nicht zu einer Aufgabe gehört** (heute
   `der-ordner.html`, `platzhalter.html`, `aufgaben.html`), steht weiterhin von
   Hand in `SEITEN` — und erst, wenn sie drüben existiert.
