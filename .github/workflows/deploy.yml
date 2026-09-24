@@ -4,10 +4,16 @@ on:
   push:
     branches:
       - master
-  # Die Anleitungsseiten kommen aus stayingclean/ki-tasks (siehe unten). Ein
-  # Push dort loest hier nichts aus, darum einmal taeglich nachziehen. Bewusst
-  # kein repository_dispatch mit PAT: ein Token, das ablaeuft, ist mehr Risiko
-  # als ein Tag Verzoegerung.
+  # Die Anleitungsseiten kommen aus stayingclean/ki-tasks (siehe unten). Nach
+  # jedem Deploy dort schickt ki-tasks ein repository_dispatch hierher. Das
+  # Token dafuer stellt eine GitHub App aus, die nur auf diesem Repo installiert
+  # ist (Contents: write); ihr Schluessel laeuft nicht ab, anders als ein PAT.
+  # Der Workflow muss dafuer auf master liegen.
+  repository_dispatch:
+    types: [ki-tasks]
+  # Reserve, falls der Dispatch ausbleibt (App fehlt, Secret falsch). Achtung:
+  # GitHub schaltet geplante Laeufe in oeffentlichen Repos nach 60 Tagen ohne
+  # Commit ab; der Dispatch haelt die Seiten trotzdem aktuell.
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
@@ -52,6 +58,10 @@ jobs:
             cp -r _ki-tasks/anleitung/. docs/claude-anleitung/
             echo "Anleitungsseiten aus ki-tasks uebernommen:"
             ls -1 _ki-tasks/anleitung
+            # Navigation und Karten der Aufgaben aus der Namenskonvention
+            # aufgaben/<name>/INFO.md + anleitung/<name>.html. Bricht ab, wenn
+            # eine Seite sonst unerreichbar waere.
+            python3 tools/anleitung_aufgaben.py _ki-tasks docs/claude-anleitung
           else
             echo "::notice::_ki-tasks/anleitung fehlt noch - nur die Toolbox-Seiten werden veroeffentlicht."
           fi

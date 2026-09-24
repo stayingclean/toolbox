@@ -113,20 +113,35 @@ Daraus folgen vier Dinge, die keine Sperre meldet:
 - **`stil.css` und `anleitung.js` gehören der Toolbox.** Die ki-tasks-Seiten
   verweisen nur darauf. Liegt drüben eine gleichnamige Datei, überschreibt das
   `cp` die hiesige — also dort **keine** mitliefern.
+- **Die Aufgabenseiten trägt der Deploy selbst ein.** Nach dem `cp` läuft
+  `tools/anleitung_aufgaben.py`: Zu jedem `aufgaben/<name>/INFO.md` drüben
+  gehört `anleitung/<name>.html`. Daraus ersetzt es in `anleitung.js` den Block
+  zwischen `/* AUFGABEN-ANFANG */` und `/* AUFGABEN-ENDE */` (Titel = `<h1>` der
+  Seite, Reihenfolge = `reihenfolge:` aus `INFO.md`) und auf `aufgaben.html`
+  die Karten zwischen `<!-- AUFGABEN-KARTEN -->`-Markern (Text = `<p
+  class="lead">`). Eine Seite drüben, die danach in keiner Navigation steht,
+  bricht den Deploy ab. Der Block im Repo ist nur der Stand für die lokale
+  Ansicht; wer ihn von Hand ändert, verliert es beim nächsten Deploy.
 - **`SEITEN` in `anleitung.js` ist die einzige Stelle mit der Seitenfolge.**
   Daraus entstehen Seitenleiste, Nummerierung und das Zurück/Weiter. Eine Seite
   dort einzutragen, die es nicht gibt, ergibt einen toten Link; eine
   wegzulassen macht sie unerreichbar. Beides fällt sonst niemandem auf — genau
   so waren `md-dateien.html` und `prompts.html` über Monate verwaist, mit einer
   eingefrorenen älteren Navigation.
-- **Eine Seite aus ki-tasks darf erst in `SEITEN` stehen, wenn sie drüben
-  existiert.** Sonst zeigt die Navigation ins Leere, bis der nächste Lauf drüben
-  durch ist.
-- **Ein Push in ki-tasks löst hier nichts aus.** Darum der `schedule`-Auslöser:
-  eine Änderung drüben ist spätestens am nächsten Morgen online. Wer nicht
-  warten will, startet den Workflow von Hand (`workflow_dispatch`).
+- **Eine Seite aus ki-tasks, die nicht zu einer Aufgabe gehört** (heute
+  `der-ordner.html`, `platzhalter.html`, `aufgaben.html`), steht weiterhin von
+  Hand in `SEITEN` — und erst, wenn sie drüben existiert.
+- **Ein Push in ki-tasks löst hier den Deploy aus.** Nach seinem eigenen Deploy
+  schickt ki-tasks ein `repository_dispatch` (Typ `ki-tasks`); das Token stellt
+  eine GitHub App aus, die nur auf diesem Repo installiert ist. Fehlt die App
+  oder ist das Secret falsch, zieht der `schedule`-Auslöser am nächsten Morgen
+  nach. Achtung: GitHub schaltet geplante Läufe in öffentlichen Repos nach 60
+  Tagen ohne Commit ab. Wer nicht warten will, startet den Workflow von Hand
+  (`workflow_dispatch`).
 
 Der Aufgabenkatalog auf `index.html` wird **nicht** von Hand gepflegt: Die
+Karten führen zur Aufgabenseite (`<name>.html`), sobald `aufgaben.json` für die
+Aufgabe ein Feld `seite` meldet, sonst direkt aufs Zip. Die
 Kurzbeschriebe holt `anleitung.js` aus
 `https://stayingclean.github.io/ki-tasks/aufgaben.json`, gespeist aus den
 `INFO.md` der Aufgaben. Eine zweite Kopie im HTML veraltet — davor stand sie
