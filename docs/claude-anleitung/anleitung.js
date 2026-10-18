@@ -144,4 +144,14 @@ var SEITEN = [
       } else { ersatz(); }
     });
   });
+
+  /* «Jetzt faellig» kommt aus stayingclean/ki-tasks (build.py -> faellig.js):
+     Punkt in der Seitenleiste, Band auf der Aufgabenseite, Spalte auf
+     aufgaben.html. Gleiche Origin, darum kein CORS. aufgaben.html bindet das
+     Skript zusaetzlich selbst ein; es laeuft trotzdem nur einmal
+     (window.faelligGeladen). Ohne Netz fehlt nur die Markierung. */
+  var faellig = document.createElement('script');
+  faellig.src = 'https://stayingclean.github.io/ki-tasks/faellig.js';
+  faellig.async = true;
+  document.body.appendChild(faellig);
 })();
