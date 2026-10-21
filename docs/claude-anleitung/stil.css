@@ -148,6 +148,9 @@ footer code { background: var(--card); }
 /* «Jetzt faellig»: faellig.js aus stayingclean/ki-tasks. Ohne faelligen Eintrag
    bleibt die Spalte hidden und .layout zweispaltig. */
 .layout.mit-spalte { grid-template-columns: var(--sidebar) minmax(0, 1fr) 300px; }
+/* Text mittig zwischen Seitenleiste und Spalte statt links, auf breiten Schirmen
+   bliebe sonst rechts eine Luecke. width:100% laesst max-width von main greifen. */
+.layout.mit-spalte main { justify-self: center; width: 100%; }
 .spalte { position: sticky; top: 24px; align-self: start; margin: 44px 24px 0 0; padding: 16px 18px;
   background: var(--card); border: 1px solid #F2D3B0; border-top: 4px solid var(--warn); border-radius: 14px; font-size: .88rem; }
 .spalte h2 { font-family: var(--font-body); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--warn); margin: 0 0 4px; }
