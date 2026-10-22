@@ -1067,7 +1067,7 @@
                 display: none !important;
             }
             /* Gedruckt wird in der Vorschau eine gerechnete Tabelle. Die
-               Stand-Leiste steckt in .sticky-head und ist hier weg - der
+               Stand-Leiste steckt in .sticky-head und ist hier weg – der
                Hinweis muss an ihrer Stelle mit aufs Blatt. */
             body.mode-preview .preview-print-note {
                 display: block;
@@ -1397,7 +1397,7 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.35);
         }
-        /* Am Bildschirm sagt es die Stand-Leiste; der Hinweis ist nur fuer
+        /* Am Bildschirm sagt es die Stand-Leiste; der Hinweis ist nur für
            den Ausdruck da (siehe @media print). */
         .preview-print-note { display: none; }
 
@@ -1457,8 +1457,8 @@
         .versions-overview-table tbody tr.is-active td:first-child {
             border-left: 3px solid var(--color-primary);
         }
-        /* Staende der aktiven Version: abgesetzt, damit niemand sie fuer
-           eine eigene Version haelt — sie sind gerechnet, nicht erfasst. */
+        /* Stände der aktiven Version: abgesetzt, damit niemand sie für
+           eine eigene Version hält — sie sind gerechnet, nicht erfasst. */
         .versions-overview-table tbody tr.overview-stand-row:first-of-type td {
             border-top: 2px dashed var(--color-warning);
         }
@@ -1822,9 +1822,15 @@
 <!-- ============================================================
      Version bar — tabs for switching between budget versions
      ============================================================ -->
-<div class="version-bar" id="versionBar" role="tablist" aria-label="Budget-Versionen">
+<!-- Die Reiterliste ist #versionTabs, nicht die ganze Leiste: nur dort setzt
+     renderVersionTabs die Rolle tab. Trüge die Leiste die Rolle tablist, wären
+     „Neue Version", der Anpassungs- und der Vorschau-Knopf Kinder einer
+     Reiterliste, ohne Reiter zu sein — ungültiges ARIA, und Screenreader
+     dürfen solche Kinder in der Reiter-Navigation überspringen. Einer davon
+     ist der Weg aus einem gesperrten Formular heraus. -->
+<div class="version-bar" id="versionBar">
     <div class="version-bar-label">Versionen:</div>
-    <div class="version-tabs" id="versionTabs"></div>
+    <div class="version-tabs" id="versionTabs" role="tablist" aria-label="Budget-Versionen"></div>
     <button class="version-add-btn" id="addVersionBtn" type="button" title="Neue Budget-Version anlegen">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19"/>
@@ -1869,8 +1875,8 @@
 
 <main class="page">
 
-    <!-- Nur im Ausdruck: die Stand-Leiste steht in .sticky-head und faellt beim
-         Drucken weg. Ohne diesen Hinweis saehe ein in der Vorschau gedrucktes
+    <!-- Nur im Ausdruck: die Stand-Leiste steht in .sticky-head und fällt beim
+         Drucken weg. Ohne diesen Hinweis sähe ein in der Vorschau gedrucktes
          Blatt aus wie ein erfasstes Budget. -->
     <p class="preview-print-note">Vorschau: gerechnete Werte zu einem Stichtag – nicht die erfassten Beträge.</p>
 
@@ -2829,7 +2835,7 @@
     // bringt beides fertig mit. Ohne sie gilt wie bisher: Werte aus der Basis
     // kopieren, Anpassungen leer.
     function createVersion({ name, basedOnId, values, adjustments }) {
-        leavePreview();                  // wie switchVersion: erst zurueck zu den erfassten Werten
+        leavePreview();                  // wie switchVersion: erst zurück zu den erfassten Werten
         captureFormToActiveVersion();    // make sure current edits land
         const v = makeBlankVersion(name, basedOnId);
         if (basedOnId) {
@@ -3155,6 +3161,12 @@
 
     // Wie die Betragsfelder der Zeile: das zuletzt getippte Feld bestimmt das andere.
     function handleAdjInputEvent(input) {
+        // Der einzige Schreibweg in die Version, der nicht durch
+        // captureFormToActiveVersion läuft — die Sperre dort greift hier nicht.
+        // Heute unerreichbar (in der Vorschau sind die .adj-input gesperrt und
+        // feuern keine Events), aber die Zusicherung hinge sonst allein an
+        // einem Attribut, das anderswo gesetzt wird. Darum dieselbe Sperre:
+        if (state.previewStand) return;
         const rowId = input.dataset.rowId;
         const art = input.dataset.adj;
         if (art === 'jaehrlich' || art === 'monatlich') {

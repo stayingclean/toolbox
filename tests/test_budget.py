@@ -567,3 +567,37 @@ def test_uebersicht_zeigt_je_stand_das_delta_zur_version():
         werte = kern("werteFuerStand", WERTE, ANPASSUNGEN, key)
         deltas[key] = round(kern("summen", SCHEMA, werte)["diffY"] - jetzt, 2)
     assert deltas == {"2027-01-01": 149 * 12, "2027-04-01": 163 * 12, "offen": 233 * 12}
+
+
+def test_eingabe_handler_schreiben_in_der_vorschau_nicht_in_die_version():
+    """Die Sperre sitzt in captureFormToActiveVersion. Ein Handler, der direkt
+    in die aktive Version schreibt, geht daran vorbei — heute unerreichbar
+    (die Felder sind in der Vorschau `disabled` und feuern keine Events), aber
+    das haengt an einem Attribut, das eine andere Funktion setzt. Kommentare
+    sind bewusst ausgenommen: sie werden nicht gerechnet und duerfen durch."""
+    text = _seite_text()
+    geprueft = []
+    for treffer in re.finditer(r"function (handle\w+)\(", text):
+        name = treffer.group(1)
+        block = _funktionsblock(name)
+        if not re.search(r"active\.(values|adjustments)\s*(\[|=)", block):
+            continue
+        geprueft.append(name)
+        assert "if (state.previewStand) return;" in block, \
+            f"{name} schreibt in die Version, ohne die Vorschau-Sperre"
+    assert "handleAdjInputEvent" in geprueft, \
+        "der bekannte Schreibweg wurde nicht mehr gefunden — pruefe den Suchausdruck"
+
+
+def test_nur_die_reiter_stehen_in_der_tablist():
+    """Eine tablist mit Nicht-Reiter-Kindern ist ungueltiges ARIA; Screenreader
+    duerfen solche Kinder in der Reiter-Navigation ueberspringen — und einer von
+    ihnen ist der Weg aus dem gesperrten Formular hinaus."""
+    text = _seite_text()
+    bar = text[text.index('id="versionBar"'):text.index("/sticky-head")]
+    for knopf in ('id="addVersionBtn"', 'id="adjustmentsBtn"', 'id="previewBtn"'):
+        assert knopf in bar, knopf
+    # Die Rolle haengt an der Reiterliste, nicht an der ganzen Leiste.
+    assert re.search(r'id="versionTabs"[^>]*role="tablist"', text)
+    kopf = text[text.index('id="versionBar"'):text.index('id="versionTabs"')]
+    assert "tablist" not in kopf, "die Leiste selbst darf keine tablist sein"
