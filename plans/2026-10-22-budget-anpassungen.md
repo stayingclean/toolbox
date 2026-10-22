@@ -202,15 +202,14 @@ def test_kein_oder_null_auf_einem_anpassungsbetrag():
     assert not re.search(r"(adjustments|anpassung)\w*\.(jaehrlich|monatlich)\s*\|\|", text, re.I)
 ```
 
-Dazu ein Kern-naher Test für `bekannteAnpassungen` — die Funktion steht ausserhalb des Kerns, ihr Verhalten lässt sich aber über `stichtagListe` prüfen, wenn der Aufrufer filtert. Stattdessen genügt hier die statische Zusicherung:
+Dazu die Zusicherung, dass der Filter überhaupt existiert. Dass ihn jede Leseseite benutzt, prüft Task 4, wo die erste Leseseite entsteht:
 
 ```python
-def test_anpassungen_werden_gegen_das_schema_gefiltert():
+def test_filter_gegen_unbekannte_zeilen_existiert():
     text = SEITE.read_text(encoding="utf-8")
     assert "function bekannteAnpassungen" in text
-    # Jede Leseseite geht durch den Filter, keine greift roh auf .adjustments zu.
-    roh = re.findall(r"(?<!function )\b\w+\.adjustments\b", text)
-    assert len(roh) <= 4, f"ungefilterte Zugriffe: {roh}"
+    block = text[text.index("function bekannteAnpassungen"):][:500]
+    assert "lookupRow" in block or "ROW_INDEX" in block
 ```
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
@@ -267,9 +266,9 @@ def test_panel_traegt_drei_anpassungsfelder():
 
 def test_zeile_mit_anpassung_bleibt_zugeklappt_markiert():
     text = SEITE.read_text(encoding="utf-8")
-    assert "has-adjustment" in text
-    assert re.search(r"\.budget-row\.has-adjustment\b", text)
-    assert "--color-warning" in text[text.index(".budget-row.has-adjustment"):][:400]
+    # Die Hauptzeile traegt heute KEINE Klasse, nur data-row-id und data-group.
+    assert re.search(r"tr\[data-row-id\]\.has-adjustment\b", text)
+    assert "--color-warning" in text[text.index("tr[data-row-id].has-adjustment"):][:400]
 
 def test_unvollstaendige_anpassung_wird_angezeigt():
     """Datum ohne Betrag rechnet nicht — die Zeile muss es sagen."""
@@ -339,6 +338,16 @@ def test_staende_kommen_aus_dem_kern():
     block = text[text.index("function recomputeAll"):][:6000]
     for fn in ("stichtagListe", "werteFuerStand", "summen"):
         assert fn in block, fn
+
+def test_jede_leseseite_filtert_unbekannte_zeilen():
+    """Eine Anpassung auf einer rowId, die das Schema nicht kennt, darf
+    weder gerechnet noch angezeigt werden."""
+    text = SEITE.read_text(encoding="utf-8")
+    for name in ("stichtagListe", "werteFuerStand"):
+        # Die Definition im Kern ausnehmen, nur Aufrufstellen pruefen.
+        for treffer in re.finditer(r"(?<!function )\b" + name + r"\(", text):
+            umfeld = text[max(0, treffer.start() - 300):treffer.end() + 300]
+            assert "bekannteAnpassungen" in umfeld, f"ungefiltert bei {name}"
 ```
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
@@ -458,8 +467,13 @@ def test_vorschau_ist_kein_versionsreiter():
     assert 'role="tab"' not in block
 
 def test_vorschau_sperrt_die_eingabefelder():
+    """`.disabled = ` steht schon viermal in der Datei — hier zaehlt nur,
+    dass die Sperre an `previewStand` haengt."""
     text = SEITE.read_text(encoding="utf-8")
-    assert "previewStand" in text and re.search(r"\.disabled = ", text)
+    ab = text.index("function enterPreview")
+    block = text[ab:ab + 1500]
+    assert re.search(r"\.disabled = (true|Boolean\(|!!)", block)
+    assert "previewStand" in block
 
 def test_speichern_laeuft_in_der_vorschau_normal_weiter():
     text = SEITE.read_text(encoding="utf-8")
