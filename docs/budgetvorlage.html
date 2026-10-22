@@ -1933,6 +1933,108 @@
         rueckstellungen: 'Rückstellungen',
     };
 
+    // Rechenkern für Anpassungen und Stichtage. Reine Rechnung ohne DOM.
+    // Dieser Block wird von tests/budget_treiber.mjs zwischen den Markern
+    // herausgeschnitten und per new Function(...) ausgeführt. Er hat darum
+    // KEINEN Zugriff auf SCHEMA, state oder das DOM: alles, was er braucht,
+    // kommt als Argument herein.
+    //
+    // Wichtig: «leer» ist hier NICHT 0. Bei den normalen Werten gilt leer = 0
+    // (`|| 0`). Bei einer Anpassung ist null «nicht gesetzt», 0 dagegen ein
+    // gültiger Zielbetrag («das Abo fällt weg»). Darum nie `|| 0` auf einen
+    // Anpassungsbetrag, sondern immer die Zahlenprüfung.
+    /* == budget-kern:anfang == */
+    function istZahl(x) {
+        return typeof x === 'number' && isFinite(x);
+    }
+
+    // Ein Datum gilt nur als lesbar, wenn es JJJJ-MM-TT ist und wirklich existiert.
+    // ISO-Daten sortieren als Zeichenketten richtig, daher kein Date-Vergleich.
+    function istIsoDatum(s) {
+        return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
+            && isFinite(Date.parse(s));
+    }
+
+    // Zielbetrag einer Anpassung: jährlich gewinnt, sonst monatlich mal zwölf.
+    // Gibt null zurück, wenn gar kein Betrag gesetzt ist.
+    function anpassungBetrag(a) {
+        if (!a) return null;
+        if (istZahl(a.jaehrlich)) {
+            return { jaehrlich: a.jaehrlich, monatlich: a.jaehrlich / 12 };
+        }
+        if (istZahl(a.monatlich)) {
+            return { jaehrlich: a.monatlich * 12, monatlich: a.monatlich };
+        }
+        return null;
+    }
+
+    // Alle Stände, in Reihenfolge: «heute», die Daten aufsteigend (je Datum
+    // genau ein Stand), am Schluss «offen» (Anpassungen ohne lesbares Datum).
+    // Anpassungen ohne Betrag zählen nicht mit.
+    function stichtagListe(adjustments, heuteIso) {
+        const daten = [];
+        let hatOffene = false;
+        Object.keys(adjustments || {}).forEach((id) => {
+            const a = adjustments[id];
+            if (!anpassungBetrag(a)) return;
+            if (istIsoDatum(a.ab)) {
+                if (daten.indexOf(a.ab) < 0) daten.push(a.ab);
+            } else {
+                hatOffene = true;
+            }
+        });
+        daten.sort();
+        const liste = [{ key: 'heute', ab: null, faellig: false }];
+        daten.forEach((d) => liste.push({ key: d, ab: d, faellig: d <= heuteIso }));
+        if (hatOffene) liste.push({ key: 'offen', ab: null, faellig: false });
+        return liste;
+    }
+
+    // Kopie der Werte mit den Anpassungen des Stands. «heute»: nichts angewendet.
+    // Datum: alle Anpassungen mit lesbarem Datum bis einschliesslich dieses Tages.
+    // «offen»: alle Anpassungen mit Betrag, auch die ohne Datum.
+    function werteFuerStand(values, adjustments, standKey) {
+        const neu = Object.assign({}, values);
+        if (standKey === 'heute') return neu;
+        Object.keys(adjustments || {}).forEach((id) => {
+            const a = adjustments[id];
+            const betrag = anpassungBetrag(a);
+            if (!betrag) return;
+            const gilt = standKey === 'offen'
+                || (istIsoDatum(a.ab) && a.ab <= standKey);
+            if (!gilt) return;
+            neu[id + '.jaehrlich'] = betrag.jaehrlich;
+            neu[id + '.monatlich'] = betrag.monatlich;
+        });
+        return neu;
+    }
+
+    // Summen wie recomputeAll: je Zeile jährlich = y || (m * 12),
+    // monatlich = m || (y / 12). Die Gruppe «einnahmen» zählt als Einnahme,
+    // jede andere als Ausgabe.
+    function summen(schema, values) {
+        const r = { einnahmenY: 0, einnahmenM: 0, ausgabenY: 0, ausgabenM: 0 };
+        Object.keys(schema).forEach((groupId) => {
+            schema[groupId].forEach((row) => {
+                const y = istZahl(values[row.id + '.jaehrlich']) ? values[row.id + '.jaehrlich'] : 0;
+                const m = istZahl(values[row.id + '.monatlich']) ? values[row.id + '.monatlich'] : 0;
+                const zeileY = y || (m * 12);
+                const zeileM = m || (y / 12);
+                if (groupId === 'einnahmen') {
+                    r.einnahmenY += zeileY;
+                    r.einnahmenM += zeileM;
+                } else {
+                    r.ausgabenY += zeileY;
+                    r.ausgabenM += zeileM;
+                }
+            });
+        });
+        r.diffY = r.einnahmenY - r.ausgabenY;
+        r.diffM = r.einnahmenM - r.ausgabenM;
+        return r;
+    }
+    /* == budget-kern:ende == */
+
     const FILE_FORMAT_VERSION = 4;
     // v1: bare values  ·  v2: yearly reduktion key  ·  v3: y+m reduktion + comment
     // v4: multi-version data model (no reduktion — versions replace it)
