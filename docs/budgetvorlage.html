@@ -1016,7 +1016,9 @@
             max-width: 480px;
             width: 100%;
             padding: 1.75rem;
-            max-height: calc(100vh - 2rem);
+            /* dvh statt vh: auf Mobilgeräten mit ein- und ausfahrender
+               Adressleiste ist 100vh höher als das, was man wirklich sieht. */
+            max-height: calc(100dvh - 2rem);
             overflow-y: auto;
             box-shadow: var(--shadow-lg);
             transform: scale(0.95);
@@ -1735,7 +1737,9 @@
         .modal-field .radio-option:hover { background: var(--color-primary-faint); }
         .modal-field .radio-option input { margin: 0; }
         .modal-field[hidden], .modal-hint[hidden] { display: none; }
-        .modal-hint {
+        /* Mit `.modal` davor, sonst schlägt `.modal p` (ein Element mehr im
+           Selektor) und der Hinweis stünde in Fliesstextfarbe da. */
+        .modal .modal-hint {
             margin: 0;
             font-size: 0.88rem;
             color: var(--color-text-muted);
@@ -1750,7 +1754,13 @@
             border-radius: var(--radius-sm);
             padding: 0.15rem;
         }
+        /* Der Name kann zweizeilig werden (die Zeile «ab …» darunter), darum
+           richtet sich die Zeile oben aus. Häkchen und Betrag stünden damit an
+           der Oberkante statt an der ersten Textzeile — die halbe Zeilenhöhe
+           gleicht das aus. */
         .einloesen-liste .radio-option { align-items: flex-start; }
+        .einloesen-liste .radio-option input { margin-top: 0.4rem; }
+        .einloesen-liste .einloesen-betrag { margin-top: 0.1rem; }
         .einloesen-liste .einloesen-name { flex: 1; min-width: 0; }
         .einloesen-liste .einloesen-ab {
             display: block;
@@ -1763,7 +1773,6 @@
             font-size: 0.88rem;
             color: var(--color-text-muted);
         }
-        .modal .einloesen-text { margin: 0; }
 
         /* ============================================================
            Anpassungsliste in der Kopfleiste
@@ -2608,8 +2617,13 @@
     // Ein Datum gilt nur als lesbar, wenn es JJJJ-MM-TT ist und wirklich existiert.
     // ISO-Daten sortieren als Zeichenketten richtig, daher kein Date-Vergleich.
     function istIsoDatum(s) {
-        return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
-            && isFinite(Date.parse(s));
+        if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+        // `Date.parse` nimmt auch den 31. Februar an und rechnet ihn still auf
+        // den 3. März um; die Seite zeigte dann einen Stand mit einer
+        // Überschrift, die es nicht gibt. Der Rückweg entlarvt das: nur ein
+        // Datum, das unverändert zurückkommt, existiert wirklich.
+        const d = new Date(s);
+        return isFinite(d.getTime()) && d.toISOString().slice(0, 10) === s;
     }
 
     // Zielbetrag einer Anpassung: jährlich gewinnt, sonst monatlich mal zwölf.
@@ -2627,7 +2641,7 @@
 
     // Gibt es diese Anpassung? Nur ein Betrag macht sie dazu (0 eingeschlossen).
     // Ein Datum allein passt nichts an und ist keine Anpassung.
-    function anpassungHatInhalt(a) {
+    function anpassungHatBetrag(a) {
         return anpassungBetrag(a) !== null;
     }
 
@@ -2635,14 +2649,14 @@
     // keinen Eintrag gäbe. Die Sperre ist der Weg, auf dem der Zustand «Datum
     // ohne Betrag» gar nicht erst entsteht.
     function anpassungDatumGesperrt(a) {
-        return !anpassungHatInhalt(a);
+        return !anpassungHatBetrag(a);
     }
 
     // Der Eintrag, der aus den drei Feldern einer Zeile entsteht: `roh` hat
     // jaehrlich/monatlich (Zahl oder null) und ab (Text, auch leer). Ohne Betrag
     // gibt es keinen Eintrag, das Datum fällt mit.
     function anpassungEintrag(roh) {
-        if (!roh || !anpassungHatInhalt(roh)) return null;
+        if (!roh || !anpassungHatBetrag(roh)) return null;
         return {
             jaehrlich: istZahl(roh.jaehrlich) ? roh.jaehrlich : null,
             monatlich: istZahl(roh.monatlich) ? roh.monatlich : null,
@@ -2660,7 +2674,7 @@
     // Zeile (etwa von «jährlich» zu «monatlich»), es wird also weitergetippt.
     function datumNachVerlassen(roh, bleibtInZeile) {
         if (!roh || !roh.ab) return '';
-        if (bleibtInZeile || anpassungHatInhalt(roh)) return roh.ab;
+        if (bleibtInZeile || anpassungHatBetrag(roh)) return roh.ab;
         return '';
     }
 
@@ -2706,7 +2720,7 @@
         let sichtbar = 0;
         Object.keys(adjustments || {}).forEach((rowId) => {
             const a = adjustments[rowId];
-            if (anpassungHatInhalt(a)) {
+            if (anpassungHatBetrag(a)) {
                 behalten[rowId] = a;
                 return;
             }
@@ -2723,7 +2737,7 @@
         const bekannt = new Set(bekannteRowIds || []);
         const behalten = {};
         Object.keys(adjustments || {}).forEach((rowId) => {
-            if (!bekannt.has(rowId) && anpassungHatInhalt(adjustments[rowId])) {
+            if (!bekannt.has(rowId) && anpassungHatBetrag(adjustments[rowId])) {
                 behalten[rowId] = adjustments[rowId];
             }
         });
@@ -2848,7 +2862,7 @@
         const rest = {};
         Object.keys(adjustments || {}).forEach((id) => {
             const a = adjustments[id];
-            if (anpassungHatInhalt(a) && !loestEin(a, standKey, id, abgewaehlt)) rest[id] = Object.assign({}, a);
+            if (anpassungHatBetrag(a) && !loestEin(a, standKey, id, abgewaehlt)) rest[id] = Object.assign({}, a);
         });
         return rest;
     }
@@ -3478,7 +3492,7 @@
     // macht sie dazu; Einträge ohne Betrag gibt es nicht.
     function rowHasAdjustment(rowId) {
         const a = getActiveVersion()?.adjustments?.[rowId];
-        return anpassungHatInhalt(a);
+        return anpassungHatBetrag(a);
     }
 
     // Betragsfeld der Anpassung: leer → null (nicht 0), sonst die Zahl;

@@ -892,18 +892,48 @@ def test_escape_schliesst_panel_und_vorschau_nicht_zugleich():
 
 def test_nur_ein_betrag_macht_einen_eintrag_aus():
     leer = {"jaehrlich": None, "monatlich": None}
-    assert kern("anpassungHatInhalt", dict(leer, ab="2027-01-01")) is False   # Datum allein
-    assert kern("anpassungHatInhalt", dict(leer, ab=None)) is False
-    assert kern("anpassungHatInhalt", None) is False
-    assert kern("anpassungHatInhalt", {}) is False
-    assert kern("anpassungHatInhalt", dict(leer, monatlich=5, ab=None)) is True
-    assert kern("anpassungHatInhalt", dict(leer, jaehrlich=60, ab="2027-01-01")) is True
+    assert kern("anpassungHatBetrag", dict(leer, ab="2027-01-01")) is False   # Datum allein
+    assert kern("anpassungHatBetrag", dict(leer, ab=None)) is False
+    assert kern("anpassungHatBetrag", None) is False
+    assert kern("anpassungHatBetrag", {}) is False
+    assert kern("anpassungHatBetrag", dict(leer, monatlich=5, ab=None)) is True
+    assert kern("anpassungHatBetrag", dict(leer, jaehrlich=60, ab="2027-01-01")) is True
 
 
 def test_null_ist_ein_betrag_und_macht_einen_eintrag_aus():
     """Das Gründungsbeispiel: «Abo gekündigt, kostet ab 01.01. nichts mehr»."""
-    assert kern("anpassungHatInhalt", {"jaehrlich": None, "monatlich": 0, "ab": "2027-01-01"}) is True
-    assert kern("anpassungHatInhalt", {"jaehrlich": 0, "monatlich": None, "ab": None}) is True
+    assert kern("anpassungHatBetrag", {"jaehrlich": None, "monatlich": 0, "ab": "2027-01-01"}) is True
+    assert kern("anpassungHatBetrag", {"jaehrlich": 0, "monatlich": None, "ab": None}) is True
+
+
+def test_hinweis_im_dialog_bleibt_gedaempft():
+    """«.modal p» hat ein Element mehr im Selektor und schlug «.modal-hint» —
+    der Satz unter der Einloese-Liste stand in Fliesstextfarbe da."""
+    text = _seite_text()
+    assert re.search(r"\.modal\s+\.modal-hint\s*\{", text)
+
+
+def test_dialog_rechnet_mit_der_sichtbaren_fensterhoehe():
+    """100vh ist auf Mobilgeraeten hoeher als das sichtbare Fenster, solange
+    die Adressleiste eingeblendet ist."""
+    text = _seite_text()
+    assert "calc(100dvh" in text
+    assert not re.search(r"max-height:\s*calc\(100vh", text)
+
+
+def test_unmoegliches_datum_gilt_nicht_als_datum():
+    """`Date.parse` nimmt den 31. Februar an und rechnet ihn still auf den
+    3. Maerz um — das ergaebe einen Stand mit unsinniger Ueberschrift. Ueber
+    <input type="date"> ist so etwas nicht zu erzeugen, aus einer von Hand
+    geschriebenen Datei schon."""
+    assert kern("istIsoDatum", "2027-01-01") is True
+    assert kern("istIsoDatum", "2027-02-28") is True
+    assert kern("istIsoDatum", "2028-02-29") is True     # Schaltjahr
+    assert kern("istIsoDatum", "2027-02-29") is False    # kein Schaltjahr
+    assert kern("istIsoDatum", "2027-02-31") is False
+    assert kern("istIsoDatum", "2026-13-01") is False
+    assert kern("istIsoDatum", "01.01.2027") is False
+    assert kern("istIsoDatum", None) is False
 
 
 def test_eingabe_ohne_betrag_ergibt_keinen_eintrag():
@@ -1141,7 +1171,7 @@ def test_ohne_betrag_wird_nichts_gespeichert_auch_wenn_ein_datum_im_feld_steht()
 def test_anpassungsfunktionen_kennen_kein_oder_null():
     """null ist leer, 0 ist ein Wert. Kein `|| 0` in den Funktionen, die
     Anpassungsfelder lesen oder bewerten."""
-    for name in ("anpassungEintrag", "anpassungHatInhalt", "anpassungDatumGesperrt",
+    for name in ("anpassungEintrag", "anpassungHatBetrag", "anpassungDatumGesperrt",
                  "anpassungenBereinigen", "datumNachVerlassen", "readAdjustmentFromDom",
                  "readAdjustmentFieldsFromDom", "parseAnpassungsFeld", "anpassungDatumNachBlur",
                  "bleibtInDerZeile", "anpassungDatumHinweis", "zeilenIdVon",
