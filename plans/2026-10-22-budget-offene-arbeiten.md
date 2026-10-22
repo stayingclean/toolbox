@@ -153,6 +153,27 @@ Diagrammbibliothek von einem CDN ist damit ausgeschlossen. Was bleibt:
 handgeschriebenes SVG oder CSS. Das ist gut machbar, aber es begrenzt den
 Ehrgeiz — und es gehört vor dem Entwerfen ausgesprochen.
 
+**Nachtrag 2026-10-22, zwei Rückfragen des Benutzers:** Lässt sich der Import
+einer Bibliothek mit einer `if`-Abfrage umgehen (lokal ohne, online mit
+Diagrammen), und lässt sich eine Bibliothek auf einer GitHub Page überhaupt
+verwenden? Beantwortet in `plans/2026-10-22-budget-abarbeitungsplan.md`,
+Welle 4, Session B — kurz: ja, beides; empfohlen ist trotzdem SVG von Hand,
+und falls doch eine Bibliothek, dann in die Datei eingebettet statt vom CDN
+und ohne zwei Fassungen.
+
+### 10. Die vierte Spalte «Total / Jahr» wiederholt in jeder Position die zweite
+
+Aus einer Rückfrage des Benutzers am 2026-10-22 entstanden: «Warum gibt es
+eigentlich jetzt schon drei Spalten? Die Zahl jährlich steht ja immer in der
+ersten und letzten Spalte.» Das stimmt — «Jährlich» und «Monatlich» füllen sich
+gegenseitig, und `rowTotal = y || (m * 12)` (Zeile 4039) ergibt damit in einer
+Positionszeile immer denselben Wert wie das Jahresfeld. Ihren Zweck hat die
+Spalte nur in den Subtotal-Zeilen und in der Zusammenfassung.
+
+Dieser Punkt ist **nicht** Teil des Anpassungs-Umbaus: er betrifft jede Zeile
+der Seite und den Ausdruck. Die Herleitung steht in
+`plans/2026-10-22-budget-abarbeitungsplan.md` unter D2.
+
 ---
 
 ## Offen aus den Prüfungen
