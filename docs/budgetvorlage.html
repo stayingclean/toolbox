@@ -1234,30 +1234,22 @@
             .expander-row {
                 display: none !important;
             }
-            /* Eine Zeile mit Kommentar oder Anpassung druckt mit dem Häkchen
-               «Kommentare drucken»; ohne Häkchen bleibt sie ganz weg. */
-            body.print-comments .expander-row.has-comment,
-            body.print-comments .expander-row.has-adjustment {
+            /* Eine Zeile mit Kommentar druckt mit dem Häkchen «Kommentare
+               drucken»; ohne Häkchen bleibt sie ganz weg. Eine Anpassung
+               druckt nie — auch nicht mit dem Häkchen. */
+            body.print-comments .expander-row.has-comment {
                 display: table-row !important;
             }
-            .expander-row.has-comment,
-            .expander-row.has-adjustment {
+            .expander-row.has-comment {
                 page-break-inside: avoid;
             }
-            /* Die Anpassungsfelder nur in Zeilen, die eine Anpassung haben –
-               sonst druckte jede Zeile mit Kommentar ein leeres Formular
-               («Neu jährlich», «Neu monatlich», «Gilt ab») mit. */
+            /* Die Anpassungsfelder drucken nie. Sie bieten nur eine
+               Möglichkeit, Zahlen für eine weitere Version zu erfassen; auf
+               Papier stand bisher ein leeres Formular («Neu jährlich», «Neu
+               monatlich», «Gilt ab»), bei leerem Datum sogar der Platzhalter
+               «tt.mm.jjjj». */
             .adj-block {
                 display: none;
-            }
-            body.print-comments .expander-row.has-adjustment .adj-block {
-                display: block;
-            }
-            .adj-input {
-                border: 1px solid #999 !important;
-                background: white !important;
-                color: black !important;
-                opacity: 1;
             }
             /* Umgekehrt: eine Zeile nur mit Anpassung druckt keinen leeren
                Kommentarkasten. */
@@ -1265,9 +1257,9 @@
             .expander-row:not(.has-comment) .comment-print {
                 display: none;
             }
-            /* Die gelbe Zeilenmarkierung druckt nur mit dem Häkchen – dann
-               steht die Erklärung (die Anpassungsfelder) darunter. Ohne Häkchen
-               stünde eine hervorgehobene Zeile ohne Erklärung auf dem Blatt. */
+            /* Die Zeilenmarkierung erklärte eine Anpassung – die nicht mehr
+               mitdruckt. Bliebe sie, stünde eine hervorgehobene Zeile ohne
+               jede Erklärung auf dem Blatt. */
             tr[data-row-id].has-adjustment > td {
                 background: transparent;
             }
@@ -1276,9 +1268,6 @@
             }
             .expander-row.has-adjustment > td {
                 background: transparent;
-            }
-            body.print-comments tr[data-row-id].has-adjustment > td:first-child {
-                border-left: 4px solid #92400e;
             }
             .comment-panel {
                 border-left-color: #999 !important;
@@ -5067,12 +5056,6 @@
                 tr.classList.toggle('has-comment', text.trim() !== '');
                 const printBlock = tr.querySelector('.comment-print');
                 if (printBlock) printBlock.textContent = text;
-                // Die Anpassung wird aus den Feldern gelesen, nicht aus der
-                // Version: sie gilt, sobald ein Betrag oder ein Datum dasteht.
-                const hatAnpassung = readAdjustmentFromDom(tr.dataset.expanderFor) !== null;
-                tr.classList.toggle('has-adjustment', hatAnpassung);
-                const hauptzeile = $(`tr[data-row-id="${tr.dataset.expanderFor}"]`);
-                if (hauptzeile) hauptzeile.classList.toggle('has-adjustment', hatAnpassung);
             });
             // Private Notiz: nur der Text wandert in den Druckblock; ob er
             // gedruckt wird, entscheidet allein das Häkchen (CSS).

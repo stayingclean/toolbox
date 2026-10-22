@@ -363,9 +363,23 @@ wechselt mit ihr.
 
 ## Drucken
 
-- Die Anpassungsfelder stehen im Aufklappbereich und drucken deshalb mit der
-  bestehenden Checkbox «Kommentare drucken» mit. Die Zeilenmarkierung druckt
-  nur dann ebenfalls — eine gelbe Zeile ohne Erklärung verwirrt.
+- **Die Anpassungen drucken nie** — unabhängig von jeder Checkbox. Auch die
+  Zeilenmarkierung `has-adjustment` druckt nicht: sie erklärte die
+  Anpassungsfelder darunter, und die sind weg.
+
+  **Nachtrag 2026-10-22, dieser Entscheid kehrt den vorherigen um.** Hier stand
+  bis dahin: «Die Anpassungsfelder stehen im Aufklappbereich und drucken
+  deshalb mit der bestehenden Checkbox ‹Kommentare drucken› mit. Die
+  Zeilenmarkierung druckt nur dann ebenfalls — eine gelbe Zeile ohne Erklärung
+  verwirrt.»
+
+  Der Benutzer hat die Seite ausprobiert und gesagt: «Sie bieten nur eine
+  Möglichkeit zum Erfassen von Zahlen für eine weitere Version.» Der erste
+  echte Ausdruck (22.10.2026, 12 Seiten A4) gibt ihm recht: Auf dem Blatt stand
+  die Überschrift «ANPASSUNG DIESER POSITION» mit drei gerahmten, beschrifteten
+  Feldern — und bei einer Anpassung ohne Datum sogar der Platzhalter
+  `tt.mm.jjjj`. Das liest sich wie ein Formular zum Ausfüllen, nicht wie eine
+  Aussage über das Budget.
 - Die Vorschau-Leiste und der Anpassungen-Knopf drucken nie (wie `.version-bar`
   heute).
 - Die Stichtag-Stände in der Versions-Übersicht drucken mit, wie die Übersicht

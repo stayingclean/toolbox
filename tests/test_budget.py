@@ -753,25 +753,36 @@ def test_kennzeichnung_wird_beim_zeichnen_der_leiste_gesetzt():
     assert "printStandMarker" in block and "standKennzeichnung" in block
 
 
-def test_druckmarkierung_kennt_auch_anpassungen():
+def test_druckmarkierung_kennt_nur_noch_kommentare():
+    """Anpassungen drucken nie mehr (Punkt 1): der beforeprint-Handler markiert
+    deshalb keine Zeile mehr als «hat eine Anpassung»."""
     text = _seite_text()
     block = re.search(r"addEventListener\('beforeprint'.*?\n        \}\);", text, re.S).group(0)
-    assert "has-comment" in block and "has-adjustment" in block
+    assert "has-comment" in block
+    assert "has-adjustment" not in block, "die Anpassung druckt nicht mehr mit"
+    assert "readAdjustmentFromDom" not in block
 
 
-def test_anpassungsfelder_drucken_nur_mit_kommentar_haekchen():
+def test_anpassungsfelder_drucken_nie():
+    """Der Ausdruck vom 22.10.2026 zeigte sie als leeres Formular auf dem Blatt
+    («Neu jaehrlich», «Gilt ab», bei leerem Datum sogar «tt.mm.jjjj»). Sie
+    bieten nur eine Moeglichkeit zum Erfassen und gehoeren nicht auf Papier."""
     css = _druck_css()
-    assert re.search(r"\.adj-block\s*\{[^}]*display:\s*none", css), \
-        "sonst druckt jede Zeile mit Kommentar ein leeres Anpassungsformular"
-    zeigen = re.search(r"body\.print-comments[^{]*\.has-adjustment[^{]*\.adj-block\s*\{[^}]*display:\s*block", css)
-    assert zeigen, "mit dem Haekchen sollen die Anpassungsfelder der Zeile mitdrucken"
+    assert re.search(r"\.adj-block\s*\{[^}]*display:\s*none", css)
+    assert not re.search(r"\.adj-block\s*\{[^}]*display:\s*(block|table)", css), \
+        "keine Regel darf die Anpassungsfelder im Druck wieder einblenden"
+    assert "print-comments" not in css[css.index(".adj-block"):css.index(".adj-block") + 400], \
+        "das Haekchen «Kommentare drucken» steuert die Anpassung nicht mehr"
+    assert "adj-input" not in css, "die Druckfarben der Anpassungsfelder sind ueberfluessig"
 
 
-def test_zeile_mit_anpassung_druckt_ohne_haekchen_unmarkiert():
-    """Sonst stuende eine gelbe Zeile ohne Erklaerung auf dem Blatt."""
+def test_zeile_mit_anpassung_druckt_nie_markiert():
+    """Die Markierung erklaerte eine Anpassung, die nun gar nicht mehr druckt —
+    eine hervorgehobene Zeile ohne Erklaerung bliebe auf dem Blatt zurueck."""
     css = _druck_css()
     assert re.search(r"tr\[data-row-id\]\.has-adjustment\s*>\s*td\s*\{[^}]*background:\s*transparent", css)
-    assert re.search(r"body\.print-comments\s+tr\[data-row-id\]\.has-adjustment", css)
+    assert not re.search(r"body\.print-comments[^{]*\.has-adjustment", css), \
+        "auch mit dem Haekchen bleibt die Zeile unmarkiert"
 
 
 def test_zeile_mit_anpassung_ohne_kommentar_zeigt_keinen_leeren_kommentarkasten():
