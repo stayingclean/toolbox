@@ -130,10 +130,17 @@ ersetzen.
 
 ---
 
-## Welle 1 — Löschen und Kleinigkeiten (~1 Stunde, kein Entwurf nötig)
+## Welle 1 — Löschen und Kleinigkeiten ✔ erledigt am 2026-10-22
 
-Vier eigene Commits, Tests nach jedem grün. Nichts davon hängt an einem
-Entscheid.
+Zwei Commits (`5c81329` Punkt 1 mit Tests und Entwurf, `ee09cfa` Punkt 6 und
+die vier Kleinigkeiten), 438 Tests grün. Die Anpassungsfelder sind im Druck
+nicht mehr erreichbar — **auf Papier gegengeprüft ist das noch nicht**, der
+nächste Ausdruck zeigt es.
+
+Was dabei anders kam als geplant: Die vier Kleinigkeiten stehen in **einem**
+Commit statt in vieren; keine trägt für sich einen. Die Ersatzregel
+`.modal .einloesen-text` ist mitgegangen, weil sie nur den Abstand nachbesserte,
+den `.modal p` dem Hinweis genommen hatte.
 
 ### 1.1 Punkt 1: Anpassungen drucken nie mehr
 
