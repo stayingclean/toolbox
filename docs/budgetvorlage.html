@@ -2058,6 +2058,25 @@
         return null;
     }
 
+    // Hat eine Anpassung überhaupt Inhalt (einen Betrag oder ein Datum)?
+    function anpassungHatInhalt(a) {
+        return !!a && (anpassungBetrag(a) !== null || !!a.ab);
+    }
+
+    // Beim Speichern: Einträge für Zeilen, die diese Seite nicht kennt, bleiben
+    // erhalten (die Datei kann aus einer anderen Fassung stammen). Leere Hüllen
+    // ohne Betrag und ohne Datum tragen nichts und werden nicht übernommen.
+    function unbekannteAnpassungenBehalten(adjustments, bekannteRowIds) {
+        const bekannt = new Set(bekannteRowIds || []);
+        const behalten = {};
+        Object.keys(adjustments || {}).forEach((rowId) => {
+            if (!bekannt.has(rowId) && anpassungHatInhalt(adjustments[rowId])) {
+                behalten[rowId] = adjustments[rowId];
+            }
+        });
+        return behalten;
+    }
+
     // Alle Stände, in Reihenfolge: «heute», die Daten aufsteigend (je Datum
     // genau ein Stand), am Schluss «offen» (Anpassungen ohne lesbares Datum).
     // Anpassungen ohne Betrag zählen nicht mit.
@@ -2274,10 +2293,7 @@
         // unangetastet (sonst ginge beim Speichern still etwas verloren); für
         // bekannte Zeilen gilt der Stand der Felder. Ohne Betrag UND ohne Datum
         // gibt es keinen Eintrag.
-        const adjustments = {};
-        Object.entries(active.adjustments || {}).forEach(([rowId, a]) => {
-            if (!lookupRow(rowId)) adjustments[rowId] = a;
-        });
+        const adjustments = unbekannteAnpassungenBehalten(active.adjustments, Object.keys(ROW_INDEX));
         $$('.expander-row').forEach((tr) => {
             const rowId = tr.dataset.expanderFor;
             const eintrag = readAdjustmentFromDom(rowId);
@@ -2635,7 +2651,7 @@
     // Datum)? Einträge ohne beides werden gar nicht erst gespeichert.
     function rowHasAdjustment(rowId) {
         const a = getActiveVersion()?.adjustments?.[rowId];
-        return !!a && (anpassungBetrag(a) !== null || !!a.ab);
+        return anpassungHatInhalt(a);
     }
 
     // Betragsfeld der Anpassung: leer → null (nicht 0), sonst die Zahl;

@@ -188,3 +188,25 @@ def test_leerer_anpassungseintrag_wird_geloescht():
     text = _seite_text()
     block = text[text.index("function captureFormToActiveVersion"):][:3000]
     assert "delete" in block and "adjustments" in block
+
+
+def test_unbekannte_zeilen_bleiben_erhalten_leere_huellen_nicht():
+    """Beim Speichern: Eintraege fremder Zeilen mit Inhalt bleiben, leere nicht;
+    bekannte Zeilen kommen nicht von hier (sie folgen den Feldern)."""
+    eintraege = {
+        "lohn": {"jaehrlich": 1, "monatlich": None, "ab": None},            # bekannt
+        "alt_betrag": {"jaehrlich": 0, "monatlich": None, "ab": None},      # 0 ist Inhalt
+        "alt_monat": {"jaehrlich": None, "monatlich": 5, "ab": None},
+        "alt_datum": {"jaehrlich": None, "monatlich": None, "ab": "2027-01-01"},
+        "alt_leer": {"jaehrlich": None, "monatlich": None, "ab": None},     # leere Huelle
+        "alt_objekt": {},
+    }
+    ergebnis = kern("unbekannteAnpassungenBehalten", eintraege, ["lohn"])
+    assert sorted(ergebnis) == ["alt_betrag", "alt_datum", "alt_monat"]
+    assert ergebnis["alt_betrag"]["jaehrlich"] == 0
+
+
+def test_capture_nutzt_den_filter_fuer_unbekannte_zeilen():
+    text = _seite_text()
+    block = text[text.index("function captureFormToActiveVersion"):][:3000]
+    assert "unbekannteAnpassungenBehalten(" in block
