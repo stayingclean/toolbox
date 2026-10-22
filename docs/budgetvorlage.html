@@ -1606,11 +1606,6 @@
             font-style: italic;
             color: #92400e;
         }
-        .versions-overview-table tbody tr.overview-stand-row.is-preview td:first-child {
-            border-left: 3px solid var(--color-warning);
-            font-style: normal;
-            font-weight: 600;
-        }
         .versions-overview-table .stand-faellig {
             font-size: 0.75rem;
             font-weight: 600;
@@ -2037,7 +2032,7 @@
             <span class="private-note-badge">Privat</span>
             <span>Notiz zu dieser Version</span>
         </label>
-        <textarea id="privateNote" rows="3" placeholder="z. B. Was ich vor dem Gespräch klären will – nur für mich."></textarea>
+        <textarea id="privateNote" rows="3" placeholder="z. B. Was ich vor dem Gespräch klären will."></textarea>
         <div class="private-note-print" id="privateNotePrint" aria-hidden="true"></div>
         <p class="private-note-hint">Wird nicht mitgedruckt, ausser Sie haken oben „Private Notiz drucken" an. Die Notiz steht in der gespeicherten Datei – geben Sie die Datei nicht unbedacht weiter.</p>
     </div>
@@ -2644,6 +2639,24 @@
         const stand = standKey === 'offen' ? 'Stand mit allen Vorschlägen'
             : 'Stand ab ' + datumAnzeige(standKey);
         return stand + ' — gerechnet, nicht erfasst';
+    }
+
+    // Vorschlag für den Namen einer Version aus einem Stand.
+    function neueVersionName(standKey) {
+        return standKey === 'offen'
+            ? 'Stand mit allen Vorschlägen'
+            : 'Stand ab ' + datumAnzeige(standKey);
+    }
+
+    // Hinweis im Dialog «Neue Version aus Stand». Muss zu loestEin passen: bei
+    // «offen» werden ALLE Anpassungen mit Betrag eingerechnet, es bleibt keine
+    // stehen; bei einem Datum bleiben spätere und undatierte.
+    function neueVersionHinweis(standKey, versionName) {
+        const wert = `Die Werte stammen aus „${versionName}" mit den Anpassungen des Stands `
+            + `(${standKey === 'offen' ? 'alle' : 'bis einschliesslich ' + datumAnzeige(standKey)}). `;
+        return wert + (standKey === 'offen'
+            ? 'Alle Anpassungen mit Betrag sind eingerechnet; in der neuen Version bleibt keine stehen.'
+            : 'Später fällige und undatierte Anpassungen bleiben in der neuen Version stehen.');
     }
 
     // Alle Stände, in Reihenfolge: «heute», die Daten aufsteigend (je Datum
@@ -3301,7 +3314,6 @@
         [hauptzeile, aufklapp].forEach((tr) => {
             if (!tr) return;
             tr.classList.toggle('has-adjustment', hatAnpassung);
-            tr.classList.toggle('adj-incomplete', unvollstaendig);
         });
         const hinweis = aufklapp ? aufklapp.querySelector('.adj-unvollstaendig') : null;
         if (hinweis) hinweis.hidden = !unvollstaendig;
@@ -3565,6 +3577,10 @@
         void tr.offsetWidth;    // Animation neu starten, auch beim zweiten Sprung
         tr.classList.add('adj-sprung');
         setTimeout(() => tr.classList.remove('adj-sprung'), 1700);
+        // Das Panel mit dem geklickten Knopf ist zu; ohne Ziel fiele der Fokus
+        // auf <body> und die Tastatur müsste von vorn beginnen.
+        const expander = $(`.row-expander[aria-controls="expander-${rowId}"]`);
+        if (expander) expander.focus({ preventScroll: true });
     }
 
     // «Neue Version aus diesem Stand»: Werte mit den bis zum Stichtag
@@ -3577,15 +3593,10 @@
         captureFormToActiveVersion();
         const active = getActiveVersion();
         if (!active) return;
-        const name = standKey === 'offen'
-            ? 'Stand mit allen Anpassungen'
-            : 'Stand ab ' + datumAnzeige(standKey);
         const result = await openNewVersionModal({
-            name: name,
+            name: neueVersionName(standKey),
             basedOnId: active.id,
-            hinweis: `Die Werte stammen aus „${active.name}" mit den Anpassungen des Stands `
-                + `(${standKey === 'offen' ? 'alle' : 'bis einschliesslich ' + datumAnzeige(standKey)}). `
-                + 'Später fällige und undatierte Anpassungen bleiben in der neuen Version stehen.',
+            hinweis: neueVersionHinweis(standKey, active.name),
         });
         if (!result) return;
         captureFormToActiveVersion();
@@ -3594,9 +3605,8 @@
         const werte = werteFuerStand(active.values, bekannt, standKey);
         const rest = anpassungenNachStand(bekannt, standKey);
         // Einträge für Zeilen, die diese Seite nicht kennt, gehen nicht verloren.
-        Object.keys(alle).forEach((id) => {
-            if (!(id in bekannt) && alle[id] && typeof alle[id] === 'object') rest[id] = { ...alle[id] };
-        });
+        const unbekannt = unbekannteAnpassungenBehalten(alle, Object.keys(ROW_INDEX));
+        Object.keys(unbekannt).forEach((id) => { rest[id] = { ...unbekannt[id] }; });
         createVersion({ name: result.name, basedOnId: active.id, values: werte, adjustments: rest });
         toast(`Version „${result.name}" erstellt.`);
     }
@@ -4183,7 +4193,6 @@
             const tr = document.createElement('tr');
             tr.className = 'overview-stand-row';
             tr.dataset.stand = stand.key;
-            if (stand.key === state.previewStand) tr.classList.add('is-preview');
             const name = stand.key === 'offen'
                 ? 'Stand mit allen Vorschlägen'
                 : 'Stand ab ' + datumAnzeige(stand.ab);
@@ -4824,6 +4833,9 @@
             // Nur wenn kein Dialog offen ist: der nimmt Escape für sich.
             if (e.key !== 'Escape' || !state.previewStand) return;
             if (document.querySelector('.modal-backdrop.is-open')) return;
+            // Ein offenes Anpassungs-Panel nimmt dieses Escape für sich (oben);
+            // sonst schlösse ein Tastendruck Panel und Vorschau zugleich.
+            if (!$('#adjustmentsPanel').hidden) return;
             leavePreview();
             const btn = $('#previewBtn');
             if (btn && !btn.hidden) btn.focus();

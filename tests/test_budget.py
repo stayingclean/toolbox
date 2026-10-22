@@ -763,3 +763,95 @@ def test_infobox_verweist_nicht_mehr_nur_auf_versionen():
     box = text[text.index('<div class="info-box">'):][:2500]
     assert "direkt in der Zeile" in box, "Anpassungen stehen jetzt in der Zeile"
     assert "grundsätzlich anderen Haushalt" in box, "Versionen sind fuer den anderen Haushalt da"
+
+
+# --- Schlussrunde: Hinweis zum Stand, Jahresbeträge, Tastatur ----------------
+
+def test_summen_rechnet_mit_jahresbetraegen():
+    """Steuern, Versicherung und Rückstellungen werden jährlich erfasst. Alle
+    anderen Kerntests nutzen *.monatlich; hier läuft der zweite Zweig von
+    y || (m*12) und m || (y/12). Von Hand gerechnet:
+    heute      Einnahmen 4000*12 = 48000; Ausgaben 2400 + 1200 = 3600
+               -> diffY 44400, diffM 3700 (Ausgaben 200 + 100 im Monat)
+    ab 1.1.27  Steuern auf 3000 jährlich (250 im Monat) -> Ausgaben 4200
+               -> diffY 43800, diffM 4000 - (250 + 100) = 3650
+    offen      dazu Versicherung auf 80 monatlich (960 im Jahr) -> Ausgaben 3960
+               -> diffY 44040, diffM 4000 - (250 + 80) = 3670"""
+    schema = {
+        "einnahmen": [{"id": "lohn"}],
+        "fix": [{"id": "steuern"}, {"id": "versicherung"}],
+    }
+    werte = {"lohn.monatlich": 4000, "steuern.jaehrlich": 2400, "versicherung.jaehrlich": 1200}
+    anpassungen = {
+        "steuern": {"jaehrlich": 3000, "monatlich": None, "ab": "2027-01-01"},
+        "versicherung": {"jaehrlich": None, "monatlich": 80, "ab": None},
+    }
+
+    def rechne(key):
+        s = kern("summen", schema, kern("werteFuerStand", werte, anpassungen, key))
+        return {k: round(s[k], 2) for k in ("einnahmenY", "ausgabenY", "ausgabenM", "diffY", "diffM")}
+
+    assert rechne("heute") == {"einnahmenY": 48000, "ausgabenY": 3600, "ausgabenM": 300,
+                               "diffY": 44400, "diffM": 3700}
+    assert rechne("2027-01-01") == {"einnahmenY": 48000, "ausgabenY": 4200, "ausgabenM": 350,
+                                    "diffY": 43800, "diffM": 3650}
+    assert rechne("offen") == {"einnahmenY": 48000, "ausgabenY": 3960, "ausgabenM": 330,
+                               "diffY": 44040, "diffM": 3670}
+
+
+def test_hinweis_zur_neuen_version_unterscheidet_offen_von_einem_datum():
+    """Bei «offen» löst loestEin jede Anpassung mit Betrag ein; ein Hinweis, der
+    von stehenbleibenden Anpassungen spricht, widerspräche dem Code."""
+    offen = kern("neueVersionHinweis", "offen", "Basis")
+    datiert = kern("neueVersionHinweis", "2027-01-01", "Basis")
+    assert offen != datiert
+    assert "Später fällige" not in offen and "bleibt keine stehen" in offen
+    assert "Später fällige und undatierte" in datiert and "01.01.2027" in datiert
+    assert "„Basis\"" in offen
+
+
+def test_hinweis_fuer_offen_stimmt_mit_dem_was_stehen_bleibt():
+    """Das Gegenstück zum Hinweis: bei «offen» bleibt nur, was keinen Betrag hat."""
+    mit_leerer = dict(ANPASSUNGEN, leer={"jaehrlich": None, "monatlich": None, "ab": "2028-01-01"})
+    assert list(kern("anpassungenNachStand", mit_leerer, "offen")) == ["leer"]
+    assert set(kern("anpassungenNachStand", mit_leerer, "2027-01-01")) == {"hausrat", "kasse", "leer"}
+
+
+def test_name_der_neuen_version_sagt_vorschlaege_wie_der_rest():
+    assert kern("neueVersionName", "offen") == "Stand mit allen Vorschlägen"
+    assert kern("neueVersionName", "2027-04-01") == "Stand ab 01.04.2027"
+    assert "Stand mit allen Anpassungen" not in _seite_text()
+
+
+def test_neue_version_aus_stand_nimmt_name_und_hinweis_aus_dem_kern():
+    block = _funktionsblock("neueVersionAusStand")
+    assert "neueVersionName(standKey)" in block
+    assert "neueVersionHinweis(standKey" in block
+    assert "Später fällige" not in block, "der Hinweistext gehört in den Kern, nicht zurück in den Dialog"
+
+
+def test_neue_version_aus_stand_nutzt_die_regel_des_kerns_fuer_unbekannte_zeilen():
+    block = _funktionsblock("neueVersionAusStand")
+    assert "unbekannteAnpassungenBehalten(alle, Object.keys(ROW_INDEX))" in block
+    assert "typeof alle" not in block
+    assert "{ ...unbekannt[id] }" in block, "die Einträge dürfen nicht mit der Quellversion geteilt werden"
+
+
+def test_private_notiz_platzhalter_verspricht_keine_vertraulichkeit():
+    text = _seite_text()
+    tag = text[text.index('<textarea id="privateNote"'):].split(">", 1)[0]
+    assert "nur für mich" not in tag
+
+
+def test_sprung_zur_zeile_setzt_den_fokus_auf_den_aufklapper():
+    block = _funktionsblock("springeZuZeile")
+    assert "closeAdjustmentsPanel();" in block
+    assert re.search(r"row-expander\[aria-controls=\"expander-\$\{rowId\}\"\]", block)
+    assert ".focus({ preventScroll: true })" in block
+
+
+def test_escape_schliesst_panel_und_vorschau_nicht_zugleich():
+    text = _seite_text()
+    ab = text.index("// Nur wenn kein Dialog offen ist")
+    handler = text[ab:text.index("leavePreview();", ab)]
+    assert "if (!$('#adjustmentsPanel').hidden) return;" in handler
