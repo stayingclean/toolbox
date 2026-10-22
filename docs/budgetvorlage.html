@@ -1446,6 +1446,163 @@
         }
         .modal-field .radio-option:hover { background: var(--color-primary-faint); }
         .modal-field .radio-option input { margin: 0; }
+        .modal-field[hidden], .modal-hint[hidden] { display: none; }
+        .modal-hint {
+            margin: 0;
+            font-size: 0.88rem;
+            color: var(--color-text-muted);
+        }
+
+        /* ============================================================
+           Anpassungsliste in der Kopfleiste
+           ============================================================ */
+        .adj-wrap {
+            position: relative;
+            display: inline-flex;
+        }
+        .adj-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border: 1px solid var(--color-warning);
+            border-radius: var(--radius-sm);
+            background: var(--color-warning-bg);
+            /* dunkler als --color-warning: Text auf dem Warn-Hintergrund */
+            color: #92400e;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .adj-btn[hidden] { display: none; }
+        .adj-btn:hover,
+        .adj-btn[aria-expanded="true"] {
+            background: var(--color-warning);
+            color: white;
+        }
+        .adj-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3);
+        }
+        .adj-panel {
+            position: absolute;
+            top: calc(100% + 0.4rem);
+            right: 0;
+            z-index: 95;
+            width: 34rem;
+            max-width: calc(100vw - 2rem);
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 0.9rem 1rem 1rem;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            text-align: left;
+        }
+        .adj-panel[hidden] { display: none; }
+        /* Schmal: der Knopf kann in der Leiste links stehen, dann liefe das
+           Panel am Rand heraus. Es hängt sich dann an die ganze Leiste. */
+        @media (max-width: 640px) {
+            .version-bar { position: relative; }
+            .adj-wrap { position: static; }
+            .adj-panel { left: 1rem; right: 1rem; width: auto; max-width: none; }
+        }
+        .adj-group + .adj-group {
+            margin-top: 1rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid var(--color-border);
+        }
+        .adj-group-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.2rem 0.7rem;
+            margin: 0 0 0.45rem;
+            font-family: var(--font-body);
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+        .adj-faellig {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #92400e;
+        }
+        .adj-group-sum {
+            margin-left: auto;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+        .adj-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .adj-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.1rem 0.7rem;
+            padding: 0.3rem 0;
+            font-size: 0.88rem;
+        }
+        .adj-link {
+            padding: 0;
+            border: none;
+            background: none;
+            color: var(--color-primary-dark);
+            font: inherit;
+            font-weight: 600;
+            text-align: left;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            cursor: pointer;
+        }
+        .adj-link:hover { color: var(--color-primary); }
+        .adj-link:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+        .adj-change {
+            margin-left: auto;
+            font-variant-numeric: tabular-nums;
+            color: var(--color-text-muted);
+            white-space: nowrap;
+        }
+        .adj-delta { font-weight: 600; color: var(--color-text); }
+        .adj-newversion {
+            margin-top: 0.5rem;
+            padding: 0.3rem 0.7rem;
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--color-primary-dark);
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .adj-newversion:hover {
+            background: var(--color-primary-faint);
+            border-color: var(--color-primary);
+            border-style: solid;
+        }
+        /* Nach dem Sprung kurz hervorheben, damit man die Zeile findet. */
+        tr[data-row-id].adj-sprung > td {
+            animation: adj-sprung 1.6s ease-out;
+        }
+        @keyframes adj-sprung {
+            0%, 40% { background: rgba(0, 128, 128, 0.18); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            tr[data-row-id].adj-sprung > td { animation: none; }
+        }
     </style>
 </head>
 <body>
@@ -1509,6 +1666,12 @@
         </svg>
         <span>Neue Version</span>
     </button>
+    <div class="adj-wrap" id="adjustmentsWrap">
+        <button class="adj-btn" id="adjustmentsBtn" type="button" hidden
+                aria-expanded="false" aria-controls="adjustmentsPanel"
+                title="Alle Anpassungen dieser Version, nach Datum geordnet"></button>
+        <div class="adj-panel" id="adjustmentsPanel" role="region" aria-label="Anpassungen" hidden></div>
+    </div>
 </div>
 </div><!-- /sticky-head -->
 
@@ -1859,6 +2022,7 @@
                 <span class="modal-field-label">Name der Version</span>
                 <input type="text" id="newVersionName" maxlength="60" placeholder="z. B. Nach Anpassung" autocomplete="off">
             </label>
+            <p class="modal-hint" id="newVersionHinweis" hidden></p>
             <fieldset class="modal-field" id="newVersionBasedOn">
                 <legend class="modal-field-label">Basiert auf</legend>
                 <!-- Radios populated dynamically -->
@@ -2130,23 +2294,77 @@
         return liste;
     }
 
+    // Löst diese Anpassung im Stand auf? «heute»: nie. Datum: nur mit Betrag und
+    // lesbarem Datum bis einschliesslich dieses Tages. «offen»: jede mit Betrag.
+    // Eine einzige Regel für werteFuerStand und anpassungenNachStand, damit
+    // beide nie auseinanderlaufen.
+    function loestEin(a, standKey) {
+        if (standKey === 'heute') return false;
+        if (!anpassungBetrag(a)) return false;
+        return standKey === 'offen' || (istIsoDatum(a.ab) && a.ab <= standKey);
+    }
+
     // Kopie der Werte mit den Anpassungen des Stands. «heute»: nichts angewendet.
     // Datum: alle Anpassungen mit lesbarem Datum bis einschliesslich dieses Tages.
     // «offen»: alle Anpassungen mit Betrag, auch die ohne Datum.
     function werteFuerStand(values, adjustments, standKey) {
         const neu = Object.assign({}, values);
-        if (standKey === 'heute') return neu;
         Object.keys(adjustments || {}).forEach((id) => {
             const a = adjustments[id];
+            if (!loestEin(a, standKey)) return;
             const betrag = anpassungBetrag(a);
-            if (!betrag) return;
-            const gilt = standKey === 'offen'
-                || (istIsoDatum(a.ab) && a.ab <= standKey);
-            if (!gilt) return;
             neu[id + '.jaehrlich'] = betrag.jaehrlich;
             neu[id + '.monatlich'] = betrag.monatlich;
         });
         return neu;
+    }
+
+    // Was eine neue Version aus einem Stand an Anpassungen mitnimmt: alles, was
+    // der Stand NICHT eingelöst hat (spätere Daten, undatierte, solche ohne
+    // Betrag). Die eingelösten stecken danach in den Werten. Kopien, damit die
+    // neue Version die Einträge der alten nicht teilt.
+    function anpassungenNachStand(adjustments, standKey) {
+        const rest = {};
+        Object.keys(adjustments || {}).forEach((id) => {
+            const a = adjustments[id];
+            if (!loestEin(a, standKey)) rest[id] = Object.assign({}, a);
+        });
+        return rest;
+    }
+
+    // Die Anpassungsliste, nach Stand gruppiert (ohne «heute»). `staende` ist
+    // das Ergebnis von stichtagListe für dieselben Anpassungen. Je Eintrag
+    // der Istwert aus `values` (wie in summen: jährlich = y || m*12, monatlich
+    // = m || y/12), der Zielbetrag und der Unterschied. Anpassungen ohne
+    // Betrag stehen nirgends, passend zu stichtagListe.
+    function anpassungsGruppen(adjustments, staende, values) {
+        const wert = (k) => (istZahl(values[k]) ? values[k] : 0);
+        return staende.filter((s) => s.key !== 'heute').map((stand) => {
+            const eintraege = [];
+            Object.keys(adjustments || {}).forEach((rowId) => {
+                const a = adjustments[rowId];
+                const betrag = anpassungBetrag(a);
+                if (!betrag) return;
+                const key = istIsoDatum(a.ab) ? a.ab : 'offen';
+                if (key !== stand.key) return;
+                const y = wert(rowId + '.jaehrlich');
+                const m = wert(rowId + '.monatlich');
+                const altY = y || (m * 12);
+                const altM = m || (y / 12);
+                eintraege.push({
+                    rowId: rowId,
+                    altY: altY, altM: altM,
+                    neuY: betrag.jaehrlich, neuM: betrag.monatlich,
+                    deltaY: betrag.jaehrlich - altY, deltaM: betrag.monatlich - altM,
+                });
+            });
+            return {
+                key: stand.key, ab: stand.ab, faellig: stand.faellig,
+                eintraege: eintraege,
+                deltaY: eintraege.reduce((s, e) => s + e.deltaY, 0),
+                deltaM: eintraege.reduce((s, e) => s + e.deltaM, 0),
+            };
+        });
     }
 
     // Summen wie recomputeAll: je Zeile jährlich = y || (m * 12),
@@ -2387,7 +2605,10 @@
         recomputeAll();
     }
 
-    function createVersion({ name, basedOnId }) {
+    // `values` und `adjustments` sind optional: «Neue Version aus diesem Stand»
+    // bringt beides fertig mit. Ohne sie gilt wie bisher: Werte aus der Basis
+    // kopieren, Anpassungen leer.
+    function createVersion({ name, basedOnId, values, adjustments }) {
         captureFormToActiveVersion();    // make sure current edits land
         const v = makeBlankVersion(name, basedOnId);
         if (basedOnId) {
@@ -2403,6 +2624,8 @@
                 // (set by makeBlankVersion) — like comments, they are not cloned.
             }
         }
+        if (values) v.values = { ...values };
+        if (adjustments) v.adjustments = adjustments;
         state.versions.push(v);
         state.activeVersionId = v.id;
         hydrateFormFromActiveVersion();
@@ -2887,6 +3110,177 @@
     }
 
     // ----------------------------------------------------------------
+    // Anpassungsliste in der Kopfleiste
+    // ----------------------------------------------------------------
+    // Das Datum ist nur die Überschrift einer Gruppe: mehrere Positionen können
+    // auf denselben Tag fallen, ein Datum nennt also kein einzelnes Sprungziel.
+    // Gesprungen wird über den Positionsnamen, ein Eintrag = ein Ziel.
+    function rowAnzeigename(rowId) {
+        const hit = lookupRow(rowId);
+        if (!hit) return rowId;
+        return (hit.row.prefix ? hit.row.prefix + ' – ' : '') + hit.row.label;
+    }
+
+    // Mit Vorzeichen für Zunahmen; auf Rappen gerundet, damit Rechenreste wie
+    // -1e-14 nicht als «-0.00» erscheinen.
+    function deltaAnzeige(n) {
+        const r = Math.round(n * 100) / 100;
+        return (r > 0 ? '+' : '') + formatComputed(r);
+    }
+
+    function closeAdjustmentsPanel() {
+        const panel = $('#adjustmentsPanel');
+        const btn = $('#adjustmentsBtn');
+        if (!panel || panel.hidden) return;
+        panel.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleAdjustmentsPanel() {
+        const panel = $('#adjustmentsPanel');
+        const btn = $('#adjustmentsBtn');
+        const oeffnen = panel.hidden;
+        panel.hidden = !oeffnen;
+        btn.setAttribute('aria-expanded', oeffnen ? 'true' : 'false');
+    }
+
+    // Klappt die Zeile auf und scrollt sie in den Blick. Die Kopfleiste klebt
+    // oben (.sticky-head); ohne ihre Höhe abzuziehen läge die Zeile darunter.
+    function springeZuZeile(rowId) {
+        closeAdjustmentsPanel();
+        const tr = $(`tr[data-row-id="${rowId}"]`);
+        if (!tr) return;
+        setRowExpanded(rowId, true);
+        const kopf = $('.sticky-head');
+        const abstand = (kopf ? kopf.offsetHeight : 0) + 12;
+        const oben = tr.getBoundingClientRect().top + window.scrollY - abstand;
+        window.scrollTo({ top: Math.max(0, oben) });
+        tr.classList.remove('adj-sprung');
+        void tr.offsetWidth;    // Animation neu starten, auch beim zweiten Sprung
+        tr.classList.add('adj-sprung');
+        setTimeout(() => tr.classList.remove('adj-sprung'), 1700);
+    }
+
+    // «Neue Version aus diesem Stand»: Werte mit den bis zum Stichtag
+    // eingelösten Anpassungen, Basis = die Version, aus der gerechnet wurde
+    // (daran hängen «Δ vs. Basis» und «Unterschiede pro Position»). Spätere und
+    // undatierte Anpassungen wandern unverändert mit, die eingelösten stecken
+    // jetzt in den Werten. Kommentare und private Notiz beginnen leer.
+    async function neueVersionAusStand(standKey) {
+        closeAdjustmentsPanel();
+        captureFormToActiveVersion();
+        const active = getActiveVersion();
+        if (!active) return;
+        const name = standKey === 'offen'
+            ? 'Stand mit allen Anpassungen'
+            : 'Stand ab ' + datumAnzeige(standKey);
+        const result = await openNewVersionModal({
+            name: name,
+            basedOnId: active.id,
+            hinweis: `Die Werte stammen aus „${active.name}" mit den Anpassungen des Stands `
+                + `(${standKey === 'offen' ? 'alle' : 'bis einschliesslich ' + datumAnzeige(standKey)}). `
+                + 'Später fällige und undatierte Anpassungen bleiben in der neuen Version stehen.',
+        });
+        if (!result) return;
+        captureFormToActiveVersion();
+        const alle = active.adjustments || {};
+        const bekannt = bekannteAnpassungen(alle);
+        const werte = werteFuerStand(active.values, bekannt, standKey);
+        const rest = anpassungenNachStand(bekannt, standKey);
+        // Einträge für Zeilen, die diese Seite nicht kennt, gehen nicht verloren.
+        Object.keys(alle).forEach((id) => {
+            if (!(id in bekannt) && alle[id] && typeof alle[id] === 'object') rest[id] = { ...alle[id] };
+        });
+        createVersion({ name: result.name, basedOnId: active.id, values: werte, adjustments: rest });
+        toast(`Version „${result.name}" erstellt.`);
+    }
+
+    function renderAdjustmentList(formWerte) {
+        const btn = $('#adjustmentsBtn');
+        const panel = $('#adjustmentsPanel');
+        if (!btn || !panel) return;
+        const active = getActiveVersion();
+        const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
+        const staende = stichtagListe(anpassungen, heuteIso());
+        const gruppen = anpassungsGruppen(anpassungen, staende, formWerte || {});
+        const anzahl = gruppen.reduce((n, g) => n + g.eintraege.length, 0);
+
+        panel.textContent = '';
+        btn.hidden = anzahl === 0;
+        if (anzahl === 0) {
+            closeAdjustmentsPanel();
+            return;
+        }
+        btn.textContent = `⏱ ${anzahl} ${anzahl === 1 ? 'Anpassung' : 'Anpassungen'}`;
+
+        gruppen.forEach((g) => {
+            const gruppe = document.createElement('section');
+            gruppe.className = 'adj-group';
+            gruppe.dataset.stand = g.key;
+
+            const kopf = document.createElement('h3');
+            kopf.className = 'adj-group-head';
+            const titel = document.createElement('span');
+            titel.textContent = g.key === 'offen' ? 'Ohne Datum' : datumAnzeige(g.ab);
+            kopf.appendChild(titel);
+            if (g.faellig) {
+                const f = document.createElement('span');
+                f.className = 'adj-faellig';
+                f.textContent = 'fällig seit ' + datumAnzeige(g.ab);
+                kopf.appendChild(f);
+            }
+            const n = g.eintraege.length;
+            const summe = document.createElement('span');
+            summe.className = 'adj-group-sum';
+            summe.textContent = `${n} ${n === 1 ? 'Position' : 'Positionen'} · ${deltaAnzeige(g.deltaM)} / Monat`;
+            kopf.appendChild(summe);
+            gruppe.appendChild(kopf);
+
+            const liste = document.createElement('ul');
+            liste.className = 'adj-list';
+            g.eintraege
+                .map((e) => ({ e: e, name: rowAnzeigename(e.rowId) }))
+                .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+                .forEach(({ e, name }) => {
+                    const li = document.createElement('li');
+                    li.className = 'adj-item';
+
+                    const link = document.createElement('button');
+                    link.type = 'button';
+                    link.className = 'adj-link';
+                    link.textContent = name;
+                    link.title = 'Zur Position springen';
+                    link.addEventListener('click', () => springeZuZeile(e.rowId));
+                    li.appendChild(link);
+
+                    const aenderung = document.createElement('span');
+                    aenderung.className = 'adj-change';
+                    aenderung.title = `Jährlich: ${formatComputed(e.altY)} → ${formatComputed(e.neuY)}`;
+                    aenderung.append(`${formatComputed(e.altM)} → ${formatComputed(e.neuM)} · `);
+                    const delta = document.createElement('span');
+                    delta.className = 'adj-delta';
+                    delta.textContent = deltaAnzeige(e.deltaM);
+                    aenderung.appendChild(delta);
+                    li.appendChild(aenderung);
+                    liste.appendChild(li);
+                });
+            gruppe.appendChild(liste);
+
+            const neu = document.createElement('button');
+            neu.type = 'button';
+            neu.className = 'adj-newversion';
+            neu.textContent = 'Neue Version aus diesem Stand';
+            neu.title = g.key === 'offen'
+                ? 'Alle Anpassungen mit Betrag einrechnen und als neue Version anlegen'
+                : `Alle Anpassungen bis einschliesslich ${datumAnzeige(g.ab)} einrechnen und als neue Version anlegen`;
+            neu.addEventListener('click', () => neueVersionAusStand(g.key));
+            gruppe.appendChild(neu);
+
+            panel.appendChild(gruppe);
+        });
+    }
+
+    // ----------------------------------------------------------------
     // Compute & re-render all derived values
     // ----------------------------------------------------------------
     function recomputeAll() {
@@ -2965,6 +3359,8 @@
             const summe = summen(SCHEMA, werteFuerStand(formWerte, anpassungen, stand.key));
             standBlock.appendChild(standZeile(stand, summe));
         });
+
+        renderAdjustmentList(formWerte);
     }
 
     // ----------------------------------------------------------------
@@ -3331,17 +3727,24 @@
     // Promise that resolves to either the chosen value or null/false on cancel.
     // Buttons are cloned-replaced to drop previous listeners before re-binding.
 
-    function openNewVersionModal() {
+    // `vorgabe` (optional, aus der Anpassungsliste): { name, basedOnId, hinweis }.
+    // Dann ist die Basis fest (die Werte stammen aus genau dieser Version),
+    // die Auswahl «Basiert auf» entfällt und der Name ist vorausgefüllt.
+    function openNewVersionModal(vorgabe) {
         const fieldset = $('#newVersionBasedOn');
         const nameInput = $('#newVersionName');
+        const hinweis = $('#newVersionHinweis');
         fieldset.innerHTML = '';
+        fieldset.hidden = !!vorgabe;
+        hinweis.hidden = !vorgabe;
+        hinweis.textContent = vorgabe ? vorgabe.hinweis : '';
 
         const empty = document.createElement('label');
         empty.className = 'radio-option';
         empty.innerHTML = '<input type="radio" name="basedOn" value=""> <span>Leer beginnen</span>';
-        fieldset.appendChild(empty);
+        if (!vorgabe) fieldset.appendChild(empty);
 
-        state.versions.forEach((v) => {
+        if (!vorgabe) state.versions.forEach((v) => {
             const lbl = document.createElement('label');
             lbl.className = 'radio-option';
             const isActive = v.id === state.activeVersionId;
@@ -3350,8 +3753,8 @@
             fieldset.appendChild(lbl);
         });
 
-        nameInput.value = '';
-        nameInput.placeholder = 'z. B. ' + suggestVersionName();
+        nameInput.value = vorgabe ? vorgabe.name : '';
+        nameInput.placeholder = 'z. B. ' + (vorgabe ? vorgabe.name : suggestVersionName());
 
         return new Promise((resolve) => {
             const m = openModal('modalNewVersion');
@@ -3362,8 +3765,10 @@
             };
             m.querySelector('[data-modal-action="cancel"]').addEventListener('click', () => cleanup(null));
             m.querySelector('[data-modal-action="confirm"]').addEventListener('click', () => {
-                const name = (nameInput.value || '').trim() || suggestVersionName();
-                const basedOnId = m.querySelector('input[name="basedOn"]:checked')?.value || null;
+                const name = (nameInput.value || '').trim() || (vorgabe ? vorgabe.name : suggestVersionName());
+                const basedOnId = vorgabe
+                    ? vorgabe.basedOnId
+                    : (m.querySelector('input[name="basedOn"]:checked')?.value || null);
                 cleanup({ name, basedOnId });
             });
             setTimeout(() => nameInput.focus(), 50);
@@ -3801,6 +4206,22 @@
             });
         });
         $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
+
+        // Anpassungsliste: Knopf schaltet um, Klick ausserhalb und Escape schliessen.
+        $('#adjustmentsBtn').addEventListener('click', toggleAdjustmentsPanel);
+        document.addEventListener('click', (e) => {
+            const wrap = $('#adjustmentsWrap');
+            if (!wrap || $('#adjustmentsPanel').hidden) return;
+            // composedPath: der angeklickte Knopf kann beim Neuzeichnen schon
+            // aus dem DOM sein, contains() fände ihn dann nicht mehr.
+            if (!e.composedPath().includes(wrap)) closeAdjustmentsPanel();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !$('#adjustmentsPanel').hidden) {
+                closeAdjustmentsPanel();
+                $('#adjustmentsBtn').focus();
+            }
+        });
 
         // Backdrop click on ANY modal triggers its cancel button.
         document.querySelectorAll('.modal-backdrop').forEach((m) => {

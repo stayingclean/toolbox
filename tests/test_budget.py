@@ -261,3 +261,150 @@ def test_eingabe_in_anpassungsfeld_rechnet_die_zusammenfassung_neu():
     text = SEITE.read_text(encoding="utf-8")
     block = text[text.index("function handleAdjInputEvent"):][:1500]
     assert "recomputeAll()" in block
+
+
+# --- Knopf «Anpassungen» in der Kopfleiste ------------------------------------
+# Die Gruppierung und die Regel, welche Anpassungen eine neue Version aus einem
+# Stand mitnimmt, sind reine Logik und laufen im Treiber. Der Rest hängt am DOM
+# und wird als Text der ausgelieferten Datei geprüft.
+
+
+def gruppen(anpassungen=None, werte=None, heute="2026-10-22"):
+    anpassungen = ANPASSUNGEN if anpassungen is None else anpassungen
+    staende = kern("stichtagListe", anpassungen, heute)
+    return kern("anpassungsGruppen", anpassungen, staende, WERTE if werte is None else werte)
+
+
+def test_gruppen_in_der_reihenfolge_der_staende_ohne_heute():
+    assert [g["key"] for g in gruppen()] == ["2027-01-01", "2027-04-01", "offen"]
+
+
+def test_zwei_positionen_am_selben_datum_stehen_in_einer_gruppe():
+    erste = gruppen()[0]
+    assert sorted(e["rowId"] for e in erste["eintraege"]) == ["fitness", "handy"]
+
+
+def test_eintrag_nennt_alt_neu_und_delta():
+    erste = {e["rowId"]: e for e in gruppen()[0]["eintraege"]}
+    assert erste["handy"]["altM"] == 60 and erste["handy"]["neuM"] == 0
+    assert erste["handy"]["deltaM"] == -60
+    assert erste["fitness"]["deltaM"] == -89
+    assert erste["handy"]["altY"] == 720 and erste["handy"]["deltaY"] == -720
+
+
+def test_gruppensumme_ist_die_summe_der_deltas():
+    erste = gruppen()[0]
+    assert erste["deltaM"] == -149 and erste["deltaY"] == -149 * 12
+
+
+def test_gruppe_ohne_datum_heisst_offen_und_ist_nie_faellig():
+    letzte = gruppen(heute="2099-01-01")[-1]
+    assert letzte["key"] == "offen" and letzte["faellig"] is False
+    assert [e["rowId"] for e in letzte["eintraege"]] == ["kasse"]
+
+
+def test_verstrichenes_datum_ist_in_der_gruppe_faellig():
+    nach_datum = {g["key"]: g["faellig"] for g in gruppen(heute="2027-02-01")}
+    assert nach_datum == {"2027-01-01": True, "2027-04-01": False, "offen": False}
+
+
+def test_jaehrlicher_istwert_wird_zum_monatlichen_alt():
+    werte = {"hausrat.jaehrlich": 600}
+    eintrag = gruppen(werte=werte)[1]["eintraege"][0]
+    assert eintrag["altY"] == 600 and eintrag["altM"] == 50
+    assert eintrag["deltaM"] == 28 - 50
+
+
+def test_anpassung_ohne_betrag_steht_in_keiner_gruppe():
+    nur_datum = {"handy": {"jaehrlich": None, "monatlich": None, "ab": "2027-01-01"}}
+    assert gruppen(nur_datum) == []
+
+
+def test_neue_version_nimmt_spaetere_und_undatierte_mit():
+    rest = kern("anpassungenNachStand", ANPASSUNGEN, "2027-01-01")
+    assert sorted(rest) == ["hausrat", "kasse"]
+    assert rest["hausrat"] == ANPASSUNGEN["hausrat"]     # unveraendert
+
+
+def test_neue_version_aus_dem_letzten_datum_behaelt_nur_undatierte():
+    assert sorted(kern("anpassungenNachStand", ANPASSUNGEN, "2027-04-01")) == ["kasse"]
+
+
+def test_neue_version_aus_offen_behaelt_nichts_eingeloestes():
+    assert kern("anpassungenNachStand", ANPASSUNGEN, "offen") == {}
+
+
+def test_nicht_eingeloeste_ohne_betrag_bleiben_erhalten():
+    """Ein Datum ohne Betrag rechnet nicht - es ist nicht eingeloest, also nicht weg."""
+    mit_huelle = dict(ANPASSUNGEN, strom={"jaehrlich": None, "monatlich": None, "ab": "2026-12-01"})
+    assert "strom" in kern("anpassungenNachStand", mit_huelle, "2027-01-01")
+
+
+def test_eingeloeste_und_mitgenommene_decken_alle_ab():
+    """Was in der neuen Version fehlt, steckt in den Werten: keine Anpassung geht verloren."""
+    for key in ("2027-01-01", "2027-04-01", "offen"):
+        rest = kern("anpassungenNachStand", ANPASSUNGEN, key)
+        neu = kern("werteFuerStand", WERTE, ANPASSUNGEN, key)
+        for rowId, a in ANPASSUNGEN.items():
+            if rowId in rest:
+                assert neu[rowId + ".monatlich"] == WERTE[rowId + ".monatlich"], (key, rowId)
+            else:
+                assert neu[rowId + ".monatlich"] == a["monatlich"], (key, rowId)
+
+
+def test_nach_stand_laesst_das_original_in_ruhe():
+    kern("anpassungenNachStand", ANPASSUNGEN, "offen")
+    assert ANPASSUNGEN["handy"]["ab"] == "2027-01-01"
+
+
+def test_knopf_nennt_die_anzahl():
+    text = SEITE.read_text(encoding="utf-8")
+    assert 'id="adjustmentsBtn"' in text and 'id="adjustmentsPanel"' in text
+
+
+def test_knopf_erscheint_nur_mit_anpassungen():
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index("function renderAdjustmentList"):][:4000]
+    assert "hidden" in block and "Anpassung" in block
+
+
+def test_gesprungen_wird_ueber_die_position_nicht_das_datum():
+    """Mehrere Positionen koennen auf dasselbe Datum fallen."""
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index("function renderAdjustmentList"):][:4000]
+    assert "springeZuZeile" in block
+    assert re.search(r"springeZuZeile\([^)]*rowId", block)
+
+
+def test_sprung_zieht_die_klebende_kopfleiste_ab():
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index("function springeZuZeile"):][:800]
+    assert "sticky-head" in block or "stickyHead" in block
+
+
+def test_je_datumsgruppe_ein_versionsknopf():
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index("function renderAdjustmentList"):][:4000]
+    assert "Neue Version aus diesem Stand" in block
+
+
+def test_neue_version_aus_stand_basiert_auf_der_aktiven_version():
+    """Ohne Basis gaebe es keinen Vergleich: «Δ vs. Basis» braucht basedOn."""
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index("function neueVersionAusStand"):][:2500]
+    assert "basedOnId: " in block and "getActiveVersion" in block
+    assert "anpassungenNachStand" in block and "werteFuerStand" in block
+    assert "bekannteAnpassungen" in block
+
+
+def test_panel_schliesst_bei_klick_ausserhalb_und_escape():
+    text = SEITE.read_text(encoding="utf-8")
+    assert "function closeAdjustmentsPanel" in text
+    ende = text[text.index("function init"):]
+    assert "adjustmentsPanel" in ende and "Escape" in ende
+
+
+def test_kopfleiste_traegt_den_knopf_neben_den_reitern():
+    text = SEITE.read_text(encoding="utf-8")
+    bar = text[text.index('id="versionBar"'):text.index("/sticky-head")]
+    assert bar.index('id="versionTabs"') < bar.index('id="adjustmentsBtn"')
