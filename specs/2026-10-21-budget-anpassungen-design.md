@@ -118,8 +118,20 @@ jeder leeren Anpassung eine Nullsetzung und streicht stillschweigend Positionen
 aus dem Budget.
 
 Eine Anpassung **gilt als vorhanden**, wenn `jaehrlich` oder `monatlich` eine
-Zahl ist (0 eingeschlossen). Ein `ab` allein ohne Betrag ist unvollständig und
-wird nicht gerechnet; die Zeile soll das sichtbar machen.
+Zahl ist (0 eingeschlossen).
+
+**Nachtrag vom 2026-10-22: eine Anpassung ohne Betrag kann es nicht geben.**
+Ursprünglich war ein `ab` ohne Betrag erlaubt und wurde als «unvollständig»
+markiert. Das ist gestrichen — eine Anpassung, die nichts anpasst, ist keine.
+Umgesetzt wird das als **Sperre, nicht als Aufräumen**: das Datumsfeld bleibt
+gesperrt, solange keiner der beiden Beträge eine Zahl enthält. So entsteht der
+Zustand gar nicht erst, statt dass die Seite ihn hinterher stillschweigend
+wegräumt. Werden beide Beträge geleert, fällt das Datum mit und der Eintrag
+verschwindet.
+
+Die 0 bleibt davon unberührt und bleibt ein gültiger Zielbetrag. «Abo
+gekündigt, kostet ab 01.01. nichts mehr» ist der Anlass dieses ganzen
+Vorhabens; ohne die 0 liesse er sich nicht ausdrücken.
 
 Für die Rechnung gilt dieselbe Regel wie bei `values`: jährlich gewinnt, sonst
 monatlich × 12.
@@ -136,6 +148,21 @@ monatlich × 12.
   Anpassungen mit späterem Datum **und** solche ohne Datum wandern unverändert
   mit — sonst verlöre man mit dem Einlösen des ersten Stichtags alle folgenden.
   Kommentare und private Notiz werden nicht mitkopiert.
+
+  **Nachtrag vom 2026-10-22: der Dialog fragt, welche Positionen mitkommen.**
+  Nicht jede Anpassung, die zu einem Stichtag gehört, ist auch wirklich
+  eingetreten — die Krankenkasse hat zugestimmt, der Vermieter nicht. Der
+  Dialog listet deshalb jede Position, die dieser Stand einlösen würde, mit
+  ihrem alten und neuen Betrag und einem Häkchen, **standardmässig gesetzt**.
+  Was angehakt bleibt, wandert in die Werte der neuen Version; was abgewählt
+  wird, bleibt dort als Anpassung stehen, mit seinem Datum. Entschieden wird
+  also an **einer** Stelle, im Moment des Drückens, und nichts davon muss
+  gespeichert werden. Häkchen neben den Zeilen im Formular wurden erwogen und
+  verworfen: zwei Orte für dieselbe Entscheidung ergeben zwei Stände, die sich
+  widersprechen können.
+
+  Der feste Hinweissatz im Dialog entfällt damit. Was mit den übrigen
+  Anpassungen geschieht, zeigt die Liste selbst.
 
 ### Dateiformat
 
