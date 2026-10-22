@@ -495,6 +495,96 @@
             box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.12);
         }
 
+        /* Anpassung hinterlegt → kleiner Punkt am Knopf. Bewusst kein Fuellen
+           des Knopfes: das bleibt dem Kommentar vorbehalten. Unvollstaendig
+           (Datum ohne Betrag) → nur der Ring. */
+        .row-expander {
+            position: relative;
+        }
+        .row-expander[data-has-adjustment="1"]::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 0.6rem;
+            height: 0.6rem;
+            box-sizing: border-box;
+            border-radius: 50%;
+            background: var(--color-warning);
+            border: 2px solid var(--color-bg);
+        }
+        .row-expander[data-adj-incomplete="1"]::after {
+            background: var(--color-bg);
+            border-color: var(--color-warning);
+        }
+
+        /* Zeile mit Anpassung: Balken links und getoenter Hintergrund, auch
+           zugeklappt. Die Hauptzeile hat keine eigene Klasse, nur data-row-id. */
+        tr[data-row-id].has-adjustment > td {
+            background: var(--color-warning-bg);
+        }
+        tr[data-row-id].has-adjustment > td:first-child {
+            box-shadow: inset 4px 0 0 var(--color-warning);
+        }
+        .expander-row.has-adjustment > td {
+            background: var(--color-warning-bg);
+        }
+        .expander-row.has-adjustment .comment-panel {
+            border-left-color: var(--color-warning);
+        }
+
+        /* Block «Anpassung dieser Position» im Aufklappbereich. */
+        .adj-block {
+            margin-bottom: 0.8rem;
+        }
+        .adj-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem 1rem;
+        }
+        .adj-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+        }
+        .adj-input {
+            width: 10rem;
+            padding: 0.4rem 0.625rem;
+            font-family: var(--font-body);
+            font-size: 0.92rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-fast);
+        }
+        .adj-input.adj-jaehrlich,
+        .adj-input.adj-monatlich {
+            text-align: right;
+        }
+        .adj-input:hover {
+            border-color: var(--color-primary-light);
+        }
+        .adj-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+        .adj-unvollstaendig {
+            margin: 0.5rem 0 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            /* --color-warning (#d97706) ist auf dem Warn-Hintergrund als Text
+               zu hell (Kontrast ~3:1); darum ein dunkleres Bernstein. */
+            color: #92400e;
+        }
+        .adj-unvollstaendig[hidden] {
+            display: none;
+        }
+
         /* Collapsible row that hosts the comment textarea. */
         .expander-row > td {
             padding: 0;
@@ -2179,6 +2269,22 @@
             if (txt !== '') comments[ta.dataset.rowId] = txt;
         });
         active.comments = comments;
+
+        // Anpassungen: Einträge für Zeilen, die diese Seite nicht kennt, bleiben
+        // unangetastet (sonst ginge beim Speichern still etwas verloren); für
+        // bekannte Zeilen gilt der Stand der Felder. Ohne Betrag UND ohne Datum
+        // gibt es keinen Eintrag.
+        const adjustments = {};
+        Object.entries(active.adjustments || {}).forEach(([rowId, a]) => {
+            if (!lookupRow(rowId)) adjustments[rowId] = a;
+        });
+        $$('.expander-row').forEach((tr) => {
+            const rowId = tr.dataset.expanderFor;
+            const eintrag = readAdjustmentFromDom(rowId);
+            if (eintrag === null) delete adjustments[rowId];
+            else adjustments[rowId] = eintrag;
+        });
+        active.adjustments = adjustments;
     }
 
     function hydrateFormFromActiveVersion() {
@@ -2186,6 +2292,7 @@
         const active = getActiveVersion();
         $$('input.amount-input').forEach((input) => { input.value = ''; });
         $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
+        $$('.adj-input').forEach((input) => { input.value = ''; });
         // Collapse all expander rows; we'll re-open the ones with content below.
         $$('.row-expander').forEach((btn) => {
             const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
@@ -2207,6 +2314,16 @@
                 // Auto-expand rows with existing content so the comment is visible.
                 if (text.trim() !== '') setRowExpanded(rowId, true);
             }
+        });
+        Object.entries(bekannteAnpassungen(active.adjustments)).forEach(([rowId, a]) => {
+            const feld = (k) => $(`.adj-input[data-row-id="${rowId}"][data-adj="${k}"]`);
+            if (!feld('ab') || !a || typeof a !== 'object') return;
+            // 0 ist ein gültiger Zielbetrag und muss sichtbar bleiben; leer ist null.
+            if (Number.isFinite(a.jaehrlich)) feld('jaehrlich').value = formatComputed(a.jaehrlich);
+            if (Number.isFinite(a.monatlich)) feld('monatlich').value = formatComputed(a.monatlich);
+            if (typeof a.ab === 'string') feld('ab').value = a.ab;
+            // Zeilen mit Anpassung klappen auf wie solche mit Kommentar.
+            if (rowHasAdjustment(rowId)) setRowExpanded(rowId, true);
         });
         refreshAllExpanderUI();
     }
@@ -2350,10 +2467,12 @@
         return bekannt;
     }
 
-    // Groups whose rows get a per-row comment expander. Expense rows only —
-    // matches the prior visual rhythm and where comments are most useful
-    // (notes about reductions, planned changes, …).
-    const EXPANDABLE_GROUPS = new Set(AUSGABEN_GROUPS);
+    // Gruppen, deren Zeilen einen Aufklappbereich bekommen. Er trägt die
+    // Anpassung (neuer Betrag, optional ab Datum) und den Kommentar der
+    // Version. Beides braucht es bei den Einnahmen genauso wie bei den
+    // Ausgaben: «neue Stelle ab 01.03.» ist eine Anpassung einer Einnahme,
+    // «Wechsel zu günstigerer Versicherung ab April» eine einer Ausgabe.
+    const EXPANDABLE_GROUPS = new Set(['einnahmen', ...AUSGABEN_GROUPS]);
 
     // Chevron icon used by the comment expander button.
     const CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
@@ -2364,8 +2483,8 @@
         btn.className = 'row-expander';
         btn.setAttribute('aria-expanded', 'false');
         btn.setAttribute('aria-controls', `expander-${rowId}`);
-        btn.setAttribute('aria-label', `Kommentar für „${label}" ein-/ausblenden`);
-        btn.title = 'Kommentar';   // overridden by refreshExpanderUI when a basedOn comment exists
+        btn.setAttribute('aria-label', `Kommentar und Anpassung für „${label}" ein-/ausblenden`);
+        btn.title = 'Kommentar und Anpassung';   // refreshExpanderUI überschreibt ihn je nach Inhalt
         btn.innerHTML = CHEVRON_SVG;
         btn.addEventListener('click', () => {
             const isOpen = btn.getAttribute('aria-expanded') === 'true';
@@ -2392,6 +2511,25 @@
 
         const panel = document.createElement('div');
         panel.className = 'comment-panel';
+
+        // Anpassung: neuer Betrag, optional mit Datum. Leer heisst «keine
+        // Angabe» (null), nicht 0 — ein Zielbetrag von 0 ist etwas anderes.
+        const adj = document.createElement('div');
+        adj.className = 'adj-block';
+        adj.innerHTML =
+            '<div class="comment-panel-label">Anpassung dieser Position</div>' +
+            '<div class="adj-fields">' +
+            '<label class="adj-field"><span>Neu jährlich</span><input type="text" inputmode="decimal" class="adj-input adj-jaehrlich" placeholder="leer"></label>' +
+            '<label class="adj-field"><span>Neu monatlich</span><input type="text" inputmode="decimal" class="adj-input adj-monatlich" placeholder="leer"></label>' +
+            '<label class="adj-field"><span>Gilt ab (darf leer bleiben)</span><input type="date" class="adj-input adj-ab"></label>' +
+            '</div>' +
+            '<p class="adj-unvollstaendig" hidden>Ohne Betrag wird diese Anpassung nicht gerechnet.</p>';
+        adj.querySelectorAll('.adj-input').forEach((input) => {
+            input.dataset.rowId = row.id;
+            input.dataset.adj = input.classList.contains('adj-jaehrlich') ? 'jaehrlich'
+                : input.classList.contains('adj-monatlich') ? 'monatlich' : 'ab';
+        });
+        panel.appendChild(adj);
 
         const lbl = document.createElement('label');
         lbl.className = 'comment-panel-label';
@@ -2457,14 +2595,98 @@
 
         btn.classList.toggle('is-filled', ownText.trim() !== '');
 
+        // Anpassung: ein eigenes Zeichen (Punkt am Knopf), damit es nicht mit
+        // der Füllung für «hat Kommentar» verwechselt wird. Unvollständig
+        // (Datum ohne Betrag) heisst: Punkt nur als Ring.
+        const hatAnpassung = rowHasAdjustment(rowId);
+        const unvollstaendig = hatAnpassung && !anpassungBetrag(active?.adjustments?.[rowId]);
+        if (hatAnpassung) btn.dataset.hasAdjustment = '1';
+        else delete btn.dataset.hasAdjustment;
+        if (unvollstaendig) btn.dataset.adjIncomplete = '1';
+        else delete btn.dataset.adjIncomplete;
+        const adjHinweis = !hatAnpassung ? ''
+            : unvollstaendig ? 'Anpassung unvollständig: ohne Betrag wird sie nicht gerechnet'
+            : 'Anpassung hinterlegt';
+
         if (baseText.trim() !== '' && baseline) {
             // Native tooltip — supports newlines on most browsers.
             btn.title = `Kommentar in „${baseline.name}":\n${baseText}`;
             btn.dataset.hasBaselineComment = '1';
         } else {
-            btn.title = 'Kommentar';
+            btn.title = 'Kommentar und Anpassung';
             delete btn.dataset.hasBaselineComment;
         }
+        if (adjHinweis) btn.title += `\n${adjHinweis}`;
+
+        // Markierung der Zeilen: die Hauptzeile hat keine eigene Klasse, nur
+        // data-row-id; darum der Selektor tr[data-row-id] im CSS.
+        const hauptzeile = $(`tr[data-row-id="${rowId}"]`);
+        const aufklapp = $(`#expander-${rowId}`);
+        [hauptzeile, aufklapp].forEach((tr) => {
+            if (!tr) return;
+            tr.classList.toggle('has-adjustment', hatAnpassung);
+            tr.classList.toggle('adj-incomplete', unvollstaendig);
+        });
+        const hinweis = aufklapp ? aufklapp.querySelector('.adj-unvollstaendig') : null;
+        if (hinweis) hinweis.hidden = !unvollstaendig;
+    }
+
+    // Hat die aktive Version für diese Zeile eine Anpassung (Betrag und/oder
+    // Datum)? Einträge ohne beides werden gar nicht erst gespeichert.
+    function rowHasAdjustment(rowId) {
+        const a = getActiveVersion()?.adjustments?.[rowId];
+        return !!a && (anpassungBetrag(a) !== null || !!a.ab);
+    }
+
+    // Betragsfeld der Anpassung: leer → null (nicht 0), sonst die Zahl;
+    // Text, der keine Zahl ist, zählt als leer statt als Nullsetzung.
+    function parseAnpassungsFeld(raw) {
+        const s = String(raw ?? '').trim().replace(/['\s]/g, '').replace(',', '.');
+        if (s === '') return null;
+        const n = Number(s);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    // Liest die drei Felder einer Zeile; null, wenn alle leer sind.
+    function readAdjustmentFromDom(rowId) {
+        const feld = (k) => $(`.adj-input[data-row-id="${rowId}"][data-adj="${k}"]`);
+        const j = feld('jaehrlich'), m = feld('monatlich'), ab = feld('ab');
+        if (!j || !m || !ab) return null;
+        const eintrag = {
+            jaehrlich: parseAnpassungsFeld(j.value),
+            monatlich: parseAnpassungsFeld(m.value),
+            ab: ab.value ? ab.value : null,
+        };
+        if (eintrag.jaehrlich === null && eintrag.monatlich === null && eintrag.ab === null) return null;
+        return eintrag;
+    }
+
+    // Wie die Betragsfelder der Zeile: das zuletzt getippte Feld bestimmt das andere.
+    function handleAdjInputEvent(input) {
+        const rowId = input.dataset.rowId;
+        const art = input.dataset.adj;
+        if (art === 'jaehrlich' || art === 'monatlich') {
+            const andere = art === 'jaehrlich' ? 'monatlich' : 'jaehrlich';
+            const gegenueber = $(`.adj-input[data-row-id="${rowId}"][data-adj="${andere}"]`);
+            const v = parseAnpassungsFeld(input.value);
+            if (gegenueber) {
+                gegenueber.value = v === null ? '' : formatComputed(art === 'jaehrlich' ? v / 12 : v * 12);
+            }
+        }
+        const active = getActiveVersion();
+        if (active) {
+            const eintrag = readAdjustmentFromDom(rowId);
+            if (eintrag === null) delete active.adjustments[rowId];
+            else active.adjustments[rowId] = eintrag;
+        }
+        refreshExpanderUI(rowId);
+        markDirty();
+    }
+
+    function handleAdjInputBlur(input) {
+        if (input.dataset.adj === 'ab') return;
+        const v = parseAnpassungsFeld(input.value);
+        input.value = v === null ? '' : formatComputed(v);
     }
 
     function refreshAllExpanderUI() {
@@ -3330,6 +3552,7 @@
         if (!ok) return;
         $$('input.amount-input').forEach((input) => { input.value = ''; });
         $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
+        $$('.adj-input').forEach((input) => { input.value = ''; });
         // Collapse all expander rows; refresh their visual state.
         $$('.row-expander').forEach((btn) => {
             const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
@@ -3412,6 +3635,11 @@
         });
         $$('textarea.comment-textarea').forEach((ta) => {
             ta.addEventListener('input', () => handleCommentInputEvent(ta));
+        });
+        $$('.adj-input').forEach((input) => {
+            input.addEventListener('input',  () => handleAdjInputEvent(input));
+            input.addEventListener('change', () => handleAdjInputEvent(input));
+            input.addEventListener('blur',   () => handleAdjInputBlur(input));
         });
     }
 

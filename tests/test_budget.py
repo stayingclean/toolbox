@@ -152,3 +152,39 @@ def test_filter_gegen_unbekannte_zeilen_existiert():
     assert "function bekannteAnpassungen" in text
     block = text[text.index("function bekannteAnpassungen"):][:500]
     assert "lookupRow" in block or "ROW_INDEX" in block
+
+
+# --- Die Zeile: Anpassungsfelder, Markierung, Einnahmen aufklappbar -----------
+
+
+def test_einnahmen_bekommen_den_aufklappbereich():
+    text = _seite_text()
+    assert re.search(
+        r"EXPANDABLE_GROUPS = new Set\(\['einnahmen', \.\.\.AUSGABEN_GROUPS\]\)", text
+    )
+
+
+def test_panel_traegt_drei_anpassungsfelder():
+    text = _seite_text()
+    block = text[text.index("function makeCommentRow"):][:3000]
+    for feld in ("adj-jaehrlich", "adj-monatlich", "adj-ab"):
+        assert feld in block, feld
+    assert 'type="date"' in block or "type = 'date'" in block
+
+
+def test_zeile_mit_anpassung_bleibt_zugeklappt_markiert():
+    text = _seite_text()
+    # Die Hauptzeile traegt KEINE Klasse, nur data-row-id und data-group.
+    assert re.search(r"tr\[data-row-id\]\.has-adjustment\b", text)
+    assert "--color-warning" in text[text.index("tr[data-row-id].has-adjustment"):][:400]
+
+
+def test_unvollstaendige_anpassung_wird_angezeigt():
+    """Datum ohne Betrag rechnet nicht - die Zeile muss es sagen."""
+    assert "adj-unvollstaendig" in _seite_text()
+
+
+def test_leerer_anpassungseintrag_wird_geloescht():
+    text = _seite_text()
+    block = text[text.index("function captureFormToActiveVersion"):][:3000]
+    assert "delete" in block and "adjustments" in block
