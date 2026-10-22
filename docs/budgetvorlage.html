@@ -2631,6 +2631,20 @@
         };
     }
 
+    // Welches Datum im Feld stehen bleibt, wenn der Benutzer ein Betragsfeld
+    // verlässt. Beim Tippen ist «kein Betrag» ein Zwischenzustand: wer die 0 zu
+    // einer 50 ändert, löscht erst die 0 und darf sein Datum dabei nicht
+    // verlieren. Gespeichert wird in dieser Zeit ohnehin nichts (anpassungEintrag
+    // liefert ohne Betrag null). Erst wenn der Benutzer die Zeile verlässt, ist
+    // klar, dass kein Betrag mehr kommt, und das Datum fällt mit.
+    // `bleibtInZeile`: der Fokus geht zu einem anderen Anpassungsfeld derselben
+    // Zeile (etwa von «jährlich» zu «monatlich»), es wird also weitergetippt.
+    function datumNachVerlassen(roh, bleibtInZeile) {
+        if (!roh || !roh.ab) return '';
+        if (bleibtInZeile || anpassungHatInhalt(roh)) return roh.ab;
+        return '';
+    }
+
     // Beim Laden einer Datei: ältere Stände dieser Seite erlaubten ein Datum
     // ohne Betrag. Solche Einträge passen nichts an und tragen ausser dem Datum
     // keine Angabe; sie werden nicht übernommen. `verworfen` zählt alle,
@@ -3390,14 +3404,21 @@
     // Liest die drei Felder einer Zeile; null, wenn kein Betrag dasteht (das
     // Datum fällt dann mit, siehe anpassungEintrag).
     function readAdjustmentFromDom(rowId) {
+        const roh = readAdjustmentFieldsFromDom(rowId);
+        return roh ? anpassungEintrag(roh) : null;
+    }
+
+    // Die drei Felder einer Zeile, wie sie gerade dastehen (Beträge als Zahl
+    // oder null, Datum als Text) — auch wenn noch kein Betrag da ist.
+    function readAdjustmentFieldsFromDom(rowId) {
         const feld = (k) => $(`.adj-input[data-row-id="${rowId}"][data-adj="${k}"]`);
         const j = feld('jaehrlich'), m = feld('monatlich'), ab = feld('ab');
         if (!j || !m || !ab) return null;
-        return anpassungEintrag({
+        return {
             jaehrlich: parseAnpassungsFeld(j.value),
             monatlich: parseAnpassungsFeld(m.value),
             ab: ab.value,
-        });
+        };
     }
 
     // Wie die Betragsfelder der Zeile: das zuletzt getippte Feld bestimmt das andere.
@@ -3421,25 +3442,33 @@
         const active = getActiveVersion();
         if (active) {
             const eintrag = readAdjustmentFromDom(rowId);
-            if (eintrag === null) {
-                delete active.adjustments[rowId];
-                // Beide Beträge leer: das Datum geht mit, sonst stünde im Feld
-                // etwas, das nicht mehr gespeichert wird.
-                const datum = $(`.adj-input[data-row-id="${rowId}"][data-adj="ab"]`);
-                if (datum) datum.value = '';
-            } else {
-                active.adjustments[rowId] = eintrag;
-            }
+            // Ohne Betrag gibt es keinen gespeicherten Eintrag. Das Datum im Feld
+            // bleibt dabei stehen, solange getippt wird (Zwischenzustand beim
+            // Korrigieren); es fällt erst in handleAdjInputBlur, wenn die Zeile
+            // verlassen wird. Kommt der Betrag zurück, ist das Datum noch da.
+            if (eintrag === null) delete active.adjustments[rowId];
+            else active.adjustments[rowId] = eintrag;
         }
         refreshExpanderUI(rowId);
         recomputeAll();
         markDirty();
     }
 
-    function handleAdjInputBlur(input) {
+    function handleAdjInputBlur(input, ereignis) {
         if (input.dataset.adj === 'ab') return;
         const v = parseAnpassungsFeld(input.value);
         input.value = v === null ? '' : formatComputed(v);
+        if (state.previewStand) return;
+        // Das Fenster verliert den Fokus (anderer Tab, anderes Programm): der
+        // Benutzer ist nicht aus der Zeile heraus, nur weg.
+        if (!document.hasFocus()) return;
+        const rowId = input.dataset.rowId;
+        const ziel = ereignis && ereignis.relatedTarget;
+        const bleibtInZeile = !!(ziel && ziel.dataset && ziel.classList.contains('adj-input')
+            && ziel.dataset.rowId === rowId);
+        const roh = readAdjustmentFieldsFromDom(rowId);
+        const datum = $(`.adj-input[data-row-id="${rowId}"][data-adj="ab"]`);
+        if (roh && datum) datum.value = datumNachVerlassen(roh, bleibtInZeile);
     }
 
     function refreshAllExpanderUI() {
@@ -4804,7 +4833,7 @@
         $$('.adj-input').forEach((input) => {
             input.addEventListener('input',  () => handleAdjInputEvent(input));
             input.addEventListener('change', () => handleAdjInputEvent(input));
-            input.addEventListener('blur',   () => handleAdjInputBlur(input));
+            input.addEventListener('blur',   (e) => handleAdjInputBlur(input, e));
         });
     }
 

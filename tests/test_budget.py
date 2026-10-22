@@ -977,16 +977,62 @@ def test_sperre_haengt_am_betrag_und_nicht_an_einer_zweiten_regel():
     assert "state.previewStand" in block, "in der Vorschau bleibt alles zu, auch mit Betrag"
 
 
-def test_leeren_beider_betraege_leert_das_datum_mit():
+def test_korrigieren_eines_betrags_verliert_das_datum_nicht():
+    """Der Ablauf: 0 mit Datum -> die 0 löschen (Feld nicht verlassen) -> 50
+    tippen. Dazwischen ist kein Betrag da, aber das ist kein gespeicherter
+    Zustand, sondern ein Zwischenschritt beim Tippen; das Datum steht noch."""
+    d = "2027-01-01"
+    mit_null = {"jaehrlich": None, "monatlich": 0, "ab": d}
+    geleert = {"jaehrlich": None, "monatlich": None, "ab": d}        # Datumsfeld unberührt
+    neu_50 = {"jaehrlich": None, "monatlich": 50, "ab": d}
+    assert kern("anpassungEintrag", mit_null)["ab"] == d
+    assert kern("anpassungEintrag", geleert) is None                  # nichts wird gespeichert
+    assert kern("datumNachVerlassen", geleert, True) == d             # Fokus bleibt in der Zeile
+    assert kern("anpassungEintrag", neu_50) == {"jaehrlich": None, "monatlich": 50, "ab": d}
+    assert kern("datumNachVerlassen", neu_50, False) == d
+
+
+def test_betrag_geleert_und_zeile_verlassen_verwirft_datum_und_eintrag():
+    """Das Gegenstück: kommt kein Betrag mehr, fällt das Datum mit."""
+    geleert = {"jaehrlich": None, "monatlich": None, "ab": "2027-01-01"}
+    assert kern("datumNachVerlassen", geleert, False) == ""
+    assert kern("anpassungEintrag", dict(geleert, ab="")) is None
+    # Ohne Datum gibt es nichts zu verwerfen.
+    assert kern("datumNachVerlassen", dict(geleert, ab=""), False) == ""
+    assert kern("datumNachVerlassen", None, False) == ""
+
+
+def test_null_bleibt_beim_verlassen_ein_betrag():
+    mit_null = {"jaehrlich": None, "monatlich": 0, "ab": "2027-01-01"}
+    assert kern("datumNachVerlassen", mit_null, False) == "2027-01-01"
+
+
+def test_tippen_leert_das_datum_nicht_erst_das_verlassen():
+    """Angelpunkt ist blur (mit relatedTarget), nicht input und nicht change:
+    change hat kein Ziel und feuerte beim Wechsel von «jährlich» zu «monatlich»
+    derselben Zeile, wo noch weitergetippt wird."""
+    eingabe = _funktionsblock("handleAdjInputEvent")
+    assert 'data-adj="ab"' not in eingabe, "beim Tippen wird das Datumsfeld nicht angefasst"
+    assert "datumNachVerlassen" not in eingabe
+    verlassen = _funktionsblock("handleAdjInputBlur")
+    assert "datumNachVerlassen(" in verlassen
+    assert "relatedTarget" in verlassen
+    assert "document.hasFocus()" in verlassen
+    assert "state.previewStand" in verlassen
+    assert "(e) => handleAdjInputBlur(input, e)" in _seite_text()
+
+
+def test_ohne_betrag_wird_nichts_gespeichert_auch_wenn_ein_datum_im_feld_steht():
+    """Das Datum im Feld ist ein Entwurf; gespeichert wird nur, was anpassungEintrag liefert."""
     assert "anpassungEintrag(" in _funktionsblock("readAdjustmentFromDom")
-    block = _funktionsblock("handleAdjInputEvent")
-    assert re.search(r"eintrag === null[\s\S]*?data-adj=\"ab\"[\s\S]*?value\s*=\s*''", block)
+    assert "readAdjustmentFromDom(rowId)" in _funktionsblock("captureFormToActiveVersion")
 
 
-def test_kein_oder_null_auf_einem_anpassungsbetrag():
+def test_anpassungsfunktionen_kennen_kein_oder_null():
     """null ist leer, 0 ist ein Wert. Kein `|| 0` in den Funktionen, die
     Anpassungsfelder lesen oder bewerten."""
     for name in ("anpassungEintrag", "anpassungHatInhalt", "anpassungDatumGesperrt",
-                 "anpassungenBereinigen", "readAdjustmentFromDom", "parseAnpassungsFeld",
-                 "handleAdjInputEvent"):
+                 "anpassungenBereinigen", "datumNachVerlassen", "readAdjustmentFromDom",
+                 "readAdjustmentFieldsFromDom", "parseAnpassungsFeld",
+                 "handleAdjInputEvent", "handleAdjInputBlur"):
         assert "|| 0" not in _funktionsblock(name), name
