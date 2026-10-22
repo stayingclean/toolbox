@@ -210,3 +210,54 @@ def test_capture_nutzt_den_filter_fuer_unbekannte_zeilen():
     text = _seite_text()
     block = text[text.index("function captureFormToActiveVersion"):][:3000]
     assert "unbekannteAnpassungenBehalten(" in block
+
+
+# --- Die Staende in der Zusammenfassung ----------------------------------------
+
+
+def test_zusammenfassung_hat_platz_fuer_die_staende():
+    text = SEITE.read_text(encoding="utf-8")
+    assert 'id="summaryStands"' in text
+    assert text.index('id="differenceRow"') < text.index('id="summaryStands"')
+
+
+def test_staende_haengen_nicht_am_versionsvergleich():
+    """Der Vergleich ist bei einer Version ausgeblendet — die Staende nicht."""
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index("function recomputeAll"):][:6000]
+    assert "isMultiVersion" not in block
+
+
+def test_staende_kommen_aus_dem_kern():
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index("function recomputeAll"):][:6000]
+    for fn in ("stichtagListe", "werteFuerStand", "summen"):
+        assert fn in block, fn
+
+
+def test_jede_leseseite_filtert_unbekannte_zeilen():
+    """Eine Anpassung auf einer rowId, die das Schema nicht kennt, darf
+    weder gerechnet noch angezeigt werden."""
+    text = SEITE.read_text(encoding="utf-8")
+    for name in ("stichtagListe", "werteFuerStand"):
+        # Die Definition im Kern ausnehmen, nur Aufrufstellen pruefen.
+        for treffer in re.finditer(r"(?<!function )\b" + name + r"\(", text):
+            umfeld = text[max(0, treffer.start() - 300):treffer.end() + 300]
+            assert "bekannteAnpassungen" in umfeld, f"ungefiltert bei {name}"
+
+
+def test_heute_wird_nur_an_einer_stelle_gelesen():
+    """Wer heute fuer die Faelligkeit braucht, geht durch heuteIso()."""
+    text = SEITE.read_text(encoding="utf-8")
+    assert text.count("function heuteIso(") == 1
+    block = text[text.index("function heuteIso("):][:400]
+    assert "new Date()" in block
+    assert len(re.findall(r"new Date\(\)(?!\.toISOString)", text)) == 1
+
+
+def test_eingabe_in_anpassungsfeld_rechnet_die_zusammenfassung_neu():
+    """Die Anpassungsfelder aendern nur die Version, nicht die Betragsfelder:
+    ohne eigenen Aufruf bliebe die Zusammenfassung stehen."""
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index("function handleAdjInputEvent"):][:1500]
+    assert "recomputeAll()" in block

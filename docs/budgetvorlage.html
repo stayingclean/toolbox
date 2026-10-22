@@ -797,6 +797,35 @@
             border-color: var(--color-danger);
         }
 
+        /* Stand-Zeilen: «ab 01.01.2027», «mit allen Vorschlägen» unter der Differenz.
+           Gleiche Einfärbung wie die Differenz, nur kleiner. */
+        .summary-table .stand-row td {
+            padding-top: 0.5rem;
+        }
+
+        .summary-table .stand-row .label-cell {
+            font-size: 1rem;
+        }
+
+        .summary-table .stand-row .label-cell .stand-hinweis {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--color-text-muted, #666);
+        }
+
+        .summary-table .stand-row.positive .computed {
+            background: var(--color-success-bg);
+            color: var(--color-success);
+            border-color: var(--color-success);
+        }
+
+        .summary-table .stand-row.negative .computed {
+            background: var(--color-danger-bg);
+            color: var(--color-danger);
+            border-color: var(--color-danger);
+        }
+
         /* ============================================================
            Info Box / Wegleitung
            ============================================================ */
@@ -1735,6 +1764,8 @@
                     <td><span class="computed" data-summary="differenz" data-period="monatlich">0.00</span></td>
                 </tr>
             </tbody>
+            <!-- Je Stichtag eine Zeile (recomputeAll). Leer, solange es keine Anpassung gibt. -->
+            <tbody id="summaryStands"></tbody>
         </table>
     </section>
 
@@ -2696,6 +2727,7 @@
             else active.adjustments[rowId] = eintrag;
         }
         refreshExpanderUI(rowId);
+        recomputeAll();
         markDirty();
     }
 
@@ -2806,11 +2838,63 @@
     }
 
     // ----------------------------------------------------------------
+    // Stände in der Zusammenfassung
+    // ----------------------------------------------------------------
+    // Die einzige Stelle, die das heutige Datum liest (lokales Datum, JJJJ-MM-TT).
+    function heuteIso() {
+        const d = new Date();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${d.getFullYear()}-${mm}-${dd}`;
+    }
+
+    // «2027-01-01» → «01.01.2027», ohne Date (keine Zeitzonen-Überraschung).
+    function datumAnzeige(iso) {
+        const [j, m, t] = iso.split('-');
+        return `${t}.${m}.${j}`;
+    }
+
+    // Eine Zeile unter der Differenz. Zahlen wie in der Differenz-Zeile
+    // (formatComputed), Einfärbung ebenfalls wie bei #differenceRow.
+    function standZeile(stand, summe) {
+        const tr = document.createElement('tr');
+        tr.className = 'stand-row ' + (summe.diffY >= 0 ? 'positive' : 'negative');
+        tr.dataset.stand = stand.key;
+
+        const label = document.createElement('td');
+        label.className = 'label-cell';
+        label.textContent = stand.key === 'offen' ? 'mit allen Vorschlägen' : 'ab ' + datumAnzeige(stand.ab);
+        if (stand.faellig) {
+            // «heute» wendet nichts an, auch nichts mit verstrichenem Datum.
+            const hinweis = document.createElement('span');
+            hinweis.className = 'stand-hinweis';
+            hinweis.textContent = 'Datum schon verstrichen, in «heute» nicht eingerechnet';
+            label.appendChild(hinweis);
+        }
+        tr.appendChild(label);
+
+        [['jaehrlich', summe.diffY], ['monatlich', summe.diffM]].forEach(([period, wert]) => {
+            const td = document.createElement('td');
+            const span = document.createElement('span');
+            span.className = 'computed';
+            span.dataset.stand = stand.key;
+            span.dataset.period = period;
+            span.textContent = formatComputed(wert);
+            td.appendChild(span);
+            tr.appendChild(td);
+        });
+        return tr;
+    }
+
+    // ----------------------------------------------------------------
     // Compute & re-render all derived values
     // ----------------------------------------------------------------
     function recomputeAll() {
         // Per-group subtotals (income + expense amounts) and reductions
         const groupTotals = {};
+        // Die Werte, wie sie jetzt im Formular stehen (für die Stände): die
+        // Version selbst wird erst beim Wechseln/Speichern nachgezogen.
+        const formWerte = {};
 
         Object.keys(SCHEMA).forEach((groupId) => {
             let yearly = 0;
@@ -2821,6 +2905,8 @@
                 const monthlyInput = $(`input[data-row-id="${row.id}"][data-period="monatlich"]`);
                 const y = parseAmount(yearlyInput?.value);
                 const m = parseAmount(monthlyInput?.value);
+                formWerte[`${row.id}.jaehrlich`] = y;
+                formWerte[`${row.id}.monatlich`] = m;
 
                 // Per-row total/year: prefer yearly if present, otherwise monthly*12
                 const rowTotal = y || (m * 12);
@@ -2867,6 +2953,18 @@
         const diffRow = $('#differenceRow');
         diffRow.classList.toggle('positive', diffY >= 0);
         diffRow.classList.toggle('negative', diffY < 0);
+
+        // Weitere Stände: «heute» steht schon in der Differenz-Zeile und wird
+        // hier nicht wiederholt. Hängt an keiner Version und an keinem Reiter.
+        const standBlock = $('#summaryStands');
+        standBlock.textContent = '';
+        const active = getActiveVersion();
+        const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
+        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+            if (stand.key === 'heute') return;
+            const summe = summen(SCHEMA, werteFuerStand(formWerte, anpassungen, stand.key));
+            standBlock.appendChild(standZeile(stand, summe));
+        });
     }
 
     // ----------------------------------------------------------------
@@ -3513,11 +3611,7 @@
     }
 
     function defaultFilename() {
-        const d = new Date();
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `budget-${yyyy}-${mm}-${dd}.json`;
+        return `budget-${heuteIso()}.json`;
     }
 
     // ----------------------------------------------------------------
