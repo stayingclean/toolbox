@@ -814,6 +814,13 @@
             color: var(--color-text-muted, #666);
         }
 
+        /* Der Stand, der gerade in der Vorschau im Formular steht. */
+        .summary-table .stand-row.is-preview .label-cell {
+            font-weight: 700;
+            box-shadow: inset 3px 0 0 var(--color-warning);
+            padding-left: 0.7rem;
+        }
+
         .summary-table .stand-row.positive .computed {
             background: var(--color-success-bg);
             color: var(--color-success);
@@ -1059,6 +1066,17 @@
             .sticky-head, .toolbar, .footer, .info-box, .version-bar, .toast, .modal-backdrop {
                 display: none !important;
             }
+            /* Gedruckt wird in der Vorschau eine gerechnete Tabelle. Die
+               Stand-Leiste steckt in .sticky-head und ist hier weg - der
+               Hinweis muss an ihrer Stelle mit aufs Blatt. */
+            body.mode-preview .preview-print-note {
+                display: block;
+                margin: 0 0 0.8rem;
+                padding: 0.4rem 0.6rem;
+                border: 1px solid #92400e;
+                color: #92400e;
+                font-weight: 700;
+            }
             /* Atmenden Hintergrund-Puls im Druck ausblenden. */
             body::before {
                 display: none !important;
@@ -1271,6 +1289,129 @@
         }
 
         /* ============================================================
+           Vorschau — Knopf in der Versionsleiste und Stand-Leiste
+           ============================================================
+           Gestrichelt wie „Neue Version": beides legt keine Daten an.
+           Gedrückt wird der Knopf in Warnfarbe, damit die gesperrte,
+           gerechnete Ansicht sich von der erfassten abhebt. */
+        .preview-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border: 1px dashed var(--color-border-strong);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--color-primary-dark);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .preview-btn[hidden] { display: none; }
+        .preview-btn:hover {
+            background: var(--color-primary-faint);
+            border-color: var(--color-primary);
+        }
+        .preview-btn[aria-pressed="true"] {
+            border-style: solid;
+            border-color: var(--color-warning);
+            background: var(--color-warning);
+            color: white;
+        }
+        .preview-btn:focus-visible {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.2);
+        }
+
+        .preview-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem 0.8rem;
+            flex-wrap: wrap;
+            padding: 0.55rem 1.5rem;
+            background: var(--color-warning-bg);
+            border-bottom: 1px solid var(--color-warning);
+        }
+        .preview-bar[hidden] { display: none; }
+        .preview-bar-label {
+            font-family: var(--font-body);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            /* dunkler als --color-warning: Text auf dem Warn-Hintergrund */
+            color: #92400e;
+        }
+        .preview-stands {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .preview-stand {
+            padding: 0.3rem 0.8rem;
+            border: 1px solid var(--color-warning);
+            border-radius: var(--radius-sm);
+            background: var(--color-bg);
+            color: #92400e;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .preview-stand:hover { background: #fde8c8; }
+        .preview-stand[aria-pressed="true"] {
+            background: var(--color-warning);
+            border-color: var(--color-warning);
+            color: white;
+            font-weight: 700;
+        }
+        .preview-stand:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3);
+        }
+        .preview-notice {
+            margin: 0;
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            color: #92400e;
+        }
+        .preview-leave {
+            margin-left: auto;
+            padding: 0.35rem 0.9rem;
+            border: 1px solid #92400e;
+            border-radius: var(--radius-sm);
+            background: var(--color-bg);
+            color: #92400e;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .preview-leave:hover { background: #92400e; color: white; }
+        .preview-leave:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.35);
+        }
+        /* Am Bildschirm sagt es die Stand-Leiste; der Hinweis ist nur fuer
+           den Ausdruck da (siehe @media print). */
+        .preview-print-note { display: none; }
+
+        /* Die gesperrten Felder sollen offensichtlich gesperrt aussehen —
+           sonst tippt jemand hinein und wundert sich, dass nichts passiert. */
+        body.mode-preview .amount-input:disabled,
+        body.mode-preview .adj-input:disabled {
+            background: var(--color-warning-bg);
+            border-style: dashed;
+            color: #92400e;
+            cursor: not-allowed;
+        }
+
+        /* ============================================================
            Versions overview section
            ============================================================ */
         .versions-overview-section[hidden] { display: none; }
@@ -1315,6 +1456,31 @@
         }
         .versions-overview-table tbody tr.is-active td:first-child {
             border-left: 3px solid var(--color-primary);
+        }
+        /* Staende der aktiven Version: abgesetzt, damit niemand sie fuer
+           eine eigene Version haelt — sie sind gerechnet, nicht erfasst. */
+        .versions-overview-table tbody tr.overview-stand-row:first-of-type td {
+            border-top: 2px dashed var(--color-warning);
+        }
+        .versions-overview-table tbody tr.overview-stand-row td {
+            background: var(--color-warning-bg);
+            font-size: 0.88rem;
+        }
+        .versions-overview-table tbody tr.overview-stand-row td:first-child {
+            font-style: italic;
+            color: #92400e;
+        }
+        .versions-overview-table tbody tr.overview-stand-row.is-preview td:first-child {
+            border-left: 3px solid var(--color-warning);
+            font-style: normal;
+            font-weight: 600;
+        }
+        .versions-overview-table .stand-faellig {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #92400e;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
         .versions-overview-table .active-marker {
             font-size: 0.75rem;
@@ -1672,10 +1838,41 @@
                 title="Alle Anpassungen dieser Version, nach Datum geordnet"></button>
         <div class="adj-panel" id="adjustmentsPanel" role="region" aria-label="Anpassungen" hidden></div>
     </div>
+    <!-- Kein Versionsreiter: die Vorschau ersetzt keine Version, sie zeigt die
+         aktive gerechnet. Als Reiter in derselben Liste behauptete sie, die
+         aktive Version sei abgewählt. Gestrichelt umrandet wie „Neue Version". -->
+    <button class="preview-btn" id="previewBtn" type="button" hidden aria-pressed="false"
+            aria-controls="previewBar"
+            title="Das Budget ansehen, wie es ab einem Stichtag aussieht (gerechnet, nicht erfasst)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span>Vorschau</span>
+    </button>
+</div>
+
+<!-- ============================================================
+     Stand-Leiste — nur sichtbar, solange die Vorschau offen ist
+     (renderPreviewBar). «heute» darin ist das gesperrte Abbild der
+     Version, kein Ausgang; hinaus geht es über «Vorschau verlassen».
+     ============================================================ -->
+<div class="preview-bar" id="previewBar" hidden>
+    <div class="preview-bar-label">Vorschau&nbsp;Stand:</div>
+    <div class="preview-stands" id="previewStands" role="group" aria-label="Stand der Vorschau"></div>
+    <p class="preview-notice" role="status">
+        Gerechnete Ansicht – hier wird <strong>nichts erfasst</strong>. Die erfassten Beträge bleiben unverändert.
+    </p>
+    <button class="preview-leave" id="previewLeaveBtn" type="button">Vorschau verlassen</button>
 </div>
 </div><!-- /sticky-head -->
 
 <main class="page">
+
+    <!-- Nur im Ausdruck: die Stand-Leiste steht in .sticky-head und faellt beim
+         Drucken weg. Ohne diesen Hinweis saehe ein in der Vorschau gedrucktes
+         Blatt aus wie ein erfasstes Budget. -->
+    <p class="preview-print-note">Vorschau: gerechnete Werte zu einem Stichtag – nicht die erfassten Beträge.</p>
 
     <div class="info-box">
         <h2>So füllen Sie die Vorlage aus</h2>
@@ -2294,6 +2491,15 @@
         return liste;
     }
 
+    // Welchen Stand die Vorschau beim Öffnen zeigt: den ersten nach «heute»,
+    // denn «heute» ist nur das gesperrte Abbild der Version und zeigte nichts
+    // Neues. Gibt es keinen weiteren Stand, bleibt «heute» (dann steht der
+    // Vorschau-Knopf ohnehin nicht da).
+    function ersterVorschauStand(staende) {
+        const weiter = (staende || []).filter((s) => s && s.key !== 'heute');
+        return weiter.length ? weiter[0].key : 'heute';
+    }
+
     // Löst diese Anpassung im Stand auf? «heute»: nie. Datum: nur mit Betrag und
     // lesbarem Datum bis einschliesslich dieses Tages. «offen»: jede mit Betrag.
     // Eine einzige Regel für werteFuerStand und anpassungenNachStand, damit
@@ -2421,6 +2627,11 @@
         // ----- Multi-version data model (v4) -----
         versions: [],            // [{ id, name, basedOn, createdAt, values, comments, adjustments, privateNote }]
         activeVersionId: null,
+        // Vorschau: null = normaler Betrieb (Formular = erfasste Werte der
+        // aktiven Version). Sonst der Stand-Key («heute», ein ISO-Datum oder
+        // «offen»), dessen gerechnete Werte im Formular stehen. Solange das
+        // gesetzt ist, schreibt captureFormToActiveVersion nichts zurück.
+        previewStand: null,
         // ----- Persistence + UI state -----
         fileHandle: null,        // FileSystemFileHandle when present
         currentFilename: null,   // Last known filename
@@ -2517,6 +2728,13 @@
     // All mutations go through these to keep dependent UI in sync.
 
     function captureFormToActiveVersion() {
+        // In der Vorschau stehen GERECHNETE Werte im Formular. Diese Funktion
+        // liest das Formular blind und wird aus serialize (also bei jedem
+        // Speichern), aus renderVersionsOverview und aus den Eingabe-Handlern
+        // gerufen — jeder dieser Aufrufe würde die erfassten Zahlen durch
+        // gerechnete ersetzen, unwiederbringlich. Darum hier, vor allem andern:
+        if (state.previewStand) return;
+
         // Persist current DOM form state into the active version's data.
         // Called before switching versions to make sure unsaved edits land.
         const active = getActiveVersion();
@@ -2595,6 +2813,8 @@
 
     function switchVersion(id) {
         if (!getVersionById(id)) return;
+        leavePreview();                  // sonst stünden gerechnete Werte im Formular,
+                                         // und das capture darunter nähme sie für erfasst
         captureFormToActiveVersion();    // preserve any pending edits
         state.activeVersionId = id;
         hydrateFormFromActiveVersion();
@@ -2609,6 +2829,7 @@
     // bringt beides fertig mit. Ohne sie gilt wie bisher: Werte aus der Basis
     // kopieren, Anpassungen leer.
     function createVersion({ name, basedOnId, values, adjustments }) {
+        leavePreview();                  // wie switchVersion: erst zurueck zu den erfassten Werten
         captureFormToActiveVersion();    // make sure current edits land
         const v = makeBlankVersion(name, basedOnId);
         if (basedOnId) {
@@ -2639,6 +2860,7 @@
 
     function deleteVersion(id) {
         if (state.versions.length <= 1) return; // never delete the last one
+        leavePreview();
         const idx = state.versions.findIndex(v => v.id === id);
         if (idx === -1) return;
 
@@ -3195,6 +3417,100 @@
         toast(`Version „${result.name}" erstellt.`);
     }
 
+    // ----------------------------------------------------------------
+    // Vorschau: das Budget, wie es ab einem Stichtag aussieht
+    // ----------------------------------------------------------------
+    // Die Vorschau stellt gerechnete Werte in dasselbe Formular, in das sonst
+    // erfasst wird. Nichts davon darf in die Version zurück. Zwei Dinge halten
+    // das zusammen: die Sperre ganz oben in captureFormToActiveVersion und der
+    // Umstand, dass enterPreview genau einmal erfasst, bevor es sie setzt.
+    // Die Felder gehen zusätzlich zu — nicht als Schutz (disabled ändert .value
+    // nicht), sondern damit niemand erst tippt und sich danach wundert.
+
+    // Öffnet die Vorschau oder wechselt in ihr den Stand. Ein Einstieg für
+    // beides: der zweite Aufruf erfasst nicht mehr (previewStand steht schon).
+    function enterPreview(standKey) {
+        if (!getActiveVersion()) return;
+        if (!state.previewStand) {
+            // Einmal erfassen, SOLANGE die Sperre noch offen ist — sonst wären
+            // die zuletzt getippten Werte beim Verlassen verloren.
+            captureFormToActiveVersion();
+            closeAdjustmentsPanel();
+            $$('input.amount-input').forEach((input) => { input.disabled = true; });
+            $$('.adj-input').forEach((input) => { input.disabled = true; });
+        }
+        state.previewStand = standKey;
+        fuelleVorschau();
+        renderPreviewBar();
+        recomputeAll();
+        const btn = $('#previewBtn');
+        if (btn) btn.setAttribute('aria-pressed', 'true');
+    }
+
+    // Die Betragsfelder zeigen den gerechneten Stand. Gelesen wird aus der
+    // Version, nie aus dem Formular: dort stehen schon gerechnete Werte.
+    // 0 erscheint als leeres Feld, genau wie bei einem erfassten 0 (formatAmount).
+    function fuelleVorschau() {
+        const active = getActiveVersion();
+        if (!active) return;
+        const anpassungen = bekannteAnpassungen(active.adjustments);
+        const werte = werteFuerStand(active.values, anpassungen, state.previewStand);
+        $$('input.amount-input').forEach((input) => {
+            const wert = werte[`${input.dataset.rowId}.${input.dataset.period}`];
+            input.value = Number.isFinite(wert) ? formatAmount(wert) : '';
+        });
+    }
+
+    // Zurück zur erfassten Version. Erst fällt die Sperre, dann wird aus der
+    // Version neu gefüllt — die gerechneten Werte im Formular verschwinden
+    // dabei, ohne je gespeichert worden zu sein. Wege hierher: der
+    // Vorschau-Knopf, «Vorschau verlassen», ein Versionsreiter, Escape.
+    function leavePreview() {
+        if (!state.previewStand) return;
+        state.previewStand = null;
+        $$('input.amount-input').forEach((input) => { input.disabled = false; });
+        $$('.adj-input').forEach((input) => { input.disabled = false; });
+        hydrateFormFromActiveVersion();
+        const btn = $('#previewBtn');
+        if (btn) btn.setAttribute('aria-pressed', 'false');
+        renderPreviewBar();
+        recomputeAll();
+    }
+
+    // Die Stand-Leiste: je Stand ein Knopf, nur sichtbar, solange die Vorschau
+    // offen ist. «heute» steht mit darin — es ist das gesperrte Abbild der
+    // Version, kein Ausgang; hinaus geht es über «Vorschau verlassen».
+    function renderPreviewBar() {
+        const bar = $('#previewBar');
+        const liste = $('#previewStands');
+        if (!bar || !liste) return;
+        bar.hidden = !state.previewStand;
+        document.body.classList.toggle('mode-preview', !!state.previewStand);
+        liste.textContent = '';
+        if (!state.previewStand) return;
+        const active = getActiveVersion();
+        const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
+        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'preview-stand';
+            b.dataset.stand = stand.key;
+            b.textContent = stand.key === 'heute' ? 'heute'
+                : stand.key === 'offen' ? 'mit allen Vorschlägen'
+                : 'ab ' + datumAnzeige(stand.ab);
+            b.title = stand.key === 'heute'
+                ? 'Die erfassten Werte, hier nur zum Ansehen'
+                : 'Alle Anpassungen bis zu diesem Stand eingerechnet';
+            b.setAttribute('aria-pressed', stand.key === state.previewStand ? 'true' : 'false');
+            b.addEventListener('click', () => {
+                enterPreview(stand.key);
+                const neu = $(`#previewStands button[data-stand="${stand.key}"]`);
+                if (neu) neu.focus();
+            });
+            liste.appendChild(b);
+        });
+    }
+
     function renderAdjustmentList(formWerte) {
         const btn = $('#adjustmentsBtn');
         const panel = $('#adjustmentsPanel');
@@ -3207,6 +3523,11 @@
 
         panel.textContent = '';
         btn.hidden = anzahl === 0;
+        // Ohne Anpassung gibt es nichts vorzuschauen. Der Knopf verschwindet
+        // mit der Liste; in der Vorschau kann die Zahl nicht auf 0 fallen (die
+        // Anpassungsfelder sind gesperrt), darum braucht es hier kein Verlassen.
+        const vorschau = $('#previewBtn');
+        if (vorschau) vorschau.hidden = anzahl === 0;
         if (anzahl === 0) {
             closeAdjustmentsPanel();
             return;
@@ -3352,15 +3673,24 @@
         // hier nicht wiederholt. Hängt an keiner Version und an keinem Reiter.
         const standBlock = $('#summaryStands');
         standBlock.textContent = '';
+        // In der Vorschau stehen im Formular schon gerechnete Werte. Von dort
+        // weiterzurechnen zeigte den Zielbetrag als Istwert und ein Delta von
+        // 0 — die Stände und die Anpassungsliste nehmen darum die erfassten
+        // Werte der Version. Ausserhalb der Vorschau sind beide dasselbe.
         const active = getActiveVersion();
+        const basisWerte = (state.previewStand && active) ? active.values : formWerte;
         const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
         stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
             if (stand.key === 'heute') return;
-            const summe = summen(SCHEMA, werteFuerStand(formWerte, anpassungen, stand.key));
-            standBlock.appendChild(standZeile(stand, summe));
+            const summe = summen(SCHEMA, werteFuerStand(basisWerte, anpassungen, stand.key));
+            // Der Stand, der gerade im Formular steht, wird hervorgehoben:
+            // dieselbe Zahl wie in der Differenz-Zeile darüber.
+            const zeile = standZeile(stand, summe);
+            if (stand.key === state.previewStand) zeile.classList.add('is-preview');
+            standBlock.appendChild(zeile);
         });
 
-        renderAdjustmentList(formWerte);
+        renderAdjustmentList(basisWerte);
     }
 
     // ----------------------------------------------------------------
@@ -3475,6 +3805,7 @@
     }
 
     function hydrate(payload) {
+        leavePreview();                  // eine geladene Datei trifft nie auf eine offene Vorschau
         // Reset state cleanly so a load fully replaces the prior state.
         state.versions = [];
         state.activeVersionId = null;
@@ -3639,6 +3970,40 @@
                 <td class="num-cell">${deltaDiff === null
                     ? '<span class="root-marker">—</span>'
                     : `<span class="${deltaDiff >= 0 ? 'is-positive' : 'is-negative'}">${sign(deltaDiff)}${formatComputed(deltaDiff)}</span>`}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // ---- Stände der aktiven Version -------------------------------
+        // Abgesetzte Zeilen unter den Versionen: dieselben Zahlen wie in der
+        // Zusammenfassung, hier neben den Versionen. Gerechnet wird aus den
+        // erfassten Werten der Version, nicht aus dem Formular — in der
+        // Vorschau stehen dort gerechnete Zahlen. Das Gate oben bleibt: die
+        // Stände kommen nur dazu, wo die Übersicht ohnehin sichtbar ist.
+        const aktiv = getActiveVersion();
+        const standBasis = summen(SCHEMA, aktiv ? aktiv.values : {});
+        const anpassungen = bekannteAnpassungen(aktiv ? aktiv.adjustments : {});
+        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+            if (stand.key === 'heute') return;   // steht als Version schon in der Tabelle
+            const summe = summen(SCHEMA, werteFuerStand(aktiv.values, anpassungen, stand.key));
+            const delta = summe.diffY - standBasis.diffY;
+            const tr = document.createElement('tr');
+            tr.className = 'overview-stand-row';
+            tr.dataset.stand = stand.key;
+            if (stand.key === state.previewStand) tr.classList.add('is-preview');
+            const name = stand.key === 'offen'
+                ? 'Stand mit allen Vorschlägen'
+                : 'Stand ab ' + datumAnzeige(stand.ab);
+            const diffCls = summe.diffY >= 0 ? 'is-positive' : 'is-negative';
+            tr.innerHTML = `
+                <td>${escapeHtml(name)}${stand.faellig
+                    ? ' <span class="stand-faellig">Datum verstrichen</span>' : ''}</td>
+                <td>${escapeHtml(aktiv.name)}</td>
+                <td class="num-cell">${formatComputed(summe.einnahmenY)}</td>
+                <td class="num-cell">${formatComputed(summe.ausgabenY)}</td>
+                <td class="num-cell ${diffCls}">${formatComputed(summe.diffY)}</td>
+                <td class="num-cell"><span class="${delta >= 0 ? 'is-positive' : 'is-negative'}">${
+                    delta > 0 ? '+' : ''}${formatComputed(delta)}</span></td>
             `;
             tbody.appendChild(tr);
         });
@@ -4065,6 +4430,7 @@
     async function resetAll() {
         const ok = await confirmReset();
         if (!ok) return;
+        leavePreview();                  // sonst leerte es gesperrte Felder
         $$('input.amount-input').forEach((input) => { input.value = ''; });
         $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
         $$('.adj-input').forEach((input) => { input.value = ''; });
@@ -4221,6 +4587,33 @@
                 closeAdjustmentsPanel();
                 $('#adjustmentsBtn').focus();
             }
+        });
+
+        // Vorschau: der Knopf schaltet um, «Vorschau verlassen» und Escape
+        // führen hinaus. Drei sichtbare Wege zurück — ein gesperrtes Formular
+        // ohne Ausgang wäre das Schlimmste an dieser Ansicht.
+        $('#previewBtn').addEventListener('click', () => {
+            if (state.previewStand) {
+                leavePreview();
+            } else {
+                const active = getActiveVersion();
+                const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
+                enterPreview(ersterVorschauStand(stichtagListe(anpassungen, heuteIso())));
+            }
+            $('#previewBtn').focus();
+        });
+        $('#previewLeaveBtn').addEventListener('click', () => {
+            leavePreview();
+            const btn = $('#previewBtn');
+            if (btn && !btn.hidden) btn.focus();
+        });
+        document.addEventListener('keydown', (e) => {
+            // Nur wenn kein Dialog offen ist: der nimmt Escape für sich.
+            if (e.key !== 'Escape' || !state.previewStand) return;
+            if (document.querySelector('.modal-backdrop.is-open')) return;
+            leavePreview();
+            const btn = $('#previewBtn');
+            if (btn && !btn.hidden) btn.focus();
         });
 
         // Backdrop click on ANY modal triggers its cancel button.

@@ -408,3 +408,162 @@ def test_kopfleiste_traegt_den_knopf_neben_den_reitern():
     text = SEITE.read_text(encoding="utf-8")
     bar = text[text.index('id="versionBar"'):text.index("/sticky-head")]
     assert bar.index('id="versionTabs"') < bar.index('id="adjustmentsBtn"')
+
+
+# --- Vorschau: Schreibsperre, Stand-Leiste, Uebersicht ------------------------
+# Die Vorschau stellt GERECHNETE Werte ins Formular. Schreibt irgendetwas sie
+# zurueck in die Version, sind die erfassten Zahlen der Person weg. Darum stehen
+# die Tests zur Sperre zuerst. Sie haengt am DOM und laeuft nicht im Treiber;
+# geprueft wird darum der Text der ausgelieferten Datei - fuer die Sperre ist
+# genau die Stelle im Code die Zusicherung.
+
+
+def _funktionsblock(name):
+    """Der Rumpf einer Funktion: von ihrem Kopf bis zur naechsten auf gleicher
+    Einrueckung. Genauer als ein Fenster fester Laenge, das in die naechste
+    Funktion hineinlaeuft."""
+    text = _seite_text()
+    ab = text.index("function " + name)
+    weiter = text.find("\n    function ", ab + 1)
+    return text[ab:weiter if weiter > 0 else len(text)]
+
+
+def test_vorschau_schreibt_nicht_zurueck():
+    """Sonst ersetzt der naechste Aufruf die erfassten Werte durch gerechnete."""
+    text = SEITE.read_text(encoding="utf-8")
+    ab = text.index("function captureFormToActiveVersion")
+    assert "if (state.previewStand) return;" in text[ab:ab + 500], \
+        "die Sperre fehlt am Anfang von captureFormToActiveVersion"
+
+
+def test_vorschau_ist_kein_versionsreiter():
+    """In derselben tablist behauptete sie, die aktive Version sei inaktiv."""
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index('id="previewBtn"')-400:text.index('id="previewBtn"')+400]
+    assert 'role="tab"' not in block
+
+
+def test_vorschau_sperrt_die_eingabefelder():
+    """`.disabled = ` steht schon viermal in der Datei — hier zaehlt nur,
+    dass die Sperre an `previewStand` haengt."""
+    text = SEITE.read_text(encoding="utf-8")
+    ab = text.index("function enterPreview")
+    block = text[ab:ab + 1500]
+    assert re.search(r"\.disabled = (true|Boolean\(|!!)", block)
+    assert "previewStand" in block
+
+
+def test_speichern_laeuft_in_der_vorschau_normal_weiter():
+    text = SEITE.read_text(encoding="utf-8")
+    block = text[text.index("function serialize"):][:900]
+    assert "previewStand" not in block, "serialize darf nicht auf die Vorschau reagieren"
+
+
+def test_vorschau_erfasst_einmal_bevor_sie_sperrt():
+    """Sonst waeren die zuletzt getippten Werte beim Verlassen verloren:
+    captureFormToActiveVersion muss laufen, SOLANGE previewStand noch null ist."""
+    block = _funktionsblock("enterPreview")
+    assert block.index("captureFormToActiveVersion()") < block.index("state.previewStand ="), \
+        "enterPreview setzt die Sperre, bevor es erfasst hat"
+
+
+def test_vorschau_sperrt_betraege_und_anpassungen():
+    block = _funktionsblock("enterPreview")
+    assert "amount-input" in block and "adj-input" in block
+
+
+def test_vorschau_sagt_dass_hier_nichts_erfasst_wird():
+    text = _seite_text()
+    leiste = text[text.index('id="previewBar"'):]
+    leiste = leiste[:leiste.index("</div>", leiste.index('id="previewLeaveBtn"'))]
+    assert "nichts erfasst" in leiste
+
+
+def test_vorschau_hat_drei_wege_hinaus():
+    """Ein Zustand, aus dem man nicht sichtbar herauskommt, waere das Schlimmste."""
+    text = _seite_text()
+    assert "function leavePreview" in text
+    # der Vorschau-Knopf selbst und Escape haengen in init
+    ende = text[text.index("function init"):]
+    assert "previewBtn" in ende and "leavePreview" in ende and "Escape" in ende
+    # ein Versionsreiter: switchVersion ruft leavePreview als Erstes
+    sw = _funktionsblock("switchVersion")
+    assert sw.index("leavePreview()") < sw.index("captureFormToActiveVersion()")
+
+
+def test_vorschau_stellt_die_felder_wieder_frei():
+    block = _funktionsblock("leavePreview")
+    assert re.search(r"\.disabled = false", block)
+    assert "state.previewStand = null" in block
+    assert "hydrateFormFromActiveVersion()" in block
+
+
+def test_vorschau_knopf_erscheint_nur_mit_anpassungen():
+    block = _funktionsblock("renderAdjustmentList")
+    assert re.search(r"previewBtn'\)[\s\S]{0,400}?hidden", block)
+
+
+def test_stand_leiste_nur_in_der_vorschau():
+    assert 'id="previewBar"' in _seite_text()
+    block = _funktionsblock("renderPreviewBar")
+    assert re.search(r"hidden = !state\.previewStand", block)
+
+
+def test_heute_in_der_stand_leiste_verlaesst_die_vorschau_nicht():
+    """«heute» ist das gesperrte Abbild der Version, kein Ausgang."""
+    block = _funktionsblock("renderPreviewBar")
+    assert "enterPreview(" in block and "leavePreview(" not in block
+
+
+def test_uebersicht_behaelt_das_gate_auf_zwei_versionen():
+    """Die Staende kommen dazu, wo die Uebersicht ohnehin sichtbar ist."""
+    block = _funktionsblock("renderVersionsOverview")
+    assert "if (!isMultiVersion())" in block and "section.hidden = true;" in block
+
+
+def test_uebersicht_setzt_die_staende_ab():
+    block = _funktionsblock("renderVersionsOverview")
+    assert "overview-stand-row" in block
+    text = _seite_text()
+    assert ".overview-stand-row" in text[:text.index("function renderVersionsOverview")], \
+        "zur abgesetzten Zeile fehlt das CSS"
+
+
+def test_vorschau_rechnet_aus_der_version_nicht_aus_dem_formular():
+    """Im Formular stehen in der Vorschau schon gerechnete Werte. Wer von dort
+    weiterrechnet, zeigt in der Anpassungsliste den Zielbetrag als Istwert und
+    in den Stand-Zeilen ein Delta von 0."""
+    vorschau = _funktionsblock("fuelleVorschau")
+    assert "active.values" in vorschau and "werteFuerStand(" in vorschau
+    assert "formWerte" not in vorschau
+    rechnen = _funktionsblock("recomputeAll")
+    assert re.search(r"state\.previewStand[^\n]*active\.values", rechnen), \
+        "recomputeAll muss in der Vorschau aus der Version rechnen"
+
+
+def test_vorschau_oeffnet_den_ersten_stand_nach_heute():
+    staende = kern("stichtagListe", ANPASSUNGEN, "2026-10-22")
+    assert kern("ersterVorschauStand", staende) == "2027-01-01"
+
+
+def test_vorschau_ohne_stichtag_zeigt_heute():
+    """Ohne Anpassung mit Betrag gibt es nur «heute» — und keinen Knopf."""
+    assert kern("ersterVorschauStand", kern("stichtagListe", {}, "2026-10-22")) == "heute"
+    assert kern("ersterVorschauStand", []) == "heute"
+
+
+def test_offen_ist_der_erste_stand_wenn_kein_datum_gesetzt_ist():
+    nur_offen = {"kasse": ANPASSUNGEN["kasse"]}
+    staende = kern("stichtagListe", nur_offen, "2026-10-22")
+    assert kern("ersterVorschauStand", staende) == "offen"
+
+
+def test_uebersicht_zeigt_je_stand_das_delta_zur_version():
+    """Die abgesetzten Zeilen rechnen aus den erfassten Werten der Version:
+    Differenz des Stands minus Differenz der Version — die Spalte «Δ vs. Basis»."""
+    jetzt = kern("summen", SCHEMA, WERTE)["diffY"]
+    deltas = {}
+    for key in ("2027-01-01", "2027-04-01", "offen"):
+        werte = kern("werteFuerStand", WERTE, ANPASSUNGEN, key)
+        deltas[key] = round(kern("summen", SCHEMA, werte)["diffY"] - jetzt, 2)
+    assert deltas == {"2027-01-01": 149 * 12, "2027-04-01": 163 * 12, "offen": 233 * 12}
