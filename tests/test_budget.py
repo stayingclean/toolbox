@@ -344,16 +344,40 @@ def test_neue_version_nimmt_keine_anpassung_ohne_betrag_mit():
         assert "strom" not in kern("anpassungenNachStand", mit_huelle, key), key
 
 
+AUSWAHLEN = (
+    [],                                   # alles angehakt, wie bisher
+    ["handy"],                            # eine von zwei am selben Datum abgewählt
+    ["handy", "fitness"],                 # das ganze Datum abgewählt
+    ["hausrat", "kasse"],                 # bei «offen»/April: spätere Zeilen
+    ["handy", "fitness", "hausrat", "kasse"],   # alles abgewählt
+    ["gibt_es_nicht"],                    # eine Zeile, die der Stand nie einlöst
+)
+
+
 def test_eingeloeste_und_mitgenommene_decken_alle_ab():
-    """Was in der neuen Version fehlt, steckt in den Werten: keine Anpassung geht verloren."""
+    """Was in der neuen Version fehlt, steckt in den Werten: keine Anpassung geht
+    verloren und keine wird doppelt gezählt - auch mit abgewählten Positionen."""
     for key in ("2027-01-01", "2027-04-01", "offen"):
-        rest = kern("anpassungenNachStand", ANPASSUNGEN, key)
-        neu = kern("werteFuerStand", WERTE, ANPASSUNGEN, key)
-        for rowId, a in ANPASSUNGEN.items():
-            if rowId in rest:
-                assert neu[rowId + ".monatlich"] == WERTE[rowId + ".monatlich"], (key, rowId)
-            else:
-                assert neu[rowId + ".monatlich"] == a["monatlich"], (key, rowId)
+        for abgewaehlt in AUSWAHLEN:
+            rest = kern("anpassungenNachStand", ANPASSUNGEN, key, abgewaehlt)
+            neu = kern("werteFuerStand", WERTE, ANPASSUNGEN, key, abgewaehlt)
+            for rowId, a in ANPASSUNGEN.items():
+                if rowId in rest:
+                    assert neu[rowId + ".monatlich"] == WERTE[rowId + ".monatlich"], (key, abgewaehlt, rowId)
+                    assert rest[rowId] == a, (key, abgewaehlt, rowId)
+                else:
+                    assert neu[rowId + ".monatlich"] == a["monatlich"], (key, abgewaehlt, rowId)
+
+
+def test_jede_anpassung_ist_entweder_eingeloest_oder_geblieben():
+    """Die Invariante ohne Umweg über die Werte: loestEin ist die einzige Regel,
+    und was sie verneint, bleibt als Anpassung stehen."""
+    for key in ("heute", "2027-01-01", "2027-04-01", "offen"):
+        for abgewaehlt in AUSWAHLEN:
+            rest = kern("anpassungenNachStand", ANPASSUNGEN, key, abgewaehlt)
+            for rowId, a in ANPASSUNGEN.items():
+                loest = kern("loestEin", a, key, rowId, abgewaehlt)
+                assert loest == (rowId not in rest), (key, abgewaehlt, rowId)
 
 
 def test_nach_stand_laesst_das_original_in_ruhe():
@@ -803,21 +827,9 @@ def test_summen_rechnet_mit_jahresbetraegen():
                                "diffY": 44040, "diffM": 3670}
 
 
-def test_hinweis_zur_neuen_version_unterscheidet_offen_von_einem_datum():
-    """Bei «offen» löst loestEin jede Anpassung mit Betrag ein; ein Hinweis, der
-    von stehenbleibenden Anpassungen spricht, widerspräche dem Code."""
-    offen = kern("neueVersionHinweis", "offen", "Basis")
-    datiert = kern("neueVersionHinweis", "2027-01-01", "Basis")
-    assert offen != datiert
-    assert "Später fällige" not in offen and "bleibt keine stehen" in offen
-    assert "Später fällige und undatierte" in datiert and "01.01.2027" in datiert
-    assert "„Basis\"" in offen
-
-
 def test_hinweis_fuer_offen_stimmt_mit_dem_was_stehen_bleibt():
-    """Das Gegenstück zum Hinweis «in der neuen Version bleibt keine stehen»:
-    bei «offen» bleibt nichts, auch keine Hülle ohne Betrag. Der Satz war nur
-    wahr, solange es solche Hüllen nicht gab - jetzt gibt es sie nicht."""
+    """Bei «offen» bleibt (ohne Abwahl) nichts stehen, auch keine Hülle ohne
+    Betrag: eine Hülle gibt es nicht mehr."""
     mit_leerer = dict(ANPASSUNGEN, leer={"jaehrlich": None, "monatlich": None, "ab": "2028-01-01"})
     assert kern("anpassungenNachStand", mit_leerer, "offen") == {}
     assert set(kern("anpassungenNachStand", mit_leerer, "2027-01-01")) == {"hausrat", "kasse"}
@@ -829,11 +841,13 @@ def test_name_der_neuen_version_sagt_vorschlaege_wie_der_rest():
     assert "Stand mit allen Anpassungen" not in _seite_text()
 
 
-def test_neue_version_aus_stand_nimmt_name_und_hinweis_aus_dem_kern():
+def test_neue_version_aus_stand_nimmt_den_namen_aus_dem_kern_und_hat_keinen_festen_hinweis():
     block = _funktionsblock("neueVersionAusStand")
     assert "neueVersionName(standKey)" in block
-    assert "neueVersionHinweis(standKey" in block
-    assert "Später fällige" not in block, "der Hinweistext gehört in den Kern, nicht zurück in den Dialog"
+    assert "neueVersionHinweis" not in _seite_text()
+    assert "newVersionHinweis" not in _seite_text(), "der feste Hinweissatz entfällt, die Liste zeigt es"
+    assert "Später fällige" not in _seite_text()
+    assert "bleibt keine stehen" not in _seite_text()
 
 
 def test_neue_version_aus_stand_nutzt_die_regel_des_kerns_fuer_unbekannte_zeilen():
@@ -1122,3 +1136,141 @@ def test_anpassungsfunktionen_kennen_kein_oder_null():
                  "bleibtInDerZeile", "anpassungDatumHinweis", "zeilenIdVon",
                  "handleAdjInputEvent", "handleAdjInputBlur"):
         assert "|| 0" not in _funktionsblock(name), name
+
+
+# --- Dialog «Neue Version aus Stand»: welche Positionen kommen mit ------------
+# Die Auswahl entscheidet sich im Moment des Drückens und wird nirgends
+# gespeichert. Die Logik ist rein und liegt im Kern; der Dialog selbst hängt
+# am DOM und wird als Text geprüft.
+
+
+def test_abgewaehlte_position_bleibt_mit_ihrem_datum_stehen():
+    rest = kern("anpassungenNachStand", ANPASSUNGEN, "2027-01-01", ["handy"])
+    assert sorted(rest) == ["handy", "hausrat", "kasse"]
+    assert rest["handy"] == ANPASSUNGEN["handy"], "mit Betrag 0 und Datum, nichts verloren"
+    assert rest["handy"]["ab"] == "2027-01-01"
+
+
+def test_abgewaehlte_position_behaelt_ihren_alten_wert():
+    neu = kern("werteFuerStand", WERTE, ANPASSUNGEN, "2027-01-01", ["handy"])
+    assert neu["handy.monatlich"] == 60 and "handy.jaehrlich" not in neu
+    assert neu["fitness.monatlich"] == 0, "die angehakte wird eingelöst, auch auf 0"
+
+
+def test_ohne_auswahl_wie_bisher():
+    for key in ("heute", "2027-01-01", "offen"):
+        assert kern("werteFuerStand", WERTE, ANPASSUNGEN, key, None) == kern("werteFuerStand", WERTE, ANPASSUNGEN, key)
+        assert kern("anpassungenNachStand", ANPASSUNGEN, key, None) == kern("anpassungenNachStand", ANPASSUNGEN, key)
+        assert kern("anpassungenNachStand", ANPASSUNGEN, key, []) == kern("anpassungenNachStand", ANPASSUNGEN, key)
+
+
+def test_alles_abgewaehlt_ist_eine_kopie_mit_allen_anpassungen():
+    alle = ["handy", "fitness", "hausrat", "kasse"]
+    assert kern("werteFuerStand", WERTE, ANPASSUNGEN, "offen", alle) == WERTE
+    assert kern("anpassungenNachStand", ANPASSUNGEN, "offen", alle) == ANPASSUNGEN
+
+
+def test_abwahl_aendert_loest_ein_nur_fuer_die_genannte_zeile():
+    a = ANPASSUNGEN["handy"]
+    assert kern("loestEin", a, "2027-01-01", "handy", []) is True
+    assert kern("loestEin", a, "2027-01-01", "handy", ["fitness"]) is True
+    assert kern("loestEin", a, "2027-01-01", "handy", ["handy"]) is False
+    assert kern("loestEin", a, "2027-01-01") is True, "ohne die neuen Parameter wie bisher"
+    assert kern("loestEin", a, "heute", "handy", []) is False
+
+
+def test_abwahl_aendert_die_eingaben_nicht():
+    kern("anpassungenNachStand", ANPASSUNGEN, "offen", ["handy"])
+    assert ANPASSUNGEN["handy"]["ab"] == "2027-01-01"
+
+
+def eintraege(key, anpassungen=None, werte=None):
+    anpassungen = ANPASSUNGEN if anpassungen is None else anpassungen
+    staende = kern("stichtagListe", anpassungen, "2026-10-22")
+    return kern("einloesbareEintraege", anpassungen, staende, WERTE if werte is None else werte, key)
+
+
+def test_dialog_listet_alles_was_der_stand_einloest():
+    """Die Liste im Dialog ist dieselbe Menge, die loestEin bejaht - kumulativ:
+    der Stand vom April löst auch die Anpassungen vom Januar ein."""
+    assert sorted(e["rowId"] for e in eintraege("2027-01-01")) == ["fitness", "handy"]
+    assert sorted(e["rowId"] for e in eintraege("2027-04-01")) == ["fitness", "handy", "hausrat"]
+    assert sorted(e["rowId"] for e in eintraege("offen")) == ["fitness", "handy", "hausrat", "kasse"]
+    for key in ("2027-01-01", "2027-04-01", "offen"):
+        erwartet = sorted(r for r, a in ANPASSUNGEN.items() if kern("loestEin", a, key))
+        assert sorted(e["rowId"] for e in eintraege(key)) == erwartet
+
+
+def test_dialogeintrag_nennt_alt_neu_und_datum():
+    e = {x["rowId"]: x for x in eintraege("2027-04-01")}
+    assert e["handy"]["altM"] == 60 and e["handy"]["neuM"] == 0 and e["handy"]["deltaM"] == -60
+    assert e["hausrat"]["neuM"] == 28 and e["hausrat"]["ab"] == "2027-04-01"
+    assert e["handy"]["ab"] == "2027-01-01", "bei einem kumulativen Stand sieht man, von wann die Zeile ist"
+    assert {x["rowId"]: x["ab"] for x in eintraege("offen")}["kasse"] is None
+
+
+def test_dialog_listet_nichts_fuer_heute_und_unbekannte_staende():
+    assert eintraege("heute") == []
+    assert eintraege("2030-01-01") == []
+
+
+def test_dialog_listet_keine_huelle_ohne_betrag():
+    mit_huelle = dict(ANPASSUNGEN, strom={"jaehrlich": None, "monatlich": None, "ab": "2026-12-01"})
+    for key in ("2027-04-01", "offen"):
+        assert "strom" not in [e["rowId"] for e in eintraege(key, mit_huelle)]
+
+
+def test_dialog_listet_die_null_als_zielbetrag():
+    e = {x["rowId"]: x for x in eintraege("2027-01-01")}
+    assert e["handy"]["neuM"] == 0 and e["handy"]["neuY"] == 0
+
+
+def test_auswahltext_zaehlt_mit():
+    def t(n, g):
+        return kern("neueVersionAuswahlText", n, g)
+    assert t(3, 3) == "Alle 3 Positionen werden eingerechnet."
+    assert t(1, 1) == "Die Position wird eingerechnet."
+    assert t(2, 3) == "2 von 3 Positionen werden eingerechnet, 1 bleibt als Anpassung stehen."
+    assert t(1, 4) == "1 von 4 Positionen wird eingerechnet, 3 bleiben als Anpassung stehen."
+    assert t(0, 1) == "Die Position wird nicht eingerechnet, sie bleibt als Anpassung stehen."
+    assert t(0, 3).startswith("Keine Position wird eingerechnet")
+    assert "Kopie" in t(0, 3), "die leere Auswahl sagt, was dabei herauskommt"
+
+
+def test_dialog_hat_checkboxen_standardmaessig_gesetzt_und_nur_fuer_den_stand():
+    block = _funktionsblock("openNewVersionModal")
+    assert "vorgabe.eintraege" in block, "die Liste kommt nur mit der Vorgabe des Stands"
+    assert "abgewaehlt" in block and "!b.checked" in block
+    liste = _funktionsblock("fuelleEinloesenListe")
+    assert "type = 'checkbox'" in liste
+    assert re.search(r"\.checked\s*=\s*true", liste), "alle Häkchen beginnen gesetzt"
+    assert "neueVersionAuswahlText" in liste
+    assert "abschnitt.hidden = zeilen.length === 0" in liste, "ohne Stand bleibt der Abschnitt zu"
+    assert "localStorage" not in block + liste
+
+
+def test_dialog_gibt_die_abgewaehlten_an_beide_kernfunktionen_weiter():
+    block = _funktionsblock("neueVersionAusStand")
+    assert "einloesbareEintraege(" in block
+    assert re.search(r"werteFuerStand\(.*abgewaehlt\)", block)
+    assert re.search(r"anpassungenNachStand\(.*abgewaehlt\)", block)
+
+
+def test_auswahl_hat_keinen_zustand_ausserhalb_des_dialogs():
+    """Die Entscheidung gehört in den Moment des Drückens: nichts in state, nichts
+    in der Version, keine Häkchen neben den Zeilen im Formular."""
+    text = _seite_text()
+    block = _funktionsblock("neueVersionAusStand")
+    assert "state." not in block
+    liste = text[text.index("function renderAdjustmentList"):][:5000]
+    assert "abgewaehlt" not in liste and "checkbox" not in liste
+    kern_text = re.sub(r"//.*", "", text[text.index("budget-kern:anfang"):text.index("budget-kern:ende")])
+    assert not re.search(r"\bstate\b|\bSCHEMA\b|\bdocument\b|\$\(", kern_text), "der Kern bleibt frei von state, SCHEMA und DOM"
+
+
+def test_liste_im_dialog_scrollt_und_ist_per_tastatur_erreichbar():
+    text = _seite_text()
+    assert re.search(r"\.einloesen-liste\s*\{[^}]*max-height", text)
+    assert re.search(r"\.einloesen-liste\s*\{[^}]*overflow-y:\s*auto", text)
+    assert '<fieldset class="modal-field" id="newVersionEinloesen"' in text
+    assert "<legend" in text[text.index('id="newVersionEinloesen"'):][:300]

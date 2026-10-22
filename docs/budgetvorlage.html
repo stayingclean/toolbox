@@ -1016,6 +1016,8 @@
             max-width: 480px;
             width: 100%;
             padding: 1.75rem;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
             box-shadow: var(--shadow-lg);
             transform: scale(0.95);
             transition: transform var(--transition-base);
@@ -1749,6 +1751,30 @@
             font-size: 0.88rem;
             color: var(--color-text-muted);
         }
+        /* Die Liste der Positionen, die ein Stand einlösen würde. Ein Stand kann
+           ein Dutzend halten: die Liste scrollt für sich, der Dialog bleibt
+           auf dem Bildschirm. */
+        .einloesen-liste {
+            max-height: 14rem;
+            overflow-y: auto;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: 0.15rem;
+        }
+        .einloesen-liste .radio-option { align-items: flex-start; }
+        .einloesen-liste .einloesen-name { flex: 1; min-width: 0; }
+        .einloesen-liste .einloesen-ab {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+        }
+        .einloesen-liste .einloesen-betrag {
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.88rem;
+            color: var(--color-text-muted);
+        }
+        .modal .einloesen-text { margin: 0; }
 
         /* ============================================================
            Anpassungsliste in der Kopfleiste
@@ -2375,7 +2401,11 @@
                 <span class="modal-field-label">Name der Version</span>
                 <input type="text" id="newVersionName" maxlength="60" placeholder="z. B. Nach Anpassung" autocomplete="off">
             </label>
-            <p class="modal-hint" id="newVersionHinweis" hidden></p>
+            <fieldset class="modal-field" id="newVersionEinloesen" hidden>
+                <legend class="modal-field-label">Diese Anpassungen einrechnen (Beträge pro Monat)</legend>
+                <div class="einloesen-liste" id="newVersionEinloesenListe"></div>
+                <p class="modal-hint einloesen-text" id="newVersionEinloesenText" aria-live="polite"></p>
+            </fieldset>
             <fieldset class="modal-field" id="newVersionBasedOn">
                 <legend class="modal-field-label">Basiert auf</legend>
                 <!-- Radios populated dynamically -->
@@ -2734,15 +2764,24 @@
             : 'Stand ab ' + datumAnzeige(standKey);
     }
 
-    // Hinweis im Dialog «Neue Version aus Stand». Muss zu loestEin passen: bei
-    // «offen» werden ALLE Anpassungen eingerechnet (jede hat einen Betrag), es
-    // bleibt keine stehen; bei einem Datum bleiben spätere und undatierte.
-    function neueVersionHinweis(standKey, versionName) {
-        const wert = `Die Werte stammen aus „${versionName}" mit den Anpassungen des Stands `
-            + `(${standKey === 'offen' ? 'alle' : 'bis einschliesslich ' + datumAnzeige(standKey)}). `;
-        return wert + (standKey === 'offen'
-            ? 'Alle Anpassungen mit Betrag sind eingerechnet; in der neuen Version bleibt keine stehen.'
-            : 'Später fällige und undatierte Anpassungen bleiben in der neuen Version stehen.');
+    // Der Satz unter der Liste im Dialog «Neue Version aus Stand»: zählt mit,
+    // wie viele der aufgelisteten Positionen angehakt sind und was mit dem Rest
+    // geschieht. Bei leerer Auswahl sagt er ausdrücklich, was dabei entsteht,
+    // statt den Knopf zu sperren.
+    function neueVersionAuswahlText(gewaehlt, gesamt) {
+        const rest = gesamt - gewaehlt;
+        if (gewaehlt === 0) {
+            return gesamt === 1
+                ? 'Die Position wird nicht eingerechnet, sie bleibt als Anpassung stehen.'
+                : 'Keine Position wird eingerechnet, die neue Version ist eine Kopie der Werte und Anpassungen.';
+        }
+        if (rest === 0) {
+            return gesamt === 1
+                ? 'Die Position wird eingerechnet.'
+                : `Alle ${gesamt} Positionen werden eingerechnet.`;
+        }
+        return `${gewaehlt} von ${gesamt} Positionen ${gewaehlt === 1 ? 'wird' : 'werden'} eingerechnet, `
+            + `${rest} ${rest === 1 ? 'bleibt' : 'bleiben'} als Anpassung stehen.`;
     }
 
     // Alle Stände, in Reihenfolge: «heute», die Daten aufsteigend (je Datum
@@ -2778,22 +2817,29 @@
 
     // Löst diese Anpassung im Stand auf? «heute»: nie. Datum: nur mit Betrag und
     // lesbarem Datum bis einschliesslich dieses Tages. «offen»: jede mit Betrag.
-    // Eine einzige Regel für werteFuerStand und anpassungenNachStand, damit
-    // beide nie auseinanderlaufen.
-    function loestEin(a, standKey) {
+    // Eine einzige Regel für werteFuerStand, anpassungenNachStand und die Liste
+    // im Dialog, damit sie nie auseinanderlaufen.
+    //
+    // `rowId` und `abgewaehlt` (Liste von rowIds) sind optional: Wer im Dialog
+    // abgewählt wurde, wird NICHT eingelöst, ganz gleich was das Datum sagt. Das
+    // ist keine zweite Regel, sondern eine Ausnahme von der einen. Ohne die
+    // beiden Angaben gilt die Regel wie bisher.
+    function loestEin(a, standKey, rowId, abgewaehlt) {
         if (standKey === 'heute') return false;
         if (!anpassungBetrag(a)) return false;
+        if (abgewaehlt && abgewaehlt.indexOf(rowId) >= 0) return false;
         return standKey === 'offen' || (istIsoDatum(a.ab) && a.ab <= standKey);
     }
 
     // Kopie der Werte mit den Anpassungen des Stands. «heute»: nichts angewendet.
     // Datum: alle Anpassungen mit lesbarem Datum bis einschliesslich dieses Tages.
-    // «offen»: alle Anpassungen mit Betrag, auch die ohne Datum.
-    function werteFuerStand(values, adjustments, standKey) {
+    // «offen»: alle Anpassungen mit Betrag, auch die ohne Datum. `abgewaehlt`
+    // (optional, rowIds): diese Positionen behalten ihren Wert.
+    function werteFuerStand(values, adjustments, standKey, abgewaehlt) {
         const neu = Object.assign({}, values);
         Object.keys(adjustments || {}).forEach((id) => {
             const a = adjustments[id];
-            if (!loestEin(a, standKey)) return;
+            if (!loestEin(a, standKey, id, abgewaehlt)) return;
             const betrag = anpassungBetrag(a);
             neu[id + '.jaehrlich'] = betrag.jaehrlich;
             neu[id + '.monatlich'] = betrag.monatlich;
@@ -2806,12 +2852,14 @@
     // eingelösten stecken danach in den Werten. Einträge ohne Betrag sind keine
     // Anpassung und wandern nie mit — sonst entstünde in der neuen Version der
     // Zustand, den die Sperre am Datumsfeld verhindert. Kopien, damit die neue
-    // Version die Einträge der alten nicht teilt.
-    function anpassungenNachStand(adjustments, standKey) {
+    // Version die Einträge der alten nicht teilt. Wer im Dialog abgewählt wurde
+    // (`abgewaehlt`, optional, rowIds), gilt als nicht eingelöst und bleibt mit
+    // seinem Datum stehen.
+    function anpassungenNachStand(adjustments, standKey, abgewaehlt) {
         const rest = {};
         Object.keys(adjustments || {}).forEach((id) => {
             const a = adjustments[id];
-            if (anpassungHatInhalt(a) && !loestEin(a, standKey)) rest[id] = Object.assign({}, a);
+            if (anpassungHatInhalt(a) && !loestEin(a, standKey, id, abgewaehlt)) rest[id] = Object.assign({}, a);
         });
         return rest;
     }
@@ -2849,6 +2897,25 @@
                 deltaM: eintraege.reduce((s, e) => s + e.deltaM, 0),
             };
         });
+    }
+
+    // Die Positionen, die ein Stand einlösen würde: die Liste im Dialog «Neue
+    // Version aus Stand». Nicht die Gruppe des Datums, sondern alles, was
+    // loestEin bejaht — der Stand vom April löst auch die vom Januar ein. Je
+    // Eintrag wie in anpassungsGruppen (alt, neu, Unterschied), dazu `ab`, damit
+    // man bei einem Stand über mehrere Daten sieht, woher eine Zeile stammt.
+    // Ein Stand, den es in `staende` nicht gibt, und «heute» liefern nichts.
+    function einloesbareEintraege(adjustments, staende, values, standKey) {
+        if (!(staende || []).some((s) => s.key === standKey)) return [];
+        const liste = [];
+        anpassungsGruppen(adjustments, staende, values).forEach((gruppe) => {
+            gruppe.eintraege.forEach((e) => {
+                const a = adjustments[e.rowId];
+                if (!loestEin(a, standKey, e.rowId)) return;
+                liste.push(Object.assign({}, e, { ab: istIsoDatum(a.ab) ? a.ab : null }));
+            });
+        });
+        return liste;
     }
 
     // Summen wie recomputeAll: je Zeile jährlich = y || (m * 12),
@@ -3719,25 +3786,30 @@
 
     // «Neue Version aus diesem Stand»: Werte mit den bis zum Stichtag
     // eingelösten Anpassungen, Basis = die Version, aus der gerechnet wurde
-    // (daran hängen «Δ vs. Basis» und «Unterschiede pro Position»). Spätere und
-    // undatierte Anpassungen wandern unverändert mit, die eingelösten stecken
-    // jetzt in den Werten. Kommentare und private Notiz beginnen leer.
+    // (daran hängen «Δ vs. Basis» und «Unterschiede pro Position»). Der Dialog
+    // listet, was der Stand einlösen würde; was dort abgewählt wird, behält
+    // seinen Wert und bleibt wie die späteren und undatierten Anpassungen mit
+    // seinem Datum in der neuen Version stehen. Die Wahl gilt nur für diesen
+    // einen Druck und wird nirgends gespeichert. Kommentare und private Notiz
+    // beginnen leer.
     async function neueVersionAusStand(standKey) {
         closeAdjustmentsPanel();
         captureFormToActiveVersion();
         const active = getActiveVersion();
         if (!active) return;
+        const bekannt = bekannteAnpassungen(active.adjustments || {});
+        const staende = stichtagListe(bekannt, heuteIso());
         const result = await openNewVersionModal({
             name: neueVersionName(standKey),
             basedOnId: active.id,
-            hinweis: neueVersionHinweis(standKey, active.name),
+            eintraege: einloesbareEintraege(bekannt, staende, active.values || {}, standKey),
         });
         if (!result) return;
         captureFormToActiveVersion();
         const alle = active.adjustments || {};
-        const bekannt = bekannteAnpassungen(alle);
-        const werte = werteFuerStand(active.values, bekannt, standKey);
-        const rest = anpassungenNachStand(bekannt, standKey);
+        const abgewaehlt = result.abgewaehlt;
+        const werte = werteFuerStand(active.values, bekannteAnpassungen(alle), standKey, abgewaehlt);
+        const rest = anpassungenNachStand(bekannteAnpassungen(alle), standKey, abgewaehlt);
         // Einträge für Zeilen, die diese Seite nicht kennt, gehen nicht verloren.
         const unbekannt = unbekannteAnpassungenBehalten(alle, Object.keys(ROW_INDEX));
         Object.keys(unbekannt).forEach((id) => { rest[id] = { ...unbekannt[id] }; });
@@ -3932,8 +4004,8 @@
             neu.className = 'adj-newversion';
             neu.textContent = 'Neue Version aus diesem Stand';
             neu.title = g.key === 'offen'
-                ? 'Alle Anpassungen mit Betrag einrechnen und als neue Version anlegen'
-                : `Alle Anpassungen bis einschliesslich ${datumAnzeige(g.ab)} einrechnen und als neue Version anlegen`;
+                ? 'Anpassungen mit Betrag einrechnen (Auswahl im nächsten Schritt) und als neue Version anlegen'
+                : `Anpassungen bis einschliesslich ${datumAnzeige(g.ab)} einrechnen (Auswahl im nächsten Schritt) und als neue Version anlegen`;
             neu.addEventListener('click', () => neueVersionAusStand(g.key));
             gruppe.appendChild(neu);
 
@@ -4453,17 +4525,18 @@
     // Promise that resolves to either the chosen value or null/false on cancel.
     // Buttons are cloned-replaced to drop previous listeners before re-binding.
 
-    // `vorgabe` (optional, aus der Anpassungsliste): { name, basedOnId, hinweis }.
+    // `vorgabe` (optional, aus der Anpassungsliste): { name, basedOnId, eintraege }.
     // Dann ist die Basis fest (die Werte stammen aus genau dieser Version),
     // die Auswahl «Basiert auf» entfällt und der Name ist vorausgefüllt.
+    // `eintraege` (einloesbareEintraege) erscheinen als Liste mit Häkchen,
+    // alle gesetzt. Das Ergebnis nennt die abgewählten rowIds (`abgewaehlt`,
+    // leer ohne Liste); mehr wird davon nicht festgehalten.
     function openNewVersionModal(vorgabe) {
         const fieldset = $('#newVersionBasedOn');
         const nameInput = $('#newVersionName');
-        const hinweis = $('#newVersionHinweis');
         fieldset.innerHTML = '';
         fieldset.hidden = !!vorgabe;
-        hinweis.hidden = !vorgabe;
-        hinweis.textContent = vorgabe ? vorgabe.hinweis : '';
+        const boxen = fuelleEinloesenListe(vorgabe && vorgabe.eintraege);
 
         const empty = document.createElement('label');
         empty.className = 'radio-option';
@@ -4495,10 +4568,64 @@
                 const basedOnId = vorgabe
                     ? vorgabe.basedOnId
                     : (m.querySelector('input[name="basedOn"]:checked')?.value || null);
-                cleanup({ name, basedOnId });
+                const abgewaehlt = boxen.filter((b) => !b.checked).map((b) => b.value);
+                cleanup({ name, basedOnId, abgewaehlt });
             });
             setTimeout(() => nameInput.focus(), 50);
         });
+    }
+
+    // Baut die Liste «Diese Anpassungen einrechnen» im Dialog neu auf und gibt
+    // die Häkchen zurück. Ohne Einträge bleibt der Abschnitt zu (der gewöhnliche
+    // Dialog «Neue Version»). Jede Zeile beginnt angehakt; der Satz darunter
+    // zählt bei jeder Änderung neu mit. Die Häkchen entstehen mit dem Dialog
+    // und verschwinden mit ihm: Gemerkt wird nichts.
+    function fuelleEinloesenListe(eintraege) {
+        const abschnitt = $('#newVersionEinloesen');
+        const liste = $('#newVersionEinloesenListe');
+        const text = $('#newVersionEinloesenText');
+        liste.textContent = '';
+        text.textContent = '';
+        const zeilen = (eintraege || [])
+            .map((e) => ({ e: e, name: rowAnzeigename(e.rowId) }))
+            .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+        abschnitt.hidden = zeilen.length === 0;
+        // Bei einem Stand über mehrere Daten sagt jede Zeile, von wann sie ist.
+        const gemischt = zeilen.some(({ e }) => e.ab !== zeilen[0].e.ab);
+        const boxen = zeilen.map(({ e, name }) => {
+            const zeile = document.createElement('label');
+            zeile.className = 'radio-option';
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.value = e.rowId;
+            box.checked = true;
+            zeile.appendChild(box);
+            const titel = document.createElement('span');
+            titel.className = 'einloesen-name';
+            titel.textContent = name;
+            if (gemischt) {
+                const ab = document.createElement('span');
+                ab.className = 'einloesen-ab';
+                ab.textContent = e.ab ? 'ab ' + datumAnzeige(e.ab) : 'ohne Datum';
+                titel.appendChild(ab);
+            }
+            zeile.appendChild(titel);
+            const betrag = document.createElement('span');
+            betrag.className = 'einloesen-betrag';
+            betrag.textContent = `${formatComputed(e.altM)} → ${formatComputed(e.neuM)} · ${deltaAnzeige(e.deltaM)}`;
+            betrag.title = `Jährlich: ${formatComputed(e.altY)} → ${formatComputed(e.neuY)}`;
+            zeile.appendChild(betrag);
+            liste.appendChild(zeile);
+            return box;
+        });
+        const nachzaehlen = () => {
+            text.textContent = boxen.length
+                ? neueVersionAuswahlText(boxen.filter((b) => b.checked).length, boxen.length)
+                : '';
+        };
+        boxen.forEach((b) => b.addEventListener('change', nachzaehlen));
+        nachzaehlen();
+        return boxen;
     }
 
     function openRenameModal(versionId) {
