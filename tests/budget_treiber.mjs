@@ -21,7 +21,7 @@ if (ab < 0 || bis < 0) {
 }
 
 const kern = new Function(
-  html.slice(ab, bis) + '\nreturn { anpassungBetrag, anpassungHatInhalt, unbekannteAnpassungenBehalten, stichtagListe, ersterVorschauStand, werteFuerStand, summen, anpassungsGruppen, anpassungenNachStand };'
+  html.slice(ab, bis) + '\nreturn { anpassungBetrag, anpassungHatInhalt, unbekannteAnpassungenBehalten, stichtagListe, ersterVorschauStand, werteFuerStand, summen, anpassungsGruppen, anpassungenNachStand, standKennzeichnung };'
 )();
 
 if (typeof kern[funktion] !== 'function') {

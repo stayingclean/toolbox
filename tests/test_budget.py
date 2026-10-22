@@ -601,3 +601,165 @@ def test_nur_die_reiter_stehen_in_der_tablist():
     assert re.search(r'id="versionTabs"[^>]*role="tablist"', text)
     kopf = text[text.index('id="versionBar"'):text.index('id="versionTabs"')]
     assert "tablist" not in kopf, "die Leiste selbst darf keine tablist sein"
+
+
+# ---------------------------------------------------------------------------
+# Private Notiz, Druck und Hinweistexte (Task 7)
+#
+# «Privat» heisst hier: wird nicht mitgedruckt, ausser das Haekchen ist gesetzt.
+# Es heisst NICHT: steht nicht in der Datei. Das ist ausdruecklich so entschieden.
+# Geschuetzt ist der versehentliche Ausdruck, nicht die Weitergabe der Datei.
+# ---------------------------------------------------------------------------
+
+
+def _druck_css():
+    """Der @media-print-Block, vom Kopf bis zum naechsten Abschnittskommentar."""
+    text = _seite_text()
+    ab = text.index("@media print {")
+    return text[ab:text.index("Version bar", ab)]
+
+
+def test_private_notiz_druckt_nur_mit_haekchen():
+    text = _seite_text()
+    # Nur das Tag selbst pruefen: ein Fenster um die ID erwischte das
+    # «checked» der Nachbar-Checkbox «Kommentare drucken».
+    tag = re.search(r'<input[^>]*id="chkPrintPrivateNote"[^>]*>', text)
+    assert tag, "die Checkbox fehlt"
+    assert not re.search(r"\bchecked\b", tag.group(0)), \
+        "die private Notiz darf nicht vorgewaehlt mitdrucken"
+    assert "body.print-private-note" in text
+    # «Kommentare drucken» behaelt seine Voreinstellung.
+    assert re.search(r'<input[^>]*id="chkPrintComments"[^>]*\bchecked\b[^>]*>', text)
+
+
+def test_private_notiz_ist_im_druck_sonst_unsichtbar():
+    css = _druck_css()
+    regel = re.search(r"#privateNoteBox\s*\{[^}]*display:\s*none", css)
+    assert regel, "ohne Haekchen muss die Notiz im Druck weg sein"
+    gezeigt = css.index("body.print-private-note")
+    assert gezeigt > css.index("#privateNoteBox"), \
+        "die Regel mit Haekchen muss nach der verbergenden stehen"
+
+
+def test_private_notiz_steht_in_der_datei():
+    """Ausdruecklich so entschieden — geschuetzt ist der Druck, nicht die Datei."""
+    block = _funktionsblock("serialize")
+    assert "privateNote" in block
+
+
+def test_private_notiz_gehoert_zur_version_und_laeuft_durch_die_sperre():
+    """Gefuellt aus der aktiven Version, zurueckgeschrieben in
+    captureFormToActiveVersion — also hinter der Vorschau-Sperre, ohne zweite."""
+    capture = _funktionsblock("captureFormToActiveVersion")
+    assert "privateNote" in capture
+    assert capture.index("privateNote") > capture.index("if (state.previewStand) return;")
+    assert "privateNote" in _funktionsblock("hydrateFormFromActiveVersion")
+    assert "privateNote" in _funktionsblock("resetAll")
+    # Keine zweite Sperre fuer die Notiz: die eine am Kopf von capture genuegt.
+    assert capture.count("state.previewStand") == 1
+
+
+def test_private_notiz_ist_in_der_vorschau_gesperrt():
+    """Capture schreibt dort nicht zurueck; ein offenes Feld verschluckte Tipparbeit."""
+    assert "privateNote" in _funktionsblock("enterPreview")
+    assert "privateNote" in _funktionsblock("leavePreview")
+
+
+def test_private_notiz_verspricht_nicht_mehr_als_der_druck():
+    text = _seite_text()
+    box = text[text.index('id="privateNoteBox"'):][:1500]
+    assert "nicht mitgedruckt" in box
+    assert "Datei" in box, "der Hinweis muss sagen, dass die Notiz in der Datei steht"
+    assert "verschl" not in box.lower() and "geheim" not in box.lower()
+
+
+def test_private_notiz_hat_einen_druckblock_der_mitwaechst():
+    """Eine Textarea waechst im Druck nicht mit; wie beim Kommentar druckt ein Block."""
+    css = _druck_css()
+    assert re.search(r"#privateNote\s*\{[^}]*display:\s*none", css)
+    block = re.search(r"addEventListener\('beforeprint'.*?\n        \}\);", _seite_text(), re.S).group(0)
+    assert "privateNote" in block
+
+
+def test_gerechneter_stand_wird_im_ausdruck_gekennzeichnet():
+    text = _seite_text()
+    assert 'id="printStandMarker"' in text
+    assert "gerechnet, nicht erfasst" in text
+
+
+def test_genau_eine_kennzeichnung_im_ausdruck():
+    """Task 6 brachte schon einen Hinweis nur fuer den Druck. Zwei davon
+    stuenden doppelt auf dem Blatt."""
+    text = _seite_text()
+    assert text.count('id="printStandMarker"') == 1
+    assert "preview-print-note" not in text, "der alte Hinweis darf nicht uebrig bleiben"
+
+
+def test_kennzeichnung_steht_im_blattkopf_und_nur_im_druck():
+    text = _seite_text()
+    kopf = text[text.index('<header class="header">'):text.index("</header>")]
+    assert 'id="printStandMarker"' in kopf
+    css = _druck_css()
+    assert re.search(r"body\.mode-preview\s+#printStandMarker", css)
+    # Am Bildschirm sagt es die Stand-Leiste: ausserhalb des Druck-Blocks verborgen.
+    ausserhalb = text.replace(css, "")
+    assert re.search(r"#printStandMarker\s*\{[^}]*display:\s*none", ausserhalb)
+
+
+def test_kennzeichnung_nennt_das_datum():
+    assert kern("standKennzeichnung", "2027-01-01") == "Stand ab 01.01.2027 — gerechnet, nicht erfasst"
+
+
+def test_kennzeichnung_fuer_offen():
+    assert kern("standKennzeichnung", "offen") == "Stand mit allen Vorschlägen — gerechnet, nicht erfasst"
+
+
+def test_heute_wird_nicht_gekennzeichnet():
+    """«heute» zeigt die erfassten Werte; ein «gerechnet» darauf wäre falsch."""
+    assert kern("standKennzeichnung", "heute") == ""
+    assert kern("standKennzeichnung", None) == ""
+
+
+def test_kennzeichnung_wird_beim_zeichnen_der_leiste_gesetzt():
+    block = _funktionsblock("renderPreviewBar")
+    assert "printStandMarker" in block and "standKennzeichnung" in block
+
+
+def test_druckmarkierung_kennt_auch_anpassungen():
+    text = _seite_text()
+    block = re.search(r"addEventListener\('beforeprint'.*?\n        \}\);", text, re.S).group(0)
+    assert "has-comment" in block and "has-adjustment" in block
+
+
+def test_anpassungsfelder_drucken_nur_mit_kommentar_haekchen():
+    css = _druck_css()
+    assert re.search(r"\.adj-block\s*\{[^}]*display:\s*none", css), \
+        "sonst druckt jede Zeile mit Kommentar ein leeres Anpassungsformular"
+    zeigen = re.search(r"body\.print-comments[^{]*\.has-adjustment[^{]*\.adj-block\s*\{[^}]*display:\s*block", css)
+    assert zeigen, "mit dem Haekchen sollen die Anpassungsfelder der Zeile mitdrucken"
+
+
+def test_zeile_mit_anpassung_druckt_ohne_haekchen_unmarkiert():
+    """Sonst stuende eine gelbe Zeile ohne Erklaerung auf dem Blatt."""
+    css = _druck_css()
+    assert re.search(r"tr\[data-row-id\]\.has-adjustment\s*>\s*td\s*\{[^}]*background:\s*transparent", css)
+    assert re.search(r"body\.print-comments\s+tr\[data-row-id\]\.has-adjustment", css)
+
+
+def test_zeile_mit_anpassung_ohne_kommentar_zeigt_keinen_leeren_kommentarkasten():
+    css = _druck_css()
+    assert re.search(r"\.expander-row:not\(\.has-comment\)[^{]*\.comment-print[^{]*\{[^}]*display:\s*none", css)
+
+
+def test_stand_zeilen_der_zusammenfassung_drucken_mit():
+    css = _druck_css()
+    assert "stand-row" not in css, "keine Druckregel darf die Stand-Zeilen verbergen"
+    assert 'id="differenceRow"' in _seite_text()
+
+
+def test_infobox_verweist_nicht_mehr_nur_auf_versionen():
+    text = _seite_text()
+    assert "modellieren Sie über <strong>weitere Budget-Versionen</strong>" not in text
+    box = text[text.index('<div class="info-box">'):][:2500]
+    assert "direkt in der Zeile" in box, "Anpassungen stehen jetzt in der Zeile"
+    assert "grundsätzlich anderen Haushalt" in box, "Versionen sind fuer den anderen Haushalt da"

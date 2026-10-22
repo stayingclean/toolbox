@@ -866,6 +866,65 @@
             margin-bottom: 0.25rem;
         }
 
+        /* Private Notiz zur Version. «Privat» heisst: wird nicht mitgedruckt,
+           solange «Private Notiz drucken» nicht angehakt ist. Sie steht in der
+           gespeicherten Datei. */
+        .private-note {
+            background: var(--color-warning-bg);
+            border-left: 4px solid var(--color-warning);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .private-note-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 0.4rem;
+        }
+        .private-note-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            color: var(--color-bg);
+            background: var(--color-warning);
+        }
+        #privateNote {
+            width: 100%;
+            min-height: 4.5rem;
+            padding: 0.55rem 0.75rem;
+            font-family: var(--font-body);
+            font-size: 0.92rem;
+            line-height: 1.45;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            resize: vertical;
+        }
+        #privateNote:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.15);
+        }
+        #privateNote:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .private-note-hint {
+            margin: 0.4rem 0 0;
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+        }
+        /* Druckfassung der Notiz – am Bildschirm unsichtbar, siehe @media print. */
+        .private-note-print { display: none; }
+
         /* ============================================================
            Footnote
            ============================================================ */
@@ -1067,15 +1126,52 @@
                 display: none !important;
             }
             /* Gedruckt wird in der Vorschau eine gerechnete Tabelle. Die
-               Stand-Leiste steckt in .sticky-head und ist hier weg – der
-               Hinweis muss an ihrer Stelle mit aufs Blatt. */
-            body.mode-preview .preview-print-note {
+               Stand-Leiste steckt in .sticky-head und ist hier weg – die
+               Kennzeichnung steht im Blattkopf an ihrer Stelle. Leer (Stand
+               «heute», keine Vorschau) bleibt sie unsichtbar. */
+            body.mode-preview #printStandMarker:not(:empty) {
                 display: block;
-                margin: 0 0 0.8rem;
+                margin: 0.6rem 0 0;
                 padding: 0.4rem 0.6rem;
                 border: 1px solid #92400e;
                 color: #92400e;
                 font-weight: 700;
+            }
+            /* Private Notiz: ohne Häkchen gar nicht auf dem Blatt. Mit Häkchen
+               nur, wenn auch etwas drinsteht (has-text, gesetzt in beforeprint).
+               Eine Textarea wächst im Druck nicht mit, darum druckt ein Block. */
+            #privateNoteBox {
+                display: none !important;
+            }
+            body.print-private-note #privateNoteBox.has-text {
+                display: block !important;
+                background: white !important;
+                border: 1px solid #999;
+                border-left: 4px solid #999;
+                border-radius: var(--radius-sm);
+                margin-bottom: 0.75rem;
+                padding: 0.6rem 0.9rem;
+                page-break-inside: avoid;
+            }
+            #privateNote {
+                display: none !important;
+            }
+            .private-note-hint {
+                display: none;
+            }
+            .private-note-badge {
+                color: black;
+                background: transparent;
+                border: 1px solid #999;
+            }
+            .private-note-print {
+                display: block;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                font-family: var(--font-body);
+                font-size: 0.92rem;
+                line-height: 1.45;
+                color: black;
             }
             /* Atmenden Hintergrund-Puls im Druck ausblenden. */
             body::before {
@@ -1136,11 +1232,51 @@
             .expander-row {
                 display: none !important;
             }
-            body.print-comments .expander-row.has-comment {
+            /* Eine Zeile mit Kommentar oder Anpassung druckt mit dem Häkchen
+               «Kommentare drucken»; ohne Häkchen bleibt sie ganz weg. */
+            body.print-comments .expander-row.has-comment,
+            body.print-comments .expander-row.has-adjustment {
                 display: table-row !important;
             }
-            .expander-row.has-comment {
+            .expander-row.has-comment,
+            .expander-row.has-adjustment {
                 page-break-inside: avoid;
+            }
+            /* Die Anpassungsfelder nur in Zeilen, die eine Anpassung haben –
+               sonst druckte jede Zeile mit Kommentar ein leeres Formular
+               («Neu jährlich», «Neu monatlich», «Gilt ab») mit. */
+            .adj-block {
+                display: none;
+            }
+            body.print-comments .expander-row.has-adjustment .adj-block {
+                display: block;
+            }
+            .adj-input {
+                border: 1px solid #999 !important;
+                background: white !important;
+                color: black !important;
+                opacity: 1;
+            }
+            /* Umgekehrt: eine Zeile nur mit Anpassung druckt keinen leeren
+               Kommentarkasten. */
+            .expander-row:not(.has-comment) label.comment-panel-label,
+            .expander-row:not(.has-comment) .comment-print {
+                display: none;
+            }
+            /* Die gelbe Zeilenmarkierung druckt nur mit dem Häkchen – dann
+               steht die Erklärung (die Anpassungsfelder) darunter. Ohne Häkchen
+               stünde eine hervorgehobene Zeile ohne Erklärung auf dem Blatt. */
+            tr[data-row-id].has-adjustment > td {
+                background: transparent;
+            }
+            tr[data-row-id].has-adjustment > td:first-child {
+                box-shadow: none;
+            }
+            .expander-row.has-adjustment > td {
+                background: transparent;
+            }
+            body.print-comments tr[data-row-id].has-adjustment > td:first-child {
+                border-left: 4px solid #92400e;
             }
             .comment-panel {
                 border-left-color: #999 !important;
@@ -1397,9 +1533,9 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.35);
         }
-        /* Am Bildschirm sagt es die Stand-Leiste; der Hinweis ist nur für
+        /* Am Bildschirm sagt es die Stand-Leiste; die Kennzeichnung ist nur für
            den Ausdruck da (siehe @media print). */
-        .preview-print-note { display: none; }
+        #printStandMarker { display: none; }
 
         /* Die gesperrten Felder sollen offensichtlich gesperrt aussehen —
            sonst tippt jemand hinein und wundert sich, dass nichts passiert. */
@@ -1778,6 +1914,11 @@
         <div class="brand">
             <h1>Budgetvorlage</h1>
             <p class="subtitle">Übersicht Einnahmen und Ausgaben</p>
+            <!-- Nur im Ausdruck: die Stand-Leiste steht in .sticky-head und fällt
+                 beim Drucken weg. Ohne diese Zeile sähe ein aus der Vorschau
+                 gedrucktes Blatt aus wie ein erfasstes Budget. Gefüllt von
+                 renderPreviewBar (standKennzeichnung). -->
+            <p class="print-stand-marker" id="printStandMarker"></p>
         </div>
     </div>
 </header>
@@ -1790,9 +1931,13 @@
             <span class="status-text" id="statusText">Keine Datei verbunden</span>
         </div>
         <div class="toolbar-actions">
-            <label class="print-toggle" title="Steuert nur den Ausdruck (Strg+P): Kommentare mitdrucken oder nicht.">
+            <label class="print-toggle" title="Steuert nur den Ausdruck (Strg+P): Kommentare und Anpassungen mitdrucken oder nicht.">
                 <input type="checkbox" id="chkPrintComments" checked>
                 <span>Kommentare drucken</span>
+            </label>
+            <label class="print-toggle" title="Steuert nur den Ausdruck (Strg+P): die private Notiz zur Version mitdrucken. Vorgewählt ist das nie.">
+                <input type="checkbox" id="chkPrintPrivateNote">
+                <span>Private Notiz drucken</span>
             </label>
             <button type="button" class="btn btn-secondary" id="btnOpen" title="Bestehende Budget-Datei öffnen">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1875,16 +2020,26 @@
 
 <main class="page">
 
-    <!-- Nur im Ausdruck: die Stand-Leiste steht in .sticky-head und fällt beim
-         Drucken weg. Ohne diesen Hinweis sähe ein in der Vorschau gedrucktes
-         Blatt aus wie ein erfasstes Budget. -->
-    <p class="preview-print-note">Vorschau: gerechnete Werte zu einem Stichtag – nicht die erfassten Beträge.</p>
-
     <div class="info-box">
         <h2>So füllen Sie die Vorlage aus</h2>
         <p>Tragen Sie Beträge entweder in die <strong>Jahres-</strong> oder die <strong>Monatsspalte</strong> ein – die jeweils andere Spalte wird automatisch berechnet (Jahresbetrag ÷ 12 bzw. Monatsbetrag × 12). Subtotale und Gesamtsummen aktualisieren sich automatisch.</p>
-        <p>Mögliche Einsparungen oder Anpassungen modellieren Sie über <strong>weitere Budget-Versionen</strong>: Klicken Sie oben auf „Neue Version", übernehmen Sie die Werte aus einer bestehenden Version und passen Sie sie an. In der Sektion „Versionsvergleich" sehen Sie die Differenzen auf einen Blick.</p>
+        <p>Mögliche Einsparungen oder Anpassungen tragen Sie <strong>direkt in der Zeile</strong> ein: Klappen Sie die Position mit dem Pfeil auf und geben Sie den neuen Betrag an, auf Wunsch mit „Gilt ab". Die Zusammenfassung zeigt dann den Stand zu jedem Stichtag, und die „Vorschau" in der Versionsleiste zeigt das ganze Budget ab einem Stichtag – gerechnet, nichts davon wird erfasst.</p>
+        <p>Eine <strong>weitere Budget-Version</strong> brauchen Sie für einen grundsätzlich anderen Haushalt, etwa nach einem Umzug oder einer Trennung: Klicken Sie oben auf „Neue Version", übernehmen Sie die Werte aus einer bestehenden Version und passen Sie sie an. In der Sektion „Versionsvergleich" sehen Sie die Differenzen auf einen Blick.</p>
         <p>Beträge in <strong>CHF</strong>. Dezimalstellen mit Komma oder Punkt möglich.</p>
+    </div>
+
+    <!-- Private Notiz der aktiven Version. «Privat» heisst: wird nicht
+         mitgedruckt (ausser mit dem Häkchen in der Werkzeugleiste). Sie steht
+         in der gespeicherten Datei – der Schutz gilt dem versehentlichen
+         Ausdruck, nicht der Weitergabe der Datei. -->
+    <div class="private-note" id="privateNoteBox">
+        <label class="private-note-label" for="privateNote">
+            <span class="private-note-badge">Privat</span>
+            <span>Notiz zu dieser Version</span>
+        </label>
+        <textarea id="privateNote" rows="3" placeholder="z. B. Was ich vor dem Gespräch klären will – nur für mich."></textarea>
+        <div class="private-note-print" id="privateNotePrint" aria-hidden="true"></div>
+        <p class="private-note-hint">Wird nicht mitgedruckt, ausser Sie haken oben „Private Notiz drucken" an. Die Notiz steht in der gespeicherten Datei – geben Sie die Datei nicht unbedacht weiter.</p>
     </div>
 
     <!-- ============================================================
@@ -2475,6 +2630,22 @@
         return behalten;
     }
 
+    // «2027-01-01» → «01.01.2027», ohne Date (keine Zeitzonen-Überraschung).
+    function datumAnzeige(iso) {
+        const [j, m, t] = iso.split('-');
+        return `${t}.${m}.${j}`;
+    }
+
+    // Die Zeile, die ein gedrucktes Blatt als GERECHNET ausweist. Nur für Stände,
+    // die etwas anderes zeigen als die erfassten Werte: «heute» ist das gesperrte
+    // Abbild der Version, ein «gerechnet» darauf wäre falsch. Leer = nichts drucken.
+    function standKennzeichnung(standKey) {
+        if (!standKey || standKey === 'heute') return '';
+        const stand = standKey === 'offen' ? 'Stand mit allen Vorschlägen'
+            : 'Stand ab ' + datumAnzeige(standKey);
+        return stand + ' — gerechnet, nicht erfasst';
+    }
+
     // Alle Stände, in Reihenfolge: «heute», die Daten aufsteigend (je Datum
     // genau ein Stand), am Schluss «offen» (Anpassungen ohne lesbares Datum).
     // Anpassungen ohne Betrag zählen nicht mit.
@@ -2774,6 +2945,11 @@
             else adjustments[rowId] = eintrag;
         });
         active.adjustments = adjustments;
+
+        // Private Notiz der Version. Liegt hinter derselben Sperre wie alles
+        // andere hier – in der Vorschau ist das Feld zudem gesperrt.
+        const notiz = $('#privateNote');
+        if (notiz) active.privateNote = notiz.value;
     }
 
     function hydrateFormFromActiveVersion() {
@@ -2782,6 +2958,7 @@
         $$('input.amount-input').forEach((input) => { input.value = ''; });
         $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
         $$('.adj-input').forEach((input) => { input.value = ''; });
+        $('#privateNote').value = '';
         // Collapse all expander rows; we'll re-open the ones with content below.
         $$('.row-expander').forEach((btn) => {
             const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
@@ -2789,6 +2966,7 @@
         });
         if (!active) return;
 
+        $('#privateNote').value = typeof active.privateNote === 'string' ? active.privateNote : '';
         Object.entries(active.values).forEach(([key, value]) => {
             const [rowId, period] = key.split('.');
             const input = $(`input[data-row-id="${rowId}"][data-period="${period}"]`);
@@ -3305,12 +3483,6 @@
         return `${d.getFullYear()}-${mm}-${dd}`;
     }
 
-    // «2027-01-01» → «01.01.2027», ohne Date (keine Zeitzonen-Überraschung).
-    function datumAnzeige(iso) {
-        const [j, m, t] = iso.split('-');
-        return `${t}.${m}.${j}`;
-    }
-
     // Eine Zeile unter der Differenz. Zahlen wie in der Differenz-Zeile
     // (formatComputed), Einfärbung ebenfalls wie bei #differenceRow.
     function standZeile(stand, summe) {
@@ -3450,6 +3622,10 @@
             closeAdjustmentsPanel();
             $$('input.amount-input').forEach((input) => { input.disabled = true; });
             $$('.adj-input').forEach((input) => { input.disabled = true; });
+            // Die Notiz gehört zur Version und wird in der Vorschau nicht
+            // zurückgeschrieben (Sperre in capture) – ein offenes Feld
+            // verschluckte, was jemand hineintippt.
+            $('#privateNote').disabled = true;
         }
         state.previewStand = standKey;
         fuelleVorschau();
@@ -3482,6 +3658,7 @@
         state.previewStand = null;
         $$('input.amount-input').forEach((input) => { input.disabled = false; });
         $$('.adj-input').forEach((input) => { input.disabled = false; });
+        $('#privateNote').disabled = false;
         hydrateFormFromActiveVersion();
         const btn = $('#previewBtn');
         if (btn) btn.setAttribute('aria-pressed', 'false');
@@ -3499,6 +3676,10 @@
         bar.hidden = !state.previewStand;
         document.body.classList.toggle('mode-preview', !!state.previewStand);
         liste.textContent = '';
+        // Die Kennzeichnung für den Ausdruck folgt dem Stand; leer, wo nichts
+        // Gerechnetes gezeigt wird (keine Vorschau, Stand «heute»).
+        const marker = $('#printStandMarker');
+        if (marker) marker.textContent = standKennzeichnung(state.previewStand);
         if (!state.previewStand) return;
         const active = getActiveVersion();
         const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
@@ -4446,6 +4627,7 @@
         $$('input.amount-input').forEach((input) => { input.value = ''; });
         $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
         $$('.adj-input').forEach((input) => { input.value = ''; });
+        $('#privateNote').value = '';
         // Collapse all expander rows; refresh their visual state.
         $$('.row-expander').forEach((btn) => {
             const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
@@ -4570,6 +4752,14 @@
         }
         chkPrintComments.addEventListener('change', applyPrintComments);
         applyPrintComments();
+        // Die private Notiz druckt nur mit eigenem Häkchen, das nie vorgewählt ist.
+        const chkPrintPrivateNote = $('#chkPrintPrivateNote');
+        function applyPrintPrivateNote() {
+            document.body.classList.toggle('print-private-note', chkPrintPrivateNote.checked);
+        }
+        chkPrintPrivateNote.addEventListener('change', applyPrintPrivateNote);
+        applyPrintPrivateNote();
+        $('#privateNote').addEventListener('input', () => markDirty());
         // Vor dem Drucken Zeilen mit echtem Kommentartext markieren – unabhängig
         // davon, ob sie am Bildschirm auf- oder zugeklappt sind.
         // Der Text wandert dabei in den Druckblock, der – anders als die
@@ -4581,7 +4771,18 @@
                 tr.classList.toggle('has-comment', text.trim() !== '');
                 const printBlock = tr.querySelector('.comment-print');
                 if (printBlock) printBlock.textContent = text;
+                // Die Anpassung wird aus den Feldern gelesen, nicht aus der
+                // Version: sie gilt, sobald ein Betrag oder ein Datum dasteht.
+                const hatAnpassung = readAdjustmentFromDom(tr.dataset.expanderFor) !== null;
+                tr.classList.toggle('has-adjustment', hatAnpassung);
+                const hauptzeile = $(`tr[data-row-id="${tr.dataset.expanderFor}"]`);
+                if (hauptzeile) hauptzeile.classList.toggle('has-adjustment', hatAnpassung);
             });
+            // Private Notiz: nur der Text wandert in den Druckblock; ob er
+            // gedruckt wird, entscheidet allein das Häkchen (CSS).
+            const notiz = $('#privateNote').value;
+            $('#privateNotePrint').textContent = notiz;
+            $('#privateNoteBox').classList.toggle('has-text', notiz.trim() !== '');
         });
         $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
 
