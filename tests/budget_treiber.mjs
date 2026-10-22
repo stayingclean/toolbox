@@ -20,9 +20,13 @@ if (ab < 0 || bis < 0) {
   process.exit(2);
 }
 
-const kern = new Function(
-  html.slice(ab, bis) + '\nreturn { anpassungBetrag, anpassungHatInhalt, unbekannteAnpassungenBehalten, stichtagListe, ersterVorschauStand, werteFuerStand, summen, anpassungsGruppen, anpassungenNachStand, standKennzeichnung, neueVersionName, neueVersionHinweis };'
-)();
+// Jede Funktion, die im Kern auf oberster Ebene steht, ist aufrufbar -- die
+// Liste wird aus dem Quelltext gelesen, nicht von Hand gepflegt. Eine neue
+// Funktion im Kern braucht so keine Änderung am Treiber, und ein vergessener
+// Eintrag kann nicht heimlich alle Tests des Kerns lahmlegen.
+const kernText = html.slice(ab, bis);
+const namen = [...kernText.matchAll(/^ {4}function\s+(\w+)/gm)].map((m) => m[1]);
+const kern = new Function(kernText + '\nreturn { ' + namen.join(', ') + ' };')();
 
 if (typeof kern[funktion] !== 'function') {
   console.error('Unbekannte Funktion des Rechenkerns: ' + funktion);

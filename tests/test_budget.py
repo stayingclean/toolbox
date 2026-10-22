@@ -179,9 +179,12 @@ def test_zeile_mit_anpassung_bleibt_zugeklappt_markiert():
     assert "--color-warning" in text[text.index("tr[data-row-id].has-adjustment"):][:400]
 
 
-def test_unvollstaendige_anpassung_wird_angezeigt():
-    """Datum ohne Betrag rechnet nicht - die Zeile muss es sagen."""
-    assert "adj-unvollstaendig" in _seite_text()
+def test_unvollstaendige_anpassung_gibt_es_nicht_mehr():
+    """Eine Anpassung ohne Betrag kann nicht mehr entstehen (Sperre am Datumsfeld),
+    also steht auch nichts mehr da, das einen solchen Zustand meldet."""
+    text = _seite_text()
+    for rest in ("adj-unvollstaendig", "data-adj-incomplete", "adjIncomplete", "unvollstaendig", "unvollständig"):
+        assert rest not in text, rest
 
 
 def test_leerer_anpassungseintrag_wird_geloescht():
@@ -191,8 +194,9 @@ def test_leerer_anpassungseintrag_wird_geloescht():
 
 
 def test_unbekannte_zeilen_bleiben_erhalten_leere_huellen_nicht():
-    """Beim Speichern: Eintraege fremder Zeilen mit Inhalt bleiben, leere nicht;
-    bekannte Zeilen kommen nicht von hier (sie folgen den Feldern)."""
+    """Beim Speichern: Eintraege fremder Zeilen mit Betrag bleiben; Huellen ohne
+    Betrag nicht - auch nicht, wenn nur ein Datum drinsteht (das ist keine
+    Anpassung). Bekannte Zeilen kommen nicht von hier (sie folgen den Feldern)."""
     eintraege = {
         "lohn": {"jaehrlich": 1, "monatlich": None, "ab": None},            # bekannt
         "alt_betrag": {"jaehrlich": 0, "monatlich": None, "ab": None},      # 0 ist Inhalt
@@ -202,7 +206,7 @@ def test_unbekannte_zeilen_bleiben_erhalten_leere_huellen_nicht():
         "alt_objekt": {},
     }
     ergebnis = kern("unbekannteAnpassungenBehalten", eintraege, ["lohn"])
-    assert sorted(ergebnis) == ["alt_betrag", "alt_datum", "alt_monat"]
+    assert sorted(ergebnis) == ["alt_betrag", "alt_monat"]
     assert ergebnis["alt_betrag"]["jaehrlich"] == 0
 
 
@@ -258,9 +262,7 @@ def test_heute_wird_nur_an_einer_stelle_gelesen():
 def test_eingabe_in_anpassungsfeld_rechnet_die_zusammenfassung_neu():
     """Die Anpassungsfelder aendern nur die Version, nicht die Betragsfelder:
     ohne eigenen Aufruf bliebe die Zusammenfassung stehen."""
-    text = SEITE.read_text(encoding="utf-8")
-    block = text[text.index("function handleAdjInputEvent"):][:1500]
-    assert "recomputeAll()" in block
+    assert "recomputeAll()" in _funktionsblock("handleAdjInputEvent")
 
 
 # --- Knopf «Anpassungen» in der Kopfleiste ------------------------------------
@@ -334,10 +336,12 @@ def test_neue_version_aus_offen_behaelt_nichts_eingeloestes():
     assert kern("anpassungenNachStand", ANPASSUNGEN, "offen") == {}
 
 
-def test_nicht_eingeloeste_ohne_betrag_bleiben_erhalten():
-    """Ein Datum ohne Betrag rechnet nicht - es ist nicht eingeloest, also nicht weg."""
+def test_neue_version_nimmt_keine_anpassung_ohne_betrag_mit():
+    """Ein Datum ohne Betrag ist keine Anpassung. Es wandert nicht in eine neue
+    Version, sonst entstünde dort der Zustand, den die Sperre verhindert."""
     mit_huelle = dict(ANPASSUNGEN, strom={"jaehrlich": None, "monatlich": None, "ab": "2026-12-01"})
-    assert "strom" in kern("anpassungenNachStand", mit_huelle, "2027-01-01")
+    for key in ("2026-12-01", "2027-01-01", "2027-04-01", "offen"):
+        assert "strom" not in kern("anpassungenNachStand", mit_huelle, key), key
 
 
 def test_eingeloeste_und_mitgenommene_decken_alle_ab():
@@ -811,10 +815,12 @@ def test_hinweis_zur_neuen_version_unterscheidet_offen_von_einem_datum():
 
 
 def test_hinweis_fuer_offen_stimmt_mit_dem_was_stehen_bleibt():
-    """Das Gegenstück zum Hinweis: bei «offen» bleibt nur, was keinen Betrag hat."""
+    """Das Gegenstück zum Hinweis «in der neuen Version bleibt keine stehen»:
+    bei «offen» bleibt nichts, auch keine Hülle ohne Betrag. Der Satz war nur
+    wahr, solange es solche Hüllen nicht gab - jetzt gibt es sie nicht."""
     mit_leerer = dict(ANPASSUNGEN, leer={"jaehrlich": None, "monatlich": None, "ab": "2028-01-01"})
-    assert list(kern("anpassungenNachStand", mit_leerer, "offen")) == ["leer"]
-    assert set(kern("anpassungenNachStand", mit_leerer, "2027-01-01")) == {"hausrat", "kasse", "leer"}
+    assert kern("anpassungenNachStand", mit_leerer, "offen") == {}
+    assert set(kern("anpassungenNachStand", mit_leerer, "2027-01-01")) == {"hausrat", "kasse"}
 
 
 def test_name_der_neuen_version_sagt_vorschlaege_wie_der_rest():
@@ -855,3 +861,132 @@ def test_escape_schliesst_panel_und_vorschau_nicht_zugleich():
     ab = text.index("// Nur wenn kein Dialog offen ist")
     handler = text[ab:text.index("leavePreview();", ab)]
     assert "if (!$('#adjustmentsPanel').hidden) return;" in handler
+
+
+# --- Eine Anpassung ohne Betrag gibt es nicht ----------------------------------
+
+def test_nur_ein_betrag_macht_einen_eintrag_aus():
+    leer = {"jaehrlich": None, "monatlich": None}
+    assert kern("anpassungHatInhalt", dict(leer, ab="2027-01-01")) is False   # Datum allein
+    assert kern("anpassungHatInhalt", dict(leer, ab=None)) is False
+    assert kern("anpassungHatInhalt", None) is False
+    assert kern("anpassungHatInhalt", {}) is False
+    assert kern("anpassungHatInhalt", dict(leer, monatlich=5, ab=None)) is True
+    assert kern("anpassungHatInhalt", dict(leer, jaehrlich=60, ab="2027-01-01")) is True
+
+
+def test_null_ist_ein_betrag_und_macht_einen_eintrag_aus():
+    """Das Gründungsbeispiel: «Abo gekündigt, kostet ab 01.01. nichts mehr»."""
+    assert kern("anpassungHatInhalt", {"jaehrlich": None, "monatlich": 0, "ab": "2027-01-01"}) is True
+    assert kern("anpassungHatInhalt", {"jaehrlich": 0, "monatlich": None, "ab": None}) is True
+
+
+def test_eingabe_ohne_betrag_ergibt_keinen_eintrag():
+    """Beide Beträge geleert: das Datum fällt mit, der Eintrag verschwindet."""
+    assert kern("anpassungEintrag", {"jaehrlich": None, "monatlich": None, "ab": "2027-01-01"}) is None
+    assert kern("anpassungEintrag", {"jaehrlich": None, "monatlich": None, "ab": None}) is None
+    assert kern("anpassungEintrag", {"jaehrlich": None, "monatlich": None, "ab": ""}) is None
+
+
+def test_eingabe_mit_betrag_behaelt_alles_und_die_null_bleibt_null():
+    assert kern("anpassungEintrag", {"jaehrlich": None, "monatlich": 0, "ab": "2027-01-01"}) == \
+        {"jaehrlich": None, "monatlich": 0, "ab": "2027-01-01"}
+    assert kern("anpassungEintrag", {"jaehrlich": 0, "monatlich": 0, "ab": ""}) == \
+        {"jaehrlich": 0, "monatlich": 0, "ab": None}
+    assert kern("anpassungEintrag", {"jaehrlich": 600, "monatlich": 50, "ab": None}) == \
+        {"jaehrlich": 600, "monatlich": 50, "ab": None}
+
+
+def test_datumsfeld_ist_gesperrt_genau_wenn_kein_betrag_da_ist():
+    """Die Sperre und der Eintrag teilen eine Regel: gesperrt heisst, es gäbe
+    ohnehin keinen Eintrag."""
+    for j, m in ((None, None), (None, 0), (0, None), (12, None), (None, 1)):
+        roh = {"jaehrlich": j, "monatlich": m, "ab": "2027-01-01"}
+        assert kern("anpassungDatumGesperrt", roh) is (kern("anpassungEintrag", roh) is None), (j, m)
+    assert kern("anpassungDatumGesperrt", {"jaehrlich": None, "monatlich": None, "ab": None}) is True
+    assert kern("anpassungDatumGesperrt", {"jaehrlich": None, "monatlich": 0, "ab": None}) is False
+    assert kern("anpassungDatumGesperrt", None) is True
+
+
+def test_bereinigen_wirft_datum_ohne_betrag_raus_und_laesst_die_null_stehen():
+    alt = {
+        "handy": {"jaehrlich": None, "monatlich": 0, "ab": "2027-01-01"},        # 0: bleibt
+        "strom": {"jaehrlich": None, "monatlich": None, "ab": "2027-03-01"},     # nur Datum
+        "miete": {"jaehrlich": None, "monatlich": None, "ab": None},             # leere Hülle
+        "fremd": {"jaehrlich": None, "monatlich": None, "ab": "2027-05-01"},     # Zeile unbekannt
+        "kasse": {"jaehrlich": None, "monatlich": 340, "ab": None},
+    }
+    erg = kern("anpassungenBereinigen", alt, ["handy", "strom", "miete", "kasse"])
+    assert sorted(erg["behalten"]) == ["handy", "kasse"]
+    assert erg["behalten"]["handy"]["monatlich"] == 0
+    assert erg["verworfen"] == 3
+    # Sichtbar war nur, was auf einer bekannten Zeile ein lesbares Datum trug.
+    assert erg["sichtbar"] == 1
+
+
+def test_bereinigen_ohne_etwas_zu_verwerfen_meldet_nichts():
+    erg = kern("anpassungenBereinigen", ANPASSUNGEN, ["handy", "fitness", "hausrat", "kasse"])
+    assert sorted(erg["behalten"]) == sorted(ANPASSUNGEN)
+    assert erg["verworfen"] == 0 and erg["sichtbar"] == 0
+    assert kern("anpassungenBereinigen", None, []) == {"behalten": {}, "verworfen": 0, "sichtbar": 0}
+
+
+def test_bereinigen_ungelesenes_datum_war_nicht_sichtbar():
+    """Ein Feld vom Typ date zeigt keinen Text, der kein Datum ist."""
+    erg = kern("anpassungenBereinigen",
+               {"handy": {"jaehrlich": None, "monatlich": None, "ab": "demnächst"}}, ["handy"])
+    assert erg["verworfen"] == 1 and erg["sichtbar"] == 0
+
+
+def test_rechnung_und_gruppen_kennen_huellen_ohne_betrag_weiterhin_nicht():
+    """Der Kern bleibt auch gegen handgeschriebene Dateien dicht (Datum ohne
+    Betrag), selbst wenn das Laden solche Einträge vorher entfernt."""
+    nur_datum = {"handy": {"jaehrlich": None, "monatlich": None, "ab": "2027-01-01"}}
+    assert [s["key"] for s in kern("stichtagListe", nur_datum, "2026-10-22")] == ["heute"]
+    assert kern("werteFuerStand", WERTE, nur_datum, "2027-01-01") == WERTE
+
+
+def test_laden_bereinigt_und_sagt_es():
+    """hydrate führt die Bereinigung aus; wer beim Öffnen etwas verliert, das
+    er sehen konnte, erfährt es (der Hinweis hängt am Öffnen, nicht an hydrate:
+    der Erfolgshinweis dort würde ihn sonst überschreiben)."""
+    block = _funktionsblock("hydrate(payload)")
+    assert "anpassungenBereinigen(" in block
+    assert "Object.keys(ROW_INDEX)" in block
+    for oeffnen in ("openFile", "fallbackOpen"):
+        assert "ladeHinweis(" in _funktionsblock(oeffnen), oeffnen
+
+
+def test_laden_laesst_die_datei_unveraendert():
+    """Beim Öffnen wird nichts zurückgeschrieben: die Bereinigung gilt im
+    Speicher, die Datei auf der Platte ändert erst ein späteres Speichern."""
+    assert "markDirty" not in _funktionsblock("hydrate(payload)")
+
+
+def test_datumsfeld_startet_gesperrt_und_hat_eine_erklaerung():
+    text = _seite_text()
+    block = _funktionsblock("makeCommentRow")
+    assert re.search(r'class="adj-input adj-ab"[^>]*\bdisabled\b', block)
+    assert "adj-datum-hinweis" in block, "eine kurze Zeile im Panel sagt, warum das Feld zu ist"
+    assert ".adj-input:disabled" in text, "ein gesperrtes Feld muss gesperrt aussehen"
+
+
+def test_sperre_haengt_am_betrag_und_nicht_an_einer_zweiten_regel():
+    block = _funktionsblock("refreshExpanderUI")
+    assert "anpassungDatumGesperrt(" in block
+    assert "state.previewStand" in block, "in der Vorschau bleibt alles zu, auch mit Betrag"
+
+
+def test_leeren_beider_betraege_leert_das_datum_mit():
+    assert "anpassungEintrag(" in _funktionsblock("readAdjustmentFromDom")
+    block = _funktionsblock("handleAdjInputEvent")
+    assert re.search(r"eintrag === null[\s\S]*?data-adj=\"ab\"[\s\S]*?value\s*=\s*''", block)
+
+
+def test_kein_oder_null_auf_einem_anpassungsbetrag():
+    """null ist leer, 0 ist ein Wert. Kein `|| 0` in den Funktionen, die
+    Anpassungsfelder lesen oder bewerten."""
+    for name in ("anpassungEintrag", "anpassungHatInhalt", "anpassungDatumGesperrt",
+                 "anpassungenBereinigen", "readAdjustmentFromDom", "parseAnpassungsFeld",
+                 "handleAdjInputEvent"):
+        assert "|| 0" not in _funktionsblock(name), name

@@ -496,8 +496,7 @@
         }
 
         /* Anpassung hinterlegt → kleiner Punkt am Knopf. Bewusst kein Fuellen
-           des Knopfes: das bleibt dem Kommentar vorbehalten. Unvollstaendig
-           (Datum ohne Betrag) → nur der Ring. */
+           des Knopfes: das bleibt dem Kommentar vorbehalten. */
         .row-expander {
             position: relative;
         }
@@ -512,10 +511,6 @@
             border-radius: 50%;
             background: var(--color-warning);
             border: 2px solid var(--color-bg);
-        }
-        .row-expander[data-adj-incomplete="1"]::after {
-            background: var(--color-bg);
-            border-color: var(--color-warning);
         }
 
         /* Zeile mit Anpassung: Balken links und getoenter Hintergrund, auch
@@ -573,15 +568,20 @@
             border-color: var(--color-primary);
             box-shadow: 0 0 0 3px var(--color-primary-tint);
         }
-        .adj-unvollstaendig {
-            margin: 0.5rem 0 0;
-            font-size: 0.85rem;
-            font-weight: 600;
-            /* --color-warning (#d97706) ist auf dem Warn-Hintergrund als Text
-               zu hell (Kontrast ~3:1); darum ein dunkleres Bernstein. */
-            color: #92400e;
+        /* Gesperrtes Datumsfeld (noch kein Betrag): sichtbar zu, nicht nur
+           ausgegraut — die Zeile darunter sagt, was fehlt. */
+        .adj-input:disabled {
+            background: var(--color-bg-alt);
+            color: var(--color-text-muted);
+            cursor: not-allowed;
+            border-style: dashed;
         }
-        .adj-unvollstaendig[hidden] {
+        .adj-datum-hinweis {
+            margin: 0.5rem 0 0;
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+        }
+        .adj-datum-hinweis[hidden] {
             display: none;
         }
 
@@ -2606,14 +2606,56 @@
         return null;
     }
 
-    // Hat eine Anpassung überhaupt Inhalt (einen Betrag oder ein Datum)?
+    // Gibt es diese Anpassung? Nur ein Betrag macht sie dazu (0 eingeschlossen).
+    // Ein Datum allein passt nichts an und ist keine Anpassung.
     function anpassungHatInhalt(a) {
-        return !!a && (anpassungBetrag(a) !== null || !!a.ab);
+        return anpassungBetrag(a) !== null;
+    }
+
+    // Soll das Datumsfeld einer Zeile zu sein? Genau dann, wenn es ohne Betrag
+    // keinen Eintrag gäbe. Die Sperre ist der Weg, auf dem der Zustand «Datum
+    // ohne Betrag» gar nicht erst entsteht.
+    function anpassungDatumGesperrt(a) {
+        return !anpassungHatInhalt(a);
+    }
+
+    // Der Eintrag, der aus den drei Feldern einer Zeile entsteht: `roh` hat
+    // jaehrlich/monatlich (Zahl oder null) und ab (Text, auch leer). Ohne Betrag
+    // gibt es keinen Eintrag, das Datum fällt mit.
+    function anpassungEintrag(roh) {
+        if (!roh || !anpassungHatInhalt(roh)) return null;
+        return {
+            jaehrlich: istZahl(roh.jaehrlich) ? roh.jaehrlich : null,
+            monatlich: istZahl(roh.monatlich) ? roh.monatlich : null,
+            ab: roh.ab ? roh.ab : null,
+        };
+    }
+
+    // Beim Laden einer Datei: ältere Stände dieser Seite erlaubten ein Datum
+    // ohne Betrag. Solche Einträge passen nichts an und tragen ausser dem Datum
+    // keine Angabe; sie werden nicht übernommen. `verworfen` zählt alle,
+    // `sichtbar` nur die, die der Benutzer sehen konnte: eine bekannte Zeile mit
+    // einem lesbaren Datum. Nur davon muss die Seite etwas sagen.
+    function anpassungenBereinigen(adjustments, bekannteRowIds) {
+        const bekannt = new Set(bekannteRowIds || []);
+        const behalten = {};
+        let verworfen = 0;
+        let sichtbar = 0;
+        Object.keys(adjustments || {}).forEach((rowId) => {
+            const a = adjustments[rowId];
+            if (anpassungHatInhalt(a)) {
+                behalten[rowId] = a;
+                return;
+            }
+            verworfen += 1;
+            if (bekannt.has(rowId) && a && istIsoDatum(a.ab)) sichtbar += 1;
+        });
+        return { behalten: behalten, verworfen: verworfen, sichtbar: sichtbar };
     }
 
     // Beim Speichern: Einträge für Zeilen, die diese Seite nicht kennt, bleiben
-    // erhalten (die Datei kann aus einer anderen Fassung stammen). Leere Hüllen
-    // ohne Betrag und ohne Datum tragen nichts und werden nicht übernommen.
+    // erhalten (die Datei kann aus einer anderen Fassung stammen). Hüllen ohne
+    // Betrag sind keine Anpassung und werden nicht übernommen.
     function unbekannteAnpassungenBehalten(adjustments, bekannteRowIds) {
         const bekannt = new Set(bekannteRowIds || []);
         const behalten = {};
@@ -2649,8 +2691,8 @@
     }
 
     // Hinweis im Dialog «Neue Version aus Stand». Muss zu loestEin passen: bei
-    // «offen» werden ALLE Anpassungen mit Betrag eingerechnet, es bleibt keine
-    // stehen; bei einem Datum bleiben spätere und undatierte.
+    // «offen» werden ALLE Anpassungen eingerechnet (jede hat einen Betrag), es
+    // bleibt keine stehen; bei einem Datum bleiben spätere und undatierte.
     function neueVersionHinweis(standKey, versionName) {
         const wert = `Die Werte stammen aus „${versionName}" mit den Anpassungen des Stands `
             + `(${standKey === 'offen' ? 'alle' : 'bis einschliesslich ' + datumAnzeige(standKey)}). `;
@@ -2716,14 +2758,16 @@
     }
 
     // Was eine neue Version aus einem Stand an Anpassungen mitnimmt: alles, was
-    // der Stand NICHT eingelöst hat (spätere Daten, undatierte, solche ohne
-    // Betrag). Die eingelösten stecken danach in den Werten. Kopien, damit die
-    // neue Version die Einträge der alten nicht teilt.
+    // der Stand NICHT eingelöst hat (spätere Daten, undatierte). Die
+    // eingelösten stecken danach in den Werten. Einträge ohne Betrag sind keine
+    // Anpassung und wandern nie mit — sonst entstünde in der neuen Version der
+    // Zustand, den die Sperre am Datumsfeld verhindert. Kopien, damit die neue
+    // Version die Einträge der alten nicht teilt.
     function anpassungenNachStand(adjustments, standKey) {
         const rest = {};
         Object.keys(adjustments || {}).forEach((id) => {
             const a = adjustments[id];
-            if (!loestEin(a, standKey)) rest[id] = Object.assign({}, a);
+            if (anpassungHatInhalt(a) && !loestEin(a, standKey)) rest[id] = Object.assign({}, a);
         });
         return rest;
     }
@@ -3166,6 +3210,9 @@
     // Chevron icon used by the comment expander button.
     const CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
 
+    // Warum das Datumsfeld einer Anpassung zu ist (Titel am Feld und Zeile im Panel).
+    const ADJ_DATUM_GESPERRT = 'Das Datum lässt sich setzen, sobald ein neuer Betrag eingetragen ist.';
+
     function makeCommentExpanderButton(rowId, label) {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -3203,6 +3250,8 @@
 
         // Anpassung: neuer Betrag, optional mit Datum. Leer heisst «keine
         // Angabe» (null), nicht 0 — ein Zielbetrag von 0 ist etwas anderes.
+        // Das Datum bleibt gesperrt, bis ein Betrag dasteht: eine Anpassung
+        // ohne Betrag passt nichts an (refreshExpanderUI öffnet und schliesst).
         const adj = document.createElement('div');
         adj.className = 'adj-block';
         adj.innerHTML =
@@ -3210,9 +3259,9 @@
             '<div class="adj-fields">' +
             '<label class="adj-field"><span>Neu jährlich</span><input type="text" inputmode="decimal" class="adj-input adj-jaehrlich" placeholder="leer"></label>' +
             '<label class="adj-field"><span>Neu monatlich</span><input type="text" inputmode="decimal" class="adj-input adj-monatlich" placeholder="leer"></label>' +
-            '<label class="adj-field"><span>Gilt ab (darf leer bleiben)</span><input type="date" class="adj-input adj-ab"></label>' +
+            '<label class="adj-field"><span>Gilt ab (darf leer bleiben)</span><input type="date" class="adj-input adj-ab" disabled title="' + ADJ_DATUM_GESPERRT + '"></label>' +
             '</div>' +
-            '<p class="adj-unvollstaendig" hidden>Ohne Betrag wird diese Anpassung nicht gerechnet.</p>';
+            '<p class="adj-datum-hinweis">' + ADJ_DATUM_GESPERRT + '</p>';
         adj.querySelectorAll('.adj-input').forEach((input) => {
             input.dataset.rowId = row.id;
             input.dataset.adj = input.classList.contains('adj-jaehrlich') ? 'jaehrlich'
@@ -3285,17 +3334,11 @@
         btn.classList.toggle('is-filled', ownText.trim() !== '');
 
         // Anpassung: ein eigenes Zeichen (Punkt am Knopf), damit es nicht mit
-        // der Füllung für «hat Kommentar» verwechselt wird. Unvollständig
-        // (Datum ohne Betrag) heisst: Punkt nur als Ring.
+        // der Füllung für «hat Kommentar» verwechselt wird.
         const hatAnpassung = rowHasAdjustment(rowId);
-        const unvollstaendig = hatAnpassung && !anpassungBetrag(active?.adjustments?.[rowId]);
         if (hatAnpassung) btn.dataset.hasAdjustment = '1';
         else delete btn.dataset.hasAdjustment;
-        if (unvollstaendig) btn.dataset.adjIncomplete = '1';
-        else delete btn.dataset.adjIncomplete;
-        const adjHinweis = !hatAnpassung ? ''
-            : unvollstaendig ? 'Anpassung unvollständig: ohne Betrag wird sie nicht gerechnet'
-            : 'Anpassung hinterlegt';
+        const adjHinweis = hatAnpassung ? 'Anpassung hinterlegt' : '';
 
         if (baseText.trim() !== '' && baseline) {
             // Native tooltip — supports newlines on most browsers.
@@ -3315,12 +3358,21 @@
             if (!tr) return;
             tr.classList.toggle('has-adjustment', hatAnpassung);
         });
-        const hinweis = aufklapp ? aufklapp.querySelector('.adj-unvollstaendig') : null;
-        if (hinweis) hinweis.hidden = !unvollstaendig;
+
+        // Das Datumsfeld: zu, solange kein Betrag dasteht — und in der Vorschau
+        // immer (dort sind alle Anpassungsfelder zu, auch mit Betrag).
+        const gesperrt = anpassungDatumGesperrt(active?.adjustments?.[rowId]);
+        const datum = aufklapp ? aufklapp.querySelector('.adj-ab') : null;
+        if (datum) {
+            datum.disabled = gesperrt || !!state.previewStand;
+            datum.title = gesperrt ? ADJ_DATUM_GESPERRT : '';
+        }
+        const erklaerung = aufklapp ? aufklapp.querySelector('.adj-datum-hinweis') : null;
+        if (erklaerung) erklaerung.hidden = !gesperrt;
     }
 
-    // Hat die aktive Version für diese Zeile eine Anpassung (Betrag und/oder
-    // Datum)? Einträge ohne beides werden gar nicht erst gespeichert.
+    // Hat die aktive Version für diese Zeile eine Anpassung? Nur ein Betrag
+    // macht sie dazu; Einträge ohne Betrag gibt es nicht.
     function rowHasAdjustment(rowId) {
         const a = getActiveVersion()?.adjustments?.[rowId];
         return anpassungHatInhalt(a);
@@ -3335,18 +3387,17 @@
         return Number.isFinite(n) ? n : null;
     }
 
-    // Liest die drei Felder einer Zeile; null, wenn alle leer sind.
+    // Liest die drei Felder einer Zeile; null, wenn kein Betrag dasteht (das
+    // Datum fällt dann mit, siehe anpassungEintrag).
     function readAdjustmentFromDom(rowId) {
         const feld = (k) => $(`.adj-input[data-row-id="${rowId}"][data-adj="${k}"]`);
         const j = feld('jaehrlich'), m = feld('monatlich'), ab = feld('ab');
         if (!j || !m || !ab) return null;
-        const eintrag = {
+        return anpassungEintrag({
             jaehrlich: parseAnpassungsFeld(j.value),
             monatlich: parseAnpassungsFeld(m.value),
-            ab: ab.value ? ab.value : null,
-        };
-        if (eintrag.jaehrlich === null && eintrag.monatlich === null && eintrag.ab === null) return null;
-        return eintrag;
+            ab: ab.value,
+        });
     }
 
     // Wie die Betragsfelder der Zeile: das zuletzt getippte Feld bestimmt das andere.
@@ -3370,8 +3421,15 @@
         const active = getActiveVersion();
         if (active) {
             const eintrag = readAdjustmentFromDom(rowId);
-            if (eintrag === null) delete active.adjustments[rowId];
-            else active.adjustments[rowId] = eintrag;
+            if (eintrag === null) {
+                delete active.adjustments[rowId];
+                // Beide Beträge leer: das Datum geht mit, sonst stünde im Feld
+                // etwas, das nicht mehr gespeichert wird.
+                const datum = $(`.adj-input[data-row-id="${rowId}"][data-adj="ab"]`);
+                if (datum) datum.value = '';
+            } else {
+                active.adjustments[rowId] = eintrag;
+            }
         }
         refreshExpanderUI(rowId);
         recomputeAll();
@@ -4007,7 +4065,10 @@
         return [originalVersion, reducedVersion];
     }
 
+    // Gibt zurück, wie viele sichtbare Anpassungen ohne Betrag beim Laden
+    // wegfielen (0 ist der Normalfall). Die Datei selbst bleibt unberührt.
     function hydrate(payload) {
+        let verworfeneAnpassungen = 0;
         leavePreview();                  // eine geladene Datei trifft nie auf eine offene Vorschau
         // Reset state cleanly so a load fully replaces the prior state.
         state.versions = [];
@@ -4029,6 +4090,15 @@
                     ? { ...v.adjustments } : {},
                 privateNote: typeof v.privateNote === 'string' ? v.privateNote : '',
             }));
+            // Eine Datei aus der Zeit, als ein Datum ohne Betrag erlaubt war,
+            // kann solche Einträge enthalten. Sie passen nichts an und fallen
+            // hier weg; was davon sichtbar war, meldet ladeHinweis nach dem Öffnen.
+            const bekannteIds = Object.keys(ROW_INDEX);
+            state.versions.forEach((v) => {
+                const b = anpassungenBereinigen(v.adjustments, bekannteIds);
+                v.adjustments = b.behalten;
+                verworfeneAnpassungen += b.sichtbar;
+            });
             if (state.versions.length === 0) initSingleVersionState();
             const requested = payload.data.activeVersionId;
             state.activeVersionId = (requested && getVersionById(requested))
@@ -4047,6 +4117,16 @@
         renderVersionTabs();
         renderVersionsOverview();
         recomputeAll();
+        return verworfeneAnpassungen;
+    }
+
+    // Der Hinweis nach dem Öffnen. Steht in einem Satz mit der Erfolgsmeldung,
+    // weil es nur einen Toast gibt und der zweite den ersten überschriebe.
+    function ladeHinweis(erfolg, verworfen) {
+        if (!verworfen) return erfolg;
+        return erfolg + (verworfen === 1
+            ? ' Eine Anpassung bestand nur aus einem Datum, ohne Betrag, und wurde nicht übernommen.'
+            : ` ${verworfen} Anpassungen bestanden nur aus einem Datum, ohne Betrag, und wurden nicht übernommen.`);
     }
 
     function isValidPayload(obj) {
@@ -4451,14 +4531,14 @@
     // Toast notifications
     // ----------------------------------------------------------------
     let toastTimer = null;
-    function toast(message, type) {
+    function toast(message, type, dauer) {
         const t = $('#toast');
         t.textContent = message;
         t.className = 'toast is-visible' + (type ? ' is-' + type : '');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => {
             t.className = 'toast' + (type ? ' is-' + type : '');
-        }, 3200);
+        }, dauer || 3200);
     }
 
     // ----------------------------------------------------------------
@@ -4480,10 +4560,10 @@
                 if (!isValidPayload(payload)) throw new Error('Ungültiges Dateiformat');
                 state.fileHandle = handle;
                 state.currentFilename = file.name;
-                hydrate(payload);
+                const verworfen = hydrate(payload);
                 state.isDirty = false;
                 updateStatus();
-                toast(`«${file.name}» geöffnet`, 'success');
+                toast(ladeHinweis(`«${file.name}» geöffnet.`, verworfen), verworfen ? undefined : 'success', verworfen ? 9000 : undefined);
             } else {
                 // Fallback: hidden input upload
                 fallbackOpen();
@@ -4507,10 +4587,11 @@
                 const payload = JSON.parse(text);
                 if (!isValidPayload(payload)) throw new Error('Ungültiges Dateiformat');
                 state.currentFilename = file.name;
-                hydrate(payload);
+                const verworfen = hydrate(payload);
                 state.isDirty = false;
                 updateStatus();
-                toast(`«${file.name}» geladen. Speichern erstellt eine neue Datei.`, 'success');
+                toast(ladeHinweis(`«${file.name}» geladen. Speichern erstellt eine neue Datei.`, verworfen),
+                    verworfen ? undefined : 'success', verworfen ? 9000 : undefined);
             } catch (err) {
                 console.error(err);
                 toast('Datei konnte nicht gelesen werden: ' + (err.message || err), 'error');
