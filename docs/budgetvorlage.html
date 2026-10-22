@@ -2645,6 +2645,36 @@
         return '';
     }
 
+    // Bleibt der Fokus in derselben Zeile? `zielRowId` ist die Zeile, in der das
+    // Ziel des Fokuswechsels liegt (null, wenn es in keiner liegt oder gar kein
+    // Ziel da ist). Zur Zeile gehört alles, was der Benutzer als Einheit erlebt:
+    // die Beträge, der Pfeil, der ganze Aufklappbereich samt Kommentar.
+    function bleibtInDerZeile(zielRowId, rowId) {
+        return !!zielRowId && zielRowId === rowId;
+    }
+
+    // Die ganze Entscheidung beim Verlassen eines Betragsfeldes. Gibt das Datum
+    // zurück, das danach im Feld stehen soll, oder null: nichts anfassen.
+    // Nichts angefasst wird in der Vorschau (die Felder sind dort gesperrt und
+    // zeigen gerechnete Werte) und wenn nur das Fenster den Fokus verliert
+    // (anderer Tab, anderes Programm) — der Benutzer ist dann nicht aus der
+    // Zeile heraus, sondern weg.
+    function anpassungDatumNachBlur(a) {
+        if (!a || a.vorschau || !a.fensterHatFokus || !a.roh) return null;
+        return datumNachVerlassen(a.roh, bleibtInDerZeile(a.zielRowId, a.rowId));
+    }
+
+    // Der Text zur Sperre des Datumsfeldes (Titel am Feld und Zeile im Panel).
+    // Leer, solange das Feld offen ist. Steht noch ein Datum im gesperrten Feld
+    // (der Betrag wurde gerade geleert, die Zeile noch nicht verlassen), sagt
+    // der Text das, statt zu tun, als sei das Feld leer.
+    function anpassungDatumHinweis(gesperrt, datumStehtDa) {
+        if (!gesperrt) return '';
+        return datumStehtDa
+            ? 'Ohne Betrag gilt dieses Datum nicht.'
+            : 'Das Datum lässt sich setzen, sobald ein neuer Betrag eingetragen ist.';
+    }
+
     // Beim Laden einer Datei: ältere Stände dieser Seite erlaubten ein Datum
     // ohne Betrag. Solche Einträge passen nichts an und tragen ausser dem Datum
     // keine Angabe; sie werden nicht übernommen. `verworfen` zählt alle,
@@ -3006,8 +3036,10 @@
 
         // Anpassungen: Einträge für Zeilen, die diese Seite nicht kennt, bleiben
         // unangetastet (sonst ginge beim Speichern still etwas verloren); für
-        // bekannte Zeilen gilt der Stand der Felder. Ohne Betrag UND ohne Datum
-        // gibt es keinen Eintrag.
+        // bekannte Zeilen gilt der Stand der Felder. Ohne Betrag gibt es keinen
+        // Eintrag (ein Datum allein ist keine Anpassung, readAdjustmentFromDom
+        // liefert dann null); das Datum im Feld ist bis zum Verlassen der Zeile
+        // nur ein Entwurf und wird hier nicht gespeichert.
         const adjustments = unbekannteAnpassungenBehalten(active.adjustments, Object.keys(ROW_INDEX));
         $$('.expander-row').forEach((tr) => {
             const rowId = tr.dataset.expanderFor;
@@ -3224,9 +3256,6 @@
     // Chevron icon used by the comment expander button.
     const CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
 
-    // Warum das Datumsfeld einer Anpassung zu ist (Titel am Feld und Zeile im Panel).
-    const ADJ_DATUM_GESPERRT = 'Das Datum lässt sich setzen, sobald ein neuer Betrag eingetragen ist.';
-
     function makeCommentExpanderButton(rowId, label) {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -3273,9 +3302,9 @@
             '<div class="adj-fields">' +
             '<label class="adj-field"><span>Neu jährlich</span><input type="text" inputmode="decimal" class="adj-input adj-jaehrlich" placeholder="leer"></label>' +
             '<label class="adj-field"><span>Neu monatlich</span><input type="text" inputmode="decimal" class="adj-input adj-monatlich" placeholder="leer"></label>' +
-            '<label class="adj-field"><span>Gilt ab (darf leer bleiben)</span><input type="date" class="adj-input adj-ab" disabled title="' + ADJ_DATUM_GESPERRT + '"></label>' +
+            '<label class="adj-field"><span>Gilt ab (darf leer bleiben)</span><input type="date" class="adj-input adj-ab" disabled title="' + anpassungDatumHinweis(true, false) + '"></label>' +
             '</div>' +
-            '<p class="adj-datum-hinweis">' + ADJ_DATUM_GESPERRT + '</p>';
+            '<p class="adj-datum-hinweis">' + anpassungDatumHinweis(true, false) + '</p>';
         adj.querySelectorAll('.adj-input').forEach((input) => {
             input.dataset.rowId = row.id;
             input.dataset.adj = input.classList.contains('adj-jaehrlich') ? 'jaehrlich'
@@ -3377,12 +3406,16 @@
         // immer (dort sind alle Anpassungsfelder zu, auch mit Betrag).
         const gesperrt = anpassungDatumGesperrt(active?.adjustments?.[rowId]);
         const datum = aufklapp ? aufklapp.querySelector('.adj-ab') : null;
+        const hinweis = anpassungDatumHinweis(gesperrt, !!(datum && datum.value));
         if (datum) {
             datum.disabled = gesperrt || !!state.previewStand;
-            datum.title = gesperrt ? ADJ_DATUM_GESPERRT : '';
+            datum.title = hinweis;
         }
         const erklaerung = aufklapp ? aufklapp.querySelector('.adj-datum-hinweis') : null;
-        if (erklaerung) erklaerung.hidden = !gesperrt;
+        if (erklaerung) {
+            erklaerung.hidden = !gesperrt;
+            erklaerung.textContent = hinweis;
+        }
     }
 
     // Hat die aktive Version für diese Zeile eine Anpassung? Nur ein Betrag
@@ -3454,21 +3487,35 @@
         markDirty();
     }
 
+    // In welcher Zeile liegt dieses Element? Die Hauptzeile trägt data-row-id,
+    // der Aufklappbereich data-expander-for; Pfeil, Beträge, Anpassungsfelder
+    // und Kommentar liegen in einer von beiden. null: in keiner Zeile.
+    function zeilenIdVon(el) {
+        if (!el || !el.closest) return null;
+        const aufklapp = el.closest('.expander-row');
+        if (aufklapp) return aufklapp.dataset.expanderFor || null;
+        const haupt = el.closest('tr[data-row-id]');
+        return haupt ? haupt.dataset.rowId : null;
+    }
+
     function handleAdjInputBlur(input, ereignis) {
         if (input.dataset.adj === 'ab') return;
         const v = parseAnpassungsFeld(input.value);
         input.value = v === null ? '' : formatComputed(v);
-        if (state.previewStand) return;
-        // Das Fenster verliert den Fokus (anderer Tab, anderes Programm): der
-        // Benutzer ist nicht aus der Zeile heraus, nur weg.
-        if (!document.hasFocus()) return;
+        // Die Entscheidung trifft der Kern; hier wird nur gelesen und geschrieben.
         const rowId = input.dataset.rowId;
-        const ziel = ereignis && ereignis.relatedTarget;
-        const bleibtInZeile = !!(ziel && ziel.dataset && ziel.classList.contains('adj-input')
-            && ziel.dataset.rowId === rowId);
-        const roh = readAdjustmentFieldsFromDom(rowId);
+        const neu = anpassungDatumNachBlur({
+            roh: readAdjustmentFieldsFromDom(rowId),
+            rowId: rowId,
+            zielRowId: zeilenIdVon(ereignis && ereignis.relatedTarget),
+            fensterHatFokus: document.hasFocus(),
+            vorschau: !!state.previewStand,
+        });
         const datum = $(`.adj-input[data-row-id="${rowId}"][data-adj="ab"]`);
-        if (roh && datum) datum.value = datumNachVerlassen(roh, bleibtInZeile);
+        if (neu !== null && datum) {
+            datum.value = neu;
+            refreshExpanderUI(rowId);      // der Hinweis richtet sich nach dem Feld
+        }
     }
 
     function refreshAllExpanderUI() {
@@ -3717,6 +3764,9 @@
             // die zuletzt getippten Werte beim Verlassen verloren.
             captureFormToActiveVersion();
             closeAdjustmentsPanel();
+            // Erst die Vorschau setzen, dann sperren: Ein gesperrtes Feld, das
+            // den Fokus hatte, feuert blur, und dessen Handler schaut hierauf.
+            state.previewStand = standKey;
             $$('input.amount-input').forEach((input) => { input.disabled = true; });
             $$('.adj-input').forEach((input) => { input.disabled = true; });
             // Die Notiz gehört zur Version und wird in der Vorschau nicht

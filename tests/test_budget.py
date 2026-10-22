@@ -1007,19 +1007,104 @@ def test_null_bleibt_beim_verlassen_ein_betrag():
     assert kern("datumNachVerlassen", mit_null, False) == "2027-01-01"
 
 
-def test_tippen_leert_das_datum_nicht_erst_das_verlassen():
-    """Angelpunkt ist blur (mit relatedTarget), nicht input und nicht change:
-    change hat kein Ziel und feuerte beim Wechsel von «jährlich» zu «monatlich»
-    derselben Zeile, wo noch weitergetippt wird."""
-    eingabe = _funktionsblock("handleAdjInputEvent")
-    assert 'data-adj="ab"' not in eingabe, "beim Tippen wird das Datumsfeld nicht angefasst"
-    assert "datumNachVerlassen" not in eingabe
+def _ohne_kommentare(quelltext):
+    return "\n".join(z for z in quelltext.splitlines() if not z.strip().startswith("//"))
+
+
+def test_zeile_umfasst_den_ganzen_aufklappbereich():
+    """Ziel des Fokuswechsels liegt in derselben Zeile (Kommentarfeld, Pfeil, Betrag
+    der Hauptzeile): das Datum bleibt. Eine andere Zeile oder gar keine: es fällt."""
+    assert kern("bleibtInDerZeile", "miete", "miete") is True
+    assert kern("bleibtInDerZeile", "strom", "miete") is False
+    assert kern("bleibtInDerZeile", None, "miete") is False
+    assert kern("bleibtInDerZeile", "", "miete") is False
+
+
+def _blur(**kw):
+    standard = dict(
+        roh={"jaehrlich": None, "monatlich": None, "ab": "2027-01-01"},
+        rowId="miete", zielRowId=None, fensterHatFokus=True, vorschau=False,
+    )
+    standard.update(kw)
+    return kern("anpassungDatumNachBlur", standard)
+
+
+def test_blur_ohne_betrag_aus_der_zeile_heraus_leert_das_datum():
+    assert _blur() == ""                                    # ins Leere
+    assert _blur(zielRowId="strom") == ""                   # andere Zeile
+
+
+def test_blur_innerhalb_der_zeile_laesst_das_datum_stehen():
+    assert _blur(zielRowId="miete") == "2027-01-01"         # Kommentarfeld/Pfeil/anderes Betragsfeld
+
+
+def test_blur_mit_betrag_laesst_das_datum_stehen():
+    roh = {"jaehrlich": None, "monatlich": 0, "ab": "2027-01-01"}
+    assert _blur(roh=roh) == "2027-01-01"
+
+
+def test_blur_in_der_vorschau_fasst_nichts_an():
+    assert _blur(vorschau=True) is None
+
+
+def test_blur_beim_fensterwechsel_fasst_nichts_an():
+    assert _blur(fensterHatFokus=False) is None
+
+
+def test_blur_ohne_zeilenfelder_fasst_nichts_an():
+    assert _blur(roh=None) is None
+    assert kern("anpassungDatumNachBlur", None) is None
+
+
+def test_hinweis_nennt_den_stehengebliebenen_wert():
+    """Steht noch ein Datum im gesperrten Feld, darf daneben nicht «setzen Sie es
+    erst» stehen. Offen: kein Hinweis."""
+    assert kern("anpassungDatumHinweis", False, True) == ""
+    assert kern("anpassungDatumHinweis", False, False) == ""
+    leer = kern("anpassungDatumHinweis", True, False)
+    steht = kern("anpassungDatumHinweis", True, True)
+    assert leer and steht and leer != steht
+    assert "gilt" in steht and "Betrag" in steht
+    assert "setzen" in leer
+
+
+def test_tippen_fasst_das_datumsfeld_nicht_an():
+    """Beim Tippen bleibt das Datum stehen; das Verwerfen gehört in den blur-Handler.
+    Geprüft wird jede Schreibweise, mit der das Feld angesprochen werden könnte."""
+    code = _ohne_kommentare(_funktionsblock("handleAdjInputEvent"))
+    assert not re.search(r"""[.'"\-]ab\b""", code), "kein Zugriff auf das Datumsfeld (.ab, 'ab', adj-ab, data-adj=\"ab\")"
+    assert "datumNachVerlassen" not in code and "anpassungDatumNachBlur" not in code
+    assert "readAdjustmentFromDom(rowId)" in code     # Eintrag folgt den Feldern, ohne Betrag null
+
+
+def test_blur_handler_ist_nur_verdrahtung():
+    """Die Entscheidung liegt im Kern (getestet); der Handler liest und schreibt nur."""
     verlassen = _funktionsblock("handleAdjInputBlur")
-    assert "datumNachVerlassen(" in verlassen
-    assert "relatedTarget" in verlassen
-    assert "document.hasFocus()" in verlassen
-    assert "state.previewStand" in verlassen
+    assert "anpassungDatumNachBlur(" in verlassen
+    assert "zeilenIdVon(ereignis && ereignis.relatedTarget)" in verlassen
+    assert "document.hasFocus()" in verlassen and "state.previewStand" in verlassen
     assert "(e) => handleAdjInputBlur(input, e)" in _seite_text()
+
+
+def test_zeilenid_kennt_hauptzeile_und_aufklappbereich():
+    block = _funktionsblock("zeilenIdVon")
+    assert "'.expander-row'" in block and "expanderFor" in block
+    assert "tr[data-row-id]" in block
+
+
+def test_vorschau_steht_fest_bevor_die_felder_zugehen():
+    """Ein gesperrtes Feld mit Fokus feuert blur; dessen Handler schaut auf
+    state.previewStand und muss es dann schon gesetzt finden."""
+    block = _funktionsblock("enterPreview")
+    gesetzt = block.index("state.previewStand = standKey")
+    assert gesetzt < block.index("$$('.adj-input').forEach((input) => { input.disabled = true; })")
+    assert gesetzt < block.index("$$('input.amount-input').forEach((input) => { input.disabled = true; })")
+    assert block.index("captureFormToActiveVersion()") < gesetzt, "erfasst wird, solange die Sperre noch offen ist"
+
+
+def test_kommentar_ueber_capture_sagt_nicht_mehr_datum_allein_sei_ein_eintrag():
+    text = _seite_text()
+    assert "Ohne Betrag UND ohne Datum" not in text
 
 
 def test_ohne_betrag_wird_nichts_gespeichert_auch_wenn_ein_datum_im_feld_steht():
@@ -1033,6 +1118,7 @@ def test_anpassungsfunktionen_kennen_kein_oder_null():
     Anpassungsfelder lesen oder bewerten."""
     for name in ("anpassungEintrag", "anpassungHatInhalt", "anpassungDatumGesperrt",
                  "anpassungenBereinigen", "datumNachVerlassen", "readAdjustmentFromDom",
-                 "readAdjustmentFieldsFromDom", "parseAnpassungsFeld",
+                 "readAdjustmentFieldsFromDom", "parseAnpassungsFeld", "anpassungDatumNachBlur",
+                 "bleibtInDerZeile", "anpassungDatumHinweis", "zeilenIdVon",
                  "handleAdjInputEvent", "handleAdjInputBlur"):
         assert "|| 0" not in _funktionsblock(name), name
