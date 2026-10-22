@@ -6,6 +6,7 @@ Geprüft wird damit genau der Code, der im Browser läuft.
 """
 
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -115,3 +116,39 @@ def test_die_vier_differenzen_aus_dem_entwurf():
 def test_werte_fuer_stand_laesst_das_original_in_ruhe():
     kern("werteFuerStand", WERTE, ANPASSUNGEN, "offen")
     assert WERTE["handy.monatlich"] == 60
+
+
+# --- Datenmodell und Dateiformat v5 ------------------------------------------
+# Statische Prüfungen der ausgelieferten Datei (wie in tests/test_plakat.py):
+# Das Datenmodell hängt am DOM und lässt sich nicht im Treiber ausführen.
+
+
+def _seite_text():
+    return SEITE.read_text(encoding="utf-8")
+
+
+def test_dateiformat_ist_fuenf():
+    text = _seite_text()
+    assert "const FILE_FORMAT_VERSION = 5;" in text
+    assert re.search(r"SUPPORTED_VERSIONS = new Set\(\[1, 2, 3, 4, 5\]\)", text)
+
+
+def test_neue_version_traegt_die_neuen_felder():
+    text = _seite_text()
+    block = text[text.index("function makeBlankVersion"):][:700]
+    assert "adjustments: {}" in block and "privateNote: ''" in block
+
+
+def test_kein_oder_null_auf_einem_anpassungsbetrag():
+    """`|| 0` wuerde aus jeder leeren Anpassung eine Nullsetzung machen."""
+    text = _seite_text()
+    assert not re.search(
+        r"(adjustments|anpassung)\w*\.(jaehrlich|monatlich)\s*\|\|", text, re.I
+    )
+
+
+def test_filter_gegen_unbekannte_zeilen_existiert():
+    text = _seite_text()
+    assert "function bekannteAnpassungen" in text
+    block = text[text.index("function bekannteAnpassungen"):][:500]
+    assert "lookupRow" in block or "ROW_INDEX" in block

@@ -2035,10 +2035,12 @@
     }
     /* == budget-kern:ende == */
 
-    const FILE_FORMAT_VERSION = 4;
+    const FILE_FORMAT_VERSION = 5;
     // v1: bare values  ·  v2: yearly reduktion key  ·  v3: y+m reduktion + comment
     // v4: multi-version data model (no reduktion — versions replace it)
-    const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4]);
+    // v5: v4 plus per-version `adjustments` (Anpassungen mit Stichtag) and
+    //     `privateNote` (private Versionsnotiz). Fehlende Felder lesen sich als {} und ''.
+    const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4, 5]);
     const APP_NAME = 'budgetvorlage';
 
     // ============================================================
@@ -2059,7 +2061,7 @@
     //     A "Versionsvergleich" section appears below the summary.
     const state = {
         // ----- Multi-version data model (v4) -----
-        versions: [],            // [{ id, name, basedOn, createdAt, values, comments }]
+        versions: [],            // [{ id, name, basedOn, createdAt, values, comments, adjustments, privateNote }]
         activeVersionId: null,
         // ----- Persistence + UI state -----
         fileHandle: null,        // FileSystemFileHandle when present
@@ -2086,6 +2088,8 @@
             createdAt: new Date().toISOString(),
             values: {},
             comments: {},   // rowId → string. Per-version, NOT cloned by createVersion.
+            adjustments: {},   // rowId → { jaehrlich, monatlich, ab }. null = leer, 0 ist ein gültiger Zielbetrag. NOT cloned.
+            privateNote: '',   // Private Notiz zur Version. NOT cloned.
         };
     }
 
@@ -2231,7 +2235,8 @@
                 // comments remain reachable as tooltips on the expander
                 // buttons (see refreshExpanderUI).
                 v.values = { ...base.values };
-                // v.comments stays {} (set by makeBlankVersion).
+                // v.comments, v.adjustments and v.privateNote stay empty
+                // (set by makeBlankVersion) — like comments, they are not cloned.
             }
         }
         state.versions.push(v);
@@ -2333,6 +2338,17 @@
         ROW_INDEX[row.id] = { row, groupId };
     }
     function lookupRow(rowId) { return ROW_INDEX[rowId] || null; }
+
+    // Anpassungen können in einer Datei auf Zeilen zeigen, die es in dieser
+    // Fassung der Seite nicht mehr gibt. Jede Stelle, die Anpassungen liest,
+    // geht durch diesen Filter; unbekannte rowIds werden verworfen.
+    function bekannteAnpassungen(adjustments) {
+        const bekannt = {};
+        Object.entries(adjustments || {}).forEach(([rowId, a]) => {
+            if (lookupRow(rowId)) bekannt[rowId] = a;
+        });
+        return bekannt;
+    }
 
     // Groups whose rows get a per-row comment expander. Expense rows only —
     // matches the prior visual rhythm and where comments are most useful
@@ -2633,6 +2649,8 @@
                     createdAt: v.createdAt,
                     values: { ...v.values },
                     comments: { ...(v.comments || {}) },
+                    adjustments: { ...(v.adjustments || {}) },
+                    privateNote: v.privateNote || '',
                 })),
                 activeVersionId: state.activeVersionId,
             },
@@ -2731,8 +2749,9 @@
 
         if (!payload || !payload.data) {
             initSingleVersionState();
-        } else if (payload.version === 4 && Array.isArray(payload.data.versions)) {
-            // Native v4 — load versions array.
+        } else if (payload.version >= 4 && Array.isArray(payload.data.versions)) {
+            // Native v4/v5 — load versions array. v4 has no adjustments or
+            // privateNote; they read as {} and ''.
             state.versions = payload.data.versions.map((v) => ({
                 id: v.id || genVersionId(),
                 name: typeof v.name === 'string' ? v.name : 'Version',
@@ -2740,6 +2759,9 @@
                 createdAt: v.createdAt || new Date().toISOString(),
                 values: { ...(v.values || {}) },
                 comments: { ...(v.comments || {}) },
+                adjustments: (v.adjustments && typeof v.adjustments === 'object')
+                    ? { ...v.adjustments } : {},
+                privateNote: typeof v.privateNote === 'string' ? v.privateNote : '',
             }));
             if (state.versions.length === 0) initSingleVersionState();
             const requested = payload.data.activeVersionId;
@@ -2750,6 +2772,8 @@
             // Legacy v1/v2/v3 — possibly split into Original + Nach Reduktion.
             state.versions = buildLegacyVersions(payload);
             state.activeVersionId = state.versions[0].id;
+            // The migration knows no adjustments or private note.
+            state.versions.forEach((v) => { v.adjustments = {}; v.privateNote = ''; });
         }
 
         hydrateFormFromActiveVersion();
@@ -2768,8 +2792,8 @@
         if (typeof obj.version !== 'number') return false;
         if (!SUPPORTED_VERSIONS.has(obj.version)) return false;
         if (!obj.data || typeof obj.data !== 'object') return false;
-        // v4: versions array. v1-v3: legacy values map.
-        if (obj.version === 4) return Array.isArray(obj.data.versions);
+        // v4/v5: versions array. v1-v3: legacy values map.
+        if (obj.version >= 4) return Array.isArray(obj.data.versions);
         return typeof obj.data.values === 'object';
     }
 
@@ -3316,6 +3340,8 @@
         if (active) {
             active.values = {};
             active.comments = {};
+            active.adjustments = {};
+            active.privateNote = '';
         }
         refreshAllExpanderUI();
         renderVersionsOverview();
