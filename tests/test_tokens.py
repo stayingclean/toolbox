@@ -165,7 +165,14 @@ def test_wachposten_build_liefert_die_uebrigen_eingecheckten_generate(
 AUSGENOMMEN: dict[str, str] = {
     "docs/skillsliste.html": "muss in sich geschlossen bleiben (ohne Netz benutzbar)",
     "docs/flyer-editor.html": "exportiert sich selbst als Datei, alles muss im Dokument stehen",
-    "docs/budgetvorlage.html": "wird getrennt umgebaut",
+    # Eigene --color-*-Namen und abweichende Werte, Werkzeug mit eigener
+    # Logik. Die warmen Farben sind am 2026-10-23 entschieden, offen ist nur
+    # der Zeitpunkt des Umbaus (specs/2026-10-23-stil-bibliothek-design.md, 4.).
+    "docs/budgetvorlage.html": (
+        "eigene --color-*-Namen und Werte; Umbau auf die warmen Farben ist "
+        "entschieden (2026-10-23), nur der Zeitpunkt offen -- siehe "
+        "specs/2026-10-23-stil-bibliothek-design.md"
+    ),
     "docs/neutral_flyer.html": "blosse Weiterleitung",
 }
 

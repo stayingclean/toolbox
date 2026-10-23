@@ -152,7 +152,7 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
      (kühl, Tailwind `gray-500`) → `#7A7268`, `--color-border` `#e5e7eb`
      (kühl, Tailwind `gray-200`) → `#E8E4DF`. **Offen ist nur das Wann:**
      der Umbau ist ein eigener Schritt, getrennt wegen Umfang und Risiko der
-     Seite (2181 Zeilen CSS, ein Druck-Layout, 435 eigene Tests). Begründung
+     Seite (2181 Zeilen CSS, ein Druck-Layout, 171 eigene Tests in `tests/test_budget.py`). Begründung
      in `specs/2026-10-23-stil-bibliothek-design.md`, Abschnitt «4.
      Budgetvorlage: warme Farben». **Nicht gedeckt** ist ihr Signalfarben-Trio
      (`--color-success`, `--color-warning`, `--color-danger`), das aus
