@@ -271,11 +271,21 @@ def test_staende_kommen_aus_dem_kern():
 
 def test_jede_leseseite_filtert_unbekannte_zeilen():
     """Eine Anpassung auf einer rowId, die das Schema nicht kennt, darf
-    weder gerechnet noch angezeigt werden."""
+    weder gerechnet noch angezeigt werden.
+
+    `standVerlauf` ruft die beiden anderen selbst auf und ist damit die
+    dritte Leseseite: Geprueft werden seine Aufrufstellen, waehrend seine
+    eigenen zwei Aufrufe ausgenommen sind -- dort hat der Aufrufer schon
+    gefiltert. So bleibt die Zusicherung eine echte und wird nicht durch
+    eine Funktion im Kern umgangen."""
     text = SEITE.read_text(encoding="utf-8")
-    for name in ("stichtagListe", "werteFuerStand"):
+    innen = _funktionsblock("standVerlauf")
+    ab_innen = text.index(innen)
+    for name in ("stichtagListe", "werteFuerStand", "standVerlauf"):
         # Die Definition im Kern ausnehmen, nur Aufrufstellen pruefen.
         for treffer in re.finditer(r"(?<!function )\b" + name + r"\(", text):
+            if ab_innen <= treffer.start() < ab_innen + len(innen):
+                continue
             umfeld = text[max(0, treffer.start() - 300):treffer.end() + 300]
             assert "bekannteAnpassungen" in umfeld, f"ungefiltert bei {name}"
 
