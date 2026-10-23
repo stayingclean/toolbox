@@ -145,9 +145,19 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
      Budgetvorlage ist draussen, weil sie eigene Namen (`--color-*`) und
      eigene Werte trägt — ihre Grautöne weichen von denen der übrigen Seiten
      ab — und als Werkzeug mit eigener Logik `.json` speichert (siehe unten).
-     Sie anzugleichen änderte ihr Aussehen; ob und wie, ist eine eigene
-     Entscheidung, die am 2026-10-23 bewusst von diesem Vorhaben getrennt
-     wurde. Wird sie umgebaut, kommt sie aus `AUSGENOMMEN` nach `MIGRIERT`.
+     **Das Ob ist entschieden** (Benutzer, 2026-10-23, nach einer
+     Vorher-Nachher-Vorschau: «Budgetvorlage mit den warmen Farben»): sie
+     bekommt die Werte der übrigen Seiten, sichtbar ist das bei drei Farben —
+     `--color-text` `#1a1a1a` → `#1C1C1C`, `--color-text-muted` `#6b7280`
+     (kühl, Tailwind `gray-500`) → `#7A7268`, `--color-border` `#e5e7eb`
+     (kühl, Tailwind `gray-200`) → `#E8E4DF`. **Offen ist nur das Wann:**
+     der Umbau ist ein eigener Schritt, getrennt wegen Umfang und Risiko der
+     Seite (2181 Zeilen CSS, ein Druck-Layout, 435 eigene Tests). Begründung
+     in `specs/2026-10-23-stil-bibliothek-design.md`, Abschnitt «4.
+     Budgetvorlage: warme Farben». **Nicht gedeckt** ist ihr Signalfarben-Trio
+     (`--color-success`, `--color-warning`, `--color-danger`), das aus
+     demselben fremden System stammt; das bleibt eine eigene Frage. Wird die
+     Seite umgebaut, kommt sie aus `AUSGENOMMEN` nach `MIGRIERT`.
      `neutral_flyer.html` ist eine blosse Weiterleitung, `docs/altbau/` ein
      fremder Viewer mit eigenem `vendor/` und ganz ausserhalb.
 
