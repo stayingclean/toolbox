@@ -299,6 +299,15 @@ Zwei Sessions, die **nur `specs/`** schreiben und nicht `docs/`. Jede liefert
 einen Entwurf, der die offenen Fragen beantwortet; der Einbau geschieht danach
 hier, eine Welle nach der anderen.
 
+**Session A — Punkt 7 ✔ Entwurf und Einbau erledigt am 2026-10-23**
+(`specs/2026-10-23-budget-anleitung-mitlaufend-design.md`, Commit `19a8b15`).
+Der Knopf steht auf jeder Breite in der Versionsleiste, der Streifen nur
+noch mit Text; auf dem Telefon kostet die Anleitung null Pixel (277 px
+Kopfleiste vorher wie nachher). Mitbehoben: der Reiter «Hauptversion» lief
+dort aus seinem Kasten und lag über «Neue Version».
+
+Der ursprüngliche Auftrag:
+
 **Session A — Punkt 7: mitlaufende Anleitung.** Zu beantworten: Was geschieht
 auf einem zu schmalen Bildschirm (ausdrücklich mitgefragt)? Wie verträgt sich
 ein weiterer klebender Block mit `.sticky-head`, die schon Werkzeug- und
