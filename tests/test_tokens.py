@@ -42,6 +42,7 @@ TOKENS: dict[str, str] = {
 MIGRIERT: dict[str, set[str]] = {
     "docs/index.html": set(),
     "docs/skill-vorschlagen.html": set(),
+    "docs/claude-anleitung/stil.css": set(),
 }
 
 
