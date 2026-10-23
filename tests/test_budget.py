@@ -447,12 +447,27 @@ def test_je_datumsgruppe_ein_versionsknopf():
 
 
 def test_neue_version_aus_stand_basiert_auf_der_aktiven_version():
-    """Ohne Basis gaebe es keinen Vergleich: «Δ vs. Basis» braucht basedOn."""
-    text = SEITE.read_text(encoding="utf-8")
-    block = text[text.index("function neueVersionAusStand"):][:2500]
-    assert "basedOnId: " in block and "getActiveVersion" in block
+    """Ohne Basis gaebe es keinen Vergleich: «Δ vs. Basis» braucht basedOn.
+    Angelegt wird in versionAnlegen – der gemeinsamen Stelle beider Wege zum
+    Dialog (Kopfleiste und Anpassungsliste)."""
+    aufruf = _funktionsblock("neueVersionAusStand")
+    assert "versionAnlegen(getActiveVersion(), result)" in aufruf
+    block = _funktionsblock("versionAnlegen")
+    assert "basedOnId: basis.id" in block
     assert "anpassungenNachStand" in block and "werteFuerStand" in block
     assert "bekannteAnpassungen" in block
+
+
+def test_kopfleiste_fuehrt_denselben_ablauf():
+    """Punkt 5: «Neue Version» in der Kopfleiste fuehrt die Anpassungen der
+    gewaehlten Grundlage auf und rechnet die angehakten ein — derselbe Dialog
+    wie aus der Anpassungsliste, und der einzige Weg, alle auf einmal zu
+    uebernehmen."""
+    assert "versionAnlegen(" in _funktionsblock("handleAddVersionClick")
+    dialog = _funktionsblock("openNewVersionModal")
+    assert "einloesbareEintraegeVon(gewaehlteBasis())" in dialog, \
+        "die Liste richtet sich nach der angehakten Grundlage"
+    assert "'offen'" in dialog, "ohne Stand gaebe es nichts einzuloesen"
 
 
 def test_panel_schliesst_bei_klick_ausserhalb_und_escape():
@@ -902,7 +917,7 @@ def test_neue_version_aus_stand_nimmt_den_namen_aus_dem_kern_und_hat_keinen_fest
 
 
 def test_neue_version_aus_stand_nutzt_die_regel_des_kerns_fuer_unbekannte_zeilen():
-    block = _funktionsblock("neueVersionAusStand")
+    block = _funktionsblock("versionAnlegen")
     assert "unbekannteAnpassungenBehalten(alle, Object.keys(ROW_INDEX))" in block
     assert "typeof alle" not in block
     assert "{ ...unbekannt[id] }" in block, "die Einträge dürfen nicht mit der Quellversion geteilt werden"
@@ -972,6 +987,52 @@ def test_unterschied_zum_erfassten_wert():
     assert kern("anpassungUnterschied", leer, 2052) is None
     assert kern("anpassungUnterschied", None, 2052) is None
     assert kern("anpassungUnterschied", dict(leer, jaehrlich=600), None) == 600
+
+
+def test_offen_loest_alles_ein_auch_wenn_jede_anpassung_ein_datum_hat():
+    """Der Weg «alles uebernehmen». Haben alle Anpassungen ein Datum, steht
+    «offen» nicht in der Stichtagsliste — die Eintraege muss es trotzdem
+    liefern, sonst gibt es keinen Weg, alle auf einmal einzuloesen. Genau das
+    fehlte: erreichbar war es nur mittelbar ueber die spaeteste Datumsgruppe,
+    und das weiss niemand, der es nicht gebaut hat."""
+    adjustments = {
+        "a": {"jaehrlich": 600, "monatlich": None, "ab": "2027-01-01"},
+        "b": {"jaehrlich": None, "monatlich": 50, "ab": "2027-06-01"},
+    }
+    staende = kern("stichtagListe", adjustments, "2026-10-23")
+    assert [s["key"] for s in staende] == ["heute", "2027-01-01", "2027-06-01"], \
+        "ohne datumlose Anpassung gibt es keinen Stand «offen» – das bleibt so"
+    values = {"a.jaehrlich": 1200, "b.monatlich": 100}
+    eintraege = kern("einloesbareEintraege", adjustments, staende, values, "offen")
+    assert sorted(e["rowId"] for e in eintraege) == ["a", "b"]
+
+
+def test_unbekannter_stand_liefert_nichts():
+    """Die Sperre bleibt fuer jeden anderen Schluessel: ein Stand, den es
+    nicht gibt, loest nichts ein."""
+    adjustments = {"a": {"jaehrlich": 600, "monatlich": None, "ab": "2027-01-01"}}
+    staende = kern("stichtagListe", adjustments, "2026-10-23")
+    assert kern("einloesbareEintraege", adjustments, staende, {}, "2030-01-01") == []
+
+
+def test_kommentare_der_neuen_version():
+    """Punkt 4: Die Kommentare der eingeloesten Positionen stehen im Dialog und
+    sind dort aenderbar; die uebrigen wandern nur mit, wenn das Haekchen
+    gesetzt ist. Bisher begann jede neue Version ohne jeden Kommentar."""
+    basis = {"a": "Abo gekuendigt", "b": "Steuerrechnung 2026", "c": "   "}
+    # Nur die bearbeiteten, ohne die uebrigen
+    assert kern("kommentareFuerNeueVersion", basis, {"a": "Abo laeuft aus"}, False) \
+        == {"a": "Abo laeuft aus"}
+    # Mit den uebrigen: leere zaehlen nicht mit
+    assert kern("kommentareFuerNeueVersion", basis, {}, True) \
+        == {"a": "Abo gekuendigt", "b": "Steuerrechnung 2026"}
+    # Der bearbeitete Text schlaegt den der Grundlage
+    assert kern("kommentareFuerNeueVersion", basis, {"a": "neu"}, True) \
+        == {"a": "neu", "b": "Steuerrechnung 2026"}
+    # Im Dialog geleert heisst: dieser Kommentar geht nicht mit
+    assert kern("kommentareFuerNeueVersion", basis, {"a": ""}, True) \
+        == {"b": "Steuerrechnung 2026"}
+    assert kern("kommentareFuerNeueVersion", None, None, True) == {}
 
 
 def test_wirkung_haengt_an_der_gruppe():
@@ -1356,10 +1417,10 @@ def test_dialog_hat_checkboxen_standardmaessig_gesetzt_und_nur_fuer_den_stand():
 
 
 def test_dialog_gibt_die_abgewaehlten_an_beide_kernfunktionen_weiter():
-    block = _funktionsblock("neueVersionAusStand")
-    assert "einloesbareEintraege(" in block
-    assert re.search(r"werteFuerStand\(.*abgewaehlt\)", block)
-    assert re.search(r"anpassungenNachStand\(.*abgewaehlt\)", block)
+    assert "einloesbareEintraege(" in _funktionsblock("neueVersionAusStand")
+    block = _funktionsblock("versionAnlegen")
+    assert re.search(r"werteFuerStand\(.*result\.abgewaehlt\)", block)
+    assert re.search(r"anpassungenNachStand\(.*result\.abgewaehlt\)", block)
 
 
 def test_auswahl_hat_keinen_zustand_ausserhalb_des_dialogs():

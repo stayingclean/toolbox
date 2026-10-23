@@ -1840,6 +1840,28 @@
            richtet sich die Zeile oben aus. Häkchen und Betrag stünden damit an
            der Oberkante statt an der ersten Textzeile — die halbe Zeilenhöhe
            gleicht das aus. */
+        .einloesen-eintrag + .einloesen-eintrag {
+            border-top: 1px solid var(--color-border);
+        }
+        /* Das Kommentarfeld der Position: eine Zeile unter der Auswahl, auf
+           der Höhe des Namens eingerückt. */
+        .einloesen-kommentar {
+            display: block;
+            width: calc(100% - 2.6rem);
+            margin: 0 0.55rem 0.5rem 2.05rem;
+            padding: 0.3rem 0.5rem;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+        }
+        .einloesen-kommentar:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px var(--color-primary-tint);
+        }
         .einloesen-liste .radio-option { align-items: flex-start; }
         .einloesen-liste .radio-option input { margin-top: 0.4rem; }
         .einloesen-liste .einloesen-betrag { margin-top: 0.1rem; }
@@ -2481,15 +2503,22 @@
                 <span class="modal-field-label">Name der Version</span>
                 <input type="text" id="newVersionName" maxlength="60" placeholder="z. B. Nach Anpassung" autocomplete="off">
             </label>
+            <fieldset class="modal-field" id="newVersionBasedOn">
+                <legend class="modal-field-label">Basiert auf</legend>
+                <!-- Radios populated dynamically -->
+            </fieldset>
             <fieldset class="modal-field" id="newVersionEinloesen" hidden>
                 <legend class="modal-field-label">Diese Anpassungen einrechnen (Beträge pro Monat)</legend>
                 <div class="einloesen-liste" id="newVersionEinloesenListe"></div>
                 <p class="modal-hint einloesen-text" id="newVersionEinloesenText" aria-live="polite"></p>
             </fieldset>
-            <fieldset class="modal-field" id="newVersionBasedOn">
-                <legend class="modal-field-label">Basiert auf</legend>
-                <!-- Radios populated dynamically -->
-            </fieldset>
+            <div class="modal-field" id="newVersionKommentare" hidden>
+                <label class="radio-option">
+                    <input type="checkbox" id="newVersionUebrigeKommentare" checked>
+                    <span>Übrige Kommentare übernehmen</span>
+                </label>
+                <p class="modal-hint">Die Kommentare der oben aufgeführten Positionen stehen dort und lassen sich ändern. Dieses Häkchen nimmt alle anderen Kommentare der Grundlage unverändert mit.</p>
+            </div>
         </div>
         <div class="modal-actions">
             <button type="button" class="btn btn-ghost" data-modal-action="cancel">Abbrechen</button>
@@ -2728,6 +2757,26 @@
         const ziel = anpassungBetrag(a);
         if (ziel === null) return null;
         return ziel.jaehrlich - (istZahl(erfasstJaehrlich) ? erfasstJaehrlich : 0);
+    }
+
+    // Welche Kommentare eine neue Version mitbekommt. `bearbeitet` sind die
+    // Texte aus dem Dialog (die der eingelösten Positionen, dort änderbar),
+    // `uebrigeUebernehmen` entscheidet über alle anderen der Grundlage.
+    // Ein im Dialog geleerter Text heisst: dieser Kommentar geht nicht mit.
+    function kommentareFuerNeueVersion(basisComments, bearbeitet, uebrigeUebernehmen) {
+        const ziel = {};
+        if (uebrigeUebernehmen) {
+            Object.keys(basisComments || {}).forEach((id) => {
+                const t = basisComments[id];
+                if (typeof t === 'string' && t.trim() !== '') ziel[id] = t;
+            });
+        }
+        Object.keys(bearbeitet || {}).forEach((id) => {
+            const t = bearbeitet[id];
+            if (typeof t === 'string' && t.trim() !== '') ziel[id] = t;
+            else delete ziel[id];
+        });
+        return ziel;
     }
 
     // Wirkt die Anpassung zugunsten des Budgets? Bei einer Ausgabe ist weniger
@@ -3009,7 +3058,12 @@
     // man bei einem Stand über mehrere Daten sieht, woher eine Zeile stammt.
     // Ein Stand, den es in `staende` nicht gibt, und «heute» liefern nichts.
     function einloesbareEintraege(adjustments, staende, values, standKey) {
-        if (!(staende || []).some((s) => s.key === standKey)) return [];
+        // «offen» ist der Weg «alles einlösen» und gilt immer. Es steht nur
+        // dann in der Stichtagsliste, wenn eine Anpassung ohne Datum da ist —
+        // trägt jede ein Datum, gäbe es sonst keinen Weg, alle auf einmal zu
+        // übernehmen (erreichbar wäre es nur mittelbar über die späteste
+        // Datumsgruppe, und das weiss niemand, der es nicht gebaut hat).
+        if (standKey !== 'offen' && !(staende || []).some((s) => s.key === standKey)) return [];
         const liste = [];
         anpassungsGruppen(adjustments, staende, values).forEach((gruppe) => {
             gruppe.eintraege.forEach((e) => {
@@ -3285,7 +3339,7 @@
     // `values` und `adjustments` sind optional: «Neue Version aus diesem Stand»
     // bringt beides fertig mit. Ohne sie gilt wie bisher: Werte aus der Basis
     // kopieren, Anpassungen leer.
-    function createVersion({ name, basedOnId, values, adjustments }) {
+    function createVersion({ name, basedOnId, values, adjustments, comments }) {
         leavePreview();                  // wie switchVersion: erst zurück zu den erfassten Werten
         captureFormToActiveVersion();    // make sure current edits land
         const v = makeBlankVersion(name, basedOnId);
@@ -3298,12 +3352,16 @@
                 // comments remain reachable as tooltips on the expander
                 // buttons (see refreshExpanderUI).
                 v.values = { ...base.values };
-                // v.comments, v.adjustments and v.privateNote stay empty
-                // (set by makeBlankVersion) — like comments, they are not cloned.
+                // v.adjustments und v.privateNote bleiben leer
+                // (makeBlankVersion); sie wandern nie mit.
             }
         }
         if (values) v.values = { ...values };
         if (adjustments) v.adjustments = adjustments;
+        // Kommentare entscheidet der Dialog (kommentareFuerNeueVersion): die
+        // der eingelösten Positionen, dort änderbar, plus auf Wunsch die
+        // übrigen. Ohne Angabe beginnt die Version ohne Kommentar.
+        if (comments) v.comments = { ...comments };
         state.versions.push(v);
         state.activeVersionId = v.id;
         hydrateFormFromActiveVersion();
@@ -4007,18 +4065,12 @@
         const result = await openNewVersionModal({
             name: neueVersionName(standKey),
             basedOnId: active.id,
+            standKey: standKey,
             eintraege: einloesbareEintraege(bekannt, staende, active.values || {}, standKey),
         });
         if (!result) return;
         captureFormToActiveVersion();
-        const alle = active.adjustments || {};
-        const abgewaehlt = result.abgewaehlt;
-        const werte = werteFuerStand(active.values, bekannteAnpassungen(alle), standKey, abgewaehlt);
-        const rest = anpassungenNachStand(bekannteAnpassungen(alle), standKey, abgewaehlt);
-        // Einträge für Zeilen, die diese Seite nicht kennt, gehen nicht verloren.
-        const unbekannt = unbekannteAnpassungenBehalten(alle, Object.keys(ROW_INDEX));
-        Object.keys(unbekannt).forEach((id) => { rest[id] = { ...unbekannt[id] }; });
-        createVersion({ name: result.name, basedOnId: active.id, values: werte, adjustments: rest });
+        versionAnlegen(getActiveVersion(), result);
         toast(`Version „${result.name}" erstellt.`);
     }
 
@@ -4754,7 +4806,6 @@
         const nameInput = $('#newVersionName');
         fieldset.innerHTML = '';
         fieldset.hidden = !!vorgabe;
-        const boxen = fuelleEinloesenListe(vorgabe && vorgabe.eintraege);
 
         const empty = document.createElement('label');
         empty.className = 'radio-option';
@@ -4769,6 +4820,39 @@
             lbl.innerHTML = `<input type="radio" name="basedOn" value="${v.id}" ${isActive ? 'checked' : ''}> <span>${safe}${isActive ? ' (aktuelle)' : ''}</span>`;
             fieldset.appendChild(lbl);
         });
+
+        // Welche Version ist gerade als Grundlage angehakt?
+        const gewaehlteBasis = () => {
+            if (vorgabe) return state.versions.find((v) => v.id === vorgabe.basedOnId) || null;
+            const id = fieldset.querySelector('input[name="basedOn"]:checked')?.value || '';
+            return id ? state.versions.find((v) => v.id === id) || null : null;
+        };
+
+        // Derselbe Dialog für beide Wege: Aus der Anpassungsliste kommt die
+        // Auswahl fertig mit, aus der Kopfleiste richtet sie sich nach der
+        // angehakten Grundlage — und wechselt mit ihr.
+        const kommentareVon = (v) => (v && v.comments) || {};
+        const kommentarFeld = $('#newVersionKommentare');
+        // Jeder Dialog beginnt mit «übernehmen»: Wer einmal abgewählt hat,
+        // soll beim nächsten Mal nicht stillschweigend ohne Kommentare
+        // dastehen.
+        $('#newVersionUebrigeKommentare').checked = true;
+        // Kommentare gibt es nur mit einer Grundlage: «Leer beginnen» hat keine.
+        const zeigeKommentarfeld = () => { kommentarFeld.hidden = !gewaehlteBasis(); };
+
+        let boxen = fuelleEinloesenListe(
+            vorgabe ? vorgabe.eintraege : einloesbareEintraegeVon(gewaehlteBasis()),
+            kommentareVon(gewaehlteBasis()));
+        zeigeKommentarfeld();
+        if (!vorgabe) {
+            fieldset.querySelectorAll('input[name="basedOn"]').forEach((radio) => {
+                radio.addEventListener('change', () => {
+                    const basis = gewaehlteBasis();
+                    boxen = fuelleEinloesenListe(einloesbareEintraegeVon(basis), kommentareVon(basis));
+                    zeigeKommentarfeld();
+                });
+            });
+        }
 
         nameInput.value = vorgabe ? vorgabe.name : '';
         nameInput.placeholder = 'z. B. ' + (vorgabe ? vorgabe.name : suggestVersionName());
@@ -4787,7 +4871,16 @@
                     ? vorgabe.basedOnId
                     : (m.querySelector('input[name="basedOn"]:checked')?.value || null);
                 const abgewaehlt = boxen.filter((b) => !b.checked).map((b) => b.value);
-                cleanup({ name, basedOnId, abgewaehlt });
+                // Ohne aufgelistete Anpassung gibt es nichts einzulösen: dann
+                // entsteht eine gewöhnliche Kopie (oder eine leere Version).
+                const standKey = boxen.length === 0 ? null : (vorgabe ? vorgabe.standKey : 'offen');
+                const kommentare = {};
+                $$('#newVersionEinloesenListe .einloesen-kommentar').forEach((feld) => {
+                    kommentare[feld.dataset.kommentarFuer] = feld.value;
+                });
+                const uebrigeKommentare = !kommentarFeld.hidden
+                    && $('#newVersionUebrigeKommentare').checked;
+                cleanup({ name, basedOnId, abgewaehlt, standKey, kommentare, uebrigeKommentare });
             });
             setTimeout(() => nameInput.focus(), 50);
         });
@@ -4798,7 +4891,7 @@
     // Dialog «Neue Version»). Jede Zeile beginnt angehakt; der Satz darunter
     // zählt bei jeder Änderung neu mit. Die Häkchen entstehen mit dem Dialog
     // und verschwinden mit ihm: Gemerkt wird nichts.
-    function fuelleEinloesenListe(eintraege) {
+    function fuelleEinloesenListe(eintraege, comments) {
         const abschnitt = $('#newVersionEinloesen');
         const liste = $('#newVersionEinloesenListe');
         const text = $('#newVersionEinloesenText');
@@ -4811,6 +4904,11 @@
         // Bei einem Stand über mehrere Daten sagt jede Zeile, von wann sie ist.
         const gemischt = zeilen.some(({ e }) => e.ab !== zeilen[0].e.ab);
         const boxen = zeilen.map(({ e, name }) => {
+            // Eintrag = Auswahlzeile plus Kommentarfeld. Das Feld steht
+            // bewusst NEBEN dem <label> und nicht darin: ein Klick ins
+            // Textfeld würde sonst das Häkchen umschalten.
+            const eintrag = document.createElement('div');
+            eintrag.className = 'einloesen-eintrag';
             const zeile = document.createElement('label');
             zeile.className = 'radio-option';
             const box = document.createElement('input');
@@ -4833,7 +4931,21 @@
             betrag.textContent = `${formatComputed(e.altM)} → ${formatComputed(e.neuM)} · ${deltaAnzeige(e.deltaM)}`;
             betrag.title = `Jährlich: ${formatComputed(e.altY)} → ${formatComputed(e.neuY)}`;
             zeile.appendChild(betrag);
-            liste.appendChild(zeile);
+            eintrag.appendChild(zeile);
+
+            // Der Kommentar der Position, hier änderbar: Was in der neuen
+            // Version stehen soll, schreibt man dort, wo man über sie
+            // entscheidet (Punkt 4).
+            const kommentar = document.createElement('input');
+            kommentar.type = 'text';
+            kommentar.className = 'einloesen-kommentar';
+            kommentar.dataset.kommentarFuer = e.rowId;
+            kommentar.value = (comments && typeof comments[e.rowId] === 'string') ? comments[e.rowId] : '';
+            kommentar.placeholder = 'Kommentar für die neue Version (darf leer bleiben)';
+            kommentar.setAttribute('aria-label', `Kommentar zu ${name} in der neuen Version`);
+            eintrag.appendChild(kommentar);
+
+            liste.appendChild(eintrag);
             return box;
         });
         const nachzaehlen = () => {
@@ -4897,10 +5009,52 @@
         });
     }
 
+    // Die einlösbaren Anpassungen einer Version, für den Dialog. «offen»
+    // heisst hier «alle» — siehe einloesbareEintraege.
+    function einloesbareEintraegeVon(version) {
+        if (!version) return [];
+        const bekannt = bekannteAnpassungen(version.adjustments || {});
+        return einloesbareEintraege(bekannt, stichtagListe(bekannt, heuteIso()),
+            version.values || {}, 'offen');
+    }
+
+    // Beide Wege zum Dialog enden hier: der Knopf «Neue Version» in der
+    // Kopfleiste und «Neue Version aus diesem Stand» in der Anpassungsliste.
+    // Ohne Stand entsteht eine gewöhnliche Version, mit Stand eine, in der die
+    // angehakten Anpassungen eingerechnet sind.
+    function versionAnlegen(basis, result) {
+        // Kommentare (Punkt 4): die der aufgeführten Positionen so, wie sie im
+        // Dialog stehen; alle übrigen nur mit gesetztem Häkchen.
+        const kommentare = basis
+            ? kommentareFuerNeueVersion(basis.comments, result.kommentare, result.uebrigeKommentare)
+            : {};
+        if (!basis || !result.standKey) {
+            createVersion({ name: result.name, basedOnId: result.basedOnId, comments: kommentare });
+            return;
+        }
+        const alle = basis.adjustments || {};
+        const bekannt = bekannteAnpassungen(alle);
+        const werte = werteFuerStand(basis.values, bekannt, result.standKey, result.abgewaehlt);
+        const rest = anpassungenNachStand(bekannt, result.standKey, result.abgewaehlt);
+        // Einträge für Zeilen, die diese Seite nicht kennt, gehen nicht verloren.
+        const unbekannt = unbekannteAnpassungenBehalten(alle, Object.keys(ROW_INDEX));
+        Object.keys(unbekannt).forEach((id) => { rest[id] = { ...unbekannt[id] }; });
+        createVersion({ name: result.name, basedOnId: basis.id, values: werte, adjustments: rest, comments: kommentare });
+    }
+
     async function handleAddVersionClick() {
+        // Gleicher Ablauf wie aus der Anpassungsliste: Hat die gewählte
+        // Grundlage Anpassungen, führt der Dialog sie auf und rechnet die
+        // angehakten ein. Das war der einzige Weg, der gefehlt hat — alle
+        // Anpassungen auf einmal zu übernehmen.
+        captureFormToActiveVersion();
         const result = await openNewVersionModal();
         if (!result) return;
-        createVersion({ name: result.name, basedOnId: result.basedOnId });
+        captureFormToActiveVersion();
+        const basis = result.basedOnId
+            ? state.versions.find((v) => v.id === result.basedOnId) || null
+            : null;
+        versionAnlegen(basis, result);
         toast(`Version „${result.name}" erstellt.`);
     }
 
