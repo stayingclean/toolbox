@@ -13,7 +13,7 @@ import subprocess  # noqa: F401
 import sys  # noqa: F401
 from pathlib import Path
 
-import pytest  # noqa: F401
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 TOKEN_DATEI = ROOT / "docs" / "tokens.css"
@@ -40,7 +40,9 @@ TOKENS: dict[str, str] = {
 
 # Repo-relativer POSIX-Pfad -> Token, die diese Datei selbst setzen darf.
 # Leer heisst: keine. Jede umgestellte Seite trägt sich hier selbst ein.
-MIGRIERT: dict[str, set[str]] = {}
+MIGRIERT: dict[str, set[str]] = {
+    "docs/index.html": set(),
+}
 
 
 def tokens_der_datei(pfad: Path) -> dict[str, str]:
@@ -66,3 +68,20 @@ def test_tokens_css_haelt_genau_den_vereinbarten_satz():
     Ändert sich hier einer, ändert sich das Aussehen der halben Website --
     das soll auffallen."""
     assert tokens_der_datei(TOKEN_DATEI) == TOKENS
+
+
+@pytest.mark.parametrize("pfad", sorted(MIGRIERT))
+def test_migrierte_seite_bindet_die_tokens_ein(pfad):
+    assert re.search(
+        r"""(?:<link[^>]*href\s*=|@import\s+url\()\s*["']?[^"')]*tokens\.css""",
+        (ROOT / pfad).read_text(encoding="utf-8"),
+    )
+
+
+@pytest.mark.parametrize("pfad", sorted(MIGRIERT))
+def test_migrierte_seite_deklariert_keinen_token_neu(pfad):
+    """Eine Seite, die einen Token nochmals selbst setzt, läuft wieder
+    auseinander -- und niemand sieht es. Erlaubt sind nur die in MIGRIERT
+    eingetragenen, begründeten Ausnahmen."""
+    doppelt = set(tokens_der_datei(ROOT / pfad)) & set(TOKENS) - MIGRIERT[pfad]
+    assert not doppelt, f"{pfad} setzt selbst: {sorted(doppelt)}"
