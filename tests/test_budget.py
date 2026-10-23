@@ -833,8 +833,8 @@ def test_anpassungszeile_druckt_nie():
     nicht auf Papier — auch nicht mit dem Haekchen «Kommentare drucken»."""
     css = _druck_css()
     assert re.search(r"\.adj-row\s*\{[^}]*display:\s*none", css)
-    assert re.search(r"\.adj-add-btn\s*\{[^}]*display:\s*none", css), \
-        "sonst druckt der Knopf «Anpassung erfassen» im Kommentarkasten mit"
+    assert re.search(r"\.adj-add-btn,\s*\.adj-add-hinweis\s*\{[^}]*display:\s*none", css), \
+        "sonst drucken der Knopf «Anpassung erfassen» und sein Hinweis mit"
     assert not re.search(r"\.adj-(row|add-btn)\s*\{[^}]*display:\s*(block|table|inline)", css), \
         "keine Regel darf die Anpassung im Druck wieder einblenden"
     assert "print-comments" not in css[css.index(".adj-row"):css.index(".adj-row") + 400]
@@ -862,12 +862,70 @@ def test_stand_zeilen_der_zusammenfassung_drucken_mit():
     assert 'id="differenceRow"' in _seite_text()
 
 
-def test_infobox_verweist_nicht_mehr_nur_auf_versionen():
+def test_anleitung_erklaert_auch_das_warum():
+    """Der Text soll sagen, warum man eine Anpassung erfasst statt den Betrag
+    zu ueberschreiben, und weshalb das Datum den Unterschied macht — nicht nur
+    die Klickfolge. Geprueft wird der Inhalt, nicht eine Formulierung."""
     text = _seite_text()
     assert "modellieren Sie über <strong>weitere Budget-Versionen</strong>" not in text
-    box = text[text.index('<div class="info-box">'):][:2500]
-    assert "direkt in der Zeile" in box, "Anpassungen stehen jetzt in der Zeile"
+    box = text[text.index('<div class="info-box">'):][:4000]
+    assert "künftig" in box, "das Warum: der Betrag, den die Position kuenftig haben soll"
+    assert "Mit</strong> Datum" in box or "<strong>Mit</strong>" in box, "das Weshalb des Datums"
+    assert "nie gedruckt" in box, "Anpassungen drucken nicht mit (Punkt 1)"
     assert "grundsätzlich anderen Haushalt" in box, "Versionen sind fuer den anderen Haushalt da"
+
+
+def test_anleitung_steht_nur_an_einer_stelle():
+    """Zwei Fassungen desselben Textes liefen auseinander — in diesem Projekt
+    schon einmal passiert (die Aufgabenlisten der Anleitung)."""
+    text = _seite_text()
+    assert text.count('class="info-box"') == 1
+    kopf = text[text.index('<div class="sticky-head">'):text.index("/sticky-head")]
+    assert 'class="info-box"' in kopf, "der Volltext wohnt im Hilfe-Panel der Kopfleiste"
+
+
+def test_hilfe_streifen_liegt_in_der_kopfleiste():
+    """Nur dort zaehlt er bei springeZuZeile mit (kopf.offsetHeight) und faellt
+    im Druck von selbst weg — .sticky-head steht in der Verbergen-Liste."""
+    text = _seite_text()
+    kopf = text[text.index('<div class="sticky-head">'):text.index("/sticky-head")]
+    assert 'class="hilfe-leiste"' in kopf
+    assert 'id="hilfePanel"' in kopf
+    # Der Knopf steht in der Versionsleiste, bei «Anpassungen» und «Vorschau»:
+    # so kann der Streifen auf dem Telefon verschwinden, ohne den Zugang
+    # mitzunehmen.
+    leiste = kopf[kopf.index('id="versionBar"'):kopf.index('id="previewBar"')]
+    assert 'id="hilfeBtn"' in leiste
+
+
+def test_hilfe_panel_ueberlagert_statt_zu_schieben():
+    """Sonst aenderte sich die Hoehe der Kopfleiste beim Auf- und Zuklappen,
+    und jedes Sprungziel waere um die Panelhoehe daneben."""
+    text = _seite_text()
+    assert re.search(r"#hilfePanel\s*\{[^}]*position:\s*absolute", text)
+    assert re.search(r"#hilfePanel\[hidden\]\s*\{[^}]*display:\s*none", text)
+
+
+def test_hilfe_streifen_faellt_in_der_vorschau_weg():
+    """Dort wird nichts erfasst, also braucht es keine Erfassungshilfe — und
+    Escape kann nicht zwischen Panel und Vorschau zerrissen werden."""
+    assert re.search(
+        r"body\.mode-preview\s+\.hilfe-leiste,\s*body\.mode-preview\s+\.hilfe-wrap\s*\{[^}]*display:\s*none",
+        _seite_text()), "Streifen und Knopf fallen in der Vorschau beide weg"
+
+
+def test_schmale_breite_gibt_den_text_ab():
+    """Die Kopfleiste belegt auf dem Telefon schon gegen 250 px; eine weitere
+    dauerhafte Textzeile naehme dem Formular den Platz, den sie erklaert."""
+    text = _seite_text()
+    assert ".hilfe-lang" in text and ".hilfe-kurz" in text
+    assert "max-width: 560px" in text, "unter 560 px bleibt nur der Knopf"
+
+
+def test_sprung_schliesst_das_hilfe_panel():
+    """Sonst liegt die Ueberlagerung genau ueber der Zeile, zu der gesprungen
+    wurde."""
+    assert "closeHilfePanel()" in _funktionsblock("springeZuZeile")
 
 
 # --- Schlussrunde: Hinweis zum Stand, Jahresbeträge, Tastatur ----------------

@@ -323,14 +323,52 @@ Zeilennummern nach dem heutigen Stand (Commit `5c8468c`).
 | 4104, 4140 | dort schaltet die Vorschau die Felder; dieselbe Stelle schliesst das Hilfe-Panel beim Betreten. |
 | `tests/test_budget.py:866` | Test auf die neuen Wendungen umstellen (siehe oben) und einen zweiten dazu: der Streifen liegt **innerhalb** von `.sticky-head`. |
 
+## Nachtrag 2026-10-23: nachgemessen und eingebaut
+
+Der Einbau ist erfolgt; drei Dinge sind dabei anders gekommen als hier
+entworfen, alle drei aus gemessenen Zahlen heraus.
+
+**Der Knopf steht nicht im Streifen, sondern in der Versionsleiste**, bei
+«Anpassungen» und «Vorschau». Nur so kann der Streifen unter 560 px ersatzlos
+verschwinden, ohne den Zugang zur Anleitung mitzunehmen — der Entwurf wollte
+den Knopf dort erst unterhalb der Grenze einrücken, was zwei Orte für dasselbe
+Bedienelement bedeutet hätte. Der Streifen trägt jetzt nur noch den Text.
+
+**Der Langtext weicht schon bei 960 px, nicht erst bei 768 px.** Gemessen: Bei
+900 px bricht er auf zwei Zeilen um (46 px statt 28 px). Zwei Zeilen Hilfe über
+einem Formular sind kein Dienst, also gilt die Kurzfassung ab 960 px abwärts.
+
+**Die Versionsleiste musste mit.** Beim Messen kam heraus, dass
+`.version-tabs` mit `min-width: 0` unter die Breite eines Reiters schrumpft:
+Der Reiter «Hauptversion» lief aus seinem Kasten heraus und lag auf 375 px über
+dem Knopf «Neue Version» — ein Fehler, der vor dieser Arbeit schon da war und
+den der neue Knopf nur sichtbar gemacht hat. Jetzt gilt `min-width:
+fit-content`; damit die Leiste deswegen nicht umbricht, zeigen «Neue Version»
+unter 560 px nur noch das Pluszeichen und das Wort «Versionen:» gar nichts
+(beides bleibt in `aria-label` und `title`).
+
+**Die Höhen, jetzt gemessen statt gerechnet** (Kopfleiste gesamt):
+
+| Breite | vorher | nachher |
+|---|---|---|
+| 1200 px | 160 px | 188 px |
+| 560 px | 175 px | 203 px |
+| 375 px | 277 px | **277 px** |
+
+Auf dem Telefon kostet die Anleitung damit **null Pixel** — die Zusage des
+Entwurfs hält, und die überlappende Schrift in der Versionsleiste ist
+nebenbei weg. Breit kostet der Streifen 28 px.
+
+**Geprüft wurde ausserdem:** Das Panel ändert die Höhe der Kopfleiste beim
+Auf- und Zuklappen nicht (188 px in beiden Zuständen), Escape und Klick
+ausserhalb schliessen es, der Sprung aus der Anpassungsliste schliesst es, und
+in der Vorschau sind Streifen und Knopf weg.
+
 ## Was dieser Entwurf offen lässt
 
-- **Die Höhen sind gerechnet, nicht gemessen.** Beide Zahlen (100 px breit,
-  gegen 250 px schmal) stammen aus dem CSS. Sobald ein Browser zur Hand ist,
-  gehören sie nachgemessen; ändert sich das Bild stark, ist die Grenze von
-  560 px die erste Zahl, die nachzuziehen ist.
-- **Die Stelle des «?»-Knopfs unter 560 px** (Versionsleiste oder
-  Werkzeugleiste) entscheidet sich am Umbruchverhalten, nicht am Entwurf.
+- ~~**Die Höhen sind gerechnet, nicht gemessen.**~~ Erledigt, siehe Nachtrag.
+- ~~**Die Stelle des «?»-Knopfs unter 560 px.**~~ Entschieden: Versionsleiste,
+  und zwar auf jeder Breite.
 - **Punkt 10** (die vierte Spalte «Total / Jahr») kann die Spaltenregel im
   Kurztext noch ändern. Fällt die Spalte, bleibt der Satz trotzdem richtig.
 - **Die Anleitung bleibt eine Anleitung.** Kein geführter erster Durchlauf,

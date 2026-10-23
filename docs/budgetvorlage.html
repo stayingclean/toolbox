@@ -658,6 +658,17 @@
         .adj-add-btn[hidden] {
             display: none;
         }
+        .adj-add-hinweis {
+            margin: 0.3rem 0 0;
+            font-size: 0.78rem;
+            color: var(--color-text-muted);
+        }
+        /* Mit dem Knopf zusammen: er bietet an, was es hier zu erfassen gibt,
+           der Satz sagt, was das bedeutet. Ohne Knopf steht die Anpassung
+           schon da und erklärt sich selbst. */
+        .adj-add-btn[hidden] + .adj-add-hinweis {
+            display: none;
+        }
         /* In der Vorschau wird nichts erfasst: dort sind alle Anpassungsfelder
            gesperrt, und der Knopf böte eine Zeile an, in die man nichts
            schreiben kann. */
@@ -917,15 +928,18 @@
         }
 
         /* ============================================================
-           Info Box / Wegleitung
+           Info Box / Wegleitung — der Volltext der Anleitung.
+           Sie stand bis 2026-10-23 als Kasten oben in <main> und war nach dem
+           ersten Scrollen weg: gelesen, wenn man noch nichts tut, gebraucht,
+           während man in der Zeile «Krankenkasse» steht. Jetzt wohnt sie im
+           Hilfe-Panel der Kopfleiste — an genau einer Stelle, nicht zweimal.
            ============================================================ */
         .info-box {
             background: var(--color-primary-faint);
             border-left: 4px solid var(--color-primary);
             border-radius: var(--radius-md);
-            padding: 1.25rem 1.5rem;
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
+            padding: 1rem 1.25rem;
+            font-size: 0.92rem;
             color: var(--color-text);
         }
 
@@ -935,6 +949,15 @@
             color: var(--color-primary-dark);
             margin: 0 0 0.5rem 0;
             font-weight: 600;
+        }
+
+        .info-box h3 {
+            font-size: 0.86rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--color-primary-dark);
+            margin: 1rem 0 0.25rem;
         }
 
         .info-box p {
@@ -947,6 +970,91 @@
         }
         .info-box .hint-list li {
             margin-bottom: 0.25rem;
+        }
+        .info-box .hilfe-schritte {
+            margin: 0.4rem 0 0 1.25rem;
+            padding: 0;
+        }
+        .info-box .hilfe-schritte li {
+            margin-bottom: 0.35rem;
+        }
+
+        /* ============================================================
+           Hilfe-Streifen und -Panel (die dritte Leiste von .sticky-head)
+           ============================================================ */
+        /* Der Streifen trägt nur Text. Der Knopf steht in der Versionsleiste
+           bei «Anpassungen» und «Vorschau» — so kann der Streifen auf dem
+           Telefon ersatzlos verschwinden, ohne den Zugang mitzunehmen, und
+           die Kopfleiste wächst dort um null Pixel. */
+        .hilfe-leiste {
+            padding: 0.3rem 1.5rem;
+            background: var(--color-primary-faint);
+            border-top: 1px solid var(--color-border);
+        }
+        .hilfe-text {
+            margin: 0;
+            font-size: 0.82rem;
+            line-height: 1.35;
+            color: var(--color-text-muted);
+        }
+        .hilfe-wrap {
+            position: relative;      /* Anker des überlagernden Panels */
+            display: inline-flex;
+        }
+        .hilfe-kurz { display: none; }
+        .hilfe-btn {
+            flex: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.7rem;
+            border: 1px solid var(--color-primary);
+            border-radius: var(--radius-sm);
+            background: var(--color-bg);
+            color: var(--color-primary-dark);
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .hilfe-btn:hover,
+        .hilfe-btn[aria-expanded="true"] {
+            background: var(--color-primary);
+            color: white;
+        }
+        .hilfe-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+        .hilfe-btn-kurz { display: none; }
+        /* Überlagert, schiebt nicht: sonst änderte sich die Höhe der
+           Kopfleiste beim Auf- und Zuklappen, und jedes Sprungziel von
+           springeZuZeile läge um die Panelhöhe daneben. */
+        #hilfePanel {
+            position: absolute;
+            top: calc(100% + 0.4rem);
+            right: 0;
+            z-index: 95;
+            width: 36rem;
+            max-width: calc(100vw - 2rem);
+            max-height: min(60vh, 32rem);
+            overflow-y: auto;
+            padding: 0.9rem 1rem 1rem;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            text-align: left;
+        }
+        #hilfePanel[hidden] { display: none; }
+        /* In der Vorschau wird nichts erfasst — dort braucht es keine
+           Erfassungshilfe, und die Stand-Leiste bekommt die Höhe, die der
+           Streifen abgibt. Nebenbei: Panel und Vorschau können so nicht
+           gleichzeitig offen sein, Escape bleibt eindeutig. */
+        body.mode-preview .hilfe-leiste,
+        body.mode-preview .hilfe-wrap {
+            display: none;
         }
 
         /* Private Notiz zur Version. «Privat» heisst: wird nicht mitgedruckt,
@@ -1199,6 +1307,66 @@
                 min-width: 0;
                 margin-bottom: 0.125rem;
             }
+            /* Der Streifen gibt Text ab, statt auf drei Zeilen umzubrechen:
+               drei Zeilen Hilfe über einem Formular sind kein Dienst. Kein
+               Abschneiden mit «…» — ein abgeschnittener Hinweis ist
+               schlechter als ein kurzer. */
+            .hilfe-leiste { padding-left: 0.75rem; padding-right: 0.75rem; }
+        }
+
+        /* Der Streifen bleibt einzeilig. Der lange Satz braucht gemessene
+           960 px; darunter bricht er auf zwei Zeilen um, und zwei Zeilen Hilfe
+           über einem Formular sind kein Dienst. Kein Abschneiden mit «…» —
+           ein abgeschnittener Hinweis ist schlechter als ein kurzer. */
+        @media (max-width: 960px) {
+            .hilfe-lang { display: none; }
+            .hilfe-kurz { display: inline; }
+        }
+
+        /* Wie bei der Anpassungsliste: schmal kann der Knopf links in der
+           Leiste stehen, dann liefe das Panel am Rand heraus. */
+        @media (max-width: 640px) {
+            .hilfe-wrap { position: static; }
+            #hilfePanel { left: 1rem; right: 1rem; width: auto; max-width: none; }
+        }
+
+        /* Unter 560 px bleibt nur der Knopf, als rundes «?». Die Kopfleiste
+           belegt auf 375 px schon gegen 250 px; eine weitere dauerhafte
+           Textzeile nähme dem Formular den Platz, den die Hilfe erklärt.
+           Die Zusage ist dort schwächer — «immer sichtbar» wird zu «einen
+           Tipp entfernt». Was dort den Dienst übernimmt, ist der Hinweis
+           neben «+ Anpassung erfassen», der ohnehin am richtigen Ort steht. */
+        @media (max-width: 560px) {
+            .hilfe-leiste { display: none; }
+            /* «Neue Version» zeigt nur noch das Pluszeichen. Mit Beschriftung
+               passten Reiter, Knopf und «?» nicht mehr in eine Zeile, und die
+               Leiste brach um — eine zweite Zeile Kopfleiste kostet auf dem
+               Telefon mehr als das Wort erklärt (aria-label und title sagen
+               es weiterhin). */
+            .version-add-btn span { display: none; }
+            .version-add-btn { padding-left: 0.6rem; padding-right: 0.6rem; }
+            /* Das Wort «Versionen:» ebenfalls – die Reiter sagen es selbst,
+               und die Liste trägt ihren Namen in aria-label. */
+            .version-bar-label { display: none; }
+            .hilfe-btn {
+                width: 1.8rem;
+                height: 1.8rem;
+                padding: 0;
+                justify-content: center;
+                border-radius: 50%;
+                font-size: 0.95rem;
+            }
+            .hilfe-btn-lang { display: none; }
+            .hilfe-btn-kurz { display: inline; }
+            #hilfePanel {
+                left: 0.75rem;
+                right: 0.75rem;
+                width: auto;
+                max-width: none;
+                /* dvh wie beim Modal: die einfahrende Adressleiste macht vh
+                   zu einer Lüge, und die Kopfleiste ist hier selbst hoch. */
+                max-height: calc(100dvh - 12rem);
+            }
         }
 
         /* ============================================================
@@ -1336,7 +1504,8 @@
             .adj-row {
                 display: none !important;
             }
-            .adj-add-btn {
+            .adj-add-btn,
+            .adj-add-hinweis {
                 display: none;
             }
             /* Umgekehrt: eine Zeile nur mit Anpassung druckt keinen leeren
@@ -1408,7 +1577,11 @@
             gap: 0.4rem;
             flex-wrap: wrap;
             flex: 1;
-            min-width: 0;
+            /* Nicht unter die Breite eines Reiters schrumpfen: mit `min-width: 0`
+               lief der Reiter auf schmalen Schirmen aus seinem Kasten heraus
+               und lag über «Neue Version». Die Leiste bricht jetzt lieber um —
+               eine Zeile mehr auf dem Telefon statt überlappender Schrift. */
+            min-width: fit-content;
         }
         .version-tab-wrapper {
             position: relative;
@@ -2103,7 +2276,8 @@
 <div class="version-bar" id="versionBar">
     <div class="version-bar-label">Versionen:</div>
     <div class="version-tabs" id="versionTabs" role="tablist" aria-label="Budget-Versionen"></div>
-    <button class="version-add-btn" id="addVersionBtn" type="button" title="Neue Budget-Version anlegen">
+    <button class="version-add-btn" id="addVersionBtn" type="button"
+            aria-label="Neue Budget-Version anlegen" title="Neue Budget-Version anlegen">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -2115,6 +2289,39 @@
                 aria-expanded="false" aria-controls="adjustmentsPanel"
                 title="Alle Anpassungen dieser Version, nach Datum geordnet"></button>
         <div class="adj-panel" id="adjustmentsPanel" role="region" aria-label="Anpassungen" hidden></div>
+    </div>
+    <div class="hilfe-wrap" id="hilfeWrap">
+        <button class="hilfe-btn" id="hilfeBtn" type="button" aria-expanded="false"
+                aria-controls="hilfePanel" title="Die ganze Anleitung zu dieser Seite">
+            <span class="hilfe-btn-lang">Anleitung</span>
+            <span class="hilfe-btn-kurz" aria-hidden="true">?</span>
+        </button>
+        <div class="hilfe-panel" id="hilfePanel" role="region" aria-label="Anleitung" hidden>
+            <div class="info-box">
+                <h2>So füllen Sie die Vorlage aus</h2>
+
+                <h3>Beträge</h3>
+                <p>Tragen Sie jeden Betrag entweder in die <strong>Jahres-</strong> oder in die <strong>Monatsspalte</strong> ein – die andere Spalte rechnet sich daraus (Jahresbetrag ÷ 12 bzw. Monatsbetrag × 12). Subtotale und Gesamtsummen folgen automatisch. Beträge in <strong>CHF</strong>, Dezimalstellen mit Komma oder Punkt.</p>
+
+                <h3>Anpassungen – was dort hineingehört</h3>
+                <p>Eine Anpassung ist der Betrag, den eine Position <strong>künftig</strong> haben soll, nicht der, den sie heute hat. Die erfassten Zahlen bleiben darum stehen; daneben steht, was möglich wäre. So sieht man im Gespräch, was ein Vorschlag bringt, ohne dass die Aufnahme des heutigen Haushalts überschrieben wird.</p>
+
+                <h3>Anpassungen – wie Sie eine erfassen</h3>
+                <ol class="hilfe-schritte">
+                    <li>Zeile mit dem <strong>Pfeil</strong> am Anfang aufklappen. Darunter erscheint das Feld für den Kommentar.</li>
+                    <li>Dort auf <strong>„+ Anpassung erfassen"</strong> klicken.</li>
+                    <li>Die Anpassung steht nun als eigene Zeile direkt unter dem Kommentar, spaltengleich zu den Beträgen: links das Datum, daneben der neue Jahres- oder Monatsbetrag, rechts der Unterschied zum erfassten Wert.</li>
+                    <li>Ohne Betrag gibt es keine Anpassung. Das Datum lässt sich erst setzen, wenn ein neuer Betrag dasteht, und eine Zeile ohne Betrag verschwindet wieder, sobald Sie sie verlassen.</li>
+                </ol>
+
+                <h3>Anpassungen – weshalb das Datum</h3>
+                <p><strong>Mit</strong> Datum heisst: steht fest, wirkt ab dann – ein gekündigtes Abo läuft bis zum Ende der Frist weiter. <strong>Ohne</strong> Datum heisst: noch offen, ein Vorschlag, über den niemand entschieden hat. Die Zusammenfassung unten zeigt darum für jeden Stichtag einen eigenen Stand, zuletzt den Stand <strong>mit allen Vorschlägen</strong>. „Vorschau" in der Versionsleiste zeigt dasselbe für das ganze Budget – gerechnet, nicht erfasst; dort wird nichts geschrieben.</p>
+                <p>Anpassungen werden <strong>nie gedruckt</strong>. Sie sind das Feld zum Erfassen; auf Papier gehört der Stand, nicht das Formular.</p>
+
+                <h3>Weitere Budget-Version</h3>
+                <p>Eine weitere Version brauchen Sie für einen <strong>grundsätzlich anderen Haushalt</strong> – nach einem Umzug, nach einer Trennung. Über „Neue Version" übernehmen Sie die Werte einer bestehenden Version, auf Wunsch samt den Anpassungen, die bis zu einem Stichtag fällig sind; die Kommentare lassen sich im selben Dialog gleich anpassen. „Versionsvergleich" unten zeigt die Differenzen auf einen Blick.</p>
+            </div>
+        </div>
     </div>
     <!-- Kein Versionsreiter: die Vorschau ersetzt keine Version, sie zeigt die
          aktive gerechnet. Als Reiter in derselben Liste behauptete sie, die
@@ -2143,17 +2350,24 @@
     </p>
     <button class="preview-leave" id="previewLeaveBtn" type="button">Vorschau verlassen</button>
 </div>
+
+<!-- ============================================================
+     Hilfe-Streifen — die dritte Leiste der Kopfleiste.
+     Sie trägt die zwei Sätze, die man beim Tippen braucht; der
+     Volltext liegt im Panel daneben und ÜBERLAGERT die Seite, statt
+     sie zu schieben (Muster: .adj-panel). Darum ändert sich die Höhe
+     der Kopfleiste beim Auf- und Zuklappen nicht — und springeZuZeile
+     rechnet weiterhin mit einer Zahl, die stimmt.
+     ============================================================ -->
+<div class="hilfe-leiste">
+    <p class="hilfe-text">
+        <span class="hilfe-lang">Jährlich <strong>oder</strong> monatlich eintragen – die andere Spalte rechnet sich. Anpassung: Zeile mit dem Pfeil aufklappen, dann „+ Anpassung erfassen".</span>
+        <span class="hilfe-kurz">Jährlich oder monatlich – die andere Spalte rechnet sich.</span>
+    </p>
+</div>
 </div><!-- /sticky-head -->
 
 <main class="page">
-
-    <div class="info-box">
-        <h2>So füllen Sie die Vorlage aus</h2>
-        <p>Tragen Sie Beträge entweder in die <strong>Jahres-</strong> oder die <strong>Monatsspalte</strong> ein – die jeweils andere Spalte wird automatisch berechnet (Jahresbetrag ÷ 12 bzw. Monatsbetrag × 12). Subtotale und Gesamtsummen aktualisieren sich automatisch.</p>
-        <p>Mögliche Einsparungen oder Anpassungen tragen Sie <strong>direkt in der Zeile</strong> ein: Klappen Sie die Position mit dem Pfeil auf, klicken Sie auf „+ Anpassung erfassen" und geben Sie den neuen Betrag an, auf Wunsch mit „Gilt ab". Die Anpassung steht dann als eigene Zeile unter der Position, spaltengleich zu den Beträgen; rechts sehen Sie, was sie ausmacht. Die Zusammenfassung zeigt den Stand zu jedem Stichtag, und die „Vorschau" in der Versionsleiste zeigt das ganze Budget ab einem Stichtag – gerechnet, nichts davon wird erfasst.</p>
-        <p>Eine <strong>weitere Budget-Version</strong> brauchen Sie für einen grundsätzlich anderen Haushalt, etwa nach einem Umzug oder einer Trennung: Klicken Sie oben auf „Neue Version", übernehmen Sie die Werte aus einer bestehenden Version und passen Sie sie an. In der Sektion „Versionsvergleich" sehen Sie die Differenzen auf einen Blick.</p>
-        <p>Beträge in <strong>CHF</strong>. Dezimalstellen mit Komma oder Punkt möglich.</p>
-    </div>
 
     <!-- Private Notiz der aktiven Version. «Privat» heisst: wird nicht
          mitgedruckt (ausser mit dem Häkchen in der Werkzeugleiste). Sie steht
@@ -3558,12 +3772,18 @@
         add.dataset.adjAdd = row.id;
         add.textContent = '+ Anpassung erfassen';
         add.title = 'Neuen Betrag für eine weitere Budget-Version festhalten';
+        // Die Hilfe an der Stelle des Geschehens: auf dem Telefon, wo der
+        // Streifen oben nur noch ein «?» ist, trägt dieser Satz die Last.
+        const addHinweis = document.createElement('p');
+        addHinweis.className = 'adj-add-hinweis';
+        addHinweis.textContent = 'Neuer Betrag für eine weitere Version – die erfasste Zahl bleibt stehen.';
         add.addEventListener('click', () => {
             zeigeAnpassungszeile(row.id, true);
             const feld = $(`.adj-input[data-row-id="${row.id}"][data-adj="jaehrlich"]`);
             if (feld) feld.focus();
         });
         panel.appendChild(add);
+        panel.appendChild(addHinweis);
 
         td.appendChild(panel);
         tr.appendChild(td);
@@ -4022,6 +4242,22 @@
         btn.setAttribute('aria-expanded', 'false');
     }
 
+    // Die Anleitung: derselbe Mechanismus wie bei der Anpassungsliste. Das
+    // Panel überlagert, darum ändert sich die Höhe der Kopfleiste nicht.
+    function toggleHilfePanel() {
+        const panel = $('#hilfePanel');
+        const oeffnen = panel.hidden;
+        panel.hidden = !oeffnen;
+        $('#hilfeBtn').setAttribute('aria-expanded', oeffnen ? 'true' : 'false');
+    }
+
+    function closeHilfePanel() {
+        const panel = $('#hilfePanel');
+        if (!panel || panel.hidden) return;
+        panel.hidden = true;
+        $('#hilfeBtn').setAttribute('aria-expanded', 'false');
+    }
+
     function toggleAdjustmentsPanel() {
         const panel = $('#adjustmentsPanel');
         const btn = $('#adjustmentsBtn');
@@ -4034,6 +4270,9 @@
     // oben (.sticky-head); ohne ihre Höhe abzuziehen läge die Zeile darunter.
     function springeZuZeile(rowId) {
         closeAdjustmentsPanel();
+        // Sonst läge die Überlagerung genau über der Zeile, zu der gesprungen
+        // wurde — die Kopfleiste ist der Anker des Panels.
+        closeHilfePanel();
         const tr = $(`tr[data-row-id="${rowId}"]`);
         if (!tr) return;
         setRowExpanded(rowId, true);
@@ -4097,6 +4336,10 @@
             // die zuletzt getippten Werte beim Verlassen verloren.
             captureFormToActiveVersion();
             closeAdjustmentsPanel();
+            // Der Streifen ist in der Vorschau verborgen; ein offen
+            // stehendes Panel hinge sonst an einer Leiste, die es nicht
+            // mehr gibt.
+            closeHilfePanel();
             // Erst die Vorschau setzen, dann sperren: Ein gesperrtes Feld, das
             // den Fokus hatte, feuert blur, und dessen Handler schaut hierauf.
             state.previewStand = standKey;
@@ -5465,6 +5708,22 @@
             if (e.key === 'Escape' && !$('#adjustmentsPanel').hidden) {
                 closeAdjustmentsPanel();
                 $('#adjustmentsBtn').focus();
+            }
+        });
+
+        // Hilfe-Panel: dasselbe Muster. In der Vorschau ist der Streifen
+        // verborgen und das Panel zu, darum braucht die Escape-Weiche der
+        // Vorschau keinen eigenen Zweig dafür.
+        $('#hilfeBtn').addEventListener('click', toggleHilfePanel);
+        document.addEventListener('click', (e) => {
+            const wrap = $('#hilfeWrap');
+            if (!wrap || $('#hilfePanel').hidden) return;
+            if (!e.composedPath().includes(wrap)) closeHilfePanel();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !$('#hilfePanel').hidden) {
+                closeHilfePanel();
+                $('#hilfeBtn').focus();
             }
         });
 
