@@ -17,6 +17,9 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/flyer-editor.html` = Flyer-Editor (self-contained, Bilder eingebettet).
 - `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
 - `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
+- `docs/tokens.css` = die gemeinsamen Farben und Schriften der Seiten, die
+  sie einbinden (Übersicht, Vorschlagsformular, Anleitung, Plakat). Eigener
+  Absatz in Punkt 3 unten — **vor einer Änderung dort lesen.**
 - `docs/claude-anleitung/` = Mehrseiten-Anleitung „Mit Claude arbeiten",
   Seitenleiste als Navigation. Die Seiten teilen sich `stil.css` und
   `anleitung.js`; ein Teil von ihnen kommt beim Deployment aus einem zweiten
@@ -104,6 +107,44 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    teilen, wie in `docs/claude-anleitung/` (eigener Abschnitt unten, dort teilen
    alle Seiten `stil.css` und `anleitung.js`).
 
+   **Farben und Schriften kommen aus `docs/tokens.css`** (entschieden am
+   2026-10-23, Hintergrund: `specs/2026-10-23-stil-bibliothek-design.md`).
+   Vorher trug jede der vier Seiten Übersicht, Vorschlagsformular, Anleitung
+   und Plakat dieselben Werte als eigene Kopie; wer an einer Farbe drehte,
+   musste an vier Orten drehen und merkte es nicht, wenn er einen vergass.
+   Seither stehen die elf Werte einmal in der Datei (`--bg`, `--card`,
+   `--card-hover`, `--border`, `--text`, `--muted`, `--accent`,
+   `--accent-dark`, `--accent-tint`, `--font-display`, `--font-body`).
+
+   - **Hinein gehört nur, was Seiten wirklich teilen.** Nicht hinein: die
+     Signalfarben (`--warn`, `--ok` und ihre Tönungen), **solange ihre Werte
+     auseinandergehen** — Plakat und Anleitung haben verschiedene, und welcher
+     gilt, ist offen; ein Wert in `tokens.css` entschiede es stillschweigend
+     für beide. Ebenso wenig Radien, Abstände und Übergänge (keine der Seiten
+     benutzt solche Token) und das CSS der Fusszeile: entschieden ist «nur
+     Tokens», keine Komponenten.
+   - **Eine neue Seite bindet die Datei ein, statt eigene Farben zu setzen:**
+     `<link rel="stylesheet" href="tokens.css">` im `<head>`, Pfad relativ
+     zur Seite, und zwar **vor** dem eigenen `<style>`. Im CSS dann
+     `var(--accent)` statt `#008080`. Setzt die Seite einen der elf Token
+     selbst, ist das ein Rückfall in den alten Zustand.
+   - **`tests/test_tokens.py` meldet, wenn jemand das vergisst:** jede Seite
+     in `docs/` (HTML und CSS), die einen der elf Token selbst setzt, muss in
+     `MIGRIERT` (eingebunden, Ausnahmen je Token begründet) oder in
+     `AUSGENOMMEN` (bewusst draussen, mit Grund) stehen. Dazu prüft der Test,
+     dass jeder Verweis wirklich auf die Datei zeigt, dass der `<link>` vor
+     dem `<style>` steht und dass `docs/skill-vorschlagen.html` und
+     `docs/skills-daten.json` dem frisch gebauten Stand entsprechen.
+   - **Bei einem Wert in `tokens.css` mitziehen:** `TOKENS` in demselben
+     Test hält den Satz fest. Das ist Absicht — ein Wert dort verändert das
+     Aussehen der halben Website und soll nicht nebenbei geschehen.
+   - **Ausnahmen, in `AUSGENOMMEN` mit Grund eingetragen:** `skillsliste.html`
+     und `flyer-editor.html` bleiben in sich geschlossen (Gründe: siehe die
+     beiden folgenden Ausnahmen); sie setzen ihre Farben weiter selbst. Die
+     Budgetvorlage wird getrennt umgebaut und ist nicht Teil dieses Satzes.
+     `neutral_flyer.html` ist eine blosse Weiterleitung, `docs/altbau/` ein
+     fremder Viewer mit eigenem `vendor/` und ganz ausserhalb.
+
    **Ausnahme: `docs/skillsliste.html` muss ohne Netz funktionieren.** Auch sie
    lädt wohl niemand herunter, aber sie soll es aushalten — und dort fällt die
    Entscheidung ohnehin aus Datenschutzgründen so: die Händler-Symbole dürfen
@@ -155,6 +196,24 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    verlangt, dass ein `<link rel="stylesheet">` einen relativen Pfad trägt.
    Hintergrund: `specs/2026-10-23-stil-bibliothek-design.md`.
 
+   **Das Plakat muss die beiden Schrift-Token selbst überschreiben.**
+   `tokens.css` setzt `--font-body` auf Inter und `--font-display` auf
+   Playfair Display. Die Seite lädt keine Schrift von aussen; ohne
+   Überschreibung bekäme Inter nur, wer es lokal installiert hat, alle anderen
+   die Ersatzschrift dahinter — das Plakat sähe bei jedem anders aus, und
+   niemand meldete es, weil es fast niemand sieht. Darum setzt sie beide in
+   ihrem eigenen `:root` auf Systemschriften (`test_plakat_ueberschreibt_die_schrift_tokens`;
+   in `MIGRIERT` als begründete Ausnahme eingetragen).
+
+   **Dass die Überschreibung gewinnt, entscheidet allein die Reihenfolge:**
+   `:root` gegen `:root` hat gleiche Spezifität, also gilt, was später
+   kommt. Der `<link>` auf `tokens.css` muss deshalb **vor** dem
+   `<style>`-Block stehen. Schöbe jemand ihn dahinter, bliebe jeder andere
+   Test grün — die Überschreibung stünde ja weiterhin im `:root` —, und
+   die Tokens übersteuerten sie. Festgehalten ist das in
+   `test_die_tokens_werden_vor_dem_eigenen_stil_geladen` (belegt rot, wenn
+   der `<link>` hinter das `<style>` wandert).
+
    **Die Budgetvorlage speichert `.json`, nicht HTML** (`saveFile`) — Werkzeug
    und Daten sind getrennt, kein ausgefülltes Budget steckt je in einer
    HTML-Datei. Die Konvention «Als HTML speichern» weiter oben gilt den
@@ -189,6 +248,14 @@ Ordner zusammen ändern. Geprüft wird die Anleitung darum am
 
 Daraus folgen vier Dinge, die keine Sperre meldet:
 
+- **`stil.css` holt die Token per `@import url("../tokens.css")`, die Seiten
+  tragen keinen eigenen Verweis.** Acht der vierzehn Seiten kommen aus
+  `stayingclean/ki-tasks`; ein `<link>` auf `tokens.css` müsste in jeder
+  davon stehen, also in einem zweiten Repo, und ein verschobener Pfad ginge
+  dort niemandem auf. Über `stil.css` steht der Verweis an **einer** Stelle,
+  und die ki-tasks-Seiten bekommen die Farben mit, ohne etwas zu wissen.
+  Der `@import` muss die **erste** Regel der Datei sein, sonst verwirft ihn
+  der Browser. Der Pfad ist relativ zu `stil.css`, nicht zur Seite.
 - **`stil.css` und `anleitung.js` gehören der Toolbox.** Die ki-tasks-Seiten
   verweisen nur darauf. Liegt drüben eine gleichnamige Datei, überschreibt das
   `cp` die hiesige — also dort **keine** mitliefern.
@@ -549,7 +616,12 @@ hier etwas umbaut, muss es dort nachziehen.
 
 Die Formularseite ist generiert (`template-vorschlag.html` + `build.py`) — nicht
 direkt bearbeiten. Sie ist die einzige Seite in `docs/`, die Internet braucht
-(Spam-Schutz und Absenden); das CSS bleibt trotzdem eingebettet.
+(Spam-Schutz und Absenden). Die Farben und Schriften bezieht sie aus
+`docs/tokens.css` (`<link>` in `template-vorschlag.html`, vom Build
+übernommen); das übrige CSS bleibt eingebettet. Die Token-Datei liegt auf
+demselben Server wie die Seite, es kommt also nichts von einem Dritten dazu.
+Wer `template-vorschlag.html` ändert, muss neu bauen — `tests/test_tokens.py`
+meldet eine veraltete `docs/skill-vorschlagen.html`.
 
 Der Worker liegt in `worker/`, wird aber **nicht** veröffentlicht. Details und
 Notbremse: `worker/README.md`.

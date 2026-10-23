@@ -12,7 +12,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from test_tokens import TOKENS, tokens_der_datei
+from test_tokens import tokens_der_datei
 
 ROOT = Path(__file__).resolve().parent.parent
 SEITE = ROOT / "docs" / "plakat.html"
