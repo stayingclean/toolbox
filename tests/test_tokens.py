@@ -7,13 +7,12 @@ in der Datei steht. Spätere Aufgaben benutzen die Namen aus diesem Modul
 selbst ein, sobald eine Seite umgestellt ist.
 """
 
-import hashlib
 import re
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
+
+import build
 
 ROOT = Path(__file__).resolve().parent.parent
 TOKEN_DATEI = ROOT / "docs" / "tokens.css"
@@ -88,14 +87,31 @@ def test_migrierte_seite_deklariert_keinen_token_neu(pfad):
     assert not doppelt, f"{pfad} setzt selbst: {sorted(doppelt)}"
 
 
-def test_wachposten_build_laesst_die_skillsliste_unveraendert():
-    """Wachposten, kein Rot-Gruen-Paar: der Test besteht schon vor der
-    Umstellung und soll es danach weiter tun.
+def test_wachposten_build_liefert_die_eingecheckte_skillsliste(monkeypatch, tmp_path):
+    """Wächter gegen ein Mitändern der Skillsliste (Entscheid 2).
 
-    build.py schreibt beide Generate im selben Lauf. Die Skillsliste wird in
-    diesem Vorhaben ausdruecklich nicht angefasst (Entscheid 2). Nebenwirkung:
-    der Lauf schreibt auch docs/skills-daten.json neu; deren Inhalt bleibt
-    gleich, git zeigt sie wegen der Zeilenenden aber als geaendert."""
-    vorher = hashlib.sha256(SKILLSLISTE.read_bytes()).hexdigest()
-    subprocess.run([sys.executable, str(ROOT / "build.py")], cwd=ROOT, check=True)
-    assert hashlib.sha256(SKILLSLISTE.read_bytes()).hexdigest() == vorher
+    Nicht Rot-Grün: der Test besteht schon vor der Umstellung und soll es
+    danach weiter tun. `build.py` erzeugt Skillsliste und Vorschlagsformular
+    im selben Lauf; wer die Quelle des Formulars ändert, darf die Skillsliste
+    dabei nicht verändern.
+
+    Der Build schreibt nach `tmp_path`, verglichen wird die frisch gebaute
+    Skillsliste mit der eingecheckten Datei -- also gegen den Soll-Stand, nicht
+    gegen den eigenen Vorzustand. Ein Vergleich derselben Datei vor und nach
+    dem Bauen würde heilen, was er bewachen soll: weicht der Build ab, wäre
+    sie ab dem zweiten Lauf überschrieben und der Test grün. Im Arbeitsbaum
+    wird nichts angefasst.
+    """
+    gebaut = tmp_path / "skillsliste.html"
+    monkeypatch.setattr(build, "OUTPUT", gebaut)
+    monkeypatch.setattr(build, "OUTPUT_VORSCHLAG", tmp_path / "skill-vorschlagen.html")
+    monkeypatch.setattr(build, "DATEN_JSON", tmp_path / "skills-daten.json")
+
+    # Dieselbe Folge wie build.main(), ohne dessen Ausgabe (die rechnet
+    # Pfade relativ zu ROOT und scheiterte an tmp_path).
+    daten = build.load_data()
+    build.render(daten, build.lade_favicons(daten))
+    build.render_vorschlag(daten)
+    build.write_daten_json(daten)
+
+    assert gebaut.read_bytes() == SKILLSLISTE.read_bytes()
