@@ -14,54 +14,77 @@ Blatt.
 
 ---
 
-## Die Randbedingung steht vor allem anderen
+## Die Lage: Web zuerst, eine Bibliothek wäre erlaubt
 
-Die Budgetvorlage ist **eine Datei**, die man herunterlädt, per `file://`
-öffnet, ausfüllt, speichert und weitergibt — ohne Server, ohne Internet, mit
-eingebettetem CSS (`CLAUDE.md`, Abschnitt «Neue HTML-Seite veröffentlichen»).
-Das ist keine Vorliebe, sondern der Zweck der Seite: in einer Beratung liegt sie
-auf einem Laptop, der im Sitzungszimmer kein Netz hat, und die ausgefüllte Datei
-geht per Mail weiter.
+**Nachtrag 2026-10-23, nach einer Rückfrage des Benutzers.** Eine frühere
+Fassung dieses Abschnitts begann mit «die Seite läuft per `file://` ohne Server
+und ohne Internet, also keine Bibliothek». Das war **zu streng formuliert** und
+ist seit dem Entscheid des Benutzers überholt. Was wirklich gilt:
+
+- **Die Budgetvorlage wird über die URL benutzt**, nicht als herumgeschickte
+  Kopie. Herunterladen führte bei den Beratenden zu auseinanderlaufenden
+  Ständen des Werkzeugs; dagegen hilft keine Sorgfalt in der Datei, nur eine
+  Adresse. `CLAUDE.md`, Abschnitt «Neue HTML-Seite veröffentlichen», Punkt 3 ist
+  entsprechend nachgezogen.
+- **Die Seite speichert `.json`, nicht HTML** (`saveFile`, Zeile 5428;
+  `defaultFilename` → `budget-JJJJ-MM-TT.json`). Werkzeug und Daten sind
+  getrennt; kein ausgefülltes Budget steckt je in einer HTML-Datei. Die
+  Konvention «Als HTML speichern» in `CLAUDE.md` gilt den Fragebögen, nicht
+  dieser Seite.
+- **Netzunabhängig war die Seite ohnehin nie.** Zeilen 7–9 laden Inter und
+  Playfair Display von Google Fonts, die Fusszeile holt den Avatar von
+  `github.com`. Ohne Netz zeichnet sie in Georgia und System-Sans — und das hat
+  nie jemand als Fehler gemeldet.
+- **Ohne Netz gibt es die Seite gar nicht.** Wer offline arbeiten muss, lädt sie
+  vorher herunter; nur für diese Person stellt sich die Frage, was dann fehlt.
 
 **Was damit geht:**
 
-- Jede Zeichnung aus HTML-Elementen und CSS — Balken, Spuren, Nulllinien,
-  Flächen, Farbcodierung.
-- Handgeschriebenes SVG im Markup oder aus JavaScript zusammengesetzt (`<svg>`
-  inline, keine externe Datei).
-- Alles, was aus den Zahlen rechnet, die die Seite ohnehin schon führt.
+- Alles aus HTML und CSS, alles aus handgeschriebenem SVG.
+- Schriften von aussen (die Seite tut es schon) und ein gemeinsames Stylesheet
+  über mehrere Seiten.
 
-**Was nicht geht:**
+**Was weiterhin nicht geht:**
 
-- Eine Diagrammbibliothek von einem CDN. Sie fehlt genau dort, wo die Seite
-  gebraucht wird, und jeder Aufruf meldete dem CDN, dass jemand sein Budget
-  ansieht — dasselbe Argument, das in `CLAUDE.md` schon bei den
-  Händler-Symbolen der Skillsliste steht («Die Symbole werden nie vom Händler
-  geladen»).
-- Ein externes Stylesheet oder eine Schriftdatei fürs Diagramm.
-- Ein Bild, das irgendwo liegt. Was nicht in der Datei steht, ist nach dem
-  Weitergeben weg.
+- **Eine fremde Bibliothek.** Der Benutzer hat das am 2026-10-23 ausdrücklich
+  bestätigt: erlaubt wäre sie seit dem Web-Entscheid, gewollt ist sie nicht.
+  Käme je eine, dann mitgeliefert in `docs/vendor/` oder eingebettet, mit
+  festgelegter Version — **nie vom CDN**: jeder Aufruf meldete einem Dritten,
+  dass jemand diese Seite öffnet, hier also, dass jemand ein Budget bearbeitet.
+  Dasselbe Argument steht in `CLAUDE.md` bei den Händler-Symbolen der
+  Skillsliste («Die Symbole werden nie vom Händler geladen»).
+- **Zwei Fassungen der Seite**, eine mit und eine ohne Diagramme. Technisch
+  möglich (`if (location.protocol !== 'file:')`), aber zwei Verhalten müssten
+  beide entworfen, gebaut und geprüft werden, und die Rückfallebene muss man
+  ohnehin bauen — ist sie gut, braucht es die Bibliothek nicht.
 
-### Die zwei Rückfragen des Benutzers, kurz beantwortet
+### Was der Entscheid an der Abwägung ändert
 
-**«Lässt sich der Import einer Bibliothek mit einer `if`-Abfrage umgehen — lokal
-ohne Diagramme, online mit?»** Technisch ja
-(`if (location.protocol !== 'file:')`, Skript in den `<head>` hängen, danach
-`typeof Chart !== 'undefined'` prüfen). Trotzdem nein: zwei Fassungen heissen
-zwei Verhalten, die beide entworfen, gebaut und geprüft werden müssen — und die
-schlechtere bekäme gerade der, der die Datei herunterlädt und behält. Die
-Rückfallebene muss ohnehin gebaut werden; ist sie gut, braucht es die Bibliothek
-nicht.
+Er nimmt dem stärksten Argument gegen eine Bibliothek die Grundlage: «200 KB
+fremder Code in jeder weitergegebenen Datei» zählt nicht mehr, wenn der Browser
+die Seite einmal von der URL lädt und im Cache behält. Das
+Drittanbieter-Argument bleibt, wäre aber durch Mitliefern erledigt.
 
-**«Lässt sich eine Bibliothek auf einer GitHub Page verwenden?»** Ja — vom CDN,
-mitgeliefert in `docs/vendor/`, oder in die Datei eingebettet. Nur die
-eingebettete Fassung verträgt sich mit der einen Datei, und sie kostet rund
-200 KB fremden Code plus Lizenztext in jeder weitergegebenen Mappe.
+**Der Benutzer hat trotzdem bei «keine fremden Bibliotheken» bleiben wollen**
+(2026-10-23). Die Abwägung unten steht darum nicht mehr zur Wahl — sie steht
+hier, damit nachvollziehbar bleibt, was erlaubt gewesen wäre und warum es
+niemandem fehlt.
 
-**Dieser Entwurf braucht keine.** Alle drei Diagramme unten sind Balken an einer
-Nulllinie; dafür genügen rund fünfzig Zeilen CSS und eine Funktion, die
-Prozentwerte rechnet. Eine Bibliothek zahlt sich bei Hover-Tooltips, Zoom und
-Animation aus — nichts davon steht in Punkt 8 oder 9.
+**Dieser Entwurf bleibt trotzdem bei CSS** — aus einem Grund, der nichts mit
+Offline zu tun hat: alle drei Diagramme sind Balken mit Textbeschriftung, und
+genau dort verliert eine Bibliothek. Die verbreiteten zeichnen auf ein
+`<canvas>`: für einen Screenreader leer, im Ausdruck ein Bild statt Text, und
+die Zahlen müssten zweimal gesetzt werden — einmal im Diagramm, einmal als Text
+daneben. Die Konfiguration wäre etwa so lang wie die fünfzig Zeilen CSS, die sie
+ersetzt.
+
+**Wann eine Bibliothek sich lohnen würde** (dann aber bewusst, nicht nebenbei):
+eine echte Zeitachse oder Verlaufskurve statt Sprüngen zwischen Stichtagen;
+viele Reihen auf einmal (fünf Versionen × elf Kategorien); Hover-Tooltips auf
+dichten Daten; ein Diagramm als PNG für einen Bericht. Nichts davon steht in
+Punkt 8 oder 9. Auswahlkriterium wäre dann **SVG-Ausgabe statt Canvas, klein,
+MIT**, mit genau festgelegter Version — die Namen und Grössen gehören zum
+Zeitpunkt der Wahl nachgeschaut, nicht aus diesem Entwurf übernommen.
 
 ---
 
@@ -122,7 +145,8 @@ wo der Benutzer ihn sucht. Eine zweite Vergleichsansicht entsteht nicht — sieh
 
 ## Entscheidungen auf einen Blick
 
-1. **Werkzeug: Balken aus HTML und CSS**, kein SVG, keine Bibliothek.
+1. **Werkzeug: Balken aus HTML und CSS**, kein SVG — und keine Bibliothek,
+   obwohl eine seit dem Web-Entscheid erlaubt wäre.
 2. **Drei Diagramme, alle dieselbe Bauart:** die Stände der aktiven Version, die
    Rangliste der Anpassungen, die Versionen im Vergleich.
 3. **Keine Kategorien** in diesem Schritt, mit begründetem Rückweg.
@@ -163,12 +187,14 @@ Rechnung liefert.
   Fensterbreite neu gesetzt werden. Dazu Koordinatenrechnung für jedes
   Diagramm und mehr Code, der nichts zeigt, was Variante A nicht zeigt.
 
-### Variante C — Bibliothek, in die Datei eingebettet
+### Variante C — Bibliothek, mitgeliefert oder eingebettet
 
-- **Dafür:** Hover-Tooltips, Animation, Zoom.
-- **Dagegen:** Rund 200 KB fremder Code und ein Lizenztext in jeder
-  weitergegebenen Datei, für drei Balkendiagramme. Nichts aus Punkt 8 oder 9
-  verlangt eines der drei Merkmale.
+- **Dafür:** Hover-Tooltips, Animation, Zoom. Das Grössenargument von früher
+  zählt nicht mehr.
+- **Dagegen:** Nichts aus Punkt 8 oder 9 verlangt eines der drei Merkmale — und
+  die verbreiteten Bibliotheken zeichnen auf ein `<canvas>`: nichts für einen
+  Screenreader, im Ausdruck ein Bild statt Text, die Zahlen zweimal zu setzen.
+  Für Balken mit Textbeschriftung ist das ein Rückschritt, kein Fortschritt.
 
 ### Empfehlung
 

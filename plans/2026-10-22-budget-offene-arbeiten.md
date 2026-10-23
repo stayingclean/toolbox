@@ -161,6 +161,23 @@ Welle 4, Session B — kurz: ja, beides; empfohlen ist trotzdem SVG von Hand,
 und falls doch eine Bibliothek, dann in die Datei eingebettet statt vom CDN
 und ohne zwei Fassungen.
 
+**Nachtrag 2026-10-23 — die «harte Randbedingung» oben gilt nicht mehr so.**
+Der Benutzer hat entschieden, dass die Budgetvorlage über die URL benutzt wird
+und nicht als heruntergeladene Kopie; heruntergeladene Stände liefen bei den
+Beratenden auseinander. Dazu zwei Befunde: die Seite speichert `.json` und
+nicht HTML (Werkzeug und Daten sind getrennt), und sie lädt schon heute
+Schriften von Google Fonts, war also nie netzunabhängig. Eine Bibliothek wäre
+damit erlaubt gewesen; der Benutzer hat am selben Tag **bestätigt, dass fremde
+Bibliotheken draussen bleiben** — käme je eine, dann mitgeliefert in
+`docs/vendor/` oder eingebettet, nie vom CDN. Zur Offline-Fähigkeit gehört
+neben der Skillsliste auch der **Flyer-Editor**: er exportiert sich selbst als
+HTML-Datei, die auf einer Festplatte weiter funktionieren muss.
+Die Empfehlung für die drei Diagramme bleibt CSS, nun aber mit
+anderer Begründung (Balken mit Textbeschriftung; Canvas verliert bei Ausdruck
+und Screenreader). Ausgeführt in
+`specs/2026-10-23-budget-grafik-und-vergleich-design.md`, Abschnitt «Die Lage:
+Web zuerst»; `CLAUDE.md` Punkt 3 ist nachgezogen.
+
 ### 10. Die vierte Spalte «Total / Jahr» wiederholt in jeder Position die zweite
 
 Aus einer Rückfrage des Benutzers am 2026-10-22 entstanden: «Warum gibt es
