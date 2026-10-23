@@ -884,18 +884,21 @@ def test_anleitung_steht_nur_an_einer_stelle():
     assert 'class="info-box"' in kopf, "der Volltext wohnt im Hilfe-Panel der Kopfleiste"
 
 
-def test_hilfe_streifen_liegt_in_der_kopfleiste():
-    """Nur dort zaehlt er bei springeZuZeile mit (kopf.offsetHeight) und faellt
-    im Druck von selbst weg — .sticky-head steht in der Verbergen-Liste."""
+def test_hilfe_knopf_steht_ganz_rechts_in_der_kopfleiste():
+    """Ein «?» ganz rechts aussen in der Versionsleiste, hinter «Vorschau».
+    In der Kopfleiste, denn nur dort zaehlt das Panel bei springeZuZeile mit
+    (kopf.offsetHeight) und faellt im Druck von selbst weg — .sticky-head
+    steht in der Verbergen-Liste."""
     text = _seite_text()
     kopf = text[text.index('<div class="sticky-head">'):text.index("/sticky-head")]
-    assert 'class="hilfe-leiste"' in kopf
-    assert 'id="hilfePanel"' in kopf
-    # Der Knopf steht in der Versionsleiste, bei «Anpassungen» und «Vorschau»:
-    # so kann der Streifen auf dem Telefon verschwinden, ohne den Zugang
-    # mitzunehmen.
     leiste = kopf[kopf.index('id="versionBar"'):kopf.index('id="previewBar"')]
     assert 'id="hilfeBtn"' in leiste
+    assert 'id="hilfePanel"' in leiste
+    # «Ganz rechts aussen» hat zwei Teile: der Knopf steht als Letztes in der
+    # Leiste (hinter «Vorschau»), und margin-left: auto schiebt ihn an den Rand.
+    assert leiste.index('id="previewBtn"') < leiste.index('id="hilfeWrap"'), \
+        "der Hilfe-Knopf steht hinter dem Vorschau-Knopf"
+    assert re.search(r"\.hilfe-wrap\s*\{[^}]*margin-left:\s*auto", text)
 
 
 def test_hilfe_panel_ueberlagert_statt_zu_schieben():
@@ -906,20 +909,40 @@ def test_hilfe_panel_ueberlagert_statt_zu_schieben():
     assert re.search(r"#hilfePanel\[hidden\]\s*\{[^}]*display:\s*none", text)
 
 
-def test_hilfe_streifen_faellt_in_der_vorschau_weg():
+def test_hilfe_knopf_faellt_in_der_vorschau_weg():
     """Dort wird nichts erfasst, also braucht es keine Erfassungshilfe — und
     Escape kann nicht zwischen Panel und Vorschau zerrissen werden."""
     assert re.search(
-        r"body\.mode-preview\s+\.hilfe-leiste,\s*body\.mode-preview\s+\.hilfe-wrap\s*\{[^}]*display:\s*none",
-        _seite_text()), "Streifen und Knopf fallen in der Vorschau beide weg"
+        r"body\.mode-preview\s+\.hilfe-wrap\s*\{[^}]*display:\s*none",
+        _seite_text()), "der Knopf faellt in der Vorschau weg"
 
 
-def test_schmale_breite_gibt_den_text_ab():
-    """Die Kopfleiste belegt auf dem Telefon schon gegen 250 px; eine weitere
-    dauerhafte Textzeile naehme dem Formular den Platz, den sie erklaert."""
+def test_hilfe_ist_auf_jeder_breite_dieselbe():
+    """Vorher trug eine dritte Leiste der Kopfleiste zwei Saetze Text: gemessene
+    29 px von 188 px, dazu Text abgeben unter 960 px und ganz verschwinden unter
+    560 px — drei verschiedene Hilfen fuer drei Breiten. Jetzt ein «?», ueberall
+    dasselbe."""
     text = _seite_text()
-    assert ".hilfe-lang" in text and ".hilfe-kurz" in text
-    assert "max-width: 560px" in text, "unter 560 px bleibt nur der Knopf"
+    for weg in ("hilfe-leiste", "hilfe-text", "hilfe-lang", "hilfe-kurz", "hilfe-btn-"):
+        assert weg not in text, f"{weg} gehoerte zum Streifen und ist weg"
+    # Rund und gleich gross in der Grundregel, nicht erst in einem Medienblock.
+    grund = text[text.index(".hilfe-btn {"):]
+    grund = grund[:grund.index("}")]
+    assert "border-radius: 50%" in grund and "width: 1.8rem" in grund
+
+
+def test_was_dauernd_sichtbar_sein_muss_steht_im_tooltip():
+    """Mit dem Streifen fiel der immer sichtbare Satz weg. Was man beim Tippen
+    braucht, haengt jetzt am Feld selbst — sichtbar genau dort, wo es gilt."""
+    text = _seite_text()
+    assert "input.title = 'Jährlich oder monatlich eintragen" in text, \
+        "die Spaltenregel am Betragsfeld"
+    assert re.search(r"ta\.title = '[^']*Budget-Version", text), \
+        "der Kommentar sagt, dass er nur fuer diese Version gilt"
+    assert re.search(r"input\.title = 'Betrag, den diese Position künftig", text), \
+        "die Anpassung sagt, was dort hineingehoert"
+    assert "Aufklappen: Kommentar zu dieser Position" in text, \
+        "der Pfeil sagt, was sich aufklappt"
 
 
 def test_sprung_schliesst_das_hilfe_panel():

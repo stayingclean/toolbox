@@ -980,40 +980,34 @@
         }
 
         /* ============================================================
-           Hilfe-Streifen und -Panel (die dritte Leiste von .sticky-head)
+           Hilfe-Knopf und -Panel (ganz rechts in der Versionsleiste)
            ============================================================ */
-        /* Der Streifen trägt nur Text. Der Knopf steht in der Versionsleiste
-           bei «Anpassungen» und «Vorschau» — so kann der Streifen auf dem
-           Telefon ersatzlos verschwinden, ohne den Zugang mitzunehmen, und
-           die Kopfleiste wächst dort um null Pixel. */
-        .hilfe-leiste {
-            padding: 0.3rem 1.5rem;
-            background: var(--color-primary-faint);
-            border-top: 1px solid var(--color-border);
-        }
-        .hilfe-text {
-            margin: 0;
-            font-size: 0.82rem;
-            line-height: 1.35;
-            color: var(--color-text-muted);
-        }
+        /* Ein «?» und sonst nichts, auf jeder Breite gleich. Vorher stand hier
+           eine dritte Leiste mit zwei Sätzen Text: gemessen 29 px von 188 px
+           Kopfhöhe, dazu musste sie unter 960 px Text abgeben und unter 560 px
+           ganz verschwinden — drei verschiedene Hilfen für drei Breiten. Was
+           dauernd sichtbar sein muss, steht jetzt in den Tooltips der Felder
+           selbst (title an den Betragsfeldern, am Kommentar, an der
+           Anpassung). */
         .hilfe-wrap {
             position: relative;      /* Anker des überlagernden Panels */
             display: inline-flex;
+            margin-left: auto;       /* ganz rechts aussen, hinter «Vorschau» */
         }
-        .hilfe-kurz { display: none; }
         .hilfe-btn {
             flex: none;
             display: inline-flex;
             align-items: center;
-            gap: 0.3rem;
-            padding: 0.25rem 0.7rem;
+            justify-content: center;
+            width: 1.8rem;
+            height: 1.8rem;
+            padding: 0;
             border: 1px solid var(--color-primary);
-            border-radius: var(--radius-sm);
+            border-radius: 50%;
             background: var(--color-bg);
             color: var(--color-primary-dark);
             font-family: var(--font-body);
-            font-size: 0.8rem;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             transition: all var(--transition-fast);
@@ -1027,7 +1021,6 @@
             outline: none;
             box-shadow: 0 0 0 3px var(--color-primary-tint);
         }
-        .hilfe-btn-kurz { display: none; }
         /* Überlagert, schiebt nicht: sonst änderte sich die Höhe der
            Kopfleiste beim Auf- und Zuklappen, und jedes Sprungziel von
            springeZuZeile läge um die Panelhöhe daneben. */
@@ -1049,10 +1042,9 @@
         }
         #hilfePanel[hidden] { display: none; }
         /* In der Vorschau wird nichts erfasst — dort braucht es keine
-           Erfassungshilfe, und die Stand-Leiste bekommt die Höhe, die der
-           Streifen abgibt. Nebenbei: Panel und Vorschau können so nicht
-           gleichzeitig offen sein, Escape bleibt eindeutig. */
-        body.mode-preview .hilfe-leiste,
+           Erfassungshilfe, und die Stand-Leiste bekommt den Platz. Nebenbei:
+           Panel und Vorschau können so nicht gleichzeitig offen sein, Escape
+           bleibt eindeutig. */
         body.mode-preview .hilfe-wrap {
             display: none;
         }
@@ -1307,20 +1299,6 @@
                 min-width: 0;
                 margin-bottom: 0.125rem;
             }
-            /* Der Streifen gibt Text ab, statt auf drei Zeilen umzubrechen:
-               drei Zeilen Hilfe über einem Formular sind kein Dienst. Kein
-               Abschneiden mit «…» — ein abgeschnittener Hinweis ist
-               schlechter als ein kurzer. */
-            .hilfe-leiste { padding-left: 0.75rem; padding-right: 0.75rem; }
-        }
-
-        /* Der Streifen bleibt einzeilig. Der lange Satz braucht gemessene
-           960 px; darunter bricht er auf zwei Zeilen um, und zwei Zeilen Hilfe
-           über einem Formular sind kein Dienst. Kein Abschneiden mit «…» —
-           ein abgeschnittener Hinweis ist schlechter als ein kurzer. */
-        @media (max-width: 960px) {
-            .hilfe-lang { display: none; }
-            .hilfe-kurz { display: inline; }
         }
 
         /* Wie bei der Anpassungsliste: schmal kann der Knopf links in der
@@ -1330,14 +1308,10 @@
             #hilfePanel { left: 1rem; right: 1rem; width: auto; max-width: none; }
         }
 
-        /* Unter 560 px bleibt nur der Knopf, als rundes «?». Die Kopfleiste
-           belegt auf 375 px schon gegen 250 px; eine weitere dauerhafte
-           Textzeile nähme dem Formular den Platz, den die Hilfe erklärt.
-           Die Zusage ist dort schwächer — «immer sichtbar» wird zu «einen
-           Tipp entfernt». Was dort den Dienst übernimmt, ist der Hinweis
-           neben «+ Anpassung erfassen», der ohnehin am richtigen Ort steht. */
+        /* Schmal wird in der Versionsleiste Platz gemacht — der Knopf «?» ist
+           auf jeder Breite derselbe, aber Reiter, «Neue Version» und
+           «Vorschau» müssen mit ihm in eine Zeile passen. */
         @media (max-width: 560px) {
-            .hilfe-leiste { display: none; }
             /* «Neue Version» zeigt nur noch das Pluszeichen. Mit Beschriftung
                passten Reiter, Knopf und «?» nicht mehr in eine Zeile, und die
                Leiste brach um — eine zweite Zeile Kopfleiste kostet auf dem
@@ -1348,16 +1322,6 @@
             /* Das Wort «Versionen:» ebenfalls – die Reiter sagen es selbst,
                und die Liste trägt ihren Namen in aria-label. */
             .version-bar-label { display: none; }
-            .hilfe-btn {
-                width: 1.8rem;
-                height: 1.8rem;
-                padding: 0;
-                justify-content: center;
-                border-radius: 50%;
-                font-size: 0.95rem;
-            }
-            .hilfe-btn-lang { display: none; }
-            .hilfe-btn-kurz { display: inline; }
             #hilfePanel {
                 left: 0.75rem;
                 right: 0.75rem;
@@ -2290,11 +2254,25 @@
                 title="Alle Anpassungen dieser Version, nach Datum geordnet"></button>
         <div class="adj-panel" id="adjustmentsPanel" role="region" aria-label="Anpassungen" hidden></div>
     </div>
+    <!-- Kein Versionsreiter: die Vorschau ersetzt keine Version, sie zeigt die
+         aktive gerechnet. Als Reiter in derselben Liste behauptete sie, die
+         aktive Version sei abgewählt. Gestrichelt umrandet wie „Neue Version". -->
+    <button class="preview-btn" id="previewBtn" type="button" hidden aria-pressed="false"
+            aria-controls="previewBar"
+            title="Das Budget ansehen, wie es ab einem Stichtag aussieht (gerechnet, nicht erfasst)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span>Vorschau</span>
+    </button>
+    <!-- Ganz rechts aussen (margin-left: auto) und auf jeder Breite dasselbe
+         «?». Das Panel darin ist der einzige Ort des Anleitungstextes. -->
     <div class="hilfe-wrap" id="hilfeWrap">
         <button class="hilfe-btn" id="hilfeBtn" type="button" aria-expanded="false"
-                aria-controls="hilfePanel" title="Die ganze Anleitung zu dieser Seite">
-            <span class="hilfe-btn-lang">Anleitung</span>
-            <span class="hilfe-btn-kurz" aria-hidden="true">?</span>
+                aria-controls="hilfePanel" aria-label="Anleitung zu dieser Seite"
+                title="Anleitung zu dieser Seite">
+            <span aria-hidden="true">?</span>
         </button>
         <div class="hilfe-panel" id="hilfePanel" role="region" aria-label="Anleitung" hidden>
             <div class="info-box">
@@ -2323,18 +2301,6 @@
             </div>
         </div>
     </div>
-    <!-- Kein Versionsreiter: die Vorschau ersetzt keine Version, sie zeigt die
-         aktive gerechnet. Als Reiter in derselben Liste behauptete sie, die
-         aktive Version sei abgewählt. Gestrichelt umrandet wie „Neue Version". -->
-    <button class="preview-btn" id="previewBtn" type="button" hidden aria-pressed="false"
-            aria-controls="previewBar"
-            title="Das Budget ansehen, wie es ab einem Stichtag aussieht (gerechnet, nicht erfasst)">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-            <circle cx="12" cy="12" r="3"/>
-        </svg>
-        <span>Vorschau</span>
-    </button>
 </div>
 
 <!-- ============================================================
@@ -2351,20 +2317,12 @@
     <button class="preview-leave" id="previewLeaveBtn" type="button">Vorschau verlassen</button>
 </div>
 
-<!-- ============================================================
-     Hilfe-Streifen — die dritte Leiste der Kopfleiste.
-     Sie trägt die zwei Sätze, die man beim Tippen braucht; der
-     Volltext liegt im Panel daneben und ÜBERLAGERT die Seite, statt
-     sie zu schieben (Muster: .adj-panel). Darum ändert sich die Höhe
-     der Kopfleiste beim Auf- und Zuklappen nicht — und springeZuZeile
-     rechnet weiterhin mit einer Zahl, die stimmt.
-     ============================================================ -->
-<div class="hilfe-leiste">
-    <p class="hilfe-text">
-        <span class="hilfe-lang">Jährlich <strong>oder</strong> monatlich eintragen – die andere Spalte rechnet sich. Anpassung: Zeile mit dem Pfeil aufklappen, dann „+ Anpassung erfassen".</span>
-        <span class="hilfe-kurz">Jährlich oder monatlich – die andere Spalte rechnet sich.</span>
-    </p>
-</div>
+<!-- Hier stand eine dritte Leiste mit zwei Sätzen Hilfe. Sie kostete
+     gemessene 29 px von 188 px Kopfhöhe und musste unter 960 px Text abgeben,
+     unter 560 px ganz verschwinden — drei verschiedene Hilfen für drei
+     Breiten. Jetzt gibt es nur das «?» ganz rechts in der Versionsleiste, auf
+     jeder Breite dasselbe; was dauernd sichtbar sein muss, steht im title der
+     Felder selbst. -->
 </div><!-- /sticky-head -->
 
 <main class="page">
@@ -3754,6 +3712,7 @@
         ta.dataset.rowId = row.id;
         ta.rows = 2;
         ta.placeholder = 'Notiz zu dieser Position für diese Version – z. B. „Wechsel zu günstigerer Versicherung ab April".';
+        ta.title = 'Gilt nur für diese Budget-Version. Druckt mit, solange oben „Kommentare drucken" angehakt ist.';
         ta.addEventListener('input', () => autoGrowTextarea(ta));
         panel.appendChild(ta);
 
@@ -3827,6 +3786,8 @@
             input.inputMode = 'decimal';
             input.className = `adj-input adj-${period}`;
             input.placeholder = 'neu';
+            input.title = 'Betrag, den diese Position künftig haben soll – die erfasste Zahl oben bleibt stehen. '
+                + 'Rechts steht der Unterschied. Druckt nie mit.';
             input.setAttribute('aria-label',
                 `${name} – Anpassung, neuer Betrag ${period === 'jaehrlich' ? 'jährlich' : 'monatlich'}`);
             td.appendChild(input);
@@ -3922,7 +3883,7 @@
             btn.title = `Kommentar in „${baseline.name}":\n${baseText}`;
             btn.dataset.hasBaselineComment = '1';
         } else {
-            btn.title = 'Kommentar und Anpassung';
+            btn.title = 'Aufklappen: Kommentar zu dieser Position, und «+ Anpassung erfassen» für einen künftigen Betrag';
             delete btn.dataset.hasBaselineComment;
         }
         if (adjHinweis) btn.title += `\n${adjHinweis}`;
@@ -4131,6 +4092,9 @@
                     input.dataset.group = groupId;
                     input.dataset.period = period;
                     input.placeholder = '0.00';
+                    // Der Satz, der vorher als Streifen in der Kopfleiste
+                    // stand: hier steht er an jedem Feld, für das er gilt.
+                    input.title = 'Jährlich oder monatlich eintragen – die andere Spalte rechnet sich.';
                     input.setAttribute('aria-label',
                         `${row.prefix ? row.prefix + ' – ' : ''}${row.label} – ${period === 'jaehrlich' ? 'jährlich' : 'monatlich'}`);
                     td.appendChild(input);
