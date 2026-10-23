@@ -144,4 +144,13 @@ var SEITEN = [
       } else { ersatz(); }
     });
   });
+
+  /* «Jetzt faellig» kommt aus stayingclean/ki-tasks (build.py -> faellig.js):
+     rechte Spalte auf jeder Seite der Anleitung, Abzeichen auf den Karten,
+     Punkt in der Seitenleiste. Gleiche Origin, darum kein CORS. Ist nichts
+     faellig oder fehlt das Netz, bleibt die Seite wie sie ist. */
+  var faellig = document.createElement('script');
+  faellig.src = 'https://stayingclean.github.io/ki-tasks/faellig.js';
+  faellig.async = true;
+  document.body.appendChild(faellig);
 })();
