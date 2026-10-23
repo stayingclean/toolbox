@@ -7,10 +7,10 @@ in der Datei steht. Spätere Aufgaben benutzen die Namen aus diesem Modul
 selbst ein, sobald eine Seite umgestellt ist.
 """
 
-import hashlib  # noqa: F401  (von den Wächtern der Folgeaufgaben benutzt)
+import hashlib
 import re
-import subprocess  # noqa: F401
-import sys  # noqa: F401
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -42,6 +42,7 @@ TOKENS: dict[str, str] = {
 # Leer heisst: keine. Jede umgestellte Seite trägt sich hier selbst ein.
 MIGRIERT: dict[str, set[str]] = {
     "docs/index.html": set(),
+    "docs/skill-vorschlagen.html": set(),
 }
 
 
@@ -85,3 +86,16 @@ def test_migrierte_seite_deklariert_keinen_token_neu(pfad):
     eingetragenen, begründeten Ausnahmen."""
     doppelt = set(tokens_der_datei(ROOT / pfad)) & set(TOKENS) - MIGRIERT[pfad]
     assert not doppelt, f"{pfad} setzt selbst: {sorted(doppelt)}"
+
+
+def test_wachposten_build_laesst_die_skillsliste_unveraendert():
+    """Wachposten, kein Rot-Gruen-Paar: der Test besteht schon vor der
+    Umstellung und soll es danach weiter tun.
+
+    build.py schreibt beide Generate im selben Lauf. Die Skillsliste wird in
+    diesem Vorhaben ausdruecklich nicht angefasst (Entscheid 2). Nebenwirkung:
+    der Lauf schreibt auch docs/skills-daten.json neu; deren Inhalt bleibt
+    gleich, git zeigt sie wegen der Zeilenenden aber als geaendert."""
+    vorher = hashlib.sha256(SKILLSLISTE.read_bytes()).hexdigest()
+    subprocess.run([sys.executable, str(ROOT / "build.py")], cwd=ROOT, check=True)
+    assert hashlib.sha256(SKILLSLISTE.read_bytes()).hexdigest() == vorher
