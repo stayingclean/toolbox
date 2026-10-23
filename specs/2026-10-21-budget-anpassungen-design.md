@@ -210,7 +210,46 @@ Versionen.
 
 ## Anzeige: die Zeile
 
-Im bestehenden Aufklappbereich, **über** dem Kommentar:
+**Nachtrag 2026-10-23: die Anpassung wird eine eigene Tabellenzeile.** Was
+unten in diesem Abschnitt steht, war die erste Fassung; sie stand im
+Aufklappbereich über dem Kommentar und ist beim Ausprobieren durchgefallen.
+Der Benutzer dazu: «Man würde also das Datum am Anfang der Zeile eingeben und
+die Zahlen daneben eintragen. So sieht man die Anpassungen unterhalb der
+eigentlichen Zahlen.»
+
+Neu sieht eine aufgeklappte Position so aus:
+
+```
+POSITION                       JÄHRLICH   MONATLICH   TOTAL / JAHR
+Telefonie, Internet, TV        2'052.00      171.00       2'052.00
+  KOMMENTAR ZU TELEFONIE, INTERNET, TV
+  [ Ist der aktuelle Betrag. Ab November 101.-                    ]
+  [ + Anpassung erfassen ]        ← nur, solange es keine gibt
+Anpassung ab [01.11.2026]      1'212.00      101.00        −840.00
+```
+
+- **Die Anpassung ist eine eigene `<tr>`**, spaltenbündig: das Datum in der
+  Beschriftungsspalte, die beiden Beträge unter den erfassten Beträgen, in der
+  vierten Spalte der **Unterschied** zum erfassten Jahreswert. Damit ist der
+  Vergleich alt/neu ohne Kopfrechnen zu sehen — der Zweck der ganzen Übung.
+- **Sie steht unter dem Kommentar**, nicht darüber (zweiter Wunsch des
+  Benutzers). Spaltenbündig bleibt sie trotzdem: eine Tabellenzeile behält
+  ihre Spalten, auch wenn eine andere dazwischenliegt.
+- **Sie erscheint nicht von selbst.** Aufgeklappt zeigt die Position immer den
+  Kommentar; die Anpassungsfelder kommen erst über den Knopf «Anpassung
+  erfassen» im Kommentarbereich — oder gleich, wenn schon eine Anpassung
+  dasteht. Wird die Zeile ohne Betrag verlassen, verschwindet sie wieder (die
+  Regel «eine Anpassung ohne Betrag gibt es nicht», sichtbar gemacht).
+- **Warum nur ein Knopf:** Der Pfeil gehört dem Kommentar und bleibt, wie er
+  war. Der neue Knopf steckt im Aufklappbereich, nicht in der Zeile — die
+  Zeile bekommt kein zweites Bedienelement.
+- **Die vierte Spalte ist dafür frei.** In einer Positionszeile zeigt
+  «Total / Jahr» immer dieselbe Zahl wie «Jährlich» daneben
+  (`rowTotal = y || m * 12`, und die beiden Eingabefelder füllen sich
+  gegenseitig). Dass diese Spalte in der Erfassung nichts beiträgt, ist ein
+  eigener Punkt und wird hier nicht gelöst.
+
+Die erste Fassung, zur Nachvollziehbarkeit:
 
 ```
 ANPASSUNG DIESER POSITION

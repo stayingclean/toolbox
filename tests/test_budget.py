@@ -164,12 +164,42 @@ def test_einnahmen_bekommen_den_aufklappbereich():
     )
 
 
-def test_panel_traegt_drei_anpassungsfelder():
-    text = _seite_text()
-    block = text[text.index("function makeCommentRow"):][:3000]
+def test_kommentarbereich_traegt_keine_anpassungsfelder_mehr():
+    """Die Anpassung ist eine eigene Tabellenzeile geworden; im
+    Aufklappbereich steht nur noch der Kommentar – und der Knopf, der die
+    Zeile erzeugt."""
+    block = _funktionsblock("makeCommentRow")
+    for feld in ("adj-jaehrlich", "adj-monatlich", "adj-ab"):
+        assert feld not in block, feld
+    assert "adj-add-btn" in block, "der Knopf «Anpassung erfassen» fehlt"
+
+
+def test_anpassung_ist_eine_eigene_tabellenzeile():
+    """Spaltenbuendig zur Position: Datum in der Beschriftungsspalte, die
+    Betraege unter den erfassten Betraegen, der Unterschied in Spalte vier."""
+    block = _funktionsblock("makeAdjustmentRow")
     for feld in ("adj-jaehrlich", "adj-monatlich", "adj-ab"):
         assert feld in block, feld
-    assert 'type="date"' in block or "type = 'date'" in block
+    assert 'type="date"' in block or "'date'" in block
+    assert "adj-row" in block and "adjFor" in block
+    assert "adj-delta" in block, "die vierte Spalte zeigt den Unterschied"
+
+
+def test_anpassungszeile_traegt_kein_data_row_id():
+    """`$('tr[data-row-id=…]')` steht an drei Stellen und nimmt den ersten
+    Treffer. Eine zweite Zeile mit derselben Kennung waere ein stiller
+    Fehler – die Anpassungszeile heisst darum data-adj-for."""
+    block = _funktionsblock("makeAdjustmentRow")
+    assert "dataset.rowId" not in block.split("querySelectorAll")[0], \
+        "das <tr> der Anpassung darf keine data-row-id tragen"
+    assert "dataset.adjFor" in block
+
+
+def test_zeilen_id_kennt_die_anpassungszeile():
+    """Sonst gilt der Wechsel zwischen den Anpassungsfeldern als Verlassen der
+    Zeile und das Datum faellt weg (der Fehler aus Commit 5b143b5)."""
+    block = _funktionsblock("zeilenIdVon")
+    assert "adj-row" in block and "adjFor" in block
 
 
 def test_zeile_mit_anpassung_bleibt_zugeklappt_markiert():
@@ -763,17 +793,27 @@ def test_druckmarkierung_kennt_nur_noch_kommentare():
     assert "readAdjustmentFromDom" not in block
 
 
-def test_anpassungsfelder_drucken_nie():
-    """Der Ausdruck vom 22.10.2026 zeigte sie als leeres Formular auf dem Blatt
-    («Neu jaehrlich», «Gilt ab», bei leerem Datum sogar «tt.mm.jjjj»). Sie
-    bieten nur eine Moeglichkeit zum Erfassen und gehoeren nicht auf Papier."""
+def test_vorschau_bietet_keine_neue_anpassung_an():
+    """In der Vorschau sind alle Anpassungsfelder gesperrt; der Knopf boete
+    eine Zeile an, in die sich nichts schreiben laesst."""
+    text = _seite_text()
+    assert re.search(r"body\.mode-preview\s+\.adj-add-btn\s*\{[^}]*display:\s*none", text)
+
+
+def test_anpassungszeile_druckt_nie():
+    """Der Ausdruck vom 22.10.2026 zeigte die Anpassung als leeres Formular auf
+    dem Blatt («Neu jaehrlich», «Gilt ab», bei leerem Datum sogar
+    «tt.mm.jjjj»). Sie bietet nur eine Moeglichkeit zum Erfassen und gehoert
+    nicht auf Papier — auch nicht mit dem Haekchen «Kommentare drucken»."""
     css = _druck_css()
-    assert re.search(r"\.adj-block\s*\{[^}]*display:\s*none", css)
-    assert not re.search(r"\.adj-block\s*\{[^}]*display:\s*(block|table)", css), \
-        "keine Regel darf die Anpassungsfelder im Druck wieder einblenden"
-    assert "print-comments" not in css[css.index(".adj-block"):css.index(".adj-block") + 400], \
-        "das Haekchen «Kommentare drucken» steuert die Anpassung nicht mehr"
+    assert re.search(r"\.adj-row\s*\{[^}]*display:\s*none", css)
+    assert re.search(r"\.adj-add-btn\s*\{[^}]*display:\s*none", css), \
+        "sonst druckt der Knopf «Anpassung erfassen» im Kommentarkasten mit"
+    assert not re.search(r"\.adj-(row|add-btn)\s*\{[^}]*display:\s*(block|table|inline)", css), \
+        "keine Regel darf die Anpassung im Druck wieder einblenden"
+    assert "print-comments" not in css[css.index(".adj-row"):css.index(".adj-row") + 400]
     assert "adj-input" not in css, "die Druckfarben der Anpassungsfelder sind ueberfluessig"
+    assert "adj-block" not in _seite_text(), "der alte Block im Aufklappbereich ist weg"
 
 
 def test_zeile_mit_anpassung_druckt_nie_markiert():
@@ -877,7 +917,7 @@ def test_private_notiz_platzhalter_verspricht_keine_vertraulichkeit():
 def test_sprung_zur_zeile_setzt_den_fokus_auf_den_aufklapper():
     block = _funktionsblock("springeZuZeile")
     assert "closeAdjustmentsPanel();" in block
-    assert re.search(r"row-expander\[aria-controls=\"expander-\$\{rowId\}\"\]", block)
+    assert re.search(r"row-expander\[data-row-id=\"\$\{rowId\}\"\]", block)
     assert ".focus({ preventScroll: true })" in block
 
 
@@ -919,6 +959,19 @@ def test_dialog_rechnet_mit_der_sichtbaren_fensterhoehe():
     text = _seite_text()
     assert "calc(100dvh" in text
     assert not re.search(r"max-height:\s*calc\(100vh", text)
+
+
+def test_unterschied_zum_erfassten_wert():
+    """Die vierte Spalte der Anpassungszeile: Zielbetrag minus erfasster
+    Jahreswert. Ohne Anpassung steht dort nichts (null)."""
+    leer = {"jaehrlich": None, "monatlich": None, "ab": None}
+    assert kern("anpassungUnterschied", dict(leer, jaehrlich=1212), 2052) == -840
+    assert kern("anpassungUnterschied", dict(leer, monatlich=101), 2052) == -840
+    assert kern("anpassungUnterschied", dict(leer, jaehrlich=0), 1200) == -1200
+    assert kern("anpassungUnterschied", dict(leer, jaehrlich=500), 0) == 500
+    assert kern("anpassungUnterschied", leer, 2052) is None
+    assert kern("anpassungUnterschied", None, 2052) is None
+    assert kern("anpassungUnterschied", dict(leer, jaehrlich=600), None) == 600
 
 
 def test_unmoegliches_datum_gilt_nicht_als_datum():
@@ -1020,9 +1073,9 @@ def test_laden_laesst_die_datei_unveraendert():
 
 def test_datumsfeld_startet_gesperrt_und_hat_eine_erklaerung():
     text = _seite_text()
-    block = _funktionsblock("makeCommentRow")
+    block = _funktionsblock("makeAdjustmentRow")
     assert re.search(r'class="adj-input adj-ab"[^>]*\bdisabled\b', block)
-    assert "adj-datum-hinweis" in block, "eine kurze Zeile im Panel sagt, warum das Feld zu ist"
+    assert "adj-datum-hinweis" in block, "eine kurze Zeile sagt, warum das Feld zu ist"
     assert ".adj-input:disabled" in text, "ein gesperrtes Feld muss gesperrt aussehen"
 
 

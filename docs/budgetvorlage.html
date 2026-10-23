@@ -528,24 +528,56 @@
             border-left-color: var(--color-warning);
         }
 
-        /* Block «Anpassung dieser Position» im Aufklappbereich. */
-        .adj-block {
-            margin-bottom: 0.8rem;
+        /* Die Anpassung als eigene Zeile unter dem Kommentar, spaltenbündig
+           zur Position: Datum links, die Beträge unter den erfassten, der
+           Unterschied rechts. */
+        .adj-row > td {
+            background: var(--color-warning-bg);
+            border-bottom: 1px solid var(--color-border);
+            padding-top: 0.45rem;
+            padding-bottom: 0.55rem;
         }
-        .adj-fields {
+        .adj-row[hidden] {
+            display: none;
+        }
+        .adj-row > td:first-child {
+            box-shadow: inset 4px 0 0 var(--color-warning);
+        }
+        .adj-label-cell .adj-label-content {
             display: flex;
+            align-items: center;
+            gap: 0.45rem;
             flex-wrap: wrap;
-            gap: 0.6rem 1rem;
+            padding-left: 2.1rem;    /* unter dem Positionsnamen, nicht unter dem Pfeil */
         }
-        .adj-field {
-            display: flex;
-            flex-direction: column;
-            gap: 0.2rem;
-            font-size: 0.8rem;
+        .adj-marke {
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-warning);
+        }
+        .adj-ab-feld {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .adj-ab-wort {
+            font-size: 0.85rem;
             color: var(--color-text-muted);
         }
+        /* Der Unterschied zum erfassten Wert. Weniger ist gut, mehr nicht –
+           dieselbe Lesart wie in der Differenz-Zeile der Zusammenfassung. */
+        .adj-delta {
+            font-variant-numeric: tabular-nums;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--color-text-muted);
+        }
+        .adj-delta.ist-weniger { color: var(--color-success); }
+        .adj-delta.ist-mehr    { color: var(--color-danger); }
         .adj-input {
-            width: 10rem;
+            width: 100%;
             padding: 0.4rem 0.625rem;
             font-family: var(--font-body);
             font-size: 0.92rem;
@@ -577,9 +609,39 @@
             border-style: dashed;
         }
         .adj-datum-hinweis {
-            margin: 0.5rem 0 0;
+            margin: 0.3rem 0 0 2.1rem;
             font-size: 0.8rem;
             color: var(--color-text-muted);
+        }
+        /* Der Knopf, der die Anpassungszeile erzeugt. Steht im
+           Kommentarbereich und verschwindet, sobald die Zeile da ist. */
+        .adj-add-btn {
+            display: inline-flex;
+            align-items: center;
+            margin-top: 0.6rem;
+            padding: 0.3rem 0.7rem;
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--color-warning);
+            background: var(--color-warning-bg);
+            border: 1px solid var(--color-warning);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .adj-add-btn:hover {
+            color: var(--color-bg);
+            background: var(--color-warning);
+        }
+        .adj-add-btn[hidden] {
+            display: none;
+        }
+        /* In der Vorschau wird nichts erfasst: dort sind alle Anpassungsfelder
+           gesperrt, und der Knopf böte eine Zeile an, in die man nichts
+           schreiben kann. */
+        body.mode-preview .adj-add-btn {
+            display: none;
         }
         .adj-datum-hinweis[hidden] {
             display: none;
@@ -1245,12 +1307,15 @@
             .expander-row.has-comment {
                 page-break-inside: avoid;
             }
-            /* Die Anpassungsfelder drucken nie. Sie bieten nur eine
-               Möglichkeit, Zahlen für eine weitere Version zu erfassen; auf
-               Papier stand bisher ein leeres Formular («Neu jährlich», «Neu
-               monatlich», «Gilt ab»), bei leerem Datum sogar der Platzhalter
+            /* Die Anpassung druckt nie. Sie bietet nur eine Möglichkeit,
+               Zahlen für eine weitere Version zu erfassen; auf Papier stand
+               bisher ein leeres Formular («Neu jährlich», «Neu monatlich»,
+               «Gilt ab»), bei leerem Datum sogar der Platzhalter
                «tt.mm.jjjj». */
-            .adj-block {
+            .adj-row {
+                display: none !important;
+            }
+            .adj-add-btn {
                 display: none;
             }
             /* Umgekehrt: eine Zeile nur mit Anpassung druckt keinen leeren
@@ -2042,7 +2107,7 @@
     <div class="info-box">
         <h2>So füllen Sie die Vorlage aus</h2>
         <p>Tragen Sie Beträge entweder in die <strong>Jahres-</strong> oder die <strong>Monatsspalte</strong> ein – die jeweils andere Spalte wird automatisch berechnet (Jahresbetrag ÷ 12 bzw. Monatsbetrag × 12). Subtotale und Gesamtsummen aktualisieren sich automatisch.</p>
-        <p>Mögliche Einsparungen oder Anpassungen tragen Sie <strong>direkt in der Zeile</strong> ein: Klappen Sie die Position mit dem Pfeil auf und geben Sie den neuen Betrag an, auf Wunsch mit „Gilt ab". Die Zusammenfassung zeigt dann den Stand zu jedem Stichtag, und die „Vorschau" in der Versionsleiste zeigt das ganze Budget ab einem Stichtag – gerechnet, nichts davon wird erfasst.</p>
+        <p>Mögliche Einsparungen oder Anpassungen tragen Sie <strong>direkt in der Zeile</strong> ein: Klappen Sie die Position mit dem Pfeil auf, klicken Sie auf „+ Anpassung erfassen" und geben Sie den neuen Betrag an, auf Wunsch mit „Gilt ab". Die Anpassung steht dann als eigene Zeile unter der Position, spaltengleich zu den Beträgen; rechts sehen Sie, was sie ausmacht. Die Zusammenfassung zeigt den Stand zu jedem Stichtag, und die „Vorschau" in der Versionsleiste zeigt das ganze Budget ab einem Stichtag – gerechnet, nichts davon wird erfasst.</p>
         <p>Eine <strong>weitere Budget-Version</strong> brauchen Sie für einen grundsätzlich anderen Haushalt, etwa nach einem Umzug oder einer Trennung: Klicken Sie oben auf „Neue Version", übernehmen Sie die Werte aus einer bestehenden Version und passen Sie sie an. In der Sektion „Versionsvergleich" sehen Sie die Differenzen auf einen Blick.</p>
         <p>Beträge in <strong>CHF</strong>. Dezimalstellen mit Komma oder Punkt möglich.</p>
     </div>
@@ -2639,6 +2704,15 @@
         return null;
     }
 
+    // Was die Anpassung gegenüber dem erfassten Jahreswert ausmacht — die
+    // vierte Spalte der Anpassungszeile. Negativ heisst «kostet weniger».
+    // null: keine Anpassung, dann steht in der Spalte nichts.
+    function anpassungUnterschied(a, erfasstJaehrlich) {
+        const ziel = anpassungBetrag(a);
+        if (ziel === null) return null;
+        return ziel.jaehrlich - (istZahl(erfasstJaehrlich) ? erfasstJaehrlich : 0);
+    }
+
     // Gibt es diese Anpassung? Nur ein Betrag macht sie dazu (0 eingeschlossen).
     // Ein Datum allein passt nichts an und ist keine Anpassung.
     function anpassungHatBetrag(a) {
@@ -3134,7 +3208,7 @@
         $('#privateNote').value = '';
         // Collapse all expander rows; we'll re-open the ones with content below.
         $$('.row-expander').forEach((btn) => {
-            const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
+            const rowId = btn.dataset.rowId;
             if (rowId) setRowExpanded(rowId, false);
         });
         if (!active) return;
@@ -3331,7 +3405,11 @@
         btn.type = 'button';
         btn.className = 'row-expander';
         btn.setAttribute('aria-expanded', 'false');
-        btn.setAttribute('aria-controls', `expander-${rowId}`);
+        // Der Knopf steuert zwei Zeilen: den Kommentar und – wenn es eine
+        // gibt – die Anpassung. `data-row-id` ist der Griff für alle
+        // Nachschlagewerke; aria-controls nennt beide Ziele.
+        btn.dataset.rowId = rowId;
+        btn.setAttribute('aria-controls', `expander-${rowId} adj-${rowId}`);
         btn.setAttribute('aria-label', `Kommentar und Anpassung für „${label}" ein-/ausblenden`);
         btn.title = 'Kommentar und Anpassung';   // refreshExpanderUI überschreibt ihn je nach Inhalt
         btn.innerHTML = CHEVRON_SVG;
@@ -3361,27 +3439,6 @@
         const panel = document.createElement('div');
         panel.className = 'comment-panel';
 
-        // Anpassung: neuer Betrag, optional mit Datum. Leer heisst «keine
-        // Angabe» (null), nicht 0 — ein Zielbetrag von 0 ist etwas anderes.
-        // Das Datum bleibt gesperrt, bis ein Betrag dasteht: eine Anpassung
-        // ohne Betrag passt nichts an (refreshExpanderUI öffnet und schliesst).
-        const adj = document.createElement('div');
-        adj.className = 'adj-block';
-        adj.innerHTML =
-            '<div class="comment-panel-label">Anpassung dieser Position</div>' +
-            '<div class="adj-fields">' +
-            '<label class="adj-field"><span>Neu jährlich</span><input type="text" inputmode="decimal" class="adj-input adj-jaehrlich" placeholder="leer"></label>' +
-            '<label class="adj-field"><span>Neu monatlich</span><input type="text" inputmode="decimal" class="adj-input adj-monatlich" placeholder="leer"></label>' +
-            '<label class="adj-field"><span>Gilt ab (darf leer bleiben)</span><input type="date" class="adj-input adj-ab" disabled title="' + anpassungDatumHinweis(true, false) + '"></label>' +
-            '</div>' +
-            '<p class="adj-datum-hinweis">' + anpassungDatumHinweis(true, false) + '</p>';
-        adj.querySelectorAll('.adj-input').forEach((input) => {
-            input.dataset.rowId = row.id;
-            input.dataset.adj = input.classList.contains('adj-jaehrlich') ? 'jaehrlich'
-                : input.classList.contains('adj-monatlich') ? 'monatlich' : 'ab';
-        });
-        panel.appendChild(adj);
-
         const lbl = document.createElement('label');
         lbl.className = 'comment-panel-label';
         const taId = `comment-${row.id}`;
@@ -3404,9 +3461,105 @@
         printBlock.setAttribute('aria-hidden', 'true');
         panel.appendChild(printBlock);
 
+        // Der einzige Knopf, den die Anpassung braucht: Der Pfeil gehört dem
+        // Kommentar, dieser hier erzeugt die Anpassungszeile. Er steht nur da,
+        // solange es keine Anpassung gibt (zeigeAnpassungszeile schaltet ihn).
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'adj-add-btn';
+        add.dataset.adjAdd = row.id;
+        add.textContent = '+ Anpassung erfassen';
+        add.title = 'Neuen Betrag für eine weitere Budget-Version festhalten';
+        add.addEventListener('click', () => {
+            zeigeAnpassungszeile(row.id, true);
+            const feld = $(`.adj-input[data-row-id="${row.id}"][data-adj="jaehrlich"]`);
+            if (feld) feld.focus();
+        });
+        panel.appendChild(add);
+
         td.appendChild(panel);
         tr.appendChild(td);
         return tr;
+    }
+
+    // Die Anpassung als eigene Tabellenzeile, direkt unter dem Kommentar und
+    // spaltenbündig zur Position: Datum in der Beschriftungsspalte, die beiden
+    // Beträge unter den erfassten, der Unterschied in der vierten Spalte.
+    //
+    // Das <tr> trägt bewusst KEIN data-row-id: `$('tr[data-row-id="…"]')` steht
+    // an mehreren Stellen und nähme sonst je nach Reihenfolge die falsche
+    // Zeile. Die Eingabefelder behalten ihr data-row-id — über das suchen
+    // readAdjustmentFieldsFromDom und handleAdjInputEvent.
+    function makeAdjustmentRow(row, groupId) {
+        const tr = document.createElement('tr');
+        tr.className = 'adj-row';
+        tr.id = `adj-${row.id}`;
+        tr.dataset.adjFor = row.id;
+        tr.dataset.rowGroup = groupId;
+        tr.hidden = true;
+
+        const name = `${row.prefix ? row.prefix + ' – ' : ''}${row.label}`;
+
+        const labelTd = document.createElement('td');
+        labelTd.className = 'label-cell adj-label-cell';
+        labelTd.innerHTML =
+            '<div class="adj-label-content">' +
+            '<span class="adj-marke">Anpassung</span>' +
+            '<span class="adj-ab-feld"><span class="adj-ab-wort">ab</span>' +
+            '<input type="date" class="adj-input adj-ab" disabled title="' + anpassungDatumHinweis(true, false) + '"></span>' +
+            '</div>' +
+            '<p class="adj-datum-hinweis">' + anpassungDatumHinweis(true, false) + '</p>';
+        tr.appendChild(labelTd);
+
+        ['jaehrlich', 'monatlich'].forEach((period) => {
+            const td = document.createElement('td');
+            td.className = 'input-cell';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.inputMode = 'decimal';
+            input.className = `adj-input adj-${period}`;
+            input.placeholder = 'neu';
+            input.setAttribute('aria-label',
+                `${name} – Anpassung, neuer Betrag ${period === 'jaehrlich' ? 'jährlich' : 'monatlich'}`);
+            td.appendChild(input);
+            tr.appendChild(td);
+        });
+
+        const deltaTd = document.createElement('td');
+        deltaTd.className = 'total-cell';
+        const delta = document.createElement('span');
+        delta.className = 'adj-delta';
+        delta.dataset.adjDelta = row.id;
+        deltaTd.appendChild(delta);
+        tr.appendChild(deltaTd);
+
+        tr.querySelectorAll('.adj-input').forEach((input) => {
+            input.dataset.rowId = row.id;
+            input.dataset.adj = input.classList.contains('adj-jaehrlich') ? 'jaehrlich'
+                : input.classList.contains('adj-monatlich') ? 'monatlich' : 'ab';
+        });
+        tr.querySelector('.adj-ab').setAttribute('aria-label', `${name} – Anpassung gilt ab`);
+
+        // Ohne Betrag verschwindet die Zeile wieder, sobald der Fokus sie
+        // verlässt — «eine Anpassung ohne Betrag gibt es nicht», sichtbar
+        // gemacht. Beim Fensterwechsel bleibt sie stehen: sonst wäre das
+        // Getippte beim Zurückkommen weg.
+        tr.addEventListener('focusout', (e) => {
+            if (e.relatedTarget && tr.contains(e.relatedTarget)) return;
+            if (!document.hasFocus()) return;
+            if (rowHasAdjustment(row.id)) return;
+            zeigeAnpassungszeile(row.id, false);
+        });
+        return tr;
+    }
+
+    // Blendet die Anpassungszeile ein oder aus und schaltet den Knopf im
+    // Kommentarbereich gegengleich: Wo die Zeile steht, braucht es ihn nicht.
+    function zeigeAnpassungszeile(rowId, sichtbar) {
+        const tr = $(`.adj-row[data-adj-for="${rowId}"]`);
+        if (tr) tr.hidden = !sichtbar;
+        const add = $(`.adj-add-btn[data-adj-add="${rowId}"]`);
+        if (add) add.hidden = sichtbar;
     }
 
     // Textarea-Höhe an den Inhalt anpassen. scrollHeight ist der Inhalt ohne
@@ -3418,11 +3571,14 @@
     }
 
     function setRowExpanded(rowId, expanded) {
-        const btn = $(`.row-expander[aria-controls="expander-${rowId}"]`);
+        const btn = $(`.row-expander[data-row-id="${rowId}"]`);
         const sub = $(`#expander-${rowId}`);
         if (!btn || !sub) return;
         btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         sub.hidden = !expanded;
+        // Der Kommentar erscheint beim Aufklappen immer, die Anpassung nur,
+        // wenn es eine gibt — sonst steht dort der Knopf, der sie erzeugt.
+        zeigeAnpassungszeile(rowId, expanded && rowHasAdjustment(rowId));
         if (expanded) {
             const ta = sub.querySelector('.comment-textarea');
             if (ta) autoGrowTextarea(ta);
@@ -3436,7 +3592,7 @@
         //   2. title attribute — set to the *basedOn* version's comment when
         //      one exists (browser tooltip on hover). When there's no
         //      previous-version comment, falls back to a generic label.
-        const btn = $(`.row-expander[aria-controls="expander-${rowId}"]`);
+        const btn = $(`.row-expander[data-row-id="${rowId}"]`);
         if (!btn) return;
 
         const active   = getActiveVersion();
@@ -3467,21 +3623,28 @@
         // data-row-id; darum der Selektor tr[data-row-id] im CSS.
         const hauptzeile = $(`tr[data-row-id="${rowId}"]`);
         const aufklapp = $(`#expander-${rowId}`);
-        [hauptzeile, aufklapp].forEach((tr) => {
+        const anpasszeile = $(`.adj-row[data-adj-for="${rowId}"]`);
+        [hauptzeile, aufklapp, anpasszeile].forEach((tr) => {
             if (!tr) return;
             tr.classList.toggle('has-adjustment', hatAnpassung);
         });
 
+        // Eine bestehende Anpassung zeigt sich, sobald die Zeile offen ist.
+        // Verstecken tut diese Stelle nie: beim Leeren des Betrags verschwände
+        // die Zeile sonst unter den tippenden Fingern. Das macht erst das
+        // Verlassen der Zeile (focusout in makeAdjustmentRow).
+        if (hatAnpassung && aufklapp && !aufklapp.hidden) zeigeAnpassungszeile(rowId, true);
+
         // Das Datumsfeld: zu, solange kein Betrag dasteht — und in der Vorschau
         // immer (dort sind alle Anpassungsfelder zu, auch mit Betrag).
         const gesperrt = anpassungDatumGesperrt(active?.adjustments?.[rowId]);
-        const datum = aufklapp ? aufklapp.querySelector('.adj-ab') : null;
+        const datum = anpasszeile ? anpasszeile.querySelector('.adj-ab') : null;
         const hinweis = anpassungDatumHinweis(gesperrt, !!(datum && datum.value));
         if (datum) {
             datum.disabled = gesperrt || !!state.previewStand;
             datum.title = hinweis;
         }
-        const erklaerung = aufklapp ? aufklapp.querySelector('.adj-datum-hinweis') : null;
+        const erklaerung = anpasszeile ? anpasszeile.querySelector('.adj-datum-hinweis') : null;
         if (erklaerung) {
             erklaerung.hidden = !gesperrt;
             erklaerung.textContent = hinweis;
@@ -3557,11 +3720,19 @@
         markDirty();
     }
 
-    // In welcher Zeile liegt dieses Element? Die Hauptzeile trägt data-row-id,
-    // der Aufklappbereich data-expander-for; Pfeil, Beträge, Anpassungsfelder
-    // und Kommentar liegen in einer von beiden. null: in keiner Zeile.
+    // In welcher Zeile liegt dieses Element? Eine Position belegt bis zu drei
+    // <tr>: die Hauptzeile mit data-row-id, den Aufklappbereich mit
+    // data-expander-for und die Anpassungszeile mit data-adj-for. Pfeil,
+    // Beträge, Kommentar und Anpassungsfelder liegen in einer davon.
+    // null: in keiner Zeile.
+    //
+    // Die Anpassungszeile gehört hier zwingend dazu: Ohne sie zählte der
+    // Wechsel von «Neu jährlich» zu «Gilt ab» als Verlassen der Zeile, und
+    // das Datum fiele weg (siehe datumNachVerlassen).
     function zeilenIdVon(el) {
         if (!el || !el.closest) return null;
+        const anpassung = el.closest('.adj-row');
+        if (anpassung) return anpassung.dataset.adjFor || null;
         const aufklapp = el.closest('.expander-row');
         if (aufklapp) return aufklapp.dataset.expanderFor || null;
         const haupt = el.closest('tr[data-row-id]');
@@ -3590,7 +3761,7 @@
 
     function refreshAllExpanderUI() {
         $$('.row-expander').forEach((btn) => {
-            const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
+            const rowId = btn.dataset.rowId;
             if (rowId) refreshExpanderUI(rowId);
         });
     }
@@ -3671,7 +3842,12 @@
                 tbody.appendChild(tr);
 
                 if (hasCommentExpander) {
+                    // Reihenfolge: Position, Kommentar, Anpassung. Die
+                    // Anpassung steht unter dem Kommentar (Wunsch des
+                    // Benutzers) und bleibt als eigene Zeile trotzdem
+                    // spaltenbündig zu den Beträgen darüber.
                     tbody.appendChild(makeCommentRow(row, groupId));
+                    tbody.appendChild(makeAdjustmentRow(row, groupId));
                 }
             });
 
@@ -3783,7 +3959,7 @@
         setTimeout(() => tr.classList.remove('adj-sprung'), 1700);
         // Das Panel mit dem geklickten Knopf ist zu; ohne Ziel fiele der Fokus
         // auf <body> und die Tastatur müsste von vorn beginnen.
-        const expander = $(`.row-expander[aria-controls="expander-${rowId}"]`);
+        const expander = $(`.row-expander[data-row-id="${rowId}"]`);
         if (expander) expander.focus({ preventScroll: true });
     }
 
@@ -4042,6 +4218,18 @@
                 const rowTotal = y || (m * 12);
                 const rowTotalEl = $(`span[data-row-total="${row.id}"]`);
                 if (rowTotalEl) rowTotalEl.textContent = formatComputed(rowTotal);
+
+                // Vierte Spalte der Anpassungszeile: was sie gegenüber dem
+                // erfassten Jahreswert ausmacht. Genau das Kopfrechnen, das
+                // die eigene Zeile loswerden soll.
+                const deltaEl = $(`span[data-adj-delta="${row.id}"]`);
+                if (deltaEl) {
+                    const unterschied = anpassungUnterschied(
+                        getActiveVersion()?.adjustments?.[row.id], rowTotal);
+                    deltaEl.textContent = unterschied === null ? '' : deltaAnzeige(unterschied);
+                    deltaEl.classList.toggle('ist-weniger', unterschied !== null && unterschied < 0);
+                    deltaEl.classList.toggle('ist-mehr', unterschied !== null && unterschied > 0);
+                }
 
                 yearly  += y || (m * 12);
                 monthly += m || (y / 12);
@@ -4929,7 +5117,7 @@
         $('#privateNote').value = '';
         // Collapse all expander rows; refresh their visual state.
         $$('.row-expander').forEach((btn) => {
-            const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
+            const rowId = btn.dataset.rowId;
             if (rowId) setRowExpanded(rowId, false);
         });
         // Wipe the active version's stored data so DOM and state stay aligned.
