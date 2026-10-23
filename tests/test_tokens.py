@@ -43,6 +43,9 @@ MIGRIERT: dict[str, set[str]] = {
     "docs/index.html": set(),
     "docs/skill-vorschlagen.html": set(),
     "docs/claude-anleitung/stil.css": set(),
+    # Die Seite laedt keine Schrift von aussen und ueberschreibt darum beide
+    # Schrift-Token (siehe test_plakat_ueberschreibt_die_schrift_tokens).
+    "docs/plakat.html": {"--font-body", "--font-display"},
 }
 
 

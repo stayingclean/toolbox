@@ -12,6 +12,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from test_tokens import TOKENS, tokens_der_datei
 
 ROOT = Path(__file__).resolve().parent.parent
 SEITE = ROOT / "docs" / "plakat.html"
@@ -253,6 +254,15 @@ def test_eine_stilvorlage_der_seite_kaeme_aus_demselben_ordner():
         assert not re.match(
             r"(https?:)?//|/", ziel.group(1)
         ), f"Stilvorlage nicht aus demselben Ordner: {ziel.group(1)}"
+
+
+def test_plakat_ueberschreibt_die_schrift_tokens():
+    """Die Seite laedt keine Schrift von aussen (CLAUDE.md Punkt 3). Bezoege
+    sie --font-body aus tokens.css, verwiese sie auf Inter -- und wer Inter
+    lokal installiert hat, saehe die Seite anders als alle anderen."""
+    eigene = tokens_der_datei(SEITE)
+    assert "Inter" not in eigene["--font-body"]
+    assert "Playfair" not in eigene["--font-display"]
 
 
 def test_seite_verweist_auf_beide_bilddateien():
