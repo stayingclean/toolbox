@@ -70,17 +70,75 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
 1. Die fertige HTML-Datei in **`docs/`** ablegen → online unter `/toolbox/<datei>.html`.
 2. Sämtliche personen-/organisationsspezifischen Angaben entfernen (neutralisieren),
    da `docs/` **öffentlich** publiziert wird.
-3. **CSS muss in der Datei eingebettet bleiben** (kein externes Stylesheet), damit
-   die Seite auch lokal ohne Server/Internet funktioniert.
+3. **Die Seiten sind für den Online-Gebrauch gerechnet** — mit zwei Ausnahmen,
+   siehe unten. Benutzt werden sie über `stayingclean.github.io/toolbox/`, nicht
+   als herumgeschickte Kopien; damit erreicht eine Korrektur alle beim nächsten
+   Laden.
 
-   **Ausnahme: `docs/claude-anleitung/`.** Dort teilen sich alle Seiten
-   `stil.css` und `anleitung.js`. Die Regel zielt auf Seiten, die jemand
-   einzeln herunterlädt und weitergibt (Budgetvorlage, Flyer, ASRS). Die
-   Anleitung ist ein zusammenhängender Mehrseiten-Ordner mit gemeinsamer
-   Navigation, den niemand seitenweise verschickt; ein relatives `stil.css`
-   daneben funktioniert auch per `file://`. Sie lädt ohnehin Schriften von
-   Google Fonts und ist damit schon heute nicht netzunabhängig. Siehe den
-   eigenen Abschnitt unten.
+   **Entschieden am 2026-10-23**, nachdem sich zeigte, dass heruntergeladene
+   Kopien der Budgetvorlage bei den Beratenden auseinanderliefen — ein
+   Versions-Chaos im Werkzeug, das keine Sorgfalt in der Datei verhindern kann.
+   Vorher stand hier «CSS muss eingebettet bleiben, damit die Seite lokal ohne
+   Internet funktioniert». Diese Begründung gilt nur noch für die beiden
+   Ausnahmen unten. (Und sie stimmte schon vorher nur für einen Teil:
+   Budgetvorlage, Skillsliste, Übersicht, Vorschlagsformular und Anleitung laden
+   alle Schriften von Google Fonts. Nichts von aussen laden nur Flyer-Editor
+   und Plakat.)
+
+   Erlaubt ist damit, was vorher nicht ging: Schriften von aussen und ein
+   gemeinsames Stylesheet über mehrere Seiten.
+
+   **Fremde Bibliotheken bleiben trotzdem draussen** (bestätigt am 2026-10-23).
+   Nicht mehr, weil sie offline fehlten, sondern weil keine gebraucht wird: was
+   die Seiten tun, tun sie mit Vanilla-JS und CSS, und jede Bibliothek wäre
+   Code, den niemand hier liest und der mit der Zeit gepflegt werden muss. Käme
+   je eine dazu, dann **mitgeliefert** (`docs/vendor/`, Lizenzdatei daneben)
+   oder in die Datei **eingebettet**, mit genau festgelegter Version — **nie vom
+   CDN**: jeder Aufruf meldete einem Dritten, dass jemand diese Seite öffnet,
+   bei der Budgetvorlage also, dass jemand ein Budget bearbeitet. Dasselbe
+   Argument steht unten bei den Händler-Symbolen.
+
+   **Eingebettetes CSS bleibt, wo es heute steht** — nicht wegen Offline,
+   sondern weil es nichts kostet: eine Datei, ein Abruf, kein Cache-Problem beim
+   Deploy. Ein eigenes Stylesheet lohnt sich erst, wenn mehrere Seiten es
+   teilen, wie in `docs/claude-anleitung/` (eigener Abschnitt unten, dort teilen
+   alle Seiten `stil.css` und `anleitung.js`).
+
+   **Ausnahme: `docs/skillsliste.html` muss ohne Netz funktionieren.** Auch sie
+   lädt wohl niemand herunter, aber sie soll es aushalten — und dort fällt die
+   Entscheidung ohnehin aus Datenschutzgründen so: die Händler-Symbole dürfen
+   nie vom Händler geladen werden (Abschnitt «Symbole der Händler»), also
+   stecken Daten, CSS und Symbole in der Datei. Von aussen kommen nur die
+   Schriften; ohne Netz zeichnet die Seite in der Ersatzschrift und bleibt
+   vollständig benutzbar.
+
+   **Ausnahme: `docs/flyer-editor.html` muss sich selbst als Datei
+   weitergeben lassen.** «Lokal» heisst hier nicht «ohne Internet», sondern:
+   **der fertige Flyer wird als HTML-Datei auf einer Festplatte abgelegt und
+   muss dort weiter aussehen wie gemeint.** Die Seite exportiert sich dazu
+   selbst — `document.documentElement.outerHTML` nach `flyer-ansicht.html`
+   (fertiger Flyer ohne Editor) und nach `flyer-bearbeitet.html` (weiter
+   bearbeitbar). Was nicht **im Dokument** steht, fehlt in diesen Dateien:
+   also CSS eingebettet, JavaScript eingebettet, Bilder als `data:`-URI, keine
+   relativen Pfade. Heute lädt die Seite als einzige in `docs/` gar nichts von
+   aussen, nicht einmal Schriften — das soll so bleiben.
+
+   Dazu ein zweiter, technischer Grund: der Bild-Export zeichnet die Seite über
+   ein SVG mit `foreignObject` auf ein `<canvas>`. Eine fremd geladene Ressource
+   verunreinigt den Canvas, und `toBlob()` wirft danach einen `SecurityError` —
+   der PNG-Export wäre also nicht nur anders, er wäre kaputt. Die Datei
+   dokumentiert das bei `loadSvgImage` für den Fall der Blob-URL.
+
+   **`docs/plakat.html` lädt ebenfalls keine Schrift**, aber aus einem dritten
+   Grund: sie rendert PNG und PDF selbst, und eine erst später eintreffende
+   Schrift ergäbe ein anderes Bild. Ein Test hält das fest
+   (`tests/test_plakat.py`, `test_seite_laedt_nichts_von_aussen_ausser_dem_avatar`).
+
+   **Die Budgetvorlage speichert `.json`, nicht HTML** (`saveFile`) — Werkzeug
+   und Daten sind getrennt, kein ausgefülltes Budget steckt je in einer
+   HTML-Datei. Die Konvention «Als HTML speichern» weiter oben gilt den
+   Fragebögen, nicht ihr. Wer offline arbeiten muss, lädt die Datei vorher
+   herunter und bekommt die Ersatzschrift; alles Übrige funktioniert.
 4. Die Fusszeile muss den Urheber-Credit und den Kaffee-Link enthalten (siehe
    Konvention unten).
 5. In `docs/index.html` (Übersicht) eine Karte ergänzen (Link + Kurzbeschreibung).
@@ -512,8 +570,9 @@ Dazu dieses CSS (Farben/Abstände an das jeweilige Theme der Seite anpassen):
 
 - Avatar kommt direkt von `https://github.com/stayingclean.png` (aktualisiert sich
   automatisch, wenn das Organisations-Logo geändert wird).
-- **Kein Bild für den Kaffee-Link** — nur das Zeichen ☕. So bleibt jede Seite ohne
-  Internet lauffähig, und der offizielle gelbe Button würde zu keinem Theme passen.
+- **Kein Bild für den Kaffee-Link** — nur das Zeichen ☕. Der offizielle gelbe
+  Button würde zu keinem Theme passen, und die Skillsliste bleibt so auch ohne
+  Netz vollständig (siehe Punkt 3 oben).
 - Bei zentrierten Fusszeilen zusätzlich `justify-content:center` auf `.footer-links`.
 - Bei der Skillsliste steht die Fusszeile in **`template.html`**, beim
   Vorschlagsformular in **`template-vorschlag.html`** (nicht in den generierten
