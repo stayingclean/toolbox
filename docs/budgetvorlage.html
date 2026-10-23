@@ -3293,6 +3293,83 @@
         r.diffM = r.einnahmenM - r.ausgabenM;
         return r;
     }
+
+    // ----------------------------------------------------------------
+    // Die Diagramme: gerechnet wird hier, gezeichnet im DOM
+    // ----------------------------------------------------------------
+
+    // Die Stände einer Version mit ihren Summen — eine Quelle für drei
+    // Anzeigen: die Stand-Zeilen der Zusammenfassung, die der Übersicht und
+    // die Balken des Diagramms. Dieselbe Schleife stand vorher zweimal fast
+    // gleich da; mit dem Diagramm wäre eine dritte dazugekommen.
+    // `deltaY`/`deltaM` ist der Unterschied zum Stand «heute», der selbst 0
+    // trägt — er ist der Bezugspunkt und steht immer zuerst.
+    function standVerlauf(schema, values, adjustments, heuteIso) {
+        let basis = null;
+        return stichtagListe(adjustments, heuteIso).map((stand) => {
+            const s = summen(schema, werteFuerStand(values, adjustments, stand.key));
+            if (basis === null) basis = s;
+            return {
+                key: stand.key, ab: stand.ab, faellig: stand.faellig,
+                einnahmenY: s.einnahmenY, einnahmenM: s.einnahmenM,
+                ausgabenY: s.ausgabenY, ausgabenM: s.ausgabenM,
+                diffY: s.diffY, diffM: s.diffM,
+                deltaY: s.diffY - basis.diffY,
+                deltaM: s.diffM - basis.diffM,
+            };
+        });
+    }
+
+    // Woher die Veränderung kommt: je angepasste Position ein Eintrag, nach
+    // Betrag absteigend. `einnahmeRowIds` muss sein, weil der Kern SCHEMA
+    // nicht kennt — ohne diese Liste landete das Vorzeichen wieder im
+    // DOM-Code, und «+200 beim Lohn» stünde in Rot da.
+    // Bei gleichem Betrag entscheidet die rowId, damit das Ergebnis nicht von
+    // der Schlüsselreihenfolge des Objekts abhängt.
+    function anpassungsRangliste(adjustments, staende, values, einnahmeRowIds, maxAnzahl) {
+        const einnahmen = {};
+        (einnahmeRowIds || []).forEach((id) => { einnahmen[id] = true; });
+        const alle = [];
+        anpassungsGruppen(adjustments, staende, values).forEach((gruppe) => {
+            gruppe.eintraege.forEach((e) => {
+                alle.push({
+                    rowId: e.rowId,
+                    deltaY: e.deltaY,
+                    deltaM: e.deltaM,
+                    wirkung: anpassungWirkung(e.deltaM, !!einnahmen[e.rowId]),
+                });
+            });
+        });
+        alle.sort((a, b) => (Math.abs(b.deltaM) - Math.abs(a.deltaM))
+            || (a.rowId < b.rowId ? -1 : a.rowId > b.rowId ? 1 : 0));
+        const grenze = istZahl(maxAnzahl) && maxAnzahl > 0 ? maxAnzahl : alle.length;
+        const rest = alle.slice(grenze);
+        return {
+            eintraege: alle.slice(0, grenze),
+            restAnzahl: rest.length,
+            restDeltaM: rest.reduce((s, e) => s + e.deltaM, 0),
+        };
+    }
+
+    // Die Geometrie eines Balkensatzes, in Prozent der Spur. Die Spanne
+    // umfasst immer die Null — sonst stünde ein Balken im Plus links von
+    // einem im Minus. Ohne Spanne (alle Werte 0) bleibt die Breite 0: ein
+    // voller Balken behauptete eine Grösse, die es nicht gibt.
+    function balkenAnteile(werte) {
+        const zahlen = (werte || []).map((w) => (istZahl(w) ? w : 0));
+        const min = Math.min.apply(null, [0].concat(zahlen));
+        const max = Math.max.apply(null, [0].concat(zahlen));
+        const spanne = max - min;
+        const nullBei = spanne === 0 ? 0 : (-min / spanne) * 100;
+        return {
+            nullBei: nullBei,
+            balken: zahlen.map((w) => {
+                if (spanne === 0) return { von: nullBei, breite: 0 };
+                const breite = Math.abs(w) / spanne * 100;
+                return { von: w < 0 ? nullBei - breite : nullBei, breite: breite };
+            }),
+        };
+    }
     /* == budget-kern:ende == */
 
     const FILE_FORMAT_VERSION = 5;

@@ -1550,3 +1550,118 @@ def test_liste_im_dialog_scrollt_und_ist_per_tastatur_erreichbar():
     assert re.search(r"\.einloesen-liste\s*\{[^}]*overflow-y:\s*auto", text)
     assert '<fieldset class="modal-field" id="newVersionEinloesen"' in text
     assert "<legend" in text[text.index('id="newVersionEinloesen"'):][:300]
+
+
+# --- Die Diagramme: eine Rechnung im Kern, drei Anzeigen ----------------------
+# Punkte 8 und 9 (specs/2026-10-23-budget-grafik-und-vergleich-design.md).
+# Gerechnet wird im Kern, gezeichnet im DOM -- darum stehen die Tests hier und
+# nicht als Textsuche in der ausgelieferten Datei.
+
+
+SCHEMA_MINI = {
+    "einnahmen": [{"id": "lohn"}],
+    "wohnen": [{"id": "miete"}, {"id": "strom"}],
+}
+
+
+def test_standverlauf_rechnet_jeden_stand_und_den_unterschied_zu_heute():
+    """Eine Quelle fuer drei Anzeigen: die Stand-Zeilen der Zusammenfassung,
+    die der Uebersicht und das Diagramm. Bisher stand dieselbe Schleife
+    zweimal fast gleich da."""
+    values = {"lohn.monatlich": 5000, "miete.monatlich": 1500, "strom.monatlich": 100}
+    adjustments = {
+        "miete": {"jaehrlich": None, "monatlich": 1400, "ab": "2027-01-01"},
+        "strom": {"jaehrlich": None, "monatlich": 80, "ab": None},
+    }
+    staende = kern("standVerlauf", SCHEMA_MINI, values, adjustments, "2026-10-23")
+    assert [s["key"] for s in staende] == ["heute", "2027-01-01", "offen"]
+
+    heute = staende[0]
+    assert heute["diffM"] == 3400          # 5000 - 1600
+    assert heute["deltaM"] == 0            # der Bezugspunkt
+    assert heute["einnahmenM"] == 5000 and heute["ausgabenM"] == 1600
+
+    ab2027 = staende[1]
+    assert ab2027["diffM"] == 3500         # Miete 100 tiefer
+    assert ab2027["deltaM"] == 100
+    assert ab2027["deltaY"] == 1200
+
+    offen = staende[2]
+    assert offen["diffM"] == 3520          # dazu der Strom-Vorschlag
+    assert offen["deltaM"] == 120
+
+
+def test_standverlauf_ohne_anpassung_kennt_nur_heute():
+    """Auf einer frisch geoeffneten Seite steht kein leeres Diagramm."""
+    staende = kern("standVerlauf", SCHEMA_MINI, {"lohn.monatlich": 100}, {}, "2026-10-23")
+    assert [s["key"] for s in staende] == ["heute"]
+    assert staende[0]["deltaM"] == 0
+
+
+def test_rangliste_sortiert_nach_betrag_und_kennt_die_wirkung():
+    """Woher die Veraenderung kommt: je Position ein Balken, nach Betrag
+    absteigend. Die Wirkung haengt an der Gruppe -- bei einer Einnahme ist
+    mehr gut."""
+    values = {"lohn.monatlich": 5000, "miete.monatlich": 1500, "strom.monatlich": 100}
+    adjustments = {
+        "strom": {"jaehrlich": None, "monatlich": 80, "ab": None},      # -20, Ausgabe
+        "miete": {"jaehrlich": None, "monatlich": 1400, "ab": None},    # -100, Ausgabe
+        "lohn": {"jaehrlich": None, "monatlich": 5200, "ab": None},     # +200, Einnahme
+    }
+    staende = kern("standVerlauf", SCHEMA_MINI, values, adjustments, "2026-10-23")
+    r = kern("anpassungsRangliste", adjustments, staende, values, ["lohn"], 8)
+    assert [e["rowId"] for e in r["eintraege"]] == ["lohn", "miete", "strom"]
+    assert [e["deltaM"] for e in r["eintraege"]] == [200, -100, -20]
+    assert [e["wirkung"] for e in r["eintraege"]] == ["gut", "gut", "gut"]
+    assert r["restAnzahl"] == 0 and r["restDeltaM"] == 0
+
+
+def test_rangliste_kappt_und_fasst_den_rest_zusammen():
+    """Zwanzig Balken waeren eine zweite Tabelle, keine Grafik."""
+    values = {}
+    adjustments = {}
+    for i in range(10):
+        rid = "p%02d" % i
+        values[rid + ".monatlich"] = 100
+        adjustments[rid] = {"jaehrlich": None, "monatlich": 100 - (i + 1), "ab": None}
+    schema = {"einnahmen": [], "ausgaben": [{"id": "p%02d" % i} for i in range(10)]}
+    staende = kern("standVerlauf", schema, values, adjustments, "2026-10-23")
+    r = kern("anpassungsRangliste", adjustments, staende, values, [], 8)
+    assert len(r["eintraege"]) == 8
+    assert r["eintraege"][0]["deltaM"] == -10      # groesster Betrag zuerst
+    assert r["restAnzahl"] == 2
+    assert r["restDeltaM"] == -3                   # -1 und -2
+
+
+def test_balkenanteile_haengen_immer_an_der_null():
+    """Die Spanne umfasst immer die Null -- sonst stuende ein Balken im
+    Plus links von einem im Minus."""
+    r = kern("balkenAnteile", [-120, 29, 43, 113])
+    assert 0 < r["nullBei"] < 100
+    assert len(r["balken"]) == 4
+    # Der negative Balken endet an der Nulllinie, der groesste positive beginnt dort.
+    assert abs(r["balken"][0]["von"] + r["balken"][0]["breite"] - r["nullBei"]) < 0.01
+    assert abs(r["balken"][3]["von"] - r["nullBei"]) < 0.01
+    assert r["balken"][3]["breite"] > r["balken"][1]["breite"]
+
+
+def test_balkenanteile_nur_positive_werte():
+    r = kern("balkenAnteile", [10, 20, 40])
+    assert r["nullBei"] == 0
+    assert r["balken"][2]["breite"] == 100
+    assert r["balken"][0]["von"] == 0
+
+
+def test_balkenanteile_ohne_spanne_springt_nicht_auf_hundert():
+    """Alle Werte null: ein Balken behauptete eine Groesse, die es nicht gibt.
+
+    Der Entwurf sagt «alle Werte gleich ODER alle 0 -> Breite 0». Das gilt hier
+    nur fuer den zweiten Fall: Weil die Spanne immer die Null einschliesst,
+    haben zwei gleiche Werte von 50 sehr wohl eine Spanne (0 bis 50), und zwei
+    volle Balken sind dann die Wahrheit -- «beide gleich, beide im Plus».
+    Breite 0 hiesse dort «nichts da»."""
+    assert kern("balkenAnteile", [0, 0])["balken"][0]["breite"] == 0
+    assert kern("balkenAnteile", [])["balken"] == []
+    gleich = kern("balkenAnteile", [50, 50])
+    assert gleich["nullBei"] == 0
+    assert gleich["balken"][0]["breite"] == 100
