@@ -974,6 +974,18 @@ def test_unterschied_zum_erfassten_wert():
     assert kern("anpassungUnterschied", dict(leer, jaehrlich=600), None) == 600
 
 
+def test_wirkung_haengt_an_der_gruppe():
+    """Bei einer Ausgabe ist weniger gut, bei einer Einnahme mehr. Ohne diese
+    Unterscheidung stuende «+1'200.00» beim Lohn in Rot da — die Seite saegte
+    dem Benutzer das Gegenteil dessen, was er erreicht hat."""
+    assert kern("anpassungWirkung", -840, False) == "gut"       # Ausgabe sinkt
+    assert kern("anpassungWirkung", 500, False) == "schlecht"   # Ausgabe steigt
+    assert kern("anpassungWirkung", 1200, True) == "gut"        # Einnahme steigt
+    assert kern("anpassungWirkung", -300, True) == "schlecht"   # Einnahme sinkt
+    assert kern("anpassungWirkung", 0, False) == ""
+    assert kern("anpassungWirkung", None, False) == ""
+
+
 def test_unmoegliches_datum_gilt_nicht_als_datum():
     """`Date.parse` nimmt den 31. Februar an und rechnet ihn still auf den
     3. Maerz um — das ergaebe einen Stand mit unsinniger Ueberschrift. Ueber

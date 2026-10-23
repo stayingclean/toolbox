@@ -534,21 +534,35 @@
         .adj-row > td {
             background: var(--color-warning-bg);
             border-bottom: 1px solid var(--color-border);
-            padding-top: 0.45rem;
-            padding-bottom: 0.55rem;
+            padding-top: 0.35rem;
+            padding-bottom: 0.5rem;
         }
         .adj-row[hidden] {
             display: none;
         }
+        /* Kommentar und Anpassung sind ein Block: keine Trennlinie dazwischen,
+           und der farbige Balken läuft ohne Lücke durch. Darum sitzt der
+           Balken der Anpassung im Inhalt (wie beim Kommentarkasten) und nicht
+           an der Zellkante — die Zelle gibt ihre Polsterung dafür ab. */
+        .expander-row:has(+ .adj-row:not([hidden])) > td {
+            border-bottom: none;
+        }
+        .expander-row:has(+ .adj-row:not([hidden])) .comment-panel {
+            border-left-color: var(--color-warning);
+            padding-bottom: 0.35rem;
+        }
         .adj-row > td:first-child {
-            box-shadow: inset 4px 0 0 var(--color-warning);
+            padding: 0;
         }
         .adj-label-cell .adj-label-content {
             display: flex;
             align-items: center;
             gap: 0.45rem;
             flex-wrap: wrap;
-            padding-left: 2.1rem;    /* unter dem Positionsnamen, nicht unter dem Pfeil */
+            border-left: 3px solid var(--color-warning);
+            margin-left: 0.25rem;
+            /* 2.6rem links: bündig zur Beschriftung im Kommentarkasten. */
+            padding: 0.35rem 1rem 0.5rem 2.6rem;
         }
         .adj-marke {
             font-size: 0.78rem;
@@ -574,8 +588,8 @@
             font-weight: 600;
             color: var(--color-text-muted);
         }
-        .adj-delta.ist-weniger { color: var(--color-success); }
-        .adj-delta.ist-mehr    { color: var(--color-danger); }
+        .adj-delta.ist-gut      { color: var(--color-success); }
+        .adj-delta.ist-schlecht { color: var(--color-danger); }
         .adj-input {
             width: 100%;
             padding: 0.4rem 0.625rem;
@@ -608,8 +622,11 @@
             cursor: not-allowed;
             border-style: dashed;
         }
+        /* Steht im Inhalt der Zelle, damit der Balken auch an ihm vorbeiläuft;
+           flex-basis 100 % setzt ihn auf eine eigene Zeile. */
         .adj-datum-hinweis {
-            margin: 0.3rem 0 0 2.1rem;
+            flex: 0 0 100%;
+            margin: 0.2rem 0 0;
             font-size: 0.8rem;
             color: var(--color-text-muted);
         }
@@ -2713,6 +2730,15 @@
         return ziel.jaehrlich - (istZahl(erfasstJaehrlich) ? erfasstJaehrlich : 0);
     }
 
+    // Wirkt die Anpassung zugunsten des Budgets? Bei einer Ausgabe ist weniger
+    // gut, bei einer Einnahme mehr — ohne diese Unterscheidung stünde
+    // «+1'200.00» beim Lohn in Rot da und sagte das Gegenteil.
+    // '' heisst: keine Aussage (keine Anpassung oder kein Unterschied).
+    function anpassungWirkung(unterschied, istEinnahme) {
+        if (!istZahl(unterschied) || unterschied === 0) return '';
+        return (istEinnahme ? unterschied > 0 : unterschied < 0) ? 'gut' : 'schlecht';
+    }
+
     // Gibt es diese Anpassung? Nur ein Betrag macht sie dazu (0 eingeschlossen).
     // Ein Datum allein passt nichts an und ist keine Anpassung.
     function anpassungHatBetrag(a) {
@@ -3507,8 +3533,8 @@
             '<span class="adj-marke">Anpassung</span>' +
             '<span class="adj-ab-feld"><span class="adj-ab-wort">ab</span>' +
             '<input type="date" class="adj-input adj-ab" disabled title="' + anpassungDatumHinweis(true, false) + '"></span>' +
-            '</div>' +
-            '<p class="adj-datum-hinweis">' + anpassungDatumHinweis(true, false) + '</p>';
+            '<p class="adj-datum-hinweis">' + anpassungDatumHinweis(true, false) + '</p>' +
+            '</div>';
         tr.appendChild(labelTd);
 
         ['jaehrlich', 'monatlich'].forEach((period) => {
@@ -4226,9 +4252,10 @@
                 if (deltaEl) {
                     const unterschied = anpassungUnterschied(
                         getActiveVersion()?.adjustments?.[row.id], rowTotal);
+                    const wirkung = anpassungWirkung(unterschied, groupId === 'einnahmen');
                     deltaEl.textContent = unterschied === null ? '' : deltaAnzeige(unterschied);
-                    deltaEl.classList.toggle('ist-weniger', unterschied !== null && unterschied < 0);
-                    deltaEl.classList.toggle('ist-mehr', unterschied !== null && unterschied > 0);
+                    deltaEl.classList.toggle('ist-gut', wirkung === 'gut');
+                    deltaEl.classList.toggle('ist-schlecht', wirkung === 'schlecht');
                 }
 
                 yearly  += y || (m * 12);
