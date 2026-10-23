@@ -552,7 +552,11 @@
             padding-bottom: 0.35rem;
         }
         .adj-row > td:first-child {
-            padding: 0;
+            /* Links so viel wie jede Zelle der Tabelle (.budget-table tbody
+               td), denn die Kommentarzelle behält diese Polsterung auch — nur
+               so steht der Balken der Anpassung genau unter ihrem. Oben und
+               unten keine: die trägt der Inhalt, damit der Balken durchläuft. */
+            padding: 0 0.5rem;
         }
         .adj-label-cell .adj-label-content {
             display: flex;

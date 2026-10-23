@@ -458,6 +458,17 @@ def test_neue_version_aus_stand_basiert_auf_der_aktiven_version():
     assert "bekannteAnpassungen" in block
 
 
+def test_anpassung_steht_in_linie_mit_dem_kommentar():
+    """Der farbige Balken der Anpassung muss genau unter dem des
+    Kommentarkastens stehen. Beide Zellen brauchen dafuer dieselbe linke
+    Polsterung: die Kommentarzelle behaelt die der Tabelle, obwohl
+    «.expander-row > td» padding 0 setzt — «.budget-table tbody td» ist
+    staerker. Mit padding 0 sass die Anpassung 8 px weiter links."""
+    text = _seite_text()
+    assert re.search(r"\.budget-table tbody td \{[^}]*padding:\s*0\.375rem 0\.5rem", text)
+    assert re.search(r"\.adj-row > td:first-child \{[^}]*padding:\s*0 0\.5rem", text)
+
+
 def test_kopfleiste_fuehrt_denselben_ablauf():
     """Punkt 5: «Neue Version» in der Kopfleiste fuehrt die Anpassungen der
     gewaehlten Grundlage auf und rechnet die angehakten ein — derselbe Dialog
