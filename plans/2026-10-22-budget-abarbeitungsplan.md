@@ -251,7 +251,20 @@ selben Aufklapp-Zustand.
 
 ---
 
-## Welle 3 — Punkte 5 + 4: der Dialog (~halber Tag)
+## Welle 3 — Punkte 5 + 4 ✔ erledigt am 2026-10-23
+
+Commit `3b443e0`, 448 Tests grün, im Browser durchgespielt.
+
+Anders als geplant: Nicht `stichtagListe` hat den Stand «alle» bekommen,
+sondern `einloesbareEintraege` lässt «offen» immer zu. Der Unterschied ist
+wichtig — ein zusätzlicher Stand hätte in der Zusammenfassung eine zweite
+Zeile mit denselben Zahlen erzeugt, sobald jede Anpassung ein Datum trägt.
+
+Dazugekommen: Die Grundlage steht im Dialog jetzt **über** der Liste (sie
+bestimmt, was darunter steht), und das Häkchen «Übrige Kommentare
+übernehmen» beginnt jedes Mal gesetzt.
+
+### Was geplant war
 
 ### 3.1 Punkt 5: ein Weg, *alle* Anpassungen einzulösen
 
