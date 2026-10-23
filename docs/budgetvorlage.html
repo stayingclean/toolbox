@@ -1786,7 +1786,10 @@
         /* Hide × on the last remaining tab (cannot delete the last version). */
         .version-tabs[data-count="1"] .version-tab-close { display: none !important; }
 
-        .version-add-btn {
+        /* «Vergleichen» sieht aus wie «Neue Version» und «Vorschau»:
+           gestrichelt umrandet, weil keiner von ihnen eine Version ist. */
+        .version-add-btn,
+        .version-compare-btn {
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
@@ -1800,6 +1803,70 @@
             font-weight: 600;
             cursor: pointer;
             transition: all var(--transition-fast);
+        }
+        .version-compare-btn[hidden] { display: none; }
+        .version-compare-btn:hover {
+            border-style: solid;
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+        .version-compare-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+        /* Die Auswahl des Paares. Schmal brechen die beiden Listen
+           untereinander, mit «mit» als eigener Zeile — nicht mitten im Satz. */
+        .vergleich-wahl {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 1rem;
+        }
+        .vergleich-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-primary-dark);
+        }
+        .vergleich-mit {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+        }
+        .vergleich-select {
+            padding: 0.35rem 0.6rem;
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            max-width: 16rem;
+        }
+        .vergleich-select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+        /* Das Abzeichen der gewählten Versionen im Diagramm. */
+        .balken-abzeichen {
+            display: inline-block;
+            min-width: 1.1rem;
+            margin-right: 0.35rem;
+            padding: 0 0.25rem;
+            border-radius: var(--radius-sm);
+            background: var(--color-primary);
+            color: var(--color-bg);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        .balken-zeile.ist-gewaehlt {
+            border-color: var(--color-primary);
+            background: var(--color-primary-faint);
+        }
+        @media (max-width: 480px) {
+            .vergleich-wahl { flex-direction: column; align-items: stretch; }
+            .vergleich-select { max-width: none; }
         }
         .version-add-btn:hover {
             background: var(--color-primary-faint);
@@ -2333,14 +2400,16 @@
             border-style: solid;
         }
         /* Nach dem Sprung kurz hervorheben, damit man die Zeile findet. */
-        tr[data-row-id].adj-sprung > td {
+        tr[data-row-id].adj-sprung > td,
+        .section.adj-sprung {
             animation: adj-sprung 1.6s ease-out;
         }
         @keyframes adj-sprung {
             0%, 40% { background: rgba(0, 128, 128, 0.18); }
         }
         @media (prefers-reduced-motion: reduce) {
-            tr[data-row-id].adj-sprung > td { animation: none; }
+            tr[data-row-id].adj-sprung > td,
+            .section.adj-sprung { animation: none; }
         }
     </style>
 </head>
@@ -2413,6 +2482,13 @@
 <div class="version-bar" id="versionBar">
     <div class="version-bar-label">Versionen:</div>
     <div class="version-tabs" id="versionTabs" role="tablist" aria-label="Budget-Versionen"></div>
+    <!-- «Vergleichen» steht bei den Reitern, weil er auf sie wirkt, während
+         «Neue Version» einen neuen anlegt. Er trägt keine Rolle «tab»: die
+         Leiste selbst ist keine Reiterliste, nur #versionTabs ist es. -->
+    <button class="version-compare-btn" id="compareBtn" type="button" hidden
+            title="Zwei Versionen nebeneinanderlegen">
+        <span aria-hidden="true">⇄</span><span>Vergleichen</span>
+    </button>
     <button class="version-add-btn" id="addVersionBtn" type="button"
             aria-label="Neue Budget-Version anlegen" title="Neue Budget-Version anlegen">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2790,6 +2866,22 @@
             Übersicht aller erfassten Budget-Versionen mit den Differenzen zur jeweiligen Basis-Version.
             Die aktive Version ist hervorgehoben.
         </p>
+
+        <!-- Die freie Wahl des Paares. Vorbelegt mit dem, was ohne jede
+             Bedienung ohnehin gilt: A = Basis der aktiven Version, B = die
+             aktive Version. Die Wahl steht nicht in der Datei — sie ist eine
+             Blickrichtung, kein Inhalt. -->
+        <div class="vergleich-wahl" id="vergleichWahl">
+            <label class="vergleich-label" for="vergleichA">Vergleichen:</label>
+            <select id="vergleichA" class="vergleich-select"></select>
+            <span class="vergleich-mit">mit</span>
+            <select id="vergleichB" class="vergleich-select"></select>
+        </div>
+
+        <h3 class="grafik-titel">Die Versionen im Vergleich</h3>
+        <p class="grafik-untertitel">Was in jeder Version am Monatsende bleibt. Ein Klick wählt sie als A.</p>
+        <div class="balken-satz" id="grafikVersionen"></div>
+
         <table class="versions-overview-table">
             <thead>
                 <tr>
@@ -5208,6 +5300,11 @@
         const multi = isMultiVersion();
         document.body.classList.toggle('mode-multi-version', multi);
         document.body.classList.toggle('mode-single-version', !multi);
+        // Mit einer Version gibt es nichts zu vergleichen, und der
+        // Zielabschnitt ist dann selbst versteckt — ein Knopf, der ins Nichts
+        // führt, wäre schlimmer als keiner.
+        const vergleich = $('#compareBtn');
+        if (vergleich) vergleich.hidden = !multi;
     }
 
     function suggestVersionName() {
@@ -5343,13 +5440,101 @@
             tbody.appendChild(tr);
         });
 
-        // ---- Per-row diff detail block --------------------------------
-        renderVersionsDetail();
+        // ---- Das gewählte Paar: Auswahl, Diagramm, Unterschiede -------
+        const paar = vergleichsPaar();
+        renderVergleichWahl(paar);
+        renderGrafikVersionen(paar);
+        renderVersionsDetail(paar.a, paar.b);
     }
 
-    function renderVersionsDetail() {
-        // Show, position by position, where the active version differs from
-        // its basedOn. Hidden when active is a root version (no baseline).
+    // ----------------------------------------------------------------
+    // Punkt 9: zwei frei gewählte Versionen vergleichen
+    // ----------------------------------------------------------------
+    // Die Wahl lebt nur zur Laufzeit: sie steht nicht in der Datei (v5 bleibt
+    // unverändert) und überlebt kein Neuladen — eine Blickrichtung, kein
+    // Inhalt. Vorbelegt ist, was ohne jede Bedienung ohnehin gilt.
+    function vergleichsPaar() {
+        const aktiv = getActiveVersion();
+        const vorhanden = (id) => !!(id && getVersionById(id));
+        let b = vorhanden(state.vergleichB) ? state.vergleichB : (aktiv ? aktiv.id : null);
+        let a = vorhanden(state.vergleichA) ? state.vergleichA : (aktiv && aktiv.basedOn ? aktiv.basedOn : null);
+        if (!a) {
+            // Wurzelversion: die erste andere Version. Früher versteckte sich
+            // der Detailblock in diesem Fall ganz; mit freier Wahl gibt es
+            // immer ein Paar, und die leere Aussage heisst «keine
+            // Unterschiede» statt «nichts zu sehen».
+            const andere = state.versions.find((v) => v.id !== b);
+            a = andere ? andere.id : b;
+        }
+        return { a: getVersionById(a) || null, b: getVersionById(b) || null };
+    }
+
+    // Dasselbe Muster wie springeZuZeile: die klebende Kopfleiste abziehen,
+    // kurz hervorheben und den Fokus setzen, damit sichtbar ist, wo man
+    // gelandet ist — und die Tastatur nicht von vorn beginnen muss.
+    function springeZumVergleich() {
+        const abschnitt = $('#versionsOverviewSection');
+        if (!abschnitt || abschnitt.hidden) return;
+        closeAdjustmentsPanel();
+        closeHilfePanel();
+        const kopf = $('.sticky-head');
+        const abstand = (kopf ? kopf.offsetHeight : 0) + 12;
+        const oben = abschnitt.getBoundingClientRect().top + window.scrollY - abstand;
+        window.scrollTo({ top: Math.max(0, oben) });
+        abschnitt.classList.remove('adj-sprung');
+        void abschnitt.offsetWidth;
+        abschnitt.classList.add('adj-sprung');
+        setTimeout(() => abschnitt.classList.remove('adj-sprung'), 1700);
+        const wahl = $('#vergleichA');
+        if (wahl) wahl.focus({ preventScroll: true });
+    }
+
+    function renderVergleichWahl(paar) {
+        [['#vergleichA', paar.a], ['#vergleichB', paar.b]].forEach(([sel, gewaehlt]) => {
+            const feld = $(sel);
+            if (!feld) return;
+            feld.innerHTML = '';
+            state.versions.forEach((v) => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = v.name;
+                if (gewaehlt && v.id === gewaehlt.id) opt.selected = true;
+                feld.appendChild(opt);
+            });
+        });
+    }
+
+    // Diagramm 3: je Version ein Balken, in der Reihenfolge der Reiter. Die
+    // beiden gewählten tragen ein Abzeichen. Die Stände stehen hier bewusst
+    // nicht noch einmal — dreimal dieselbe Zahl ist keine Übersicht.
+    function renderGrafikVersionen(paar) {
+        const box = $('#grafikVersionen');
+        if (!box) return;
+        box.textContent = '';
+        const werte = state.versions.map((v) => summen(SCHEMA, v.values).diffM);
+        const geo = balkenAnteile(werte);
+        state.versions.forEach((v, i) => {
+            const abzeichen = (paar.a && v.id === paar.a.id) ? 'A'
+                : (paar.b && v.id === paar.b.id) ? 'B' : '';
+            const zeile = balkenZeile(
+                v.name, '', geo.balken[i], geo.nullBei,
+                formatComputed(werte[i]), werte[i] >= 0 ? 'gut' : 'schlecht',
+                `${v.name}: ${formatComputed(summen(SCHEMA, v.values).diffY)} pro Jahr · als A wählen`,
+                () => { state.vergleichA = v.id; renderVersionsOverview(); });
+            if (abzeichen) {
+                const marke = document.createElement('span');
+                marke.className = 'balken-abzeichen';
+                marke.textContent = abzeichen;
+                zeile.querySelector('.balken-name').prepend(marke);
+                zeile.classList.add('ist-gewaehlt');
+            }
+            box.appendChild(zeile);
+        });
+    }
+
+    function renderVersionsDetail(a, b) {
+        // Zeigt Position für Position, worin sich zwei Versionen
+        // unterscheiden — welche zwei, bestimmt die Auswahl darüber.
         const block       = $('#versionsDetailBlock');
         const detailBody  = $('#versionsDetailBody');
         const detailIntro = $('#versionsDetailIntro');
@@ -5358,8 +5543,8 @@
         const colActive   = $('#detailColActive');
         if (!block || !detailBody) return;
 
-        const active   = getActiveVersion();
-        const baseline = getBaselineVersion();
+        const baseline = a;
+        const active   = b;
         if (!active || !baseline) {
             block.hidden = true;
             return;
@@ -5368,7 +5553,7 @@
 
         // Headline text
         detailIntro.textContent =
-            `Aktive Version „${active.name}" verglichen mit Basis „${baseline.name}". `
+            `„${baseline.name}" verglichen mit „${active.name}". `
             + `Es werden nur Positionen mit einer Wertabweichung gelistet.`;
         colBasis.textContent  = baseline.name;
         colActive.textContent = active.name;
@@ -6079,6 +6264,16 @@
             $('#privateNoteBox').classList.toggle('has-text', notiz.trim() !== '');
         });
         $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
+
+        // «Vergleichen»: kein zweites Fenster und keine zweite Tabelle — der
+        // Knopf bringt den Benutzer an den Abschnitt, den es schon gibt.
+        $('#compareBtn').addEventListener('click', springeZumVergleich);
+        [['#vergleichA', 'vergleichA'], ['#vergleichB', 'vergleichB']].forEach(([sel, feld]) => {
+            $(sel).addEventListener('change', (e) => {
+                state[feld] = e.target.value;
+                renderVersionsOverview();
+            });
+        });
 
         // Anpassungsliste: Knopf schaltet um, Klick ausserhalb und Escape schliessen.
         $('#adjustmentsBtn').addEventListener('click', toggleAdjustmentsPanel);

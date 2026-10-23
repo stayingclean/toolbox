@@ -1734,3 +1734,68 @@ def test_diagramme_drucken_mit():
         "ohne erzwungene Fuellung druckt der Balken als leere Flaeche"
     assert re.search(r"\.balken-spur\s*\{[^}]*border:", css), \
         "die Spur braucht einen Rahmen, Hintergruende druckt der Browser nicht"
+
+
+# --- Punkt 9: zwei frei gewaehlte Versionen vergleichen -----------------------
+
+
+def test_vergleichen_steht_bei_den_reitern():
+    """Er wirkt auf die Reiter, waehrend «Neue Version» einen neuen anlegt --
+    darum dort und nicht daneben. Und er traegt keine Rolle «tab»: die Leiste
+    selbst ist keine Reiterliste."""
+    text = _seite_text()
+    leiste = text[text.index('id="versionBar"'):text.index('id="previewBar"')]
+    assert leiste.index('id="versionTabs"') < leiste.index('id="compareBtn"')
+    assert leiste.index('id="compareBtn"') < leiste.index('id="addVersionBtn"')
+    knopf = text[text.index('id="compareBtn"') - 200:text.index('id="compareBtn"') + 200]
+    assert 'role="tab"' not in knopf
+
+
+def test_vergleichen_nur_mit_mehreren_versionen():
+    """Mit einer Version gibt es nichts zu vergleichen, und der Zielabschnitt
+    ist dann selbst versteckt -- ein Knopf, der ins Nichts fuehrt, waere
+    schlimmer als keiner."""
+    assert 'id="compareBtn" type="button" hidden' in _seite_text()
+    block = _funktionsblock("applyModeToUI")
+    assert "compareBtn" in block and "multi" in block
+
+
+def test_der_vergleich_baut_keine_zweite_ansicht():
+    """Kein Fenster, keine zweite Tabelle: der Knopf bringt den Benutzer an
+    den Abschnitt, den es schon gibt."""
+    block = _funktionsblock("springeZumVergleich")
+    assert "versionsOverviewSection" in block
+    assert "sticky-head" in block, "die klebende Kopfleiste gehoert abgezogen"
+    assert "focus(" in block
+    assert "openModal" not in block
+
+
+def test_das_paar_ist_vorbelegt_mit_dem_was_ohnehin_gilt():
+    """A = Basis der aktiven Version, B = die aktive. Damit zeigt der
+    Abschnitt ohne jede Bedienung genau das, was er vorher zeigte."""
+    block = _funktionsblock("vergleichsPaar")
+    assert "basedOn" in block and "getActiveVersion" in block
+    assert "state.versions.find" in block, "Wurzelversion: die erste andere Version"
+
+
+def test_die_wahl_steht_nicht_in_der_datei():
+    """Sie ist eine Blickrichtung, kein Inhalt -- v5 bleibt unveraendert."""
+    text = _seite_text()
+    block = text[text.index("function serialize"):][:1200]
+    assert "vergleich" not in block.lower()
+
+
+def test_unterschiede_bekommen_das_paar_als_argument():
+    """Frueher rief die Funktion getBaselineVersion und getActiveVersion
+    selbst; die Herkunft der zwei Seiten ist das Einzige, was sich aendert."""
+    text = _seite_text()
+    assert "function renderVersionsDetail(a, b)" in text
+    assert "renderVersionsDetail(paar.a, paar.b)" in text
+
+
+def test_diagramm_drei_rechnet_nicht_ueber_die_dom_fassung():
+    """computeTotalsForVersion rechnet dasselbe wie summen -- eine alte
+    Doppelung. Das Diagramm vergroessert sie nicht."""
+    block = _funktionsblock("renderGrafikVersionen")
+    assert "summen(SCHEMA" in block
+    assert "computeTotalsForVersion" not in block
