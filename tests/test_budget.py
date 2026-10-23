@@ -263,10 +263,15 @@ def test_staende_haengen_nicht_am_versionsvergleich():
 
 
 def test_staende_kommen_aus_dem_kern():
+    """Die Zusammenfassung rechnet nicht selbst. Sie nimmt standVerlauf, und
+    das steht im Kern und ruft dort die drei Funktionen auf, die frueher hier
+    einzeln standen."""
     text = SEITE.read_text(encoding="utf-8")
     block = text[text.index("function recomputeAll"):][:6000]
+    assert "standVerlauf(SCHEMA" in block
+    kernfunktion = _funktionsblock("standVerlauf")
     for fn in ("stichtagListe", "werteFuerStand", "summen"):
-        assert fn in block, fn
+        assert fn in kernfunktion, fn
 
 
 def test_jede_leseseite_filtert_unbekannte_zeilen():
@@ -1675,3 +1680,57 @@ def test_balkenanteile_ohne_spanne_springt_nicht_auf_hundert():
     gleich = kern("balkenAnteile", [50, 50])
     assert gleich["nullBei"] == 0
     assert gleich["balken"][0]["breite"] == 100
+
+
+def test_diagramme_stehen_in_einem_eigenen_abschnitt():
+    """Nicht in der Zusammenfassung: die hat ihre eigenen Druckregeln, und ein
+    eigener Abschnitt laesst sich als Ganzes ein- und ausblenden."""
+    text = _seite_text()
+    assert 'id="grafikSection"' in text
+    assert 'id="grafikStaende"' in text and 'id="grafikPositionen"' in text
+    # Direkt nach der Zusammenfassung, vor dem Versionsvergleich.
+    assert text.index('id="summaryStands"') < text.index('id="grafikSection"')
+    assert text.index('id="grafikSection"') < text.index('id="versionsOverviewSection"')
+
+
+def test_diagramm_erscheint_erst_mit_einer_anpassung():
+    """Auf einer frisch geoeffneten Seite steht kein leeres Diagramm."""
+    block = _funktionsblock("renderGrafik")
+    assert "anpassungHatBetrag" in block
+    assert "section.hidden" in block
+
+
+def test_diagramm_faerbt_nach_der_wirkung_nicht_nach_dem_vorzeichen():
+    """Wer hier allein nach dem Betrag einfaerbt, laesst «+200 beim Lohn» in
+    Rot stehen — genau der Fehler, den anpassungWirkung verhindert."""
+    block = _funktionsblock("renderGrafik")
+    assert "anpassungsRangliste" in block
+    assert "e.wirkung" in block, "die Wirkung kommt aus dem Kern, nicht aus dem Vorzeichen"
+
+
+def test_diagramm_sortiert_nicht_unter_den_tippenden_fingern():
+    """recomputeAll laeuft bei jedem Tastendruck; eine mitlaufende Sortierung
+    liesse die Balken unter dem Finger wegwandern."""
+    block = _funktionsblock("renderGrafik")
+    assert "imAnpassungsfeld()" in block and "grafikReihenfolge" in block
+
+
+def test_eine_rechnung_fuer_die_staende_statt_drei():
+    """standVerlauf ersetzt die beiden fast gleichen Schleifen; mit dem
+    Diagramm waere eine dritte dazugekommen."""
+    text = _seite_text()
+    assert text.count("standVerlauf(SCHEMA") == 2, \
+        "Zusammenfassung und Versions-Uebersicht rechnen ueber dieselbe Funktion"
+    # Die alte Doppelung ist weg: kein summen(...werteFuerStand...) mehr im DOM-Teil.
+    assert "summen(SCHEMA, werteFuerStand(" not in text
+
+
+def test_diagramme_drucken_mit():
+    """Auf dem Blatt sind sie das Beste, was die Seite zu bieten hat — und das
+    Gegenmittel gegen die 60 leeren Kaestchen."""
+    css = _druck_css()
+    assert "grafik-section" in css
+    assert re.search(r"\.balken\s*\{[^}]*print-color-adjust:\s*exact", css), \
+        "ohne erzwungene Fuellung druckt der Balken als leere Flaeche"
+    assert re.search(r"\.balken-spur\s*\{[^}]*border:", css), \
+        "die Spur braucht einen Rahmen, Hintergruende druckt der Browser nicht"

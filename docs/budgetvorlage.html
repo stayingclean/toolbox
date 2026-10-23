@@ -946,6 +946,140 @@
         }
 
         /* ============================================================
+           Diagramme — Balken aus CSS, keine Bibliothek und kein SVG.
+           Jedes Diagramm hier ist ein Balken an einer gemeinsamen
+           Nulllinie; genau dort ist CSS dem SVG überlegen, weil die
+           Beschriftung Text bleibt (auswählbar, durchsuchbar, skalierend).
+           Die Geometrie rechnet `balkenAnteile` im Kern, hier steht nur,
+           wie sie aussieht.
+           ============================================================ */
+        .grafik-section[hidden] { display: none; }
+        .grafik-titel {
+            font-size: 0.86rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--color-primary-dark);
+            margin: 1.4rem 0 0.1rem;
+        }
+        .grafik-titel:first-of-type { margin-top: 0.6rem; }
+        .grafik-untertitel {
+            margin: 0 0 0.6rem;
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+        }
+        .balken-satz {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+        /* Eine Zeile: Beschriftung, Spur, Zahl. Als <button>, weil jede Zeile
+           irgendwohin führt — zum Stand in der Vorschau oder zur Position. */
+        .balken-zeile {
+            display: grid;
+            grid-template-columns: minmax(6rem, 14rem) 1fr minmax(5.5rem, auto);
+            align-items: center;
+            gap: 0.6rem;
+            width: 100%;
+            padding: 0.3rem 0.5rem;
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            background: none;
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            color: var(--color-text);
+            text-align: left;
+            cursor: pointer;
+            transition: background var(--transition-fast), border-color var(--transition-fast);
+        }
+        .balken-zeile:hover { background: var(--color-primary-faint); }
+        .balken-zeile:focus-visible {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px var(--color-primary-tint);
+        }
+        .balken-zeile.is-preview {
+            background: var(--color-warning-bg);
+            border-color: var(--color-warning);
+        }
+        .balken-name {
+            min-width: 0;
+            overflow-wrap: anywhere;
+            line-height: 1.3;
+        }
+        .balken-name .balken-zusatz {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--color-text-muted);
+        }
+        /* Die Spur trägt die Nulllinie als eigenes Element: ein Rand am Balken
+           verschöbe sie um seine Breite. */
+        .balken-spur {
+            position: relative;
+            min-height: 14px;
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        .balken-null {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--color-border);
+        }
+        .balken {
+            position: absolute;
+            top: 2px;
+            bottom: 2px;
+            border-radius: 2px;
+            background: var(--color-text-muted);
+        }
+        /* Dieselbe Zuordnung wie bei den Stand-Zeilen: eine zweite Farblogik
+           auf demselben Blatt wäre eine Falle. */
+        .balken.ist-gut      { background: var(--color-success); }
+        .balken.ist-schlecht { background: var(--color-danger); }
+        .balken-wert {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .balken-wert.ist-gut      { color: var(--color-success); }
+        .balken-wert.ist-schlecht { color: var(--color-danger); }
+        /* Die Restzeile ist keine Schaltfläche: sie führt nirgendwohin. */
+        .balken-rest {
+            display: grid;
+            grid-template-columns: minmax(6rem, 14rem) 1fr minmax(5.5rem, auto);
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+        }
+        .grafik-leer {
+            margin: 0.4rem 0 0;
+            font-size: 0.88rem;
+            color: var(--color-text-muted);
+        }
+        /* Schmal: Beschriftung und Zahl in einer Zeile, die Spur darunter über
+           die ganze Breite. Ein Balken von 40 % einer 120 px breiten Spur sagt
+           nichts mehr; über die volle Breite sagt er wieder etwas. */
+        @media (max-width: 480px) {
+            .balken-zeile,
+            .balken-rest {
+                grid-template-columns: 1fr auto;
+                gap: 0.2rem 0.6rem;
+            }
+            .balken-zeile .balken-spur,
+            .balken-rest span:nth-child(2) {
+                grid-column: 1 / -1;
+                order: 3;
+            }
+            .balken-wert { order: 2; }
+        }
+
+        /* ============================================================
            Info Box / Wegleitung — der Volltext der Anleitung.
            Sie stand bis 2026-10-23 als Kasten oben in <main> und war nach dem
            ersten Scrollen weg: gelesen, wenn man noch nichts tut, gebraucht,
@@ -1362,6 +1496,27 @@
             .sticky-head, .toolbar, .footer, .info-box, .version-bar, .toast, .modal-backdrop {
                 display: none !important;
             }
+            /* Die Diagramme drucken mit — auf dem Blatt, das in einer Beratung
+               oder bei einer Stiftung landet, sind sie das Beste, was die
+               Seite zu bieten hat. Hintergründe druckt der Browser von sich
+               aus nicht: die Spur bekommt darum einen Rahmen, der Balken eine
+               ausdrücklich erzwungene Füllung und zusätzlich einen Rand, damit
+               er auch ohne Hintergrundgrafiken als Fläche lesbar bleibt. */
+            .grafik-section { page-break-inside: avoid; }
+            .balken-zeile { border-color: transparent; }
+            .balken-spur {
+                border: 1px solid #999;
+                background: transparent;
+            }
+            .balken {
+                background: #444 !important;
+                border: 1px solid #444;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            .balken.ist-gut     { background: #0f5132 !important; border-color: #0f5132; }
+            .balken.ist-schlecht { background: #842029 !important; border-color: #842029; }
+            .balken-null { background: #999; }
             /* Gedruckt wird in der Vorschau eine gerechnete Tabelle. Die
                Stand-Leiste steckt in .sticky-head und ist hier weg – die
                Kennzeichnung steht im Blattkopf an ihrer Stelle. Leer (Stand
@@ -2608,6 +2763,25 @@
     </section>
 
     <!-- ============================================================
+         Diagramme zu den Anpassungen — eigener Abschnitt, nicht in der
+         Zusammenfassung: die hat ihre eigenen Druckregeln, und ein
+         eigener Abschnitt lässt sich als Ganzes ein- und ausblenden.
+         Sichtbar, sobald es eine Anpassung gibt (renderGrafik) — auf
+         einer frisch geöffneten Seite steht kein leeres Diagramm.
+         ============================================================ -->
+    <section class="section grafik-section" id="grafikSection" hidden>
+        <h2 class="section-title">Was die Anpassungen ausmachen</h2>
+
+        <h3 class="grafik-titel">Stand für Stand</h3>
+        <p class="grafik-untertitel">Was am Monatsende bleibt – heute und zu jedem Stichtag. Ein Klick zeigt das ganze Budget zu diesem Stand.</p>
+        <div class="balken-satz" id="grafikStaende"></div>
+
+        <h3 class="grafik-titel">Woher die Veränderung kommt</h3>
+        <p class="grafik-untertitel">Was jede angepasste Position pro Monat ausmacht. Ein Klick springt zur Zeile.</p>
+        <div class="balken-satz" id="grafikPositionen"></div>
+    </section>
+
+    <!-- ============================================================
          Versionsvergleich — visible only in multi-version mode
          ============================================================ -->
     <section class="section versions-overview-section" id="versionsOverviewSection" hidden>
@@ -3752,6 +3926,12 @@
     // «Wechsel zu günstigerer Versicherung ab April» eine einer Ausgabe.
     const EXPANDABLE_GROUPS = new Set(['einnahmen', ...AUSGABEN_GROUPS]);
 
+    // Höchstzahl der Balken im Diagramm «Woher die Veränderung kommt».
+    // Darüber fasst eine Restzeile zusammen: zwanzig Balken wären eine
+    // zweite Tabelle, keine Grafik — und die Anpassungsliste in der
+    // Kopfleiste zeigt ohnehin alle.
+    const GRAFIK_MAX_BALKEN = 8;
+
     // Chevron icon used by the comment expander button.
     const CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
 
@@ -4275,6 +4455,150 @@
     }
 
     // ----------------------------------------------------------------
+    // Die Diagramme (Punkte 8 und 9)
+    // ----------------------------------------------------------------
+    // Gerechnet wird im Kern (standVerlauf, anpassungsRangliste,
+    // balkenAnteile), hier steht nur das Zusammensetzen der Zeilen.
+
+    function standName(stand) {
+        if (stand.key === 'heute') return 'heute';
+        if (stand.key === 'offen') return 'mit allen Vorschlägen';
+        return 'ab ' + datumAnzeige(stand.ab);
+    }
+
+    // Die Reihenfolge der Positions-Balken wird eingefroren, solange ein
+    // Anpassungsfeld den Fokus hat: recomputeAll läuft bei jedem Tastendruck,
+    // und eine mitlaufende Sortierung liesse die Balken unter dem Finger
+    // wegwandern. Die Breiten ziehen trotzdem nach.
+    let grafikReihenfolge = null;
+
+    function imAnpassungsfeld() {
+        const el = document.activeElement;
+        return !!(el && el.classList && el.classList.contains('adj-input'));
+    }
+
+    // Spur mit Nulllinie und Balken. Die Nulllinie ist ein eigenes Element:
+    // als Rand am Balken verschöbe sie sich mit dessen Breite.
+    function balkenSpur(anteil, nullBei) {
+        const spur = document.createElement('div');
+        spur.className = 'balken-spur';
+        const linie = document.createElement('span');
+        linie.className = 'balken-null';
+        linie.style.left = nullBei + '%';
+        spur.appendChild(linie);
+        const balken = document.createElement('span');
+        balken.className = 'balken';
+        balken.style.left = anteil.von + '%';
+        // Mindestbreite: eine kleine Anpassung soll sichtbar bleiben.
+        balken.style.width = anteil.breite === 0 ? '0' : `max(2px, ${anteil.breite}%)`;
+        spur.appendChild(balken);
+        return { spur: spur, balken: balken };
+    }
+
+    function balkenZeile(name, zusatz, anteil, nullBei, wert, wirkung, titel, beiKlick) {
+        const zeile = document.createElement('button');
+        zeile.type = 'button';
+        zeile.className = 'balken-zeile';
+        zeile.title = titel;
+
+        const beschriftung = document.createElement('span');
+        beschriftung.className = 'balken-name';
+        beschriftung.textContent = name;
+        if (zusatz) {
+            const klein = document.createElement('span');
+            klein.className = 'balken-zusatz';
+            klein.textContent = zusatz;
+            beschriftung.appendChild(klein);
+        }
+        zeile.appendChild(beschriftung);
+
+        const spur = balkenSpur(anteil, nullBei);
+        if (wirkung) spur.balken.classList.add('ist-' + wirkung);
+        zeile.appendChild(spur.spur);
+
+        const zahl = document.createElement('span');
+        zahl.className = 'balken-wert' + (wirkung ? ' ist-' + wirkung : '');
+        zahl.textContent = wert;
+        zeile.appendChild(zahl);
+
+        zeile.addEventListener('click', beiKlick);
+        return zeile;
+    }
+
+    function renderGrafik(verlauf, anpassungen, werte) {
+        const section = $('#grafikSection');
+        if (!section) return;
+        // Dasselbe Tor wie bei #adjustmentsBtn und #previewBtn.
+        const hatAnpassung = Object.keys(anpassungen || {})
+            .some((id) => anpassungHatBetrag(anpassungen[id]));
+        section.hidden = !hatAnpassung;
+        if (!hatAnpassung) return;
+
+        // ---- Diagramm 1: Stand für Stand ----
+        const standBox = $('#grafikStaende');
+        standBox.textContent = '';
+        const geo = balkenAnteile(verlauf.map((s) => s.diffM));
+        verlauf.forEach((stand, i) => {
+            // Ein Überschuss ist gut, ein Fehlbetrag nicht — dieselbe Lesart
+            // wie bei den Stand-Zeilen darüber.
+            const wirkung = stand.diffM >= 0 ? 'gut' : 'schlecht';
+            const titel = `${standName(stand)}: ${formatComputed(stand.diffY)} pro Jahr`
+                + (stand.key === 'heute' ? '' : ` · ${deltaAnzeige(stand.deltaM)} pro Monat gegenüber heute`);
+            const zeile = balkenZeile(
+                standName(stand),
+                stand.faellig ? 'Datum schon verstrichen' : '',
+                geo.balken[i], geo.nullBei,
+                formatComputed(stand.diffM), wirkung, titel,
+                () => enterPreview(stand.key));
+            zeile.dataset.stand = stand.key;
+            if (stand.key === state.previewStand) zeile.classList.add('is-preview');
+            standBox.appendChild(zeile);
+        });
+
+        // ---- Diagramm 2: Woher die Veränderung kommt ----
+        const posBox = $('#grafikPositionen');
+        posBox.textContent = '';
+        const einnahmeIds = (SCHEMA.einnahmen || []).map((r) => r.id);
+        const rang = anpassungsRangliste(anpassungen, verlauf, werte || {}, einnahmeIds, GRAFIK_MAX_BALKEN);
+        const ids = rang.eintraege.map((e) => e.rowId);
+        if (imAnpassungsfeld() && grafikReihenfolge
+            && grafikReihenfolge.length === ids.length
+            && grafikReihenfolge.every((id) => ids.indexOf(id) >= 0)) {
+            rang.eintraege.sort((a, b) =>
+                grafikReihenfolge.indexOf(a.rowId) - grafikReihenfolge.indexOf(b.rowId));
+        } else {
+            grafikReihenfolge = ids;
+        }
+        const geo2 = balkenAnteile(rang.eintraege.map((e) => e.deltaM));
+        rang.eintraege.forEach((e, i) => {
+            const name = rowAnzeigename(e.rowId);
+            const zeile = balkenZeile(
+                name, '', geo2.balken[i], geo2.nullBei,
+                deltaAnzeige(e.deltaM), e.wirkung,
+                `${name}: ${deltaAnzeige(e.deltaY)} pro Jahr · zur Zeile springen`,
+                () => springeZuZeile(e.rowId));
+            zeile.dataset.rowId = e.rowId;
+            posBox.appendChild(zeile);
+        });
+        if (rang.restAnzahl > 0) {
+            // Keine Schaltfläche: die Zeile führt nirgendwohin. Alle Einträge
+            // stehen in der Anpassungsliste der Kopfleiste.
+            const rest = document.createElement('div');
+            rest.className = 'balken-rest';
+            const text = document.createElement('span');
+            text.textContent = `weitere ${rang.restAnzahl} Positionen`;
+            const leer = document.createElement('span');
+            const zahl = document.createElement('span');
+            zahl.className = 'balken-wert';
+            zahl.textContent = deltaAnzeige(rang.restDeltaM);
+            rest.appendChild(text);
+            rest.appendChild(leer);
+            rest.appendChild(zahl);
+            posBox.appendChild(rest);
+        }
+    }
+
+    // ----------------------------------------------------------------
     // Anpassungsliste in der Kopfleiste
     // ----------------------------------------------------------------
     // Das Datum ist nur die Überschrift einer Gruppe: mehrere Positionen können
@@ -4668,16 +4992,19 @@
         const active = getActiveVersion();
         const basisWerte = (state.previewStand && active) ? active.values : formWerte;
         const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
-        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+        // Eine Rechnung, drei Anzeigen: diese Zeilen, die Stände in der
+        // Versions-Übersicht und die Balken des Diagramms.
+        const verlauf = standVerlauf(SCHEMA, basisWerte, anpassungen, heuteIso());
+        verlauf.forEach((stand) => {
             if (stand.key === 'heute') return;
-            const summe = summen(SCHEMA, werteFuerStand(basisWerte, anpassungen, stand.key));
             // Der Stand, der gerade im Formular steht, wird hervorgehoben:
             // dieselbe Zahl wie in der Differenz-Zeile darüber.
-            const zeile = standZeile(stand, summe);
+            const zeile = standZeile(stand, stand);
             if (stand.key === state.previewStand) zeile.classList.add('is-preview');
             standBlock.appendChild(zeile);
         });
 
+        renderGrafik(verlauf, anpassungen, basisWerte);
         renderAdjustmentList(basisWerte);
     }
 
@@ -4991,12 +5318,11 @@
         // Vorschau stehen dort gerechnete Zahlen. Das Gate oben bleibt: die
         // Stände kommen nur dazu, wo die Übersicht ohnehin sichtbar ist.
         const aktiv = getActiveVersion();
-        const standBasis = summen(SCHEMA, aktiv ? aktiv.values : {});
         const anpassungen = bekannteAnpassungen(aktiv ? aktiv.adjustments : {});
-        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+        standVerlauf(SCHEMA, aktiv ? aktiv.values : {}, anpassungen, heuteIso()).forEach((stand) => {
             if (stand.key === 'heute') return;   // steht als Version schon in der Tabelle
-            const summe = summen(SCHEMA, werteFuerStand(aktiv.values, anpassungen, stand.key));
-            const delta = summe.diffY - standBasis.diffY;
+            const summe = stand;                 // dieselbe Rechnung wie in der Zusammenfassung
+            const delta = stand.deltaY;
             const tr = document.createElement('tr');
             tr.className = 'overview-stand-row';
             tr.dataset.stand = stand.key;
