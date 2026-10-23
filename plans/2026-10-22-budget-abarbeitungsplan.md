@@ -182,7 +182,26 @@ und die Checkbox über eine gemeinsame Zeilenhöhe ausrichten.
 
 ---
 
-## Welle 2 — Punkte 2 + 3: die Anpassung wird eine Tabellenzeile (~halber Tag)
+## Welle 2 — Punkte 2 + 3 ✔ erledigt am 2026-10-23
+
+Commit `d8162d9`, 443 Tests grün, im Browser gegengeprüft (Spalten bündig auf
+den Pixel, Datum überlebt den Feldwechsel, leere Zeile verschwindet, Zuklappen
+nimmt beide Zeilen mit, Einlösen und Rückweg stimmen).
+
+Zwei Dinge kamen beim Bauen dazu, die unten nicht standen:
+
+- **In der Vorschau bietet der Knopf nichts an** (`body.mode-preview
+  .adj-add-btn { display: none }`). Dort sind alle Felder gesperrt; der Knopf
+  hätte eine Zeile geöffnet, in die man nichts schreiben kann.
+- **Der Satz in der Anleitung oben nennt jetzt den Knopf.** Er beschrieb den
+  alten Ablauf. Punkt 7 schreibt den Kasten ohnehin neu, bis dahin stimmt er
+  wenigstens.
+
+Noch offen aus dieser Welle: der **erste echte Ausdruck mit der neuen Zeile**.
+`.adj-row` druckt nie, das sichert ein Test — auf Papier gesehen hat es
+niemand.
+
+### Was geplant war
 
 Der grosse Umbau. **Zuerst ein Nachtrag im Entwurf**
 (`specs/2026-10-21-budget-anpassungen-design.md`, Abschnitte «Anzeige: die
