@@ -129,10 +129,31 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    der PNG-Export wäre also nicht nur anders, er wäre kaputt. Die Datei
    dokumentiert das bei `loadSvgImage` für den Fall der Blob-URL.
 
-   **`docs/plakat.html` lädt ebenfalls keine Schrift**, aber aus einem dritten
-   Grund: sie rendert PNG und PDF selbst, und eine erst später eintreffende
-   Schrift ergäbe ein anderes Bild. Ein Test hält das fest
-   (`tests/test_plakat.py`, `test_seite_laedt_nichts_von_aussen_ausser_dem_avatar`).
+   **`docs/plakat.html` lädt keine Schrift, aber eine eigene Stilvorlage darf
+   es** (entschieden am 2026-10-23). Hier stand vorher, die Seite sei die
+   dritte Ausnahme, «weil sie PNG und PDF selbst rendert und eine erst später
+   eintreffende Schrift ein anderes Bild ergäbe». **Das war falsch**, am Code
+   nachgeprüft:
+
+   - Die Seite **rendert das Plakat nicht**. Sie liefert die fertige Datei
+     `docs/plakat-skillsliste.png` aus und holt sie per `fetch`.
+   - `pdfAusPng` reicht die **Bildpunkte unverändert** ins PDF durch; der Kern
+     sagt es selbst: «Reine Funktionen: kein DOM, kein fetch, kein Canvas.»
+   - Die Rückfallebene `pdfAusJpeg` benutzt zwar ein Canvas, zeichnet darauf
+     aber `drawImage(bild, 0, 0)` — **die Bilddatei**, nicht die Seite.
+
+   Das Aussehen der Seite hat damit **keinen Einfluss** auf PNG oder PDF, und
+   eine Stilvorlage verunreinigt kein Canvas (das tun nur gezeichnete Bilder
+   und Medien) — anders als beim Flyer-Editor, der wirklich das DOM zeichnet.
+
+   **Was bleibt, ist der Datenschutz-Grund, und der gilt unverändert:** von
+   einem fremden Server darf nichts kommen. Zwei Tests halten das fest
+   (`tests/test_plakat.py`): `test_seite_laedt_nichts_von_aussen_ausser_dem_avatar`
+   prüft, was die Seite **lädt** (`src`, und `href` an einem `<link>`) — nicht,
+   wohin sie verlinkt; `<a href="https://buymeacoffee.com/…">` ist ein Ziel für
+   einen Klick und meldet niemandem etwas. `test_eine_stilvorlage_der_seite_kaeme_aus_demselben_ordner`
+   verlangt, dass ein `<link rel="stylesheet">` einen relativen Pfad trägt.
+   Hintergrund: `specs/2026-10-23-stil-bibliothek-design.md`.
 
    **Die Budgetvorlage speichert `.json`, nicht HTML** (`saveFile`) — Werkzeug
    und Daten sind getrennt, kein ausgefülltes Budget steckt je in einer

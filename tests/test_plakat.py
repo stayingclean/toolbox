@@ -193,14 +193,66 @@ def test_fusszeile_traegt_credit_und_kaffee_link():
     assert "Kaffee spendieren" in text
 
 
+AVATAR = "https://github.com/stayingclean.png"
+
+
 def test_seite_laedt_nichts_von_aussen_ausser_dem_avatar():
-    """CSS eingebettet, keine fremde Schriftquelle — sonst sähe die Seite
-    ohne Internet anders aus. Der Avatar der Fusszeile ist die vereinbarte
-    Ausnahme aus CLAUDE.md."""
+    """Keine Ressource von einem Dritten — der Avatar der Fusszeile ist die
+    vereinbarte Ausnahme aus CLAUDE.md.
+
+    Geprüft wird, was die Seite **lädt** (`src`, und `href` an einem `<link>`),
+    nicht, wohin sie verlinkt: `<a href="https://buymeacoffee.com/…">` ist ein
+    Ziel für einen Klick und meldet niemandem etwas.
+
+    Eine eigene Stilvorlage aus demselben Ordner ist seit 2026-10-23 erlaubt
+    (Entscheid in `specs/2026-10-23-stil-bibliothek-design.md`). Die frühere
+    Fassung verbot `rel="stylesheet"` rundweg, mit der Begründung, die Seite
+    rendere PNG und PDF selbst. **Das stimmt nicht:** sie liefert eine fertige
+    Bilddatei aus, `pdfAusPng` reicht deren Bildpunkte unverändert ins PDF
+    durch, und die Rückfallebene zeichnet mit `drawImage` ebenfalls die
+    Bilddatei, nicht die Seite. Das Aussehen der Seite hat damit keinen
+    Einfluss auf das Ergebnis.
+
+    Was bleibt, ist der Datenschutz-Grund, und der ist hier festgehalten: von
+    einem fremden Server darf nichts kommen.
+    """
     text = SEITE.read_text(encoding="utf-8")
-    assert 'rel="stylesheet"' not in text
+
+    geladen = re.findall(r'\bsrc="([^"]*)"', text)
+    geladen += re.findall(r'<link\b[^>]*\bhref="([^"]*)"', text)
+
+    fremd = [
+        u
+        for u in geladen
+        if re.match(r"(https?:)?//", u) and not u.startswith(AVATAR)
+    ]
+    assert not fremd, f"laedt von einem fremden Server: {fremd}"
+
     assert "fonts.googleapis.com" not in text
     assert "fonts.gstatic.com" not in text
+
+
+def test_eine_stilvorlage_der_seite_kaeme_aus_demselben_ordner():
+    """Gegenstueck zum Test darueber: Wenn das Plakat je ein `<link
+    rel="stylesheet">` bekommt, muss der Pfad relativ sein. Ein absoluter
+    verfehlte den Zweck — und beim Oeffnen der Datei von der Platte zeigte er
+    ins Leere.
+
+    Heute hat die Seite keine Stilvorlage; der Test ist dann leer und wacht ab
+    dem Tag, an dem eine dazukommt.
+    """
+    text = SEITE.read_text(encoding="utf-8")
+    vorlagen = [
+        treffer
+        for treffer in re.findall(r"<link\b[^>]*>", text)
+        if 'rel="stylesheet"' in treffer
+    ]
+    for tag in vorlagen:
+        ziel = re.search(r'href="([^"]*)"', tag)
+        assert ziel, f"<link> ohne href: {tag}"
+        assert not re.match(
+            r"(https?:)?//|/", ziel.group(1)
+        ), f"Stilvorlage nicht aus demselben Ordner: {ziel.group(1)}"
 
 
 def test_seite_verweist_auf_beide_bilddateien():
