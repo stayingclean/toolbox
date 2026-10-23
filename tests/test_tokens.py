@@ -91,48 +91,53 @@ def test_migrierte_seite_deklariert_keinen_token_neu(pfad):
     assert not doppelt, f"{pfad} setzt selbst: {sorted(doppelt)}"
 
 
-def test_wachposten_build_liefert_die_eingecheckte_skillsliste(monkeypatch, tmp_path):
+@pytest.fixture(scope="module")
+def frisch_gebaut(tmp_path_factory):
+    """Das Ergebnis eines Builds, ausschliesslich nach einem Temp-Ordner.
+
+    Der Arbeitsbaum wird nicht angefasst. Verglichen wird später gegen die
+    eingecheckten Dateien -- also gegen den Soll-Stand, nicht gegen den
+    eigenen Vorzustand: ein Vergleich derselben Datei vor und nach dem Bauen
+    würde heilen, was er bewachen soll (weicht der Build ab, wäre sie ab dem
+    zweiten Lauf überschrieben und der Test grün).
+
+    Einmal je Modul gebaut, nicht je Test.
+    """
+    ziel = tmp_path_factory.mktemp("build")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(build, "OUTPUT", ziel / "skillsliste.html")
+        mp.setattr(build, "OUTPUT_VORSCHLAG", ziel / "skill-vorschlagen.html")
+        mp.setattr(build, "DATEN_JSON", ziel / "skills-daten.json")
+
+        # Dieselbe Folge wie build.main(), ohne dessen Ausgabe (die rechnet
+        # Pfade relativ zu ROOT und scheiterte an tmp_path). Beides muss
+        # gemeinsam gepflegt werden: bekommt main() einen Schritt dazu, der die
+        # Skillsliste verändert, geht er an diesen Wächtern vorbei, solange er
+        # hier nicht ebenfalls steht.
+        daten = build.load_data()
+        build.render(daten, build.lade_favicons(daten))
+        build.render_vorschlag(daten)
+        build.write_daten_json(daten)
+    return ziel
+
+
+def test_wachposten_build_liefert_die_eingecheckte_skillsliste(frisch_gebaut):
     """Wächter gegen ein Mitändern der Skillsliste (Entscheid 2).
 
     Nicht Rot-Grün: der Test besteht schon vor der Umstellung und soll es
     danach weiter tun. `build.py` erzeugt Skillsliste und Vorschlagsformular
     im selben Lauf; wer die Quelle des Formulars ändert, darf die Skillsliste
     dabei nicht verändern.
-
-    Der Build schreibt nach `tmp_path`, verglichen wird die frisch gebaute
-    Skillsliste mit der eingecheckten Datei -- also gegen den Soll-Stand, nicht
-    gegen den eigenen Vorzustand. Ein Vergleich derselben Datei vor und nach
-    dem Bauen würde heilen, was er bewachen soll: weicht der Build ab, wäre
-    sie ab dem zweiten Lauf überschrieben und der Test grün. Im Arbeitsbaum
-    wird nichts angefasst.
     """
-    gebaut = tmp_path / "skillsliste.html"
-    monkeypatch.setattr(build, "OUTPUT", gebaut)
-    monkeypatch.setattr(build, "OUTPUT_VORSCHLAG", tmp_path / "skill-vorschlagen.html")
-    monkeypatch.setattr(build, "DATEN_JSON", tmp_path / "skills-daten.json")
-
-    # Dieselbe Folge wie build.main(), ohne dessen Ausgabe (die rechnet
-    # Pfade relativ zu ROOT und scheiterte an tmp_path). Beides muss
-    # gemeinsam gepflegt werden: bekommt main() einen Schritt dazu, der die
-    # Skillsliste verändert, geht er an diesem Wächter vorbei, solange er hier
-    # nicht ebenfalls steht.
-    daten = build.load_data()
-    build.render(daten, build.lade_favicons(daten))
-    build.render_vorschlag(daten)
-    build.write_daten_json(daten)
-
-    assert gebaut.read_bytes() == SKILLSLISTE.read_bytes()
+    assert (frisch_gebaut / "skillsliste.html").read_bytes() == SKILLSLISTE.read_bytes()
 
 
 @pytest.mark.parametrize(
-    "gebaut_als, eingecheckt",
-    [
-        ("skill-vorschlagen.html", ROOT / "docs" / "skill-vorschlagen.html"),
-        ("skills-daten.json", ROOT / "docs" / "skills-daten.json"),
-    ],
+    "datei, normieren",
+    [("skill-vorschlagen.html", False), ("skills-daten.json", True)],
 )
 def test_wachposten_build_liefert_die_uebrigen_eingecheckten_generate(
-    monkeypatch, tmp_path, gebaut_als, eingecheckt
+    frisch_gebaut, datei, normieren
 ):
     """Wie der Wächter oben, für die beiden anderen Dateien des Builds.
 
@@ -142,28 +147,17 @@ def test_wachposten_build_liefert_die_uebrigen_eingecheckten_generate(
     mit dabei, weil es fast nichts kostet; das Risiko ist kleiner, denn die
     Datei wird nicht von Hand bearbeitet.
 
-    Gebaut wird ausschliesslich nach `tmp_path`: der Arbeitsbaum bleibt bei
-    jedem Testlauf unberührt.
+    Die JSON schreibt der Build bewusst fest mit LF; ein Windows-Checkout
+    (autocrlf) macht daraus CRLF. Nur sie wird darum im Zeilenende angeglichen.
+    Das HTML übernimmt die Zeilenenden der Vorlage und wird byteweise verglichen.
     """
-    monkeypatch.setattr(build, "OUTPUT", tmp_path / "skillsliste.html")
-    monkeypatch.setattr(build, "OUTPUT_VORSCHLAG", tmp_path / "skill-vorschlagen.html")
-    monkeypatch.setattr(build, "DATEN_JSON", tmp_path / "skills-daten.json")
-
-    # Dieselbe Folge wie build.main() -- siehe Kommentar im Wächter oben.
-    daten = build.load_data()
-    build.render(daten, build.lade_favicons(daten))
-    build.render_vorschlag(daten)
-    build.write_daten_json(daten)
-
-    # Zeilenenden angleichen: im Repo liegen die Dateien mit LF, ein Checkout
-    # unter Windows macht (autocrlf) CRLF daraus, während der Build -- bei der
-    # JSON-Datei bewusst -- LF schreibt. Verglichen wird der Inhalt.
-    def inhalt(pfad):
-        return pfad.read_bytes().replace(b"\r\n", b"\n")
-
-    assert inhalt(tmp_path / gebaut_als) == inhalt(eingecheckt), (
-        f"{eingecheckt.name} ist veraltet: build.py (bzw. uv run build.py) "
-        "ausführen und das Ergebnis einchecken"
+    eingecheckt = (ROOT / "docs" / datei).read_bytes()
+    gebaut = (frisch_gebaut / datei).read_bytes()
+    if normieren:
+        eingecheckt = eingecheckt.replace(b"\r\n", b"\n")
+    assert gebaut == eingecheckt, (
+        f"{datei} ist veraltet: `uv run build.py` ausführen und das Ergebnis "
+        "einchecken"
     )
 
 
@@ -224,8 +218,19 @@ def test_jeder_verweis_auf_die_tokens_zeigt_auf_die_datei(pfad):
 
 
 def test_die_tokens_werden_mitveroeffentlicht():
-    """Veröffentlicht wird nur docs/."""
-    assert TOKEN_DATEI.relative_to(ROOT).parts[0] == "docs"
+    """Veröffentlicht wird, was der Deploy als Artefakt hochlädt.
+
+    Der Pfad steht in `.github/workflows/deploy.yml` (`upload-pages-artifact`).
+    Wer ihn ändert, veröffentlichte `tokens.css` nicht mehr, und jede Seite
+    stünde online ohne Farben, während alle Tests grün blieben.
+    """
+    workflow = (ROOT / ".github" / "workflows" / "deploy.yml").read_text(encoding="utf-8")
+    block = re.search(r"upload-pages-artifact[^\n]*\n\s*with:\s*\n\s*path:\s*(\S+)", workflow)
+    assert block, "deploy.yml lädt kein Artefakt hoch (upload-pages-artifact mit path:)"
+    hochgeladen = (ROOT / block.group(1)).resolve()
+    assert TOKEN_DATEI.resolve().is_relative_to(hochgeladen), (
+        f"deploy.yml lädt {block.group(1)} hoch -- tokens.css läge ausserhalb"
+    )
 
 
 @pytest.mark.parametrize("pfad", sorted(MIGRIERT))
@@ -245,10 +250,15 @@ def test_die_tokens_werden_vor_dem_eigenen_stil_geladen(pfad):
     """
     text = (ROOT / pfad).read_text(encoding="utf-8")
     if pfad.endswith(".css"):
-        # z. B. stil.css: eine Stilvorlage hat keinen <style>-Block, sie holt
-        # die Token per @import (das steht ohnehin zwingend am Dateianfang).
-        # Nicht am Text erkennen: ein Kommentar darf "<style>" erwähnen.
-        pytest.skip(f"{pfad} ist selbst die Stilvorlage")
+        # Eine Stilvorlage hat keinen <style>-Block, sie holt die Token per
+        # @import -- und das gilt nur als erste Regel der Datei. Steht davor
+        # irgendeine Regel, verwirft der Browser es, und alle Seiten, die die
+        # Vorlage teilen, stehen ohne Farben da.
+        ohne_kommentare = re.sub(r"/\*.*?\*/", "", text, flags=re.S).lstrip()
+        assert re.match(
+            r"""@import\s+url\(["']?[^"')]*tokens\.css""", ohne_kommentare
+        ), f"{pfad}: @import der Token ist nicht die erste Regel der Datei"
+        return
     stil = re.search(r"<style[\s>]", text)
     if stil is None:
         pytest.skip(f"{pfad} hat keinen <style>-Block")

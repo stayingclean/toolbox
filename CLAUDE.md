@@ -133,7 +133,8 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
      `MIGRIERT` (eingebunden, Ausnahmen je Token begründet) oder in
      `AUSGENOMMEN` (bewusst draussen, mit Grund) stehen. Dazu prüft der Test,
      dass jeder Verweis wirklich auf die Datei zeigt, dass der `<link>` vor
-     dem `<style>` steht und dass `docs/skill-vorschlagen.html` und
+     dem `<style>` steht (bei `stil.css`: dass der `@import` die erste Regel
+     ist), dass `deploy.yml` den Ordner hochlädt, in dem `tokens.css` liegt, und dass `docs/skill-vorschlagen.html` und
      `docs/skills-daten.json` dem frisch gebauten Stand entsprechen.
    - **Bei einem Wert in `tokens.css` mitziehen:** `TOKENS` in demselben
      Test hält den Satz fest. Das ist Absicht — ein Wert dort verändert das
@@ -141,7 +142,12 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    - **Ausnahmen, in `AUSGENOMMEN` mit Grund eingetragen:** `skillsliste.html`
      und `flyer-editor.html` bleiben in sich geschlossen (Gründe: siehe die
      beiden folgenden Ausnahmen); sie setzen ihre Farben weiter selbst. Die
-     Budgetvorlage wird getrennt umgebaut und ist nicht Teil dieses Satzes.
+     Budgetvorlage ist draussen, weil sie eigene Namen (`--color-*`) und
+     eigene Werte trägt — ihre Grautöne weichen von denen der übrigen Seiten
+     ab — und als Werkzeug mit eigener Logik `.json` speichert (siehe unten).
+     Sie anzugleichen änderte ihr Aussehen; ob und wie, ist eine eigene
+     Entscheidung, die am 2026-10-23 bewusst von diesem Vorhaben getrennt
+     wurde. Wird sie umgebaut, kommt sie aus `AUSGENOMMEN` nach `MIGRIERT`.
      `neutral_flyer.html` ist eine blosse Weiterleitung, `docs/altbau/` ein
      fremder Viewer mit eigenem `vendor/` und ganz ausserhalb.
 
@@ -246,7 +252,7 @@ Leere. Das ist kein Fehler, sondern der Preis dafür, dass sie sich mit dem
 Ordner zusammen ändern. Geprüft wird die Anleitung darum am
 **zusammenkopierten** Stand, nicht am Repo allein.
 
-Daraus folgen vier Dinge, die keine Sperre meldet:
+Daraus folgen einige Dinge, die keine Sperre meldet:
 
 - **`stil.css` holt die Token per `@import url("../tokens.css")`, die Seiten
   tragen keinen eigenen Verweis.** Acht der vierzehn Seiten kommen aus
@@ -255,7 +261,11 @@ Daraus folgen vier Dinge, die keine Sperre meldet:
   dort niemandem auf. Über `stil.css` steht der Verweis an **einer** Stelle,
   und die ki-tasks-Seiten bekommen die Farben mit, ohne etwas zu wissen.
   Der `@import` muss die **erste** Regel der Datei sein, sonst verwirft ihn
-  der Browser. Der Pfad ist relativ zu `stil.css`, nicht zur Seite.
+  der Browser — und die ganze Anleitung stünde ohne Farben da, während die
+  übrigen Tests grün blieben. Das hält
+  `test_die_tokens_werden_vor_dem_eigenen_stil_geladen` fest (nach Abzug der
+  Kommentare muss der `@import` an erster Stelle stehen). Der Pfad ist
+  relativ zu `stil.css`, nicht zur Seite.
 - **`stil.css` und `anleitung.js` gehören der Toolbox.** Die ki-tasks-Seiten
   verweisen nur darauf. Liegt drüben eine gleichnamige Datei, überschreibt das
   `cp` die hiesige — also dort **keine** mitliefern.
