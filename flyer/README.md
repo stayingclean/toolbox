@@ -26,14 +26,15 @@ Derselbe Flyer mit je einem der beiden Hintergründe. Der Text steckt als echter
 Text darin, nicht als Bild — er lässt sich also herauskopieren, falls der
 Aufbau einmal von Hand nachgezogen werden muss.
 
-## Was fehlt
+## Warum hier keine bearbeitbare Editor-Datei liegt
 
-Der Editor kann sich selbst als **`flyer-bearbeitet.html`** speichern — mit
-Text, Positionen und eingebettetem Hintergrund, weiter bearbeitbar. Diese Datei
-gibt es bis jetzt nicht. Solange sie fehlt, sind Textstand und Anordnung nur in
-den PDFs festgehalten, und wer etwas ändern will, baut den Flyer im Editor neu
-auf. Wird sie einmal gespeichert, gehört sie hierher — dann sind die PDFs bloss
-noch Ergebnis.
+Der Editor kann sich selbst als `flyer-bearbeitet.html` speichern — mit Text,
+Positionen und eingebettetem Hintergrund. Das liegt hier **bewusst nicht**
+(entschieden am 2026-10-23): Der Editor gehört zum Projekt und wird gepflegt,
+die Hintergründe liegen daneben, und der Wortlaut steht in den PDFs. Wird der
+Flyer wieder gebraucht, entsteht er mit der dann aktuellen Fassung des Editors
+neu. Eine mitgespeicherte HTML-Datei wäre dagegen auf dem Stand von heute
+eingefroren und liefe mit jeder Verbesserung am Editor weiter von ihm weg.
 
 ## Was bewusst nicht hier liegt
 
