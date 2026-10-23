@@ -466,7 +466,24 @@ def test_anpassung_steht_in_linie_mit_dem_kommentar():
     staerker. Mit padding 0 sass die Anpassung 8 px weiter links."""
     text = _seite_text()
     assert re.search(r"\.budget-table tbody td \{[^}]*padding:\s*0\.375rem 0\.5rem", text)
-    assert re.search(r"\.adj-row > td:first-child \{[^}]*padding:\s*0 0\.5rem", text)
+    assert re.search(
+        r"\.budget-table tbody tr\.adj-row > td:first-child \{[^}]*padding:\s*0 0\.5rem", text)
+
+
+def test_anpassungsfelder_stehen_neben_dem_datum():
+    """Die Beschriftungszelle ist zwei Zeilen hoch (Datum, darunter der Satz zum
+    gesperrten Datumsfeld). Mittig ausgerichtet rutschten die Betragsfelder um
+    diese zweite Zeile nach unten — gemessen 28 px — und standen unter dem
+    Datum statt daneben. Der Selektor muss die Tabelle mitnennen, sonst
+    gewinnt «.budget-table tbody td» mit seinem vertical-align: middle."""
+    text = _seite_text()
+    regel = re.search(r"\.budget-table tbody tr\.adj-row > td \{[^}]*\}", text)
+    assert regel, "die Zeilenregel nennt die Tabelle mit"
+    assert "vertical-align: top" in regel.group(0)
+    # Der Unterschied rechts ist blosser Text und braucht die Polsterung, die
+    # beim Betragsfeld der Rahmen gibt — sonst steht er vier Pixel zu hoch.
+    assert re.search(
+        r"\.budget-table tbody tr\.adj-row > td\.total-cell \{[^}]*padding-top:\s*0\.6rem", text)
 
 
 def test_kopfleiste_fuehrt_denselben_ablauf():

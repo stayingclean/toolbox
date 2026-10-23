@@ -531,11 +531,22 @@
         /* Die Anpassung als eigene Zeile unter dem Kommentar, spaltenbündig
            zur Position: Datum links, die Beträge unter den erfassten, der
            Unterschied rechts. */
-        .adj-row > td {
+        /* Der Selektor nennt die Tabelle mit: `.budget-table tbody td` weiter
+           oben ist spezifischer als ein blosses `.adj-row > td` und hat dessen
+           Polsterung und die mittige Ausrichtung sonst überstimmt. Die
+           Polsterung fiel nicht auf (0.375rem statt 0.35rem), die Ausrichtung
+           schon — die Betragsfelder standen eine Zeile zu tief. */
+        .budget-table tbody tr.adj-row > td {
             background: var(--color-warning-bg);
             border-bottom: 1px solid var(--color-border);
             padding-top: 0.35rem;
             padding-bottom: 0.5rem;
+            /* Oben, nicht mittig: die Beschriftungszelle ist zwei Zeilen hoch
+               (Datum und darunter der Satz, warum es noch gesperrt ist). Mittig
+               ausgerichtet rutschten die Betragsfelder um diese zweite Zeile
+               nach unten und standen nicht mehr neben dem Datum, zu dem sie
+               gehören. */
+            vertical-align: top;
         }
         .adj-row[hidden] {
             display: none;
@@ -551,12 +562,19 @@
             border-left-color: var(--color-warning);
             padding-bottom: 0.35rem;
         }
-        .adj-row > td:first-child {
+        .budget-table tbody tr.adj-row > td:first-child {
             /* Links so viel wie jede Zelle der Tabelle (.budget-table tbody
                td), denn die Kommentarzelle behält diese Polsterung auch — nur
                so steht der Balken der Anpassung genau unter ihrem. Oben und
                unten keine: die trägt der Inhalt, damit der Balken durchläuft. */
             padding: 0 0.5rem;
+        }
+        /* Der Unterschied ist blosser Text, die Beträge daneben stehen in
+           Feldern mit Rahmen und Polsterung. Oben ausgerichtet sässe er darum
+           vier Pixel zu hoch; diese vier gibt die Polsterung zurück, damit die
+           Zahlen auf einer Linie liegen. */
+        .budget-table tbody tr.adj-row > td.total-cell {
+            padding-top: 0.6rem;
         }
         .adj-label-cell .adj-label-content {
             display: flex;
