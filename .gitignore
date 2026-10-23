@@ -36,3 +36,6 @@ neue_docs/
 # Normalerweise raeumt das Skript sie selbst weg; nach einem Stromausfall kann
 # sie liegen bleiben und wuerde sonst mit `git add -A` mitveroeffentlicht.
 *.xlsx.neu
+
+# Eigene Ausdrucke der Budgetvorlage mit echten Zahlen — nie ins oeffentliche Repo
+Budgetvorlage-Ausdruck*.pdf

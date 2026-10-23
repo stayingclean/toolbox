@@ -495,6 +495,208 @@
             box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.12);
         }
 
+        /* Anpassung hinterlegt → kleiner Punkt am Knopf. Bewusst kein Fuellen
+           des Knopfes: das bleibt dem Kommentar vorbehalten. */
+        .row-expander {
+            position: relative;
+        }
+        .row-expander[data-has-adjustment="1"]::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 0.6rem;
+            height: 0.6rem;
+            box-sizing: border-box;
+            border-radius: 50%;
+            background: var(--color-warning);
+            border: 2px solid var(--color-bg);
+        }
+
+        /* Zeile mit Anpassung: Balken links und getoenter Hintergrund, auch
+           zugeklappt. Die Hauptzeile hat keine eigene Klasse, nur data-row-id. */
+        tr[data-row-id].has-adjustment > td {
+            background: var(--color-warning-bg);
+        }
+        tr[data-row-id].has-adjustment > td:first-child {
+            box-shadow: inset 4px 0 0 var(--color-warning);
+        }
+        .expander-row.has-adjustment > td {
+            background: var(--color-warning-bg);
+        }
+        .expander-row.has-adjustment .comment-panel {
+            border-left-color: var(--color-warning);
+        }
+
+        /* Die Anpassung als eigene Zeile unter dem Kommentar, spaltenbündig
+           zur Position: Datum links, die Beträge unter den erfassten, der
+           Unterschied rechts. */
+        /* Der Selektor nennt die Tabelle mit: `.budget-table tbody td` weiter
+           oben ist spezifischer als ein blosses `.adj-row > td` und hat dessen
+           Polsterung und die mittige Ausrichtung sonst überstimmt. Die
+           Polsterung fiel nicht auf (0.375rem statt 0.35rem), die Ausrichtung
+           schon — die Betragsfelder standen eine Zeile zu tief. */
+        .budget-table tbody tr.adj-row > td {
+            background: var(--color-warning-bg);
+            border-bottom: 1px solid var(--color-border);
+            padding-top: 0.35rem;
+            padding-bottom: 0.5rem;
+            /* Oben, nicht mittig: die Beschriftungszelle ist zwei Zeilen hoch
+               (Datum und darunter der Satz, warum es noch gesperrt ist). Mittig
+               ausgerichtet rutschten die Betragsfelder um diese zweite Zeile
+               nach unten und standen nicht mehr neben dem Datum, zu dem sie
+               gehören. */
+            vertical-align: top;
+        }
+        .adj-row[hidden] {
+            display: none;
+        }
+        /* Kommentar und Anpassung sind ein Block: keine Trennlinie dazwischen,
+           und der farbige Balken läuft ohne Lücke durch. Darum sitzt der
+           Balken der Anpassung im Inhalt (wie beim Kommentarkasten) und nicht
+           an der Zellkante — die Zelle gibt ihre Polsterung dafür ab. */
+        .expander-row:has(+ .adj-row:not([hidden])) > td {
+            border-bottom: none;
+        }
+        .expander-row:has(+ .adj-row:not([hidden])) .comment-panel {
+            border-left-color: var(--color-warning);
+            padding-bottom: 0.35rem;
+        }
+        .budget-table tbody tr.adj-row > td:first-child {
+            /* Links so viel wie jede Zelle der Tabelle (.budget-table tbody
+               td), denn die Kommentarzelle behält diese Polsterung auch — nur
+               so steht der Balken der Anpassung genau unter ihrem. Oben und
+               unten keine: die trägt der Inhalt, damit der Balken durchläuft. */
+            padding: 0 0.5rem;
+        }
+        /* Der Unterschied ist blosser Text, die Beträge daneben stehen in
+           Feldern mit Rahmen und Polsterung. Oben ausgerichtet sässe er darum
+           vier Pixel zu hoch; diese vier gibt die Polsterung zurück, damit die
+           Zahlen auf einer Linie liegen. */
+        .budget-table tbody tr.adj-row > td.total-cell {
+            padding-top: 0.6rem;
+        }
+        .adj-label-cell .adj-label-content {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            border-left: 3px solid var(--color-warning);
+            margin-left: 0.25rem;
+            /* 2.6rem links: bündig zur Beschriftung im Kommentarkasten. */
+            padding: 0.35rem 1rem 0.5rem 2.6rem;
+        }
+        .adj-marke {
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-warning);
+        }
+        .adj-ab-feld {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .adj-ab-wort {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+        }
+        /* Der Unterschied zum erfassten Wert. Weniger ist gut, mehr nicht –
+           dieselbe Lesart wie in der Differenz-Zeile der Zusammenfassung. */
+        .adj-delta {
+            font-variant-numeric: tabular-nums;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--color-text-muted);
+        }
+        .adj-delta.ist-gut      { color: var(--color-success); }
+        .adj-delta.ist-schlecht { color: var(--color-danger); }
+        .adj-input {
+            width: 100%;
+            padding: 0.4rem 0.625rem;
+            font-family: var(--font-body);
+            font-size: 0.92rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-fast);
+        }
+        .adj-input.adj-jaehrlich,
+        .adj-input.adj-monatlich {
+            text-align: right;
+        }
+        .adj-input:hover {
+            border-color: var(--color-primary-light);
+        }
+        .adj-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+        /* Gesperrtes Datumsfeld (noch kein Betrag): sichtbar zu, nicht nur
+           ausgegraut — die Zeile darunter sagt, was fehlt. */
+        .adj-input:disabled {
+            background: var(--color-bg-alt);
+            color: var(--color-text-muted);
+            cursor: not-allowed;
+            border-style: dashed;
+        }
+        /* Steht im Inhalt der Zelle, damit der Balken auch an ihm vorbeiläuft;
+           flex-basis 100 % setzt ihn auf eine eigene Zeile. */
+        .adj-datum-hinweis {
+            flex: 0 0 100%;
+            margin: 0.2rem 0 0;
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+        }
+        /* Der Knopf, der die Anpassungszeile erzeugt. Steht im
+           Kommentarbereich und verschwindet, sobald die Zeile da ist. */
+        .adj-add-btn {
+            display: inline-flex;
+            align-items: center;
+            margin-top: 0.6rem;
+            padding: 0.3rem 0.7rem;
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--color-warning);
+            background: var(--color-warning-bg);
+            border: 1px solid var(--color-warning);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .adj-add-btn:hover {
+            color: var(--color-bg);
+            background: var(--color-warning);
+        }
+        .adj-add-btn[hidden] {
+            display: none;
+        }
+        .adj-add-hinweis {
+            margin: 0.3rem 0 0;
+            font-size: 0.78rem;
+            color: var(--color-text-muted);
+        }
+        /* Mit dem Knopf zusammen: er bietet an, was es hier zu erfassen gibt,
+           der Satz sagt, was das bedeutet. Ohne Knopf steht die Anpassung
+           schon da und erklärt sich selbst. */
+        .adj-add-btn[hidden] + .adj-add-hinweis {
+            display: none;
+        }
+        /* In der Vorschau wird nichts erfasst: dort sind alle Anpassungsfelder
+           gesperrt, und der Knopf böte eine Zeile an, in die man nichts
+           schreiben kann. */
+        body.mode-preview .adj-add-btn {
+            display: none;
+        }
+        .adj-datum-hinweis[hidden] {
+            display: none;
+        }
+
         /* Collapsible row that hosts the comment textarea. */
         .expander-row > td {
             padding: 0;
@@ -707,16 +909,55 @@
             border-color: var(--color-danger);
         }
 
+        /* Stand-Zeilen: «ab 01.01.2027», «mit allen Vorschlägen» unter der Differenz.
+           Gleiche Einfärbung wie die Differenz, nur kleiner. */
+        .summary-table .stand-row td {
+            padding-top: 0.5rem;
+        }
+
+        .summary-table .stand-row .label-cell {
+            font-size: 1rem;
+        }
+
+        .summary-table .stand-row .label-cell .stand-hinweis {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--color-text-muted, #666);
+        }
+
+        /* Der Stand, der gerade in der Vorschau im Formular steht. */
+        .summary-table .stand-row.is-preview .label-cell {
+            font-weight: 700;
+            box-shadow: inset 3px 0 0 var(--color-warning);
+            padding-left: 0.7rem;
+        }
+
+        .summary-table .stand-row.positive .computed {
+            background: var(--color-success-bg);
+            color: var(--color-success);
+            border-color: var(--color-success);
+        }
+
+        .summary-table .stand-row.negative .computed {
+            background: var(--color-danger-bg);
+            color: var(--color-danger);
+            border-color: var(--color-danger);
+        }
+
         /* ============================================================
-           Info Box / Wegleitung
+           Info Box / Wegleitung — der Volltext der Anleitung.
+           Sie stand bis 2026-10-23 als Kasten oben in <main> und war nach dem
+           ersten Scrollen weg: gelesen, wenn man noch nichts tut, gebraucht,
+           während man in der Zeile «Krankenkasse» steht. Jetzt wohnt sie im
+           Hilfe-Panel der Kopfleiste — an genau einer Stelle, nicht zweimal.
            ============================================================ */
         .info-box {
             background: var(--color-primary-faint);
             border-left: 4px solid var(--color-primary);
             border-radius: var(--radius-md);
-            padding: 1.25rem 1.5rem;
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
+            padding: 1rem 1.25rem;
+            font-size: 0.92rem;
             color: var(--color-text);
         }
 
@@ -726,6 +967,15 @@
             color: var(--color-primary-dark);
             margin: 0 0 0.5rem 0;
             font-weight: 600;
+        }
+
+        .info-box h3 {
+            font-size: 0.86rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--color-primary-dark);
+            margin: 1rem 0 0.25rem;
         }
 
         .info-box p {
@@ -739,6 +989,142 @@
         .info-box .hint-list li {
             margin-bottom: 0.25rem;
         }
+        .info-box .hilfe-schritte {
+            margin: 0.4rem 0 0 1.25rem;
+            padding: 0;
+        }
+        .info-box .hilfe-schritte li {
+            margin-bottom: 0.35rem;
+        }
+
+        /* ============================================================
+           Hilfe-Knopf und -Panel (ganz rechts in der Versionsleiste)
+           ============================================================ */
+        /* Ein «?» und sonst nichts, auf jeder Breite gleich. Vorher stand hier
+           eine dritte Leiste mit zwei Sätzen Text: gemessen 29 px von 188 px
+           Kopfhöhe, dazu musste sie unter 960 px Text abgeben und unter 560 px
+           ganz verschwinden — drei verschiedene Hilfen für drei Breiten. Was
+           dauernd sichtbar sein muss, steht jetzt in den Tooltips der Felder
+           selbst (title an den Betragsfeldern, am Kommentar, an der
+           Anpassung). */
+        .hilfe-wrap {
+            position: relative;      /* Anker des überlagernden Panels */
+            display: inline-flex;
+            margin-left: auto;       /* ganz rechts aussen, hinter «Vorschau» */
+        }
+        .hilfe-btn {
+            flex: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.8rem;
+            height: 1.8rem;
+            padding: 0;
+            border: 1px solid var(--color-primary);
+            border-radius: 50%;
+            background: var(--color-bg);
+            color: var(--color-primary-dark);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .hilfe-btn:hover,
+        .hilfe-btn[aria-expanded="true"] {
+            background: var(--color-primary);
+            color: white;
+        }
+        .hilfe-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+        /* Überlagert, schiebt nicht: sonst änderte sich die Höhe der
+           Kopfleiste beim Auf- und Zuklappen, und jedes Sprungziel von
+           springeZuZeile läge um die Panelhöhe daneben. */
+        #hilfePanel {
+            position: absolute;
+            top: calc(100% + 0.4rem);
+            right: 0;
+            z-index: 95;
+            width: 36rem;
+            max-width: calc(100vw - 2rem);
+            max-height: min(60vh, 32rem);
+            overflow-y: auto;
+            padding: 0.9rem 1rem 1rem;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            text-align: left;
+        }
+        #hilfePanel[hidden] { display: none; }
+        /* In der Vorschau wird nichts erfasst — dort braucht es keine
+           Erfassungshilfe, und die Stand-Leiste bekommt den Platz. Nebenbei:
+           Panel und Vorschau können so nicht gleichzeitig offen sein, Escape
+           bleibt eindeutig. */
+        body.mode-preview .hilfe-wrap {
+            display: none;
+        }
+
+        /* Private Notiz zur Version. «Privat» heisst: wird nicht mitgedruckt,
+           solange «Private Notiz drucken» nicht angehakt ist. Sie steht in der
+           gespeicherten Datei. */
+        .private-note {
+            background: var(--color-warning-bg);
+            border-left: 4px solid var(--color-warning);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .private-note-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 0.4rem;
+        }
+        .private-note-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            color: var(--color-bg);
+            background: var(--color-warning);
+        }
+        #privateNote {
+            width: 100%;
+            min-height: 4.5rem;
+            padding: 0.55rem 0.75rem;
+            font-family: var(--font-body);
+            font-size: 0.92rem;
+            line-height: 1.45;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            resize: vertical;
+        }
+        #privateNote:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.15);
+        }
+        #privateNote:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .private-note-hint {
+            margin: 0.4rem 0 0;
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+        }
+        /* Druckfassung der Notiz – am Bildschirm unsichtbar, siehe @media print. */
+        .private-note-print { display: none; }
 
         /* ============================================================
            Footnote
@@ -831,6 +1217,10 @@
             max-width: 480px;
             width: 100%;
             padding: 1.75rem;
+            /* dvh statt vh: auf Mobilgeräten mit ein- und ausfahrender
+               Adressleiste ist 100vh höher als das, was man wirklich sieht. */
+            max-height: calc(100dvh - 2rem);
+            overflow-y: auto;
             box-shadow: var(--shadow-lg);
             transform: scale(0.95);
             transition: transform var(--transition-base);
@@ -929,6 +1319,38 @@
             }
         }
 
+        /* Wie bei der Anpassungsliste: schmal kann der Knopf links in der
+           Leiste stehen, dann liefe das Panel am Rand heraus. */
+        @media (max-width: 640px) {
+            .hilfe-wrap { position: static; }
+            #hilfePanel { left: 1rem; right: 1rem; width: auto; max-width: none; }
+        }
+
+        /* Schmal wird in der Versionsleiste Platz gemacht — der Knopf «?» ist
+           auf jeder Breite derselbe, aber Reiter, «Neue Version» und
+           «Vorschau» müssen mit ihm in eine Zeile passen. */
+        @media (max-width: 560px) {
+            /* «Neue Version» zeigt nur noch das Pluszeichen. Mit Beschriftung
+               passten Reiter, Knopf und «?» nicht mehr in eine Zeile, und die
+               Leiste brach um — eine zweite Zeile Kopfleiste kostet auf dem
+               Telefon mehr als das Wort erklärt (aria-label und title sagen
+               es weiterhin). */
+            .version-add-btn span { display: none; }
+            .version-add-btn { padding-left: 0.6rem; padding-right: 0.6rem; }
+            /* Das Wort «Versionen:» ebenfalls – die Reiter sagen es selbst,
+               und die Liste trägt ihren Namen in aria-label. */
+            .version-bar-label { display: none; }
+            #hilfePanel {
+                left: 0.75rem;
+                right: 0.75rem;
+                width: auto;
+                max-width: none;
+                /* dvh wie beim Modal: die einfahrende Adressleiste macht vh
+                   zu einer Lüge, und die Kopfleiste ist hier selbst hoch. */
+                max-height: calc(100dvh - 12rem);
+            }
+        }
+
         /* ============================================================
            Print styles
            ============================================================ */
@@ -939,6 +1361,54 @@
             }
             .sticky-head, .toolbar, .footer, .info-box, .version-bar, .toast, .modal-backdrop {
                 display: none !important;
+            }
+            /* Gedruckt wird in der Vorschau eine gerechnete Tabelle. Die
+               Stand-Leiste steckt in .sticky-head und ist hier weg – die
+               Kennzeichnung steht im Blattkopf an ihrer Stelle. Leer (Stand
+               «heute», keine Vorschau) bleibt sie unsichtbar. */
+            body.mode-preview #printStandMarker:not(:empty) {
+                display: block;
+                margin: 0.6rem 0 0;
+                padding: 0.4rem 0.6rem;
+                border: 1px solid #92400e;
+                color: #92400e;
+                font-weight: 700;
+            }
+            /* Private Notiz: ohne Häkchen gar nicht auf dem Blatt. Mit Häkchen
+               nur, wenn auch etwas drinsteht (has-text, gesetzt in beforeprint).
+               Eine Textarea wächst im Druck nicht mit, darum druckt ein Block. */
+            #privateNoteBox {
+                display: none !important;
+            }
+            body.print-private-note #privateNoteBox.has-text {
+                display: block !important;
+                background: white !important;
+                border: 1px solid #999;
+                border-left: 4px solid #999;
+                border-radius: var(--radius-sm);
+                margin-bottom: 0.75rem;
+                padding: 0.6rem 0.9rem;
+                page-break-inside: avoid;
+            }
+            #privateNote {
+                display: none !important;
+            }
+            .private-note-hint {
+                display: none;
+            }
+            .private-note-badge {
+                color: black;
+                background: transparent;
+                border: 1px solid #999;
+            }
+            .private-note-print {
+                display: block;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                font-family: var(--font-body);
+                font-size: 0.92rem;
+                line-height: 1.45;
+                color: black;
             }
             /* Atmenden Hintergrund-Puls im Druck ausblenden. */
             body::before {
@@ -999,11 +1469,44 @@
             .expander-row {
                 display: none !important;
             }
+            /* Eine Zeile mit Kommentar druckt mit dem Häkchen «Kommentare
+               drucken»; ohne Häkchen bleibt sie ganz weg. Eine Anpassung
+               druckt nie — auch nicht mit dem Häkchen. */
             body.print-comments .expander-row.has-comment {
                 display: table-row !important;
             }
             .expander-row.has-comment {
                 page-break-inside: avoid;
+            }
+            /* Die Anpassung druckt nie. Sie bietet nur eine Möglichkeit,
+               Zahlen für eine weitere Version zu erfassen; auf Papier stand
+               bisher ein leeres Formular («Neu jährlich», «Neu monatlich»,
+               «Gilt ab»), bei leerem Datum sogar der Platzhalter
+               «tt.mm.jjjj». */
+            .adj-row {
+                display: none !important;
+            }
+            .adj-add-btn,
+            .adj-add-hinweis {
+                display: none;
+            }
+            /* Umgekehrt: eine Zeile nur mit Anpassung druckt keinen leeren
+               Kommentarkasten. */
+            .expander-row:not(.has-comment) label.comment-panel-label,
+            .expander-row:not(.has-comment) .comment-print {
+                display: none;
+            }
+            /* Die Zeilenmarkierung erklärte eine Anpassung – die nicht mehr
+               mitdruckt. Bliebe sie, stünde eine hervorgehobene Zeile ohne
+               jede Erklärung auf dem Blatt. */
+            tr[data-row-id].has-adjustment > td {
+                background: transparent;
+            }
+            tr[data-row-id].has-adjustment > td:first-child {
+                box-shadow: none;
+            }
+            .expander-row.has-adjustment > td {
+                background: transparent;
             }
             .comment-panel {
                 border-left-color: #999 !important;
@@ -1056,7 +1559,11 @@
             gap: 0.4rem;
             flex-wrap: wrap;
             flex: 1;
-            min-width: 0;
+            /* Nicht unter die Breite eines Reiters schrumpfen: mit `min-width: 0`
+               lief der Reiter auf schmalen Schirmen aus seinem Kasten heraus
+               und lag über «Neue Version». Die Leiste bricht jetzt lieber um —
+               eine Zeile mehr auf dem Telefon statt überlappender Schrift. */
+            min-width: fit-content;
         }
         .version-tab-wrapper {
             position: relative;
@@ -1152,6 +1659,129 @@
         }
 
         /* ============================================================
+           Vorschau — Knopf in der Versionsleiste und Stand-Leiste
+           ============================================================
+           Gestrichelt wie „Neue Version": beides legt keine Daten an.
+           Gedrückt wird der Knopf in Warnfarbe, damit die gesperrte,
+           gerechnete Ansicht sich von der erfassten abhebt. */
+        .preview-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border: 1px dashed var(--color-border-strong);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--color-primary-dark);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .preview-btn[hidden] { display: none; }
+        .preview-btn:hover {
+            background: var(--color-primary-faint);
+            border-color: var(--color-primary);
+        }
+        .preview-btn[aria-pressed="true"] {
+            border-style: solid;
+            border-color: var(--color-warning);
+            background: var(--color-warning);
+            color: white;
+        }
+        .preview-btn:focus-visible {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.2);
+        }
+
+        .preview-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem 0.8rem;
+            flex-wrap: wrap;
+            padding: 0.55rem 1.5rem;
+            background: var(--color-warning-bg);
+            border-bottom: 1px solid var(--color-warning);
+        }
+        .preview-bar[hidden] { display: none; }
+        .preview-bar-label {
+            font-family: var(--font-body);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            /* dunkler als --color-warning: Text auf dem Warn-Hintergrund */
+            color: #92400e;
+        }
+        .preview-stands {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .preview-stand {
+            padding: 0.3rem 0.8rem;
+            border: 1px solid var(--color-warning);
+            border-radius: var(--radius-sm);
+            background: var(--color-bg);
+            color: #92400e;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .preview-stand:hover { background: #fde8c8; }
+        .preview-stand[aria-pressed="true"] {
+            background: var(--color-warning);
+            border-color: var(--color-warning);
+            color: white;
+            font-weight: 700;
+        }
+        .preview-stand:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3);
+        }
+        .preview-notice {
+            margin: 0;
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            color: #92400e;
+        }
+        .preview-leave {
+            margin-left: auto;
+            padding: 0.35rem 0.9rem;
+            border: 1px solid #92400e;
+            border-radius: var(--radius-sm);
+            background: var(--color-bg);
+            color: #92400e;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .preview-leave:hover { background: #92400e; color: white; }
+        .preview-leave:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.35);
+        }
+        /* Am Bildschirm sagt es die Stand-Leiste; die Kennzeichnung ist nur für
+           den Ausdruck da (siehe @media print). */
+        #printStandMarker { display: none; }
+
+        /* Die gesperrten Felder sollen offensichtlich gesperrt aussehen —
+           sonst tippt jemand hinein und wundert sich, dass nichts passiert. */
+        body.mode-preview .amount-input:disabled,
+        body.mode-preview .adj-input:disabled {
+            background: var(--color-warning-bg);
+            border-style: dashed;
+            color: #92400e;
+            cursor: not-allowed;
+        }
+
+        /* ============================================================
            Versions overview section
            ============================================================ */
         .versions-overview-section[hidden] { display: none; }
@@ -1196,6 +1826,26 @@
         }
         .versions-overview-table tbody tr.is-active td:first-child {
             border-left: 3px solid var(--color-primary);
+        }
+        /* Stände der aktiven Version: abgesetzt, damit niemand sie für
+           eine eigene Version hält — sie sind gerechnet, nicht erfasst. */
+        .versions-overview-table tbody tr.overview-stand-row:first-of-type td {
+            border-top: 2px dashed var(--color-warning);
+        }
+        .versions-overview-table tbody tr.overview-stand-row td {
+            background: var(--color-warning-bg);
+            font-size: 0.88rem;
+        }
+        .versions-overview-table tbody tr.overview-stand-row td:first-child {
+            font-style: italic;
+            color: #92400e;
+        }
+        .versions-overview-table .stand-faellig {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #92400e;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
         .versions-overview-table .active-marker {
             font-size: 0.75rem;
@@ -1327,6 +1977,216 @@
         }
         .modal-field .radio-option:hover { background: var(--color-primary-faint); }
         .modal-field .radio-option input { margin: 0; }
+        .modal-field[hidden], .modal-hint[hidden] { display: none; }
+        /* Mit `.modal` davor, sonst schlägt `.modal p` (ein Element mehr im
+           Selektor) und der Hinweis stünde in Fliesstextfarbe da. */
+        .modal .modal-hint {
+            margin: 0;
+            font-size: 0.88rem;
+            color: var(--color-text-muted);
+        }
+        /* Die Liste der Positionen, die ein Stand einlösen würde. Ein Stand kann
+           ein Dutzend halten: die Liste scrollt für sich, der Dialog bleibt
+           auf dem Bildschirm. */
+        .einloesen-liste {
+            max-height: 14rem;
+            overflow-y: auto;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: 0.15rem;
+        }
+        /* Der Name kann zweizeilig werden (die Zeile «ab …» darunter), darum
+           richtet sich die Zeile oben aus. Häkchen und Betrag stünden damit an
+           der Oberkante statt an der ersten Textzeile — die halbe Zeilenhöhe
+           gleicht das aus. */
+        .einloesen-eintrag + .einloesen-eintrag {
+            border-top: 1px solid var(--color-border);
+        }
+        /* Das Kommentarfeld der Position: eine Zeile unter der Auswahl, auf
+           der Höhe des Namens eingerückt. */
+        .einloesen-kommentar {
+            display: block;
+            width: calc(100% - 2.6rem);
+            margin: 0 0.55rem 0.5rem 2.05rem;
+            padding: 0.3rem 0.5rem;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+        }
+        .einloesen-kommentar:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px var(--color-primary-tint);
+        }
+        .einloesen-liste .radio-option { align-items: flex-start; }
+        .einloesen-liste .radio-option input { margin-top: 0.4rem; }
+        .einloesen-liste .einloesen-betrag { margin-top: 0.1rem; }
+        .einloesen-liste .einloesen-name { flex: 1; min-width: 0; }
+        .einloesen-liste .einloesen-ab {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+        }
+        .einloesen-liste .einloesen-betrag {
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.88rem;
+            color: var(--color-text-muted);
+        }
+
+        /* ============================================================
+           Anpassungsliste in der Kopfleiste
+           ============================================================ */
+        .adj-wrap {
+            position: relative;
+            display: inline-flex;
+        }
+        .adj-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border: 1px solid var(--color-warning);
+            border-radius: var(--radius-sm);
+            background: var(--color-warning-bg);
+            /* dunkler als --color-warning: Text auf dem Warn-Hintergrund */
+            color: #92400e;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .adj-btn[hidden] { display: none; }
+        .adj-btn:hover,
+        .adj-btn[aria-expanded="true"] {
+            background: var(--color-warning);
+            color: white;
+        }
+        .adj-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3);
+        }
+        .adj-panel {
+            position: absolute;
+            top: calc(100% + 0.4rem);
+            right: 0;
+            z-index: 95;
+            width: 34rem;
+            max-width: calc(100vw - 2rem);
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 0.9rem 1rem 1rem;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            text-align: left;
+        }
+        .adj-panel[hidden] { display: none; }
+        /* Schmal: der Knopf kann in der Leiste links stehen, dann liefe das
+           Panel am Rand heraus. Es hängt sich dann an die ganze Leiste. */
+        @media (max-width: 640px) {
+            .version-bar { position: relative; }
+            .adj-wrap { position: static; }
+            .adj-panel { left: 1rem; right: 1rem; width: auto; max-width: none; }
+        }
+        .adj-group + .adj-group {
+            margin-top: 1rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid var(--color-border);
+        }
+        .adj-group-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.2rem 0.7rem;
+            margin: 0 0 0.45rem;
+            font-family: var(--font-body);
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+        .adj-faellig {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #92400e;
+        }
+        .adj-group-sum {
+            margin-left: auto;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+        .adj-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .adj-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.1rem 0.7rem;
+            padding: 0.3rem 0;
+            font-size: 0.88rem;
+        }
+        .adj-link {
+            padding: 0;
+            border: none;
+            background: none;
+            color: var(--color-primary-dark);
+            font: inherit;
+            font-weight: 600;
+            text-align: left;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            cursor: pointer;
+        }
+        .adj-link:hover { color: var(--color-primary); }
+        .adj-link:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+        .adj-change {
+            margin-left: auto;
+            font-variant-numeric: tabular-nums;
+            color: var(--color-text-muted);
+            white-space: nowrap;
+        }
+        .adj-delta { font-weight: 600; color: var(--color-text); }
+        .adj-newversion {
+            margin-top: 0.5rem;
+            padding: 0.3rem 0.7rem;
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--color-primary-dark);
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .adj-newversion:hover {
+            background: var(--color-primary-faint);
+            border-color: var(--color-primary);
+            border-style: solid;
+        }
+        /* Nach dem Sprung kurz hervorheben, damit man die Zeile findet. */
+        tr[data-row-id].adj-sprung > td {
+            animation: adj-sprung 1.6s ease-out;
+        }
+        @keyframes adj-sprung {
+            0%, 40% { background: rgba(0, 128, 128, 0.18); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            tr[data-row-id].adj-sprung > td { animation: none; }
+        }
     </style>
 </head>
 <body>
@@ -1336,6 +2196,11 @@
         <div class="brand">
             <h1>Budgetvorlage</h1>
             <p class="subtitle">Übersicht Einnahmen und Ausgaben</p>
+            <!-- Nur im Ausdruck: die Stand-Leiste steht in .sticky-head und fällt
+                 beim Drucken weg. Ohne diese Zeile sähe ein aus der Vorschau
+                 gedrucktes Blatt aus wie ein erfasstes Budget. Gefüllt von
+                 renderPreviewBar (standKennzeichnung). -->
+            <p class="print-stand-marker" id="printStandMarker"></p>
         </div>
     </div>
 </header>
@@ -1348,9 +2213,13 @@
             <span class="status-text" id="statusText">Keine Datei verbunden</span>
         </div>
         <div class="toolbar-actions">
-            <label class="print-toggle" title="Steuert nur den Ausdruck (Strg+P): Kommentare mitdrucken oder nicht.">
+            <label class="print-toggle" title="Steuert nur den Ausdruck (Strg+P): Kommentare und Anpassungen mitdrucken oder nicht.">
                 <input type="checkbox" id="chkPrintComments" checked>
                 <span>Kommentare drucken</span>
+            </label>
+            <label class="print-toggle" title="Steuert nur den Ausdruck (Strg+P): die private Notiz zur Version mitdrucken. Vorgewählt ist das nie.">
+                <input type="checkbox" id="chkPrintPrivateNote">
+                <span>Private Notiz drucken</span>
             </label>
             <button type="button" class="btn btn-secondary" id="btnOpen" title="Bestehende Budget-Datei öffnen">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1380,26 +2249,114 @@
 <!-- ============================================================
      Version bar — tabs for switching between budget versions
      ============================================================ -->
-<div class="version-bar" id="versionBar" role="tablist" aria-label="Budget-Versionen">
+<!-- Die Reiterliste ist #versionTabs, nicht die ganze Leiste: nur dort setzt
+     renderVersionTabs die Rolle tab. Trüge die Leiste die Rolle tablist, wären
+     „Neue Version", der Anpassungs- und der Vorschau-Knopf Kinder einer
+     Reiterliste, ohne Reiter zu sein — ungültiges ARIA, und Screenreader
+     dürfen solche Kinder in der Reiter-Navigation überspringen. Einer davon
+     ist der Weg aus einem gesperrten Formular heraus. -->
+<div class="version-bar" id="versionBar">
     <div class="version-bar-label">Versionen:</div>
-    <div class="version-tabs" id="versionTabs"></div>
-    <button class="version-add-btn" id="addVersionBtn" type="button" title="Neue Budget-Version anlegen">
+    <div class="version-tabs" id="versionTabs" role="tablist" aria-label="Budget-Versionen"></div>
+    <button class="version-add-btn" id="addVersionBtn" type="button"
+            aria-label="Neue Budget-Version anlegen" title="Neue Budget-Version anlegen">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
         <span>Neue Version</span>
     </button>
+    <div class="adj-wrap" id="adjustmentsWrap">
+        <button class="adj-btn" id="adjustmentsBtn" type="button" hidden
+                aria-expanded="false" aria-controls="adjustmentsPanel"
+                title="Alle Anpassungen dieser Version, nach Datum geordnet"></button>
+        <div class="adj-panel" id="adjustmentsPanel" role="region" aria-label="Anpassungen" hidden></div>
+    </div>
+    <!-- Kein Versionsreiter: die Vorschau ersetzt keine Version, sie zeigt die
+         aktive gerechnet. Als Reiter in derselben Liste behauptete sie, die
+         aktive Version sei abgewählt. Gestrichelt umrandet wie „Neue Version". -->
+    <button class="preview-btn" id="previewBtn" type="button" hidden aria-pressed="false"
+            aria-controls="previewBar"
+            title="Das Budget ansehen, wie es ab einem Stichtag aussieht (gerechnet, nicht erfasst)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span>Vorschau</span>
+    </button>
+    <!-- Ganz rechts aussen (margin-left: auto) und auf jeder Breite dasselbe
+         «?». Das Panel darin ist der einzige Ort des Anleitungstextes. -->
+    <div class="hilfe-wrap" id="hilfeWrap">
+        <button class="hilfe-btn" id="hilfeBtn" type="button" aria-expanded="false"
+                aria-controls="hilfePanel" aria-label="Anleitung zu dieser Seite"
+                title="Anleitung zu dieser Seite">
+            <span aria-hidden="true">?</span>
+        </button>
+        <div class="hilfe-panel" id="hilfePanel" role="region" aria-label="Anleitung" hidden>
+            <div class="info-box">
+                <h2>So füllen Sie die Vorlage aus</h2>
+
+                <h3>Beträge</h3>
+                <p>Tragen Sie jeden Betrag entweder in die <strong>Jahres-</strong> oder in die <strong>Monatsspalte</strong> ein – die andere Spalte rechnet sich daraus (Jahresbetrag ÷ 12 bzw. Monatsbetrag × 12). Subtotale und Gesamtsummen folgen automatisch. Beträge in <strong>CHF</strong>, Dezimalstellen mit Komma oder Punkt.</p>
+
+                <h3>Anpassungen – was dort hineingehört</h3>
+                <p>Eine Anpassung ist der Betrag, den eine Position <strong>künftig</strong> haben soll, nicht der, den sie heute hat. Die erfassten Zahlen bleiben darum stehen; daneben steht, was möglich wäre. So sieht man im Gespräch, was ein Vorschlag bringt, ohne dass die Aufnahme des heutigen Haushalts überschrieben wird.</p>
+
+                <h3>Anpassungen – wie Sie eine erfassen</h3>
+                <ol class="hilfe-schritte">
+                    <li>Zeile mit dem <strong>Pfeil</strong> am Anfang aufklappen. Darunter erscheint das Feld für den Kommentar.</li>
+                    <li>Dort auf <strong>„+ Anpassung erfassen"</strong> klicken.</li>
+                    <li>Die Anpassung steht nun als eigene Zeile direkt unter dem Kommentar, spaltengleich zu den Beträgen: links das Datum, daneben der neue Jahres- oder Monatsbetrag, rechts der Unterschied zum erfassten Wert.</li>
+                    <li>Ohne Betrag gibt es keine Anpassung. Das Datum lässt sich erst setzen, wenn ein neuer Betrag dasteht, und eine Zeile ohne Betrag verschwindet wieder, sobald Sie sie verlassen.</li>
+                </ol>
+
+                <h3>Anpassungen – weshalb das Datum</h3>
+                <p><strong>Mit</strong> Datum heisst: steht fest, wirkt ab dann – ein gekündigtes Abo läuft bis zum Ende der Frist weiter. <strong>Ohne</strong> Datum heisst: noch offen, ein Vorschlag, über den niemand entschieden hat. Die Zusammenfassung unten zeigt darum für jeden Stichtag einen eigenen Stand, zuletzt den Stand <strong>mit allen Vorschlägen</strong>. „Vorschau" in der Versionsleiste zeigt dasselbe für das ganze Budget – gerechnet, nicht erfasst; dort wird nichts geschrieben.</p>
+                <p>Anpassungen werden <strong>nie gedruckt</strong>. Sie sind das Feld zum Erfassen; auf Papier gehört der Stand, nicht das Formular.</p>
+
+                <h3>Weitere Budget-Version</h3>
+                <p>Eine weitere Version brauchen Sie für einen <strong>grundsätzlich anderen Haushalt</strong> – nach einem Umzug, nach einer Trennung. Über „Neue Version" übernehmen Sie die Werte einer bestehenden Version, auf Wunsch samt den Anpassungen, die bis zu einem Stichtag fällig sind; die Kommentare lassen sich im selben Dialog gleich anpassen. „Versionsvergleich" unten zeigt die Differenzen auf einen Blick.</p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- ============================================================
+     Stand-Leiste — nur sichtbar, solange die Vorschau offen ist
+     (renderPreviewBar). «heute» darin ist das gesperrte Abbild der
+     Version, kein Ausgang; hinaus geht es über «Vorschau verlassen».
+     ============================================================ -->
+<div class="preview-bar" id="previewBar" hidden>
+    <div class="preview-bar-label">Vorschau&nbsp;Stand:</div>
+    <div class="preview-stands" id="previewStands" role="group" aria-label="Stand der Vorschau"></div>
+    <p class="preview-notice" role="status">
+        Gerechnete Ansicht – hier wird <strong>nichts erfasst</strong>. Die erfassten Beträge bleiben unverändert.
+    </p>
+    <button class="preview-leave" id="previewLeaveBtn" type="button">Vorschau verlassen</button>
+</div>
+
+<!-- Hier stand eine dritte Leiste mit zwei Sätzen Hilfe. Sie kostete
+     gemessene 29 px von 188 px Kopfhöhe und musste unter 960 px Text abgeben,
+     unter 560 px ganz verschwinden — drei verschiedene Hilfen für drei
+     Breiten. Jetzt gibt es nur das «?» ganz rechts in der Versionsleiste, auf
+     jeder Breite dasselbe; was dauernd sichtbar sein muss, steht im title der
+     Felder selbst. -->
 </div><!-- /sticky-head -->
 
 <main class="page">
 
-    <div class="info-box">
-        <h2>So füllen Sie die Vorlage aus</h2>
-        <p>Tragen Sie Beträge entweder in die <strong>Jahres-</strong> oder die <strong>Monatsspalte</strong> ein – die jeweils andere Spalte wird automatisch berechnet (Jahresbetrag ÷ 12 bzw. Monatsbetrag × 12). Subtotale und Gesamtsummen aktualisieren sich automatisch.</p>
-        <p>Mögliche Einsparungen oder Anpassungen modellieren Sie über <strong>weitere Budget-Versionen</strong>: Klicken Sie oben auf „Neue Version", übernehmen Sie die Werte aus einer bestehenden Version und passen Sie sie an. In der Sektion „Versionsvergleich" sehen Sie die Differenzen auf einen Blick.</p>
-        <p>Beträge in <strong>CHF</strong>. Dezimalstellen mit Komma oder Punkt möglich.</p>
+    <!-- Private Notiz der aktiven Version. «Privat» heisst: wird nicht
+         mitgedruckt (ausser mit dem Häkchen in der Werkzeugleiste). Sie steht
+         in der gespeicherten Datei – der Schutz gilt dem versehentlichen
+         Ausdruck, nicht der Weitergabe der Datei. -->
+    <div class="private-note" id="privateNoteBox">
+        <label class="private-note-label" for="privateNote">
+            <span class="private-note-badge">Privat</span>
+            <span>Notiz zu dieser Version</span>
+        </label>
+        <textarea id="privateNote" rows="3" placeholder="z. B. Was ich vor dem Gespräch klären will."></textarea>
+        <div class="private-note-print" id="privateNotePrint" aria-hidden="true"></div>
+        <p class="private-note-hint">Wird nicht mitgedruckt, ausser Sie haken oben „Private Notiz drucken" an. Die Notiz steht in der gespeicherten Datei – geben Sie die Datei nicht unbedacht weiter.</p>
     </div>
 
     <!-- ============================================================
@@ -1645,6 +2602,8 @@
                     <td><span class="computed" data-summary="differenz" data-period="monatlich">0.00</span></td>
                 </tr>
             </tbody>
+            <!-- Je Stichtag eine Zeile (recomputeAll). Leer, solange es keine Anpassung gibt. -->
+            <tbody id="summaryStands"></tbody>
         </table>
     </section>
 
@@ -1742,6 +2701,18 @@
                 <legend class="modal-field-label">Basiert auf</legend>
                 <!-- Radios populated dynamically -->
             </fieldset>
+            <fieldset class="modal-field" id="newVersionEinloesen" hidden>
+                <legend class="modal-field-label">Diese Anpassungen einrechnen (Beträge pro Monat)</legend>
+                <div class="einloesen-liste" id="newVersionEinloesenListe"></div>
+                <p class="modal-hint einloesen-text" id="newVersionEinloesenText" aria-live="polite"></p>
+            </fieldset>
+            <div class="modal-field" id="newVersionKommentare" hidden>
+                <label class="radio-option">
+                    <input type="checkbox" id="newVersionUebrigeKommentare" checked>
+                    <span>Übrige Kommentare übernehmen</span>
+                </label>
+                <p class="modal-hint">Die Kommentare der oben aufgeführten Positionen stehen dort und lassen sich ändern. Dieses Häkchen nimmt alle anderen Kommentare der Grundlage unverändert mit.</p>
+            </div>
         </div>
         <div class="modal-actions">
             <button type="button" class="btn btn-ghost" data-modal-action="cancel">Abbrechen</button>
@@ -1933,10 +2904,403 @@
         rueckstellungen: 'Rückstellungen',
     };
 
-    const FILE_FORMAT_VERSION = 4;
+    // Rechenkern für Anpassungen und Stichtage. Reine Rechnung ohne DOM.
+    // Dieser Block wird von tests/budget_treiber.mjs zwischen den Markern
+    // herausgeschnitten und per new Function(...) ausgeführt. Er hat darum
+    // KEINEN Zugriff auf SCHEMA, state oder das DOM: alles, was er braucht,
+    // kommt als Argument herein.
+    //
+    // Wichtig: «leer» ist hier NICHT 0. Bei den normalen Werten gilt leer = 0
+    // (`|| 0`). Bei einer Anpassung ist null «nicht gesetzt», 0 dagegen ein
+    // gültiger Zielbetrag («das Abo fällt weg»). Darum nie `|| 0` auf einen
+    // Anpassungsbetrag, sondern immer die Zahlenprüfung.
+    /* == budget-kern:anfang == */
+    function istZahl(x) {
+        return typeof x === 'number' && isFinite(x);
+    }
+
+    // Ein Datum gilt nur als lesbar, wenn es JJJJ-MM-TT ist und wirklich existiert.
+    // ISO-Daten sortieren als Zeichenketten richtig, daher kein Date-Vergleich.
+    function istIsoDatum(s) {
+        if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+        // `Date.parse` nimmt auch den 31. Februar an und rechnet ihn still auf
+        // den 3. März um; die Seite zeigte dann einen Stand mit einer
+        // Überschrift, die es nicht gibt. Der Rückweg entlarvt das: nur ein
+        // Datum, das unverändert zurückkommt, existiert wirklich.
+        const d = new Date(s);
+        return isFinite(d.getTime()) && d.toISOString().slice(0, 10) === s;
+    }
+
+    // Zielbetrag einer Anpassung: jährlich gewinnt, sonst monatlich mal zwölf.
+    // Gibt null zurück, wenn gar kein Betrag gesetzt ist.
+    function anpassungBetrag(a) {
+        if (!a) return null;
+        if (istZahl(a.jaehrlich)) {
+            return { jaehrlich: a.jaehrlich, monatlich: a.jaehrlich / 12 };
+        }
+        if (istZahl(a.monatlich)) {
+            return { jaehrlich: a.monatlich * 12, monatlich: a.monatlich };
+        }
+        return null;
+    }
+
+    // Was die Anpassung gegenüber dem erfassten Jahreswert ausmacht — die
+    // vierte Spalte der Anpassungszeile. Negativ heisst «kostet weniger».
+    // null: keine Anpassung, dann steht in der Spalte nichts.
+    function anpassungUnterschied(a, erfasstJaehrlich) {
+        const ziel = anpassungBetrag(a);
+        if (ziel === null) return null;
+        return ziel.jaehrlich - (istZahl(erfasstJaehrlich) ? erfasstJaehrlich : 0);
+    }
+
+    // Welche Kommentare eine neue Version mitbekommt. `bearbeitet` sind die
+    // Texte aus dem Dialog (die der eingelösten Positionen, dort änderbar),
+    // `uebrigeUebernehmen` entscheidet über alle anderen der Grundlage.
+    // Ein im Dialog geleerter Text heisst: dieser Kommentar geht nicht mit.
+    function kommentareFuerNeueVersion(basisComments, bearbeitet, uebrigeUebernehmen) {
+        const ziel = {};
+        if (uebrigeUebernehmen) {
+            Object.keys(basisComments || {}).forEach((id) => {
+                const t = basisComments[id];
+                if (typeof t === 'string' && t.trim() !== '') ziel[id] = t;
+            });
+        }
+        Object.keys(bearbeitet || {}).forEach((id) => {
+            const t = bearbeitet[id];
+            if (typeof t === 'string' && t.trim() !== '') ziel[id] = t;
+            else delete ziel[id];
+        });
+        return ziel;
+    }
+
+    // Wirkt die Anpassung zugunsten des Budgets? Bei einer Ausgabe ist weniger
+    // gut, bei einer Einnahme mehr — ohne diese Unterscheidung stünde
+    // «+1'200.00» beim Lohn in Rot da und sagte das Gegenteil.
+    // '' heisst: keine Aussage (keine Anpassung oder kein Unterschied).
+    function anpassungWirkung(unterschied, istEinnahme) {
+        if (!istZahl(unterschied) || unterschied === 0) return '';
+        return (istEinnahme ? unterschied > 0 : unterschied < 0) ? 'gut' : 'schlecht';
+    }
+
+    // Gibt es diese Anpassung? Nur ein Betrag macht sie dazu (0 eingeschlossen).
+    // Ein Datum allein passt nichts an und ist keine Anpassung.
+    function anpassungHatBetrag(a) {
+        return anpassungBetrag(a) !== null;
+    }
+
+    // Soll das Datumsfeld einer Zeile zu sein? Genau dann, wenn es ohne Betrag
+    // keinen Eintrag gäbe. Die Sperre ist der Weg, auf dem der Zustand «Datum
+    // ohne Betrag» gar nicht erst entsteht.
+    function anpassungDatumGesperrt(a) {
+        return !anpassungHatBetrag(a);
+    }
+
+    // Der Eintrag, der aus den drei Feldern einer Zeile entsteht: `roh` hat
+    // jaehrlich/monatlich (Zahl oder null) und ab (Text, auch leer). Ohne Betrag
+    // gibt es keinen Eintrag, das Datum fällt mit.
+    function anpassungEintrag(roh) {
+        if (!roh || !anpassungHatBetrag(roh)) return null;
+        return {
+            jaehrlich: istZahl(roh.jaehrlich) ? roh.jaehrlich : null,
+            monatlich: istZahl(roh.monatlich) ? roh.monatlich : null,
+            ab: roh.ab ? roh.ab : null,
+        };
+    }
+
+    // Welches Datum im Feld stehen bleibt, wenn der Benutzer ein Betragsfeld
+    // verlässt. Beim Tippen ist «kein Betrag» ein Zwischenzustand: wer die 0 zu
+    // einer 50 ändert, löscht erst die 0 und darf sein Datum dabei nicht
+    // verlieren. Gespeichert wird in dieser Zeit ohnehin nichts (anpassungEintrag
+    // liefert ohne Betrag null). Erst wenn der Benutzer die Zeile verlässt, ist
+    // klar, dass kein Betrag mehr kommt, und das Datum fällt mit.
+    // `bleibtInZeile`: der Fokus geht zu einem anderen Anpassungsfeld derselben
+    // Zeile (etwa von «jährlich» zu «monatlich»), es wird also weitergetippt.
+    function datumNachVerlassen(roh, bleibtInZeile) {
+        if (!roh || !roh.ab) return '';
+        if (bleibtInZeile || anpassungHatBetrag(roh)) return roh.ab;
+        return '';
+    }
+
+    // Bleibt der Fokus in derselben Zeile? `zielRowId` ist die Zeile, in der das
+    // Ziel des Fokuswechsels liegt (null, wenn es in keiner liegt oder gar kein
+    // Ziel da ist). Zur Zeile gehört alles, was der Benutzer als Einheit erlebt:
+    // die Beträge, der Pfeil, der ganze Aufklappbereich samt Kommentar.
+    function bleibtInDerZeile(zielRowId, rowId) {
+        return !!zielRowId && zielRowId === rowId;
+    }
+
+    // Die ganze Entscheidung beim Verlassen eines Betragsfeldes. Gibt das Datum
+    // zurück, das danach im Feld stehen soll, oder null: nichts anfassen.
+    // Nichts angefasst wird in der Vorschau (die Felder sind dort gesperrt und
+    // zeigen gerechnete Werte) und wenn nur das Fenster den Fokus verliert
+    // (anderer Tab, anderes Programm) — der Benutzer ist dann nicht aus der
+    // Zeile heraus, sondern weg.
+    function anpassungDatumNachBlur(a) {
+        if (!a || a.vorschau || !a.fensterHatFokus || !a.roh) return null;
+        return datumNachVerlassen(a.roh, bleibtInDerZeile(a.zielRowId, a.rowId));
+    }
+
+    // Der Text zur Sperre des Datumsfeldes (Titel am Feld und Zeile im Panel).
+    // Leer, solange das Feld offen ist. Steht noch ein Datum im gesperrten Feld
+    // (der Betrag wurde gerade geleert, die Zeile noch nicht verlassen), sagt
+    // der Text das, statt zu tun, als sei das Feld leer.
+    function anpassungDatumHinweis(gesperrt, datumStehtDa) {
+        if (!gesperrt) return '';
+        return datumStehtDa
+            ? 'Ohne Betrag gilt dieses Datum nicht.'
+            : 'Das Datum lässt sich setzen, sobald ein neuer Betrag eingetragen ist.';
+    }
+
+    // Beim Laden einer Datei: ältere Stände dieser Seite erlaubten ein Datum
+    // ohne Betrag. Solche Einträge passen nichts an und tragen ausser dem Datum
+    // keine Angabe; sie werden nicht übernommen. `verworfen` zählt alle,
+    // `sichtbar` nur die, die der Benutzer sehen konnte: eine bekannte Zeile mit
+    // einem lesbaren Datum. Nur davon muss die Seite etwas sagen.
+    function anpassungenBereinigen(adjustments, bekannteRowIds) {
+        const bekannt = new Set(bekannteRowIds || []);
+        const behalten = {};
+        let verworfen = 0;
+        let sichtbar = 0;
+        Object.keys(adjustments || {}).forEach((rowId) => {
+            const a = adjustments[rowId];
+            if (anpassungHatBetrag(a)) {
+                behalten[rowId] = a;
+                return;
+            }
+            verworfen += 1;
+            if (bekannt.has(rowId) && a && istIsoDatum(a.ab)) sichtbar += 1;
+        });
+        return { behalten: behalten, verworfen: verworfen, sichtbar: sichtbar };
+    }
+
+    // Beim Speichern: Einträge für Zeilen, die diese Seite nicht kennt, bleiben
+    // erhalten (die Datei kann aus einer anderen Fassung stammen). Hüllen ohne
+    // Betrag sind keine Anpassung und werden nicht übernommen.
+    function unbekannteAnpassungenBehalten(adjustments, bekannteRowIds) {
+        const bekannt = new Set(bekannteRowIds || []);
+        const behalten = {};
+        Object.keys(adjustments || {}).forEach((rowId) => {
+            if (!bekannt.has(rowId) && anpassungHatBetrag(adjustments[rowId])) {
+                behalten[rowId] = adjustments[rowId];
+            }
+        });
+        return behalten;
+    }
+
+    // «2027-01-01» → «01.01.2027», ohne Date (keine Zeitzonen-Überraschung).
+    function datumAnzeige(iso) {
+        const [j, m, t] = iso.split('-');
+        return `${t}.${m}.${j}`;
+    }
+
+    // Die Zeile, die ein gedrucktes Blatt als GERECHNET ausweist. Nur für Stände,
+    // die etwas anderes zeigen als die erfassten Werte: «heute» ist das gesperrte
+    // Abbild der Version, ein «gerechnet» darauf wäre falsch. Leer = nichts drucken.
+    function standKennzeichnung(standKey) {
+        if (!standKey || standKey === 'heute') return '';
+        const stand = standKey === 'offen' ? 'Stand mit allen Vorschlägen'
+            : 'Stand ab ' + datumAnzeige(standKey);
+        return stand + ' — gerechnet, nicht erfasst';
+    }
+
+    // Vorschlag für den Namen einer Version aus einem Stand.
+    function neueVersionName(standKey) {
+        return standKey === 'offen'
+            ? 'Stand mit allen Vorschlägen'
+            : 'Stand ab ' + datumAnzeige(standKey);
+    }
+
+    // Der Satz unter der Liste im Dialog «Neue Version aus Stand»: zählt mit,
+    // wie viele der aufgelisteten Positionen angehakt sind und was mit dem Rest
+    // geschieht. Bei leerer Auswahl sagt er ausdrücklich, was dabei entsteht,
+    // statt den Knopf zu sperren.
+    function neueVersionAuswahlText(gewaehlt, gesamt) {
+        const rest = gesamt - gewaehlt;
+        if (gewaehlt === 0) {
+            return gesamt === 1
+                ? 'Die Position wird nicht eingerechnet, sie bleibt als Anpassung stehen.'
+                : 'Keine Position wird eingerechnet, die neue Version ist eine Kopie der Werte und Anpassungen.';
+        }
+        if (rest === 0) {
+            return gesamt === 1
+                ? 'Die Position wird eingerechnet.'
+                : `Alle ${gesamt} Positionen werden eingerechnet.`;
+        }
+        return `${gewaehlt} von ${gesamt} Positionen ${gewaehlt === 1 ? 'wird' : 'werden'} eingerechnet, `
+            + `${rest} ${rest === 1 ? 'bleibt' : 'bleiben'} als Anpassung stehen.`;
+    }
+
+    // Alle Stände, in Reihenfolge: «heute», die Daten aufsteigend (je Datum
+    // genau ein Stand), am Schluss «offen» (Anpassungen ohne lesbares Datum).
+    // Anpassungen ohne Betrag zählen nicht mit.
+    function stichtagListe(adjustments, heuteIso) {
+        const daten = [];
+        let hatOffene = false;
+        Object.keys(adjustments || {}).forEach((id) => {
+            const a = adjustments[id];
+            if (!anpassungBetrag(a)) return;
+            if (istIsoDatum(a.ab)) {
+                if (daten.indexOf(a.ab) < 0) daten.push(a.ab);
+            } else {
+                hatOffene = true;
+            }
+        });
+        daten.sort();
+        const liste = [{ key: 'heute', ab: null, faellig: false }];
+        daten.forEach((d) => liste.push({ key: d, ab: d, faellig: d <= heuteIso }));
+        if (hatOffene) liste.push({ key: 'offen', ab: null, faellig: false });
+        return liste;
+    }
+
+    // Welchen Stand die Vorschau beim Öffnen zeigt: den ersten nach «heute»,
+    // denn «heute» ist nur das gesperrte Abbild der Version und zeigte nichts
+    // Neues. Gibt es keinen weiteren Stand, bleibt «heute» (dann steht der
+    // Vorschau-Knopf ohnehin nicht da).
+    function ersterVorschauStand(staende) {
+        const weiter = (staende || []).filter((s) => s && s.key !== 'heute');
+        return weiter.length ? weiter[0].key : 'heute';
+    }
+
+    // Löst diese Anpassung im Stand auf? «heute»: nie. Datum: nur mit Betrag und
+    // lesbarem Datum bis einschliesslich dieses Tages. «offen»: jede mit Betrag.
+    // Eine einzige Regel für werteFuerStand, anpassungenNachStand und die Liste
+    // im Dialog, damit sie nie auseinanderlaufen.
+    //
+    // `rowId` und `abgewaehlt` (Liste von rowIds) sind optional: Wer im Dialog
+    // abgewählt wurde, wird NICHT eingelöst, ganz gleich was das Datum sagt. Das
+    // ist keine zweite Regel, sondern eine Ausnahme von der einen. Ohne die
+    // beiden Angaben gilt die Regel wie bisher.
+    function loestEin(a, standKey, rowId, abgewaehlt) {
+        if (standKey === 'heute') return false;
+        if (!anpassungBetrag(a)) return false;
+        if (abgewaehlt && abgewaehlt.indexOf(rowId) >= 0) return false;
+        return standKey === 'offen' || (istIsoDatum(a.ab) && a.ab <= standKey);
+    }
+
+    // Kopie der Werte mit den Anpassungen des Stands. «heute»: nichts angewendet.
+    // Datum: alle Anpassungen mit lesbarem Datum bis einschliesslich dieses Tages.
+    // «offen»: alle Anpassungen mit Betrag, auch die ohne Datum. `abgewaehlt`
+    // (optional, rowIds): diese Positionen behalten ihren Wert.
+    function werteFuerStand(values, adjustments, standKey, abgewaehlt) {
+        const neu = Object.assign({}, values);
+        Object.keys(adjustments || {}).forEach((id) => {
+            const a = adjustments[id];
+            if (!loestEin(a, standKey, id, abgewaehlt)) return;
+            const betrag = anpassungBetrag(a);
+            neu[id + '.jaehrlich'] = betrag.jaehrlich;
+            neu[id + '.monatlich'] = betrag.monatlich;
+        });
+        return neu;
+    }
+
+    // Was eine neue Version aus einem Stand an Anpassungen mitnimmt: alles, was
+    // der Stand NICHT eingelöst hat (spätere Daten, undatierte). Die
+    // eingelösten stecken danach in den Werten. Einträge ohne Betrag sind keine
+    // Anpassung und wandern nie mit — sonst entstünde in der neuen Version der
+    // Zustand, den die Sperre am Datumsfeld verhindert. Kopien, damit die neue
+    // Version die Einträge der alten nicht teilt. Wer im Dialog abgewählt wurde
+    // (`abgewaehlt`, optional, rowIds), gilt als nicht eingelöst und bleibt mit
+    // seinem Datum stehen.
+    function anpassungenNachStand(adjustments, standKey, abgewaehlt) {
+        const rest = {};
+        Object.keys(adjustments || {}).forEach((id) => {
+            const a = adjustments[id];
+            if (anpassungHatBetrag(a) && !loestEin(a, standKey, id, abgewaehlt)) rest[id] = Object.assign({}, a);
+        });
+        return rest;
+    }
+
+    // Die Anpassungsliste, nach Stand gruppiert (ohne «heute»). `staende` ist
+    // das Ergebnis von stichtagListe für dieselben Anpassungen. Je Eintrag
+    // der Istwert aus `values` (wie in summen: jährlich = y || m*12, monatlich
+    // = m || y/12), der Zielbetrag und der Unterschied. Anpassungen ohne
+    // Betrag stehen nirgends, passend zu stichtagListe.
+    function anpassungsGruppen(adjustments, staende, values) {
+        const wert = (k) => (istZahl(values[k]) ? values[k] : 0);
+        return staende.filter((s) => s.key !== 'heute').map((stand) => {
+            const eintraege = [];
+            Object.keys(adjustments || {}).forEach((rowId) => {
+                const a = adjustments[rowId];
+                const betrag = anpassungBetrag(a);
+                if (!betrag) return;
+                const key = istIsoDatum(a.ab) ? a.ab : 'offen';
+                if (key !== stand.key) return;
+                const y = wert(rowId + '.jaehrlich');
+                const m = wert(rowId + '.monatlich');
+                const altY = y || (m * 12);
+                const altM = m || (y / 12);
+                eintraege.push({
+                    rowId: rowId,
+                    altY: altY, altM: altM,
+                    neuY: betrag.jaehrlich, neuM: betrag.monatlich,
+                    deltaY: betrag.jaehrlich - altY, deltaM: betrag.monatlich - altM,
+                });
+            });
+            return {
+                key: stand.key, ab: stand.ab, faellig: stand.faellig,
+                eintraege: eintraege,
+                deltaY: eintraege.reduce((s, e) => s + e.deltaY, 0),
+                deltaM: eintraege.reduce((s, e) => s + e.deltaM, 0),
+            };
+        });
+    }
+
+    // Die Positionen, die ein Stand einlösen würde: die Liste im Dialog «Neue
+    // Version aus Stand». Nicht die Gruppe des Datums, sondern alles, was
+    // loestEin bejaht — der Stand vom April löst auch die vom Januar ein. Je
+    // Eintrag wie in anpassungsGruppen (alt, neu, Unterschied), dazu `ab`, damit
+    // man bei einem Stand über mehrere Daten sieht, woher eine Zeile stammt.
+    // Ein Stand, den es in `staende` nicht gibt, und «heute» liefern nichts.
+    function einloesbareEintraege(adjustments, staende, values, standKey) {
+        // «offen» ist der Weg «alles einlösen» und gilt immer. Es steht nur
+        // dann in der Stichtagsliste, wenn eine Anpassung ohne Datum da ist —
+        // trägt jede ein Datum, gäbe es sonst keinen Weg, alle auf einmal zu
+        // übernehmen (erreichbar wäre es nur mittelbar über die späteste
+        // Datumsgruppe, und das weiss niemand, der es nicht gebaut hat).
+        if (standKey !== 'offen' && !(staende || []).some((s) => s.key === standKey)) return [];
+        const liste = [];
+        anpassungsGruppen(adjustments, staende, values).forEach((gruppe) => {
+            gruppe.eintraege.forEach((e) => {
+                const a = adjustments[e.rowId];
+                if (!loestEin(a, standKey, e.rowId)) return;
+                liste.push(Object.assign({}, e, { ab: istIsoDatum(a.ab) ? a.ab : null }));
+            });
+        });
+        return liste;
+    }
+
+    // Summen wie recomputeAll: je Zeile jährlich = y || (m * 12),
+    // monatlich = m || (y / 12). Die Gruppe «einnahmen» zählt als Einnahme,
+    // jede andere als Ausgabe.
+    function summen(schema, values) {
+        const r = { einnahmenY: 0, einnahmenM: 0, ausgabenY: 0, ausgabenM: 0 };
+        Object.keys(schema).forEach((groupId) => {
+            schema[groupId].forEach((row) => {
+                const y = istZahl(values[row.id + '.jaehrlich']) ? values[row.id + '.jaehrlich'] : 0;
+                const m = istZahl(values[row.id + '.monatlich']) ? values[row.id + '.monatlich'] : 0;
+                const zeileY = y || (m * 12);
+                const zeileM = m || (y / 12);
+                if (groupId === 'einnahmen') {
+                    r.einnahmenY += zeileY;
+                    r.einnahmenM += zeileM;
+                } else {
+                    r.ausgabenY += zeileY;
+                    r.ausgabenM += zeileM;
+                }
+            });
+        });
+        r.diffY = r.einnahmenY - r.ausgabenY;
+        r.diffM = r.einnahmenM - r.ausgabenM;
+        return r;
+    }
+    /* == budget-kern:ende == */
+
+    const FILE_FORMAT_VERSION = 5;
     // v1: bare values  ·  v2: yearly reduktion key  ·  v3: y+m reduktion + comment
     // v4: multi-version data model (no reduktion — versions replace it)
-    const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4]);
+    // v5: v4 plus per-version `adjustments` (Anpassungen mit Stichtag) and
+    //     `privateNote` (private Versionsnotiz). Fehlende Felder lesen sich als {} und ''.
+    const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4, 5]);
     const APP_NAME = 'budgetvorlage';
 
     // ============================================================
@@ -1957,8 +3321,13 @@
     //     A "Versionsvergleich" section appears below the summary.
     const state = {
         // ----- Multi-version data model (v4) -----
-        versions: [],            // [{ id, name, basedOn, createdAt, values, comments }]
+        versions: [],            // [{ id, name, basedOn, createdAt, values, comments, adjustments, privateNote }]
         activeVersionId: null,
+        // Vorschau: null = normaler Betrieb (Formular = erfasste Werte der
+        // aktiven Version). Sonst der Stand-Key («heute», ein ISO-Datum oder
+        // «offen»), dessen gerechnete Werte im Formular stehen. Solange das
+        // gesetzt ist, schreibt captureFormToActiveVersion nichts zurück.
+        previewStand: null,
         // ----- Persistence + UI state -----
         fileHandle: null,        // FileSystemFileHandle when present
         currentFilename: null,   // Last known filename
@@ -1984,6 +3353,8 @@
             createdAt: new Date().toISOString(),
             values: {},
             comments: {},   // rowId → string. Per-version, NOT cloned by createVersion.
+            adjustments: {},   // rowId → { jaehrlich, monatlich, ab }. null = leer, 0 ist ein gültiger Zielbetrag. NOT cloned.
+            privateNote: '',   // Private Notiz zur Version. NOT cloned.
         };
     }
 
@@ -2053,6 +3424,13 @@
     // All mutations go through these to keep dependent UI in sync.
 
     function captureFormToActiveVersion() {
+        // In der Vorschau stehen GERECHNETE Werte im Formular. Diese Funktion
+        // liest das Formular blind und wird aus serialize (also bei jedem
+        // Speichern), aus renderVersionsOverview und aus den Eingabe-Handlern
+        // gerufen — jeder dieser Aufrufe würde die erfassten Zahlen durch
+        // gerechnete ersetzen, unwiederbringlich. Darum hier, vor allem andern:
+        if (state.previewStand) return;
+
         // Persist current DOM form state into the active version's data.
         // Called before switching versions to make sure unsaved edits land.
         const active = getActiveVersion();
@@ -2073,6 +3451,26 @@
             if (txt !== '') comments[ta.dataset.rowId] = txt;
         });
         active.comments = comments;
+
+        // Anpassungen: Einträge für Zeilen, die diese Seite nicht kennt, bleiben
+        // unangetastet (sonst ginge beim Speichern still etwas verloren); für
+        // bekannte Zeilen gilt der Stand der Felder. Ohne Betrag gibt es keinen
+        // Eintrag (ein Datum allein ist keine Anpassung, readAdjustmentFromDom
+        // liefert dann null); das Datum im Feld ist bis zum Verlassen der Zeile
+        // nur ein Entwurf und wird hier nicht gespeichert.
+        const adjustments = unbekannteAnpassungenBehalten(active.adjustments, Object.keys(ROW_INDEX));
+        $$('.expander-row').forEach((tr) => {
+            const rowId = tr.dataset.expanderFor;
+            const eintrag = readAdjustmentFromDom(rowId);
+            if (eintrag === null) delete adjustments[rowId];
+            else adjustments[rowId] = eintrag;
+        });
+        active.adjustments = adjustments;
+
+        // Private Notiz der Version. Liegt hinter derselben Sperre wie alles
+        // andere hier – in der Vorschau ist das Feld zudem gesperrt.
+        const notiz = $('#privateNote');
+        if (notiz) active.privateNote = notiz.value;
     }
 
     function hydrateFormFromActiveVersion() {
@@ -2080,13 +3478,16 @@
         const active = getActiveVersion();
         $$('input.amount-input').forEach((input) => { input.value = ''; });
         $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
+        $$('.adj-input').forEach((input) => { input.value = ''; });
+        $('#privateNote').value = '';
         // Collapse all expander rows; we'll re-open the ones with content below.
         $$('.row-expander').forEach((btn) => {
-            const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
+            const rowId = btn.dataset.rowId;
             if (rowId) setRowExpanded(rowId, false);
         });
         if (!active) return;
 
+        $('#privateNote').value = typeof active.privateNote === 'string' ? active.privateNote : '';
         Object.entries(active.values).forEach(([key, value]) => {
             const [rowId, period] = key.split('.');
             const input = $(`input[data-row-id="${rowId}"][data-period="${period}"]`);
@@ -2102,11 +3503,23 @@
                 if (text.trim() !== '') setRowExpanded(rowId, true);
             }
         });
+        Object.entries(bekannteAnpassungen(active.adjustments)).forEach(([rowId, a]) => {
+            const feld = (k) => $(`.adj-input[data-row-id="${rowId}"][data-adj="${k}"]`);
+            if (!feld('ab') || !a || typeof a !== 'object') return;
+            // 0 ist ein gültiger Zielbetrag und muss sichtbar bleiben; leer ist null.
+            if (Number.isFinite(a.jaehrlich)) feld('jaehrlich').value = formatComputed(a.jaehrlich);
+            if (Number.isFinite(a.monatlich)) feld('monatlich').value = formatComputed(a.monatlich);
+            if (typeof a.ab === 'string') feld('ab').value = a.ab;
+            // Zeilen mit Anpassung klappen auf wie solche mit Kommentar.
+            if (rowHasAdjustment(rowId)) setRowExpanded(rowId, true);
+        });
         refreshAllExpanderUI();
     }
 
     function switchVersion(id) {
         if (!getVersionById(id)) return;
+        leavePreview();                  // sonst stünden gerechnete Werte im Formular,
+                                         // und das capture darunter nähme sie für erfasst
         captureFormToActiveVersion();    // preserve any pending edits
         state.activeVersionId = id;
         hydrateFormFromActiveVersion();
@@ -2117,7 +3530,11 @@
         recomputeAll();
     }
 
-    function createVersion({ name, basedOnId }) {
+    // `values` und `adjustments` sind optional: «Neue Version aus diesem Stand»
+    // bringt beides fertig mit. Ohne sie gilt wie bisher: Werte aus der Basis
+    // kopieren, Anpassungen leer.
+    function createVersion({ name, basedOnId, values, adjustments, comments }) {
+        leavePreview();                  // wie switchVersion: erst zurück zu den erfassten Werten
         captureFormToActiveVersion();    // make sure current edits land
         const v = makeBlankVersion(name, basedOnId);
         if (basedOnId) {
@@ -2129,9 +3546,16 @@
                 // comments remain reachable as tooltips on the expander
                 // buttons (see refreshExpanderUI).
                 v.values = { ...base.values };
-                // v.comments stays {} (set by makeBlankVersion).
+                // v.adjustments und v.privateNote bleiben leer
+                // (makeBlankVersion); sie wandern nie mit.
             }
         }
+        if (values) v.values = { ...values };
+        if (adjustments) v.adjustments = adjustments;
+        // Kommentare entscheidet der Dialog (kommentareFuerNeueVersion): die
+        // der eingelösten Positionen, dort änderbar, plus auf Wunsch die
+        // übrigen. Ohne Angabe beginnt die Version ohne Kommentar.
+        if (comments) v.comments = { ...comments };
         state.versions.push(v);
         state.activeVersionId = v.id;
         hydrateFormFromActiveVersion();
@@ -2145,6 +3569,7 @@
 
     function deleteVersion(id) {
         if (state.versions.length <= 1) return; // never delete the last one
+        leavePreview();
         const idx = state.versions.findIndex(v => v.id === id);
         if (idx === -1) return;
 
@@ -2232,10 +3657,23 @@
     }
     function lookupRow(rowId) { return ROW_INDEX[rowId] || null; }
 
-    // Groups whose rows get a per-row comment expander. Expense rows only —
-    // matches the prior visual rhythm and where comments are most useful
-    // (notes about reductions, planned changes, …).
-    const EXPANDABLE_GROUPS = new Set(AUSGABEN_GROUPS);
+    // Anpassungen können in einer Datei auf Zeilen zeigen, die es in dieser
+    // Fassung der Seite nicht mehr gibt. Jede Stelle, die Anpassungen liest,
+    // geht durch diesen Filter; unbekannte rowIds werden verworfen.
+    function bekannteAnpassungen(adjustments) {
+        const bekannt = {};
+        Object.entries(adjustments || {}).forEach(([rowId, a]) => {
+            if (lookupRow(rowId)) bekannt[rowId] = a;
+        });
+        return bekannt;
+    }
+
+    // Gruppen, deren Zeilen einen Aufklappbereich bekommen. Er trägt die
+    // Anpassung (neuer Betrag, optional ab Datum) und den Kommentar der
+    // Version. Beides braucht es bei den Einnahmen genauso wie bei den
+    // Ausgaben: «neue Stelle ab 01.03.» ist eine Anpassung einer Einnahme,
+    // «Wechsel zu günstigerer Versicherung ab April» eine einer Ausgabe.
+    const EXPANDABLE_GROUPS = new Set(['einnahmen', ...AUSGABEN_GROUPS]);
 
     // Chevron icon used by the comment expander button.
     const CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
@@ -2245,9 +3683,13 @@
         btn.type = 'button';
         btn.className = 'row-expander';
         btn.setAttribute('aria-expanded', 'false');
-        btn.setAttribute('aria-controls', `expander-${rowId}`);
-        btn.setAttribute('aria-label', `Kommentar für „${label}" ein-/ausblenden`);
-        btn.title = 'Kommentar';   // overridden by refreshExpanderUI when a basedOn comment exists
+        // Der Knopf steuert zwei Zeilen: den Kommentar und – wenn es eine
+        // gibt – die Anpassung. `data-row-id` ist der Griff für alle
+        // Nachschlagewerke; aria-controls nennt beide Ziele.
+        btn.dataset.rowId = rowId;
+        btn.setAttribute('aria-controls', `expander-${rowId} adj-${rowId}`);
+        btn.setAttribute('aria-label', `Kommentar und Anpassung für „${label}" ein-/ausblenden`);
+        btn.title = 'Kommentar und Anpassung';   // refreshExpanderUI überschreibt ihn je nach Inhalt
         btn.innerHTML = CHEVRON_SVG;
         btn.addEventListener('click', () => {
             const isOpen = btn.getAttribute('aria-expanded') === 'true';
@@ -2288,6 +3730,7 @@
         ta.dataset.rowId = row.id;
         ta.rows = 2;
         ta.placeholder = 'Notiz zu dieser Position für diese Version – z. B. „Wechsel zu günstigerer Versicherung ab April".';
+        ta.title = 'Gilt nur für diese Budget-Version. Druckt mit, solange oben „Kommentare drucken" angehakt ist.';
         ta.addEventListener('input', () => autoGrowTextarea(ta));
         panel.appendChild(ta);
 
@@ -2297,9 +3740,113 @@
         printBlock.setAttribute('aria-hidden', 'true');
         panel.appendChild(printBlock);
 
+        // Der einzige Knopf, den die Anpassung braucht: Der Pfeil gehört dem
+        // Kommentar, dieser hier erzeugt die Anpassungszeile. Er steht nur da,
+        // solange es keine Anpassung gibt (zeigeAnpassungszeile schaltet ihn).
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'adj-add-btn';
+        add.dataset.adjAdd = row.id;
+        add.textContent = '+ Anpassung erfassen';
+        add.title = 'Neuen Betrag für eine weitere Budget-Version festhalten';
+        // Die Hilfe an der Stelle des Geschehens: auf dem Telefon, wo der
+        // Streifen oben nur noch ein «?» ist, trägt dieser Satz die Last.
+        const addHinweis = document.createElement('p');
+        addHinweis.className = 'adj-add-hinweis';
+        addHinweis.textContent = 'Neuer Betrag für eine weitere Version – die erfasste Zahl bleibt stehen.';
+        add.addEventListener('click', () => {
+            zeigeAnpassungszeile(row.id, true);
+            const feld = $(`.adj-input[data-row-id="${row.id}"][data-adj="jaehrlich"]`);
+            if (feld) feld.focus();
+        });
+        panel.appendChild(add);
+        panel.appendChild(addHinweis);
+
         td.appendChild(panel);
         tr.appendChild(td);
         return tr;
+    }
+
+    // Die Anpassung als eigene Tabellenzeile, direkt unter dem Kommentar und
+    // spaltenbündig zur Position: Datum in der Beschriftungsspalte, die beiden
+    // Beträge unter den erfassten, der Unterschied in der vierten Spalte.
+    //
+    // Das <tr> trägt bewusst KEIN data-row-id: `$('tr[data-row-id="…"]')` steht
+    // an mehreren Stellen und nähme sonst je nach Reihenfolge die falsche
+    // Zeile. Die Eingabefelder behalten ihr data-row-id — über das suchen
+    // readAdjustmentFieldsFromDom und handleAdjInputEvent.
+    function makeAdjustmentRow(row, groupId) {
+        const tr = document.createElement('tr');
+        tr.className = 'adj-row';
+        tr.id = `adj-${row.id}`;
+        tr.dataset.adjFor = row.id;
+        tr.dataset.rowGroup = groupId;
+        tr.hidden = true;
+
+        const name = `${row.prefix ? row.prefix + ' – ' : ''}${row.label}`;
+
+        const labelTd = document.createElement('td');
+        labelTd.className = 'label-cell adj-label-cell';
+        labelTd.innerHTML =
+            '<div class="adj-label-content">' +
+            '<span class="adj-marke">Anpassung</span>' +
+            '<span class="adj-ab-feld"><span class="adj-ab-wort">ab</span>' +
+            '<input type="date" class="adj-input adj-ab" disabled title="' + anpassungDatumHinweis(true, false) + '"></span>' +
+            '<p class="adj-datum-hinweis">' + anpassungDatumHinweis(true, false) + '</p>' +
+            '</div>';
+        tr.appendChild(labelTd);
+
+        ['jaehrlich', 'monatlich'].forEach((period) => {
+            const td = document.createElement('td');
+            td.className = 'input-cell';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.inputMode = 'decimal';
+            input.className = `adj-input adj-${period}`;
+            input.placeholder = 'neu';
+            input.title = 'Betrag, den diese Position künftig haben soll – die erfasste Zahl oben bleibt stehen. '
+                + 'Rechts steht der Unterschied. Druckt nie mit.';
+            input.setAttribute('aria-label',
+                `${name} – Anpassung, neuer Betrag ${period === 'jaehrlich' ? 'jährlich' : 'monatlich'}`);
+            td.appendChild(input);
+            tr.appendChild(td);
+        });
+
+        const deltaTd = document.createElement('td');
+        deltaTd.className = 'total-cell';
+        const delta = document.createElement('span');
+        delta.className = 'adj-delta';
+        delta.dataset.adjDelta = row.id;
+        deltaTd.appendChild(delta);
+        tr.appendChild(deltaTd);
+
+        tr.querySelectorAll('.adj-input').forEach((input) => {
+            input.dataset.rowId = row.id;
+            input.dataset.adj = input.classList.contains('adj-jaehrlich') ? 'jaehrlich'
+                : input.classList.contains('adj-monatlich') ? 'monatlich' : 'ab';
+        });
+        tr.querySelector('.adj-ab').setAttribute('aria-label', `${name} – Anpassung gilt ab`);
+
+        // Ohne Betrag verschwindet die Zeile wieder, sobald der Fokus sie
+        // verlässt — «eine Anpassung ohne Betrag gibt es nicht», sichtbar
+        // gemacht. Beim Fensterwechsel bleibt sie stehen: sonst wäre das
+        // Getippte beim Zurückkommen weg.
+        tr.addEventListener('focusout', (e) => {
+            if (e.relatedTarget && tr.contains(e.relatedTarget)) return;
+            if (!document.hasFocus()) return;
+            if (rowHasAdjustment(row.id)) return;
+            zeigeAnpassungszeile(row.id, false);
+        });
+        return tr;
+    }
+
+    // Blendet die Anpassungszeile ein oder aus und schaltet den Knopf im
+    // Kommentarbereich gegengleich: Wo die Zeile steht, braucht es ihn nicht.
+    function zeigeAnpassungszeile(rowId, sichtbar) {
+        const tr = $(`.adj-row[data-adj-for="${rowId}"]`);
+        if (tr) tr.hidden = !sichtbar;
+        const add = $(`.adj-add-btn[data-adj-add="${rowId}"]`);
+        if (add) add.hidden = sichtbar;
     }
 
     // Textarea-Höhe an den Inhalt anpassen. scrollHeight ist der Inhalt ohne
@@ -2311,11 +3858,14 @@
     }
 
     function setRowExpanded(rowId, expanded) {
-        const btn = $(`.row-expander[aria-controls="expander-${rowId}"]`);
+        const btn = $(`.row-expander[data-row-id="${rowId}"]`);
         const sub = $(`#expander-${rowId}`);
         if (!btn || !sub) return;
         btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         sub.hidden = !expanded;
+        // Der Kommentar erscheint beim Aufklappen immer, die Anpassung nur,
+        // wenn es eine gibt — sonst steht dort der Knopf, der sie erzeugt.
+        zeigeAnpassungszeile(rowId, expanded && rowHasAdjustment(rowId));
         if (expanded) {
             const ta = sub.querySelector('.comment-textarea');
             if (ta) autoGrowTextarea(ta);
@@ -2329,7 +3879,7 @@
         //   2. title attribute — set to the *basedOn* version's comment when
         //      one exists (browser tooltip on hover). When there's no
         //      previous-version comment, falls back to a generic label.
-        const btn = $(`.row-expander[aria-controls="expander-${rowId}"]`);
+        const btn = $(`.row-expander[data-row-id="${rowId}"]`);
         if (!btn) return;
 
         const active   = getActiveVersion();
@@ -2339,19 +3889,166 @@
 
         btn.classList.toggle('is-filled', ownText.trim() !== '');
 
+        // Anpassung: ein eigenes Zeichen (Punkt am Knopf), damit es nicht mit
+        // der Füllung für «hat Kommentar» verwechselt wird.
+        const hatAnpassung = rowHasAdjustment(rowId);
+        if (hatAnpassung) btn.dataset.hasAdjustment = '1';
+        else delete btn.dataset.hasAdjustment;
+        const adjHinweis = hatAnpassung ? 'Anpassung hinterlegt' : '';
+
         if (baseText.trim() !== '' && baseline) {
             // Native tooltip — supports newlines on most browsers.
             btn.title = `Kommentar in „${baseline.name}":\n${baseText}`;
             btn.dataset.hasBaselineComment = '1';
         } else {
-            btn.title = 'Kommentar';
+            btn.title = 'Aufklappen: Kommentar zu dieser Position, und «+ Anpassung erfassen» für einen künftigen Betrag';
             delete btn.dataset.hasBaselineComment;
+        }
+        if (adjHinweis) btn.title += `\n${adjHinweis}`;
+
+        // Markierung der Zeilen: die Hauptzeile hat keine eigene Klasse, nur
+        // data-row-id; darum der Selektor tr[data-row-id] im CSS.
+        const hauptzeile = $(`tr[data-row-id="${rowId}"]`);
+        const aufklapp = $(`#expander-${rowId}`);
+        const anpasszeile = $(`.adj-row[data-adj-for="${rowId}"]`);
+        [hauptzeile, aufklapp, anpasszeile].forEach((tr) => {
+            if (!tr) return;
+            tr.classList.toggle('has-adjustment', hatAnpassung);
+        });
+
+        // Eine bestehende Anpassung zeigt sich, sobald die Zeile offen ist.
+        // Verstecken tut diese Stelle nie: beim Leeren des Betrags verschwände
+        // die Zeile sonst unter den tippenden Fingern. Das macht erst das
+        // Verlassen der Zeile (focusout in makeAdjustmentRow).
+        if (hatAnpassung && aufklapp && !aufklapp.hidden) zeigeAnpassungszeile(rowId, true);
+
+        // Das Datumsfeld: zu, solange kein Betrag dasteht — und in der Vorschau
+        // immer (dort sind alle Anpassungsfelder zu, auch mit Betrag).
+        const gesperrt = anpassungDatumGesperrt(active?.adjustments?.[rowId]);
+        const datum = anpasszeile ? anpasszeile.querySelector('.adj-ab') : null;
+        const hinweis = anpassungDatumHinweis(gesperrt, !!(datum && datum.value));
+        if (datum) {
+            datum.disabled = gesperrt || !!state.previewStand;
+            datum.title = hinweis;
+        }
+        const erklaerung = anpasszeile ? anpasszeile.querySelector('.adj-datum-hinweis') : null;
+        if (erklaerung) {
+            erklaerung.hidden = !gesperrt;
+            erklaerung.textContent = hinweis;
+        }
+    }
+
+    // Hat die aktive Version für diese Zeile eine Anpassung? Nur ein Betrag
+    // macht sie dazu; Einträge ohne Betrag gibt es nicht.
+    function rowHasAdjustment(rowId) {
+        const a = getActiveVersion()?.adjustments?.[rowId];
+        return anpassungHatBetrag(a);
+    }
+
+    // Betragsfeld der Anpassung: leer → null (nicht 0), sonst die Zahl;
+    // Text, der keine Zahl ist, zählt als leer statt als Nullsetzung.
+    function parseAnpassungsFeld(raw) {
+        const s = String(raw ?? '').trim().replace(/['\s]/g, '').replace(',', '.');
+        if (s === '') return null;
+        const n = Number(s);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    // Liest die drei Felder einer Zeile; null, wenn kein Betrag dasteht (das
+    // Datum fällt dann mit, siehe anpassungEintrag).
+    function readAdjustmentFromDom(rowId) {
+        const roh = readAdjustmentFieldsFromDom(rowId);
+        return roh ? anpassungEintrag(roh) : null;
+    }
+
+    // Die drei Felder einer Zeile, wie sie gerade dastehen (Beträge als Zahl
+    // oder null, Datum als Text) — auch wenn noch kein Betrag da ist.
+    function readAdjustmentFieldsFromDom(rowId) {
+        const feld = (k) => $(`.adj-input[data-row-id="${rowId}"][data-adj="${k}"]`);
+        const j = feld('jaehrlich'), m = feld('monatlich'), ab = feld('ab');
+        if (!j || !m || !ab) return null;
+        return {
+            jaehrlich: parseAnpassungsFeld(j.value),
+            monatlich: parseAnpassungsFeld(m.value),
+            ab: ab.value,
+        };
+    }
+
+    // Wie die Betragsfelder der Zeile: das zuletzt getippte Feld bestimmt das andere.
+    function handleAdjInputEvent(input) {
+        // Der einzige Schreibweg in die Version, der nicht durch
+        // captureFormToActiveVersion läuft — die Sperre dort greift hier nicht.
+        // Heute unerreichbar (in der Vorschau sind die .adj-input gesperrt und
+        // feuern keine Events), aber die Zusicherung hinge sonst allein an
+        // einem Attribut, das anderswo gesetzt wird. Darum dieselbe Sperre:
+        if (state.previewStand) return;
+        const rowId = input.dataset.rowId;
+        const art = input.dataset.adj;
+        if (art === 'jaehrlich' || art === 'monatlich') {
+            const andere = art === 'jaehrlich' ? 'monatlich' : 'jaehrlich';
+            const gegenueber = $(`.adj-input[data-row-id="${rowId}"][data-adj="${andere}"]`);
+            const v = parseAnpassungsFeld(input.value);
+            if (gegenueber) {
+                gegenueber.value = v === null ? '' : formatComputed(art === 'jaehrlich' ? v / 12 : v * 12);
+            }
+        }
+        const active = getActiveVersion();
+        if (active) {
+            const eintrag = readAdjustmentFromDom(rowId);
+            // Ohne Betrag gibt es keinen gespeicherten Eintrag. Das Datum im Feld
+            // bleibt dabei stehen, solange getippt wird (Zwischenzustand beim
+            // Korrigieren); es fällt erst in handleAdjInputBlur, wenn die Zeile
+            // verlassen wird. Kommt der Betrag zurück, ist das Datum noch da.
+            if (eintrag === null) delete active.adjustments[rowId];
+            else active.adjustments[rowId] = eintrag;
+        }
+        refreshExpanderUI(rowId);
+        recomputeAll();
+        markDirty();
+    }
+
+    // In welcher Zeile liegt dieses Element? Eine Position belegt bis zu drei
+    // <tr>: die Hauptzeile mit data-row-id, den Aufklappbereich mit
+    // data-expander-for und die Anpassungszeile mit data-adj-for. Pfeil,
+    // Beträge, Kommentar und Anpassungsfelder liegen in einer davon.
+    // null: in keiner Zeile.
+    //
+    // Die Anpassungszeile gehört hier zwingend dazu: Ohne sie zählte der
+    // Wechsel von «Neu jährlich» zu «Gilt ab» als Verlassen der Zeile, und
+    // das Datum fiele weg (siehe datumNachVerlassen).
+    function zeilenIdVon(el) {
+        if (!el || !el.closest) return null;
+        const anpassung = el.closest('.adj-row');
+        if (anpassung) return anpassung.dataset.adjFor || null;
+        const aufklapp = el.closest('.expander-row');
+        if (aufklapp) return aufklapp.dataset.expanderFor || null;
+        const haupt = el.closest('tr[data-row-id]');
+        return haupt ? haupt.dataset.rowId : null;
+    }
+
+    function handleAdjInputBlur(input, ereignis) {
+        if (input.dataset.adj === 'ab') return;
+        const v = parseAnpassungsFeld(input.value);
+        input.value = v === null ? '' : formatComputed(v);
+        // Die Entscheidung trifft der Kern; hier wird nur gelesen und geschrieben.
+        const rowId = input.dataset.rowId;
+        const neu = anpassungDatumNachBlur({
+            roh: readAdjustmentFieldsFromDom(rowId),
+            rowId: rowId,
+            zielRowId: zeilenIdVon(ereignis && ereignis.relatedTarget),
+            fensterHatFokus: document.hasFocus(),
+            vorschau: !!state.previewStand,
+        });
+        const datum = $(`.adj-input[data-row-id="${rowId}"][data-adj="ab"]`);
+        if (neu !== null && datum) {
+            datum.value = neu;
+            refreshExpanderUI(rowId);      // der Hinweis richtet sich nach dem Feld
         }
     }
 
     function refreshAllExpanderUI() {
         $$('.row-expander').forEach((btn) => {
-            const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
+            const rowId = btn.dataset.rowId;
             if (rowId) refreshExpanderUI(rowId);
         });
     }
@@ -2413,6 +4110,9 @@
                     input.dataset.group = groupId;
                     input.dataset.period = period;
                     input.placeholder = '0.00';
+                    // Der Satz, der vorher als Streifen in der Kopfleiste
+                    // stand: hier steht er an jedem Feld, für das er gilt.
+                    input.title = 'Jährlich oder monatlich eintragen – die andere Spalte rechnet sich.';
                     input.setAttribute('aria-label',
                         `${row.prefix ? row.prefix + ' – ' : ''}${row.label} – ${period === 'jaehrlich' ? 'jährlich' : 'monatlich'}`);
                     td.appendChild(input);
@@ -2432,7 +4132,12 @@
                 tbody.appendChild(tr);
 
                 if (hasCommentExpander) {
+                    // Reihenfolge: Position, Kommentar, Anpassung. Die
+                    // Anpassung steht unter dem Kommentar (Wunsch des
+                    // Benutzers) und bleibt als eigene Zeile trotzdem
+                    // spaltenbündig zu den Beträgen darüber.
                     tbody.appendChild(makeCommentRow(row, groupId));
+                    tbody.appendChild(makeAdjustmentRow(row, groupId));
                 }
             });
 
@@ -2450,11 +4155,359 @@
     }
 
     // ----------------------------------------------------------------
+    // Stände in der Zusammenfassung
+    // ----------------------------------------------------------------
+    // Die einzige Stelle, die das heutige Datum liest (lokales Datum, JJJJ-MM-TT).
+    function heuteIso() {
+        const d = new Date();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${d.getFullYear()}-${mm}-${dd}`;
+    }
+
+    // Eine Zeile unter der Differenz. Zahlen wie in der Differenz-Zeile
+    // (formatComputed), Einfärbung ebenfalls wie bei #differenceRow.
+    function standZeile(stand, summe) {
+        const tr = document.createElement('tr');
+        tr.className = 'stand-row ' + (summe.diffY >= 0 ? 'positive' : 'negative');
+        tr.dataset.stand = stand.key;
+
+        const label = document.createElement('td');
+        label.className = 'label-cell';
+        label.textContent = stand.key === 'offen' ? 'mit allen Vorschlägen' : 'ab ' + datumAnzeige(stand.ab);
+        if (stand.faellig) {
+            // «heute» wendet nichts an, auch nichts mit verstrichenem Datum.
+            const hinweis = document.createElement('span');
+            hinweis.className = 'stand-hinweis';
+            hinweis.textContent = 'Datum schon verstrichen, in «heute» nicht eingerechnet';
+            label.appendChild(hinweis);
+        }
+        tr.appendChild(label);
+
+        [['jaehrlich', summe.diffY], ['monatlich', summe.diffM]].forEach(([period, wert]) => {
+            const td = document.createElement('td');
+            const span = document.createElement('span');
+            span.className = 'computed';
+            span.dataset.stand = stand.key;
+            span.dataset.period = period;
+            span.textContent = formatComputed(wert);
+            td.appendChild(span);
+            tr.appendChild(td);
+        });
+        return tr;
+    }
+
+    // ----------------------------------------------------------------
+    // Anpassungsliste in der Kopfleiste
+    // ----------------------------------------------------------------
+    // Das Datum ist nur die Überschrift einer Gruppe: mehrere Positionen können
+    // auf denselben Tag fallen, ein Datum nennt also kein einzelnes Sprungziel.
+    // Gesprungen wird über den Positionsnamen, ein Eintrag = ein Ziel.
+    function rowAnzeigename(rowId) {
+        const hit = lookupRow(rowId);
+        if (!hit) return rowId;
+        return (hit.row.prefix ? hit.row.prefix + ' – ' : '') + hit.row.label;
+    }
+
+    // Mit Vorzeichen für Zunahmen; auf Rappen gerundet, damit Rechenreste wie
+    // -1e-14 nicht als «-0.00» erscheinen.
+    function deltaAnzeige(n) {
+        const r = Math.round(n * 100) / 100;
+        return (r > 0 ? '+' : '') + formatComputed(r);
+    }
+
+    function closeAdjustmentsPanel() {
+        const panel = $('#adjustmentsPanel');
+        const btn = $('#adjustmentsBtn');
+        if (!panel || panel.hidden) return;
+        panel.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+    }
+
+    // Die Anleitung: derselbe Mechanismus wie bei der Anpassungsliste. Das
+    // Panel überlagert, darum ändert sich die Höhe der Kopfleiste nicht.
+    function toggleHilfePanel() {
+        const panel = $('#hilfePanel');
+        const oeffnen = panel.hidden;
+        panel.hidden = !oeffnen;
+        $('#hilfeBtn').setAttribute('aria-expanded', oeffnen ? 'true' : 'false');
+    }
+
+    function closeHilfePanel() {
+        const panel = $('#hilfePanel');
+        if (!panel || panel.hidden) return;
+        panel.hidden = true;
+        $('#hilfeBtn').setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleAdjustmentsPanel() {
+        const panel = $('#adjustmentsPanel');
+        const btn = $('#adjustmentsBtn');
+        const oeffnen = panel.hidden;
+        panel.hidden = !oeffnen;
+        btn.setAttribute('aria-expanded', oeffnen ? 'true' : 'false');
+    }
+
+    // Klappt die Zeile auf und scrollt sie in den Blick. Die Kopfleiste klebt
+    // oben (.sticky-head); ohne ihre Höhe abzuziehen läge die Zeile darunter.
+    function springeZuZeile(rowId) {
+        closeAdjustmentsPanel();
+        // Sonst läge die Überlagerung genau über der Zeile, zu der gesprungen
+        // wurde — die Kopfleiste ist der Anker des Panels.
+        closeHilfePanel();
+        const tr = $(`tr[data-row-id="${rowId}"]`);
+        if (!tr) return;
+        setRowExpanded(rowId, true);
+        const kopf = $('.sticky-head');
+        const abstand = (kopf ? kopf.offsetHeight : 0) + 12;
+        const oben = tr.getBoundingClientRect().top + window.scrollY - abstand;
+        window.scrollTo({ top: Math.max(0, oben) });
+        tr.classList.remove('adj-sprung');
+        void tr.offsetWidth;    // Animation neu starten, auch beim zweiten Sprung
+        tr.classList.add('adj-sprung');
+        setTimeout(() => tr.classList.remove('adj-sprung'), 1700);
+        // Das Panel mit dem geklickten Knopf ist zu; ohne Ziel fiele der Fokus
+        // auf <body> und die Tastatur müsste von vorn beginnen.
+        const expander = $(`.row-expander[data-row-id="${rowId}"]`);
+        if (expander) expander.focus({ preventScroll: true });
+    }
+
+    // «Neue Version aus diesem Stand»: Werte mit den bis zum Stichtag
+    // eingelösten Anpassungen, Basis = die Version, aus der gerechnet wurde
+    // (daran hängen «Δ vs. Basis» und «Unterschiede pro Position»). Der Dialog
+    // listet, was der Stand einlösen würde; was dort abgewählt wird, behält
+    // seinen Wert und bleibt wie die späteren und undatierten Anpassungen mit
+    // seinem Datum in der neuen Version stehen. Die Wahl gilt nur für diesen
+    // einen Druck und wird nirgends gespeichert. Kommentare und private Notiz
+    // beginnen leer.
+    async function neueVersionAusStand(standKey) {
+        closeAdjustmentsPanel();
+        captureFormToActiveVersion();
+        const active = getActiveVersion();
+        if (!active) return;
+        const bekannt = bekannteAnpassungen(active.adjustments || {});
+        const staende = stichtagListe(bekannt, heuteIso());
+        const result = await openNewVersionModal({
+            name: neueVersionName(standKey),
+            basedOnId: active.id,
+            standKey: standKey,
+            eintraege: einloesbareEintraege(bekannt, staende, active.values || {}, standKey),
+        });
+        if (!result) return;
+        captureFormToActiveVersion();
+        versionAnlegen(getActiveVersion(), result);
+        toast(`Version „${result.name}" erstellt.`);
+    }
+
+    // ----------------------------------------------------------------
+    // Vorschau: das Budget, wie es ab einem Stichtag aussieht
+    // ----------------------------------------------------------------
+    // Die Vorschau stellt gerechnete Werte in dasselbe Formular, in das sonst
+    // erfasst wird. Nichts davon darf in die Version zurück. Zwei Dinge halten
+    // das zusammen: die Sperre ganz oben in captureFormToActiveVersion und der
+    // Umstand, dass enterPreview genau einmal erfasst, bevor es sie setzt.
+    // Die Felder gehen zusätzlich zu — nicht als Schutz (disabled ändert .value
+    // nicht), sondern damit niemand erst tippt und sich danach wundert.
+
+    // Öffnet die Vorschau oder wechselt in ihr den Stand. Ein Einstieg für
+    // beides: der zweite Aufruf erfasst nicht mehr (previewStand steht schon).
+    function enterPreview(standKey) {
+        if (!getActiveVersion()) return;
+        if (!state.previewStand) {
+            // Einmal erfassen, SOLANGE die Sperre noch offen ist — sonst wären
+            // die zuletzt getippten Werte beim Verlassen verloren.
+            captureFormToActiveVersion();
+            closeAdjustmentsPanel();
+            // Der Streifen ist in der Vorschau verborgen; ein offen
+            // stehendes Panel hinge sonst an einer Leiste, die es nicht
+            // mehr gibt.
+            closeHilfePanel();
+            // Erst die Vorschau setzen, dann sperren: Ein gesperrtes Feld, das
+            // den Fokus hatte, feuert blur, und dessen Handler schaut hierauf.
+            state.previewStand = standKey;
+            $$('input.amount-input').forEach((input) => { input.disabled = true; });
+            $$('.adj-input').forEach((input) => { input.disabled = true; });
+            // Die Notiz gehört zur Version und wird in der Vorschau nicht
+            // zurückgeschrieben (Sperre in capture) – ein offenes Feld
+            // verschluckte, was jemand hineintippt.
+            $('#privateNote').disabled = true;
+        }
+        state.previewStand = standKey;
+        fuelleVorschau();
+        renderPreviewBar();
+        recomputeAll();
+        const btn = $('#previewBtn');
+        if (btn) btn.setAttribute('aria-pressed', 'true');
+    }
+
+    // Die Betragsfelder zeigen den gerechneten Stand. Gelesen wird aus der
+    // Version, nie aus dem Formular: dort stehen schon gerechnete Werte.
+    // 0 erscheint als leeres Feld, genau wie bei einem erfassten 0 (formatAmount).
+    function fuelleVorschau() {
+        const active = getActiveVersion();
+        if (!active) return;
+        const anpassungen = bekannteAnpassungen(active.adjustments);
+        const werte = werteFuerStand(active.values, anpassungen, state.previewStand);
+        $$('input.amount-input').forEach((input) => {
+            const wert = werte[`${input.dataset.rowId}.${input.dataset.period}`];
+            input.value = Number.isFinite(wert) ? formatAmount(wert) : '';
+        });
+    }
+
+    // Zurück zur erfassten Version. Erst fällt die Sperre, dann wird aus der
+    // Version neu gefüllt — die gerechneten Werte im Formular verschwinden
+    // dabei, ohne je gespeichert worden zu sein. Wege hierher: der
+    // Vorschau-Knopf, «Vorschau verlassen», ein Versionsreiter, Escape.
+    function leavePreview() {
+        if (!state.previewStand) return;
+        state.previewStand = null;
+        $$('input.amount-input').forEach((input) => { input.disabled = false; });
+        $$('.adj-input').forEach((input) => { input.disabled = false; });
+        $('#privateNote').disabled = false;
+        hydrateFormFromActiveVersion();
+        const btn = $('#previewBtn');
+        if (btn) btn.setAttribute('aria-pressed', 'false');
+        renderPreviewBar();
+        recomputeAll();
+    }
+
+    // Die Stand-Leiste: je Stand ein Knopf, nur sichtbar, solange die Vorschau
+    // offen ist. «heute» steht mit darin — es ist das gesperrte Abbild der
+    // Version, kein Ausgang; hinaus geht es über «Vorschau verlassen».
+    function renderPreviewBar() {
+        const bar = $('#previewBar');
+        const liste = $('#previewStands');
+        if (!bar || !liste) return;
+        bar.hidden = !state.previewStand;
+        document.body.classList.toggle('mode-preview', !!state.previewStand);
+        liste.textContent = '';
+        // Die Kennzeichnung für den Ausdruck folgt dem Stand; leer, wo nichts
+        // Gerechnetes gezeigt wird (keine Vorschau, Stand «heute»).
+        const marker = $('#printStandMarker');
+        if (marker) marker.textContent = standKennzeichnung(state.previewStand);
+        if (!state.previewStand) return;
+        const active = getActiveVersion();
+        const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
+        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'preview-stand';
+            b.dataset.stand = stand.key;
+            b.textContent = stand.key === 'heute' ? 'heute'
+                : stand.key === 'offen' ? 'mit allen Vorschlägen'
+                : 'ab ' + datumAnzeige(stand.ab);
+            b.title = stand.key === 'heute'
+                ? 'Die erfassten Werte, hier nur zum Ansehen'
+                : 'Alle Anpassungen bis zu diesem Stand eingerechnet';
+            b.setAttribute('aria-pressed', stand.key === state.previewStand ? 'true' : 'false');
+            b.addEventListener('click', () => {
+                enterPreview(stand.key);
+                const neu = $(`#previewStands button[data-stand="${stand.key}"]`);
+                if (neu) neu.focus();
+            });
+            liste.appendChild(b);
+        });
+    }
+
+    function renderAdjustmentList(formWerte) {
+        const btn = $('#adjustmentsBtn');
+        const panel = $('#adjustmentsPanel');
+        if (!btn || !panel) return;
+        const active = getActiveVersion();
+        const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
+        const staende = stichtagListe(anpassungen, heuteIso());
+        const gruppen = anpassungsGruppen(anpassungen, staende, formWerte || {});
+        const anzahl = gruppen.reduce((n, g) => n + g.eintraege.length, 0);
+
+        panel.textContent = '';
+        btn.hidden = anzahl === 0;
+        // Ohne Anpassung gibt es nichts vorzuschauen. Der Knopf verschwindet
+        // mit der Liste; in der Vorschau kann die Zahl nicht auf 0 fallen (die
+        // Anpassungsfelder sind gesperrt), darum braucht es hier kein Verlassen.
+        const vorschau = $('#previewBtn');
+        if (vorschau) vorschau.hidden = anzahl === 0;
+        if (anzahl === 0) {
+            closeAdjustmentsPanel();
+            return;
+        }
+        btn.textContent = `⏱ ${anzahl} ${anzahl === 1 ? 'Anpassung' : 'Anpassungen'}`;
+
+        gruppen.forEach((g) => {
+            const gruppe = document.createElement('section');
+            gruppe.className = 'adj-group';
+            gruppe.dataset.stand = g.key;
+
+            const kopf = document.createElement('h3');
+            kopf.className = 'adj-group-head';
+            const titel = document.createElement('span');
+            titel.textContent = g.key === 'offen' ? 'Ohne Datum' : datumAnzeige(g.ab);
+            kopf.appendChild(titel);
+            if (g.faellig) {
+                const f = document.createElement('span');
+                f.className = 'adj-faellig';
+                f.textContent = 'fällig seit ' + datumAnzeige(g.ab);
+                kopf.appendChild(f);
+            }
+            const n = g.eintraege.length;
+            const summe = document.createElement('span');
+            summe.className = 'adj-group-sum';
+            summe.textContent = `${n} ${n === 1 ? 'Position' : 'Positionen'} · ${deltaAnzeige(g.deltaM)} / Monat`;
+            kopf.appendChild(summe);
+            gruppe.appendChild(kopf);
+
+            const liste = document.createElement('ul');
+            liste.className = 'adj-list';
+            g.eintraege
+                .map((e) => ({ e: e, name: rowAnzeigename(e.rowId) }))
+                .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+                .forEach(({ e, name }) => {
+                    const li = document.createElement('li');
+                    li.className = 'adj-item';
+
+                    const link = document.createElement('button');
+                    link.type = 'button';
+                    link.className = 'adj-link';
+                    link.textContent = name;
+                    link.title = 'Zur Position springen';
+                    link.addEventListener('click', () => springeZuZeile(e.rowId));
+                    li.appendChild(link);
+
+                    const aenderung = document.createElement('span');
+                    aenderung.className = 'adj-change';
+                    aenderung.title = `Jährlich: ${formatComputed(e.altY)} → ${formatComputed(e.neuY)}`;
+                    aenderung.append(`${formatComputed(e.altM)} → ${formatComputed(e.neuM)} · `);
+                    const delta = document.createElement('span');
+                    delta.className = 'adj-delta';
+                    delta.textContent = deltaAnzeige(e.deltaM);
+                    aenderung.appendChild(delta);
+                    li.appendChild(aenderung);
+                    liste.appendChild(li);
+                });
+            gruppe.appendChild(liste);
+
+            const neu = document.createElement('button');
+            neu.type = 'button';
+            neu.className = 'adj-newversion';
+            neu.textContent = 'Neue Version aus diesem Stand';
+            neu.title = g.key === 'offen'
+                ? 'Anpassungen mit Betrag einrechnen (Auswahl im nächsten Schritt) und als neue Version anlegen'
+                : `Anpassungen bis einschliesslich ${datumAnzeige(g.ab)} einrechnen (Auswahl im nächsten Schritt) und als neue Version anlegen`;
+            neu.addEventListener('click', () => neueVersionAusStand(g.key));
+            gruppe.appendChild(neu);
+
+            panel.appendChild(gruppe);
+        });
+    }
+
+    // ----------------------------------------------------------------
     // Compute & re-render all derived values
     // ----------------------------------------------------------------
     function recomputeAll() {
         // Per-group subtotals (income + expense amounts) and reductions
         const groupTotals = {};
+        // Die Werte, wie sie jetzt im Formular stehen (für die Stände): die
+        // Version selbst wird erst beim Wechseln/Speichern nachgezogen.
+        const formWerte = {};
 
         Object.keys(SCHEMA).forEach((groupId) => {
             let yearly = 0;
@@ -2465,11 +4518,26 @@
                 const monthlyInput = $(`input[data-row-id="${row.id}"][data-period="monatlich"]`);
                 const y = parseAmount(yearlyInput?.value);
                 const m = parseAmount(monthlyInput?.value);
+                formWerte[`${row.id}.jaehrlich`] = y;
+                formWerte[`${row.id}.monatlich`] = m;
 
                 // Per-row total/year: prefer yearly if present, otherwise monthly*12
                 const rowTotal = y || (m * 12);
                 const rowTotalEl = $(`span[data-row-total="${row.id}"]`);
                 if (rowTotalEl) rowTotalEl.textContent = formatComputed(rowTotal);
+
+                // Vierte Spalte der Anpassungszeile: was sie gegenüber dem
+                // erfassten Jahreswert ausmacht. Genau das Kopfrechnen, das
+                // die eigene Zeile loswerden soll.
+                const deltaEl = $(`span[data-adj-delta="${row.id}"]`);
+                if (deltaEl) {
+                    const unterschied = anpassungUnterschied(
+                        getActiveVersion()?.adjustments?.[row.id], rowTotal);
+                    const wirkung = anpassungWirkung(unterschied, groupId === 'einnahmen');
+                    deltaEl.textContent = unterschied === null ? '' : deltaAnzeige(unterschied);
+                    deltaEl.classList.toggle('ist-gut', wirkung === 'gut');
+                    deltaEl.classList.toggle('ist-schlecht', wirkung === 'schlecht');
+                }
 
                 yearly  += y || (m * 12);
                 monthly += m || (y / 12);
@@ -2511,6 +4579,29 @@
         const diffRow = $('#differenceRow');
         diffRow.classList.toggle('positive', diffY >= 0);
         diffRow.classList.toggle('negative', diffY < 0);
+
+        // Weitere Stände: «heute» steht schon in der Differenz-Zeile und wird
+        // hier nicht wiederholt. Hängt an keiner Version und an keinem Reiter.
+        const standBlock = $('#summaryStands');
+        standBlock.textContent = '';
+        // In der Vorschau stehen im Formular schon gerechnete Werte. Von dort
+        // weiterzurechnen zeigte den Zielbetrag als Istwert und ein Delta von
+        // 0 — die Stände und die Anpassungsliste nehmen darum die erfassten
+        // Werte der Version. Ausserhalb der Vorschau sind beide dasselbe.
+        const active = getActiveVersion();
+        const basisWerte = (state.previewStand && active) ? active.values : formWerte;
+        const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
+        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+            if (stand.key === 'heute') return;
+            const summe = summen(SCHEMA, werteFuerStand(basisWerte, anpassungen, stand.key));
+            // Der Stand, der gerade im Formular steht, wird hervorgehoben:
+            // dieselbe Zahl wie in der Differenz-Zeile darüber.
+            const zeile = standZeile(stand, summe);
+            if (stand.key === state.previewStand) zeile.classList.add('is-preview');
+            standBlock.appendChild(zeile);
+        });
+
+        renderAdjustmentList(basisWerte);
     }
 
     // ----------------------------------------------------------------
@@ -2531,6 +4622,8 @@
                     createdAt: v.createdAt,
                     values: { ...v.values },
                     comments: { ...(v.comments || {}) },
+                    adjustments: { ...(v.adjustments || {}) },
+                    privateNote: v.privateNote || '',
                 })),
                 activeVersionId: state.activeVersionId,
             },
@@ -2622,15 +4715,20 @@
         return [originalVersion, reducedVersion];
     }
 
+    // Gibt zurück, wie viele sichtbare Anpassungen ohne Betrag beim Laden
+    // wegfielen (0 ist der Normalfall). Die Datei selbst bleibt unberührt.
     function hydrate(payload) {
+        let verworfeneAnpassungen = 0;
+        leavePreview();                  // eine geladene Datei trifft nie auf eine offene Vorschau
         // Reset state cleanly so a load fully replaces the prior state.
         state.versions = [];
         state.activeVersionId = null;
 
         if (!payload || !payload.data) {
             initSingleVersionState();
-        } else if (payload.version === 4 && Array.isArray(payload.data.versions)) {
-            // Native v4 — load versions array.
+        } else if (payload.version >= 4 && Array.isArray(payload.data.versions)) {
+            // Native v4/v5 — load versions array. v4 has no adjustments or
+            // privateNote; they read as {} and ''.
             state.versions = payload.data.versions.map((v) => ({
                 id: v.id || genVersionId(),
                 name: typeof v.name === 'string' ? v.name : 'Version',
@@ -2638,7 +4736,19 @@
                 createdAt: v.createdAt || new Date().toISOString(),
                 values: { ...(v.values || {}) },
                 comments: { ...(v.comments || {}) },
+                adjustments: (v.adjustments && typeof v.adjustments === 'object')
+                    ? { ...v.adjustments } : {},
+                privateNote: typeof v.privateNote === 'string' ? v.privateNote : '',
             }));
+            // Eine Datei aus der Zeit, als ein Datum ohne Betrag erlaubt war,
+            // kann solche Einträge enthalten. Sie passen nichts an und fallen
+            // hier weg; was davon sichtbar war, meldet ladeHinweis nach dem Öffnen.
+            const bekannteIds = Object.keys(ROW_INDEX);
+            state.versions.forEach((v) => {
+                const b = anpassungenBereinigen(v.adjustments, bekannteIds);
+                v.adjustments = b.behalten;
+                verworfeneAnpassungen += b.sichtbar;
+            });
             if (state.versions.length === 0) initSingleVersionState();
             const requested = payload.data.activeVersionId;
             state.activeVersionId = (requested && getVersionById(requested))
@@ -2648,6 +4758,8 @@
             // Legacy v1/v2/v3 — possibly split into Original + Nach Reduktion.
             state.versions = buildLegacyVersions(payload);
             state.activeVersionId = state.versions[0].id;
+            // The migration knows no adjustments or private note.
+            state.versions.forEach((v) => { v.adjustments = {}; v.privateNote = ''; });
         }
 
         hydrateFormFromActiveVersion();
@@ -2655,6 +4767,16 @@
         renderVersionTabs();
         renderVersionsOverview();
         recomputeAll();
+        return verworfeneAnpassungen;
+    }
+
+    // Der Hinweis nach dem Öffnen. Steht in einem Satz mit der Erfolgsmeldung,
+    // weil es nur einen Toast gibt und der zweite den ersten überschriebe.
+    function ladeHinweis(erfolg, verworfen) {
+        if (!verworfen) return erfolg;
+        return erfolg + (verworfen === 1
+            ? ' Eine Anpassung bestand nur aus einem Datum, ohne Betrag, und wurde nicht übernommen.'
+            : ` ${verworfen} Anpassungen bestanden nur aus einem Datum, ohne Betrag, und wurden nicht übernommen.`);
     }
 
     function isValidPayload(obj) {
@@ -2666,8 +4788,8 @@
         if (typeof obj.version !== 'number') return false;
         if (!SUPPORTED_VERSIONS.has(obj.version)) return false;
         if (!obj.data || typeof obj.data !== 'object') return false;
-        // v4: versions array. v1-v3: legacy values map.
-        if (obj.version === 4) return Array.isArray(obj.data.versions);
+        // v4/v5: versions array. v1-v3: legacy values map.
+        if (obj.version >= 4) return Array.isArray(obj.data.versions);
         return typeof obj.data.values === 'object';
     }
 
@@ -2785,6 +4907,39 @@
             tbody.appendChild(tr);
         });
 
+        // ---- Stände der aktiven Version -------------------------------
+        // Abgesetzte Zeilen unter den Versionen: dieselben Zahlen wie in der
+        // Zusammenfassung, hier neben den Versionen. Gerechnet wird aus den
+        // erfassten Werten der Version, nicht aus dem Formular — in der
+        // Vorschau stehen dort gerechnete Zahlen. Das Gate oben bleibt: die
+        // Stände kommen nur dazu, wo die Übersicht ohnehin sichtbar ist.
+        const aktiv = getActiveVersion();
+        const standBasis = summen(SCHEMA, aktiv ? aktiv.values : {});
+        const anpassungen = bekannteAnpassungen(aktiv ? aktiv.adjustments : {});
+        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+            if (stand.key === 'heute') return;   // steht als Version schon in der Tabelle
+            const summe = summen(SCHEMA, werteFuerStand(aktiv.values, anpassungen, stand.key));
+            const delta = summe.diffY - standBasis.diffY;
+            const tr = document.createElement('tr');
+            tr.className = 'overview-stand-row';
+            tr.dataset.stand = stand.key;
+            const name = stand.key === 'offen'
+                ? 'Stand mit allen Vorschlägen'
+                : 'Stand ab ' + datumAnzeige(stand.ab);
+            const diffCls = summe.diffY >= 0 ? 'is-positive' : 'is-negative';
+            tr.innerHTML = `
+                <td>${escapeHtml(name)}${stand.faellig
+                    ? ' <span class="stand-faellig">Datum verstrichen</span>' : ''}</td>
+                <td>${escapeHtml(aktiv.name)}</td>
+                <td class="num-cell">${formatComputed(summe.einnahmenY)}</td>
+                <td class="num-cell">${formatComputed(summe.ausgabenY)}</td>
+                <td class="num-cell ${diffCls}">${formatComputed(summe.diffY)}</td>
+                <td class="num-cell"><span class="${delta >= 0 ? 'is-positive' : 'is-negative'}">${
+                    delta > 0 ? '+' : ''}${formatComputed(delta)}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
         // ---- Per-row diff detail block --------------------------------
         renderVersionsDetail();
     }
@@ -2869,17 +5024,24 @@
     // Promise that resolves to either the chosen value or null/false on cancel.
     // Buttons are cloned-replaced to drop previous listeners before re-binding.
 
-    function openNewVersionModal() {
+    // `vorgabe` (optional, aus der Anpassungsliste): { name, basedOnId, eintraege }.
+    // Dann ist die Basis fest (die Werte stammen aus genau dieser Version),
+    // die Auswahl «Basiert auf» entfällt und der Name ist vorausgefüllt.
+    // `eintraege` (einloesbareEintraege) erscheinen als Liste mit Häkchen,
+    // alle gesetzt. Das Ergebnis nennt die abgewählten rowIds (`abgewaehlt`,
+    // leer ohne Liste); mehr wird davon nicht festgehalten.
+    function openNewVersionModal(vorgabe) {
         const fieldset = $('#newVersionBasedOn');
         const nameInput = $('#newVersionName');
         fieldset.innerHTML = '';
+        fieldset.hidden = !!vorgabe;
 
         const empty = document.createElement('label');
         empty.className = 'radio-option';
         empty.innerHTML = '<input type="radio" name="basedOn" value=""> <span>Leer beginnen</span>';
-        fieldset.appendChild(empty);
+        if (!vorgabe) fieldset.appendChild(empty);
 
-        state.versions.forEach((v) => {
+        if (!vorgabe) state.versions.forEach((v) => {
             const lbl = document.createElement('label');
             lbl.className = 'radio-option';
             const isActive = v.id === state.activeVersionId;
@@ -2888,8 +5050,41 @@
             fieldset.appendChild(lbl);
         });
 
-        nameInput.value = '';
-        nameInput.placeholder = 'z. B. ' + suggestVersionName();
+        // Welche Version ist gerade als Grundlage angehakt?
+        const gewaehlteBasis = () => {
+            if (vorgabe) return state.versions.find((v) => v.id === vorgabe.basedOnId) || null;
+            const id = fieldset.querySelector('input[name="basedOn"]:checked')?.value || '';
+            return id ? state.versions.find((v) => v.id === id) || null : null;
+        };
+
+        // Derselbe Dialog für beide Wege: Aus der Anpassungsliste kommt die
+        // Auswahl fertig mit, aus der Kopfleiste richtet sie sich nach der
+        // angehakten Grundlage — und wechselt mit ihr.
+        const kommentareVon = (v) => (v && v.comments) || {};
+        const kommentarFeld = $('#newVersionKommentare');
+        // Jeder Dialog beginnt mit «übernehmen»: Wer einmal abgewählt hat,
+        // soll beim nächsten Mal nicht stillschweigend ohne Kommentare
+        // dastehen.
+        $('#newVersionUebrigeKommentare').checked = true;
+        // Kommentare gibt es nur mit einer Grundlage: «Leer beginnen» hat keine.
+        const zeigeKommentarfeld = () => { kommentarFeld.hidden = !gewaehlteBasis(); };
+
+        let boxen = fuelleEinloesenListe(
+            vorgabe ? vorgabe.eintraege : einloesbareEintraegeVon(gewaehlteBasis()),
+            kommentareVon(gewaehlteBasis()));
+        zeigeKommentarfeld();
+        if (!vorgabe) {
+            fieldset.querySelectorAll('input[name="basedOn"]').forEach((radio) => {
+                radio.addEventListener('change', () => {
+                    const basis = gewaehlteBasis();
+                    boxen = fuelleEinloesenListe(einloesbareEintraegeVon(basis), kommentareVon(basis));
+                    zeigeKommentarfeld();
+                });
+            });
+        }
+
+        nameInput.value = vorgabe ? vorgabe.name : '';
+        nameInput.placeholder = 'z. B. ' + (vorgabe ? vorgabe.name : suggestVersionName());
 
         return new Promise((resolve) => {
             const m = openModal('modalNewVersion');
@@ -2900,12 +5095,96 @@
             };
             m.querySelector('[data-modal-action="cancel"]').addEventListener('click', () => cleanup(null));
             m.querySelector('[data-modal-action="confirm"]').addEventListener('click', () => {
-                const name = (nameInput.value || '').trim() || suggestVersionName();
-                const basedOnId = m.querySelector('input[name="basedOn"]:checked')?.value || null;
-                cleanup({ name, basedOnId });
+                const name = (nameInput.value || '').trim() || (vorgabe ? vorgabe.name : suggestVersionName());
+                const basedOnId = vorgabe
+                    ? vorgabe.basedOnId
+                    : (m.querySelector('input[name="basedOn"]:checked')?.value || null);
+                const abgewaehlt = boxen.filter((b) => !b.checked).map((b) => b.value);
+                // Ohne aufgelistete Anpassung gibt es nichts einzulösen: dann
+                // entsteht eine gewöhnliche Kopie (oder eine leere Version).
+                const standKey = boxen.length === 0 ? null : (vorgabe ? vorgabe.standKey : 'offen');
+                const kommentare = {};
+                $$('#newVersionEinloesenListe .einloesen-kommentar').forEach((feld) => {
+                    kommentare[feld.dataset.kommentarFuer] = feld.value;
+                });
+                const uebrigeKommentare = !kommentarFeld.hidden
+                    && $('#newVersionUebrigeKommentare').checked;
+                cleanup({ name, basedOnId, abgewaehlt, standKey, kommentare, uebrigeKommentare });
             });
             setTimeout(() => nameInput.focus(), 50);
         });
+    }
+
+    // Baut die Liste «Diese Anpassungen einrechnen» im Dialog neu auf und gibt
+    // die Häkchen zurück. Ohne Einträge bleibt der Abschnitt zu (der gewöhnliche
+    // Dialog «Neue Version»). Jede Zeile beginnt angehakt; der Satz darunter
+    // zählt bei jeder Änderung neu mit. Die Häkchen entstehen mit dem Dialog
+    // und verschwinden mit ihm: Gemerkt wird nichts.
+    function fuelleEinloesenListe(eintraege, comments) {
+        const abschnitt = $('#newVersionEinloesen');
+        const liste = $('#newVersionEinloesenListe');
+        const text = $('#newVersionEinloesenText');
+        liste.textContent = '';
+        text.textContent = '';
+        const zeilen = (eintraege || [])
+            .map((e) => ({ e: e, name: rowAnzeigename(e.rowId) }))
+            .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+        abschnitt.hidden = zeilen.length === 0;
+        // Bei einem Stand über mehrere Daten sagt jede Zeile, von wann sie ist.
+        const gemischt = zeilen.some(({ e }) => e.ab !== zeilen[0].e.ab);
+        const boxen = zeilen.map(({ e, name }) => {
+            // Eintrag = Auswahlzeile plus Kommentarfeld. Das Feld steht
+            // bewusst NEBEN dem <label> und nicht darin: ein Klick ins
+            // Textfeld würde sonst das Häkchen umschalten.
+            const eintrag = document.createElement('div');
+            eintrag.className = 'einloesen-eintrag';
+            const zeile = document.createElement('label');
+            zeile.className = 'radio-option';
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.value = e.rowId;
+            box.checked = true;
+            zeile.appendChild(box);
+            const titel = document.createElement('span');
+            titel.className = 'einloesen-name';
+            titel.textContent = name;
+            if (gemischt) {
+                const ab = document.createElement('span');
+                ab.className = 'einloesen-ab';
+                ab.textContent = e.ab ? 'ab ' + datumAnzeige(e.ab) : 'ohne Datum';
+                titel.appendChild(ab);
+            }
+            zeile.appendChild(titel);
+            const betrag = document.createElement('span');
+            betrag.className = 'einloesen-betrag';
+            betrag.textContent = `${formatComputed(e.altM)} → ${formatComputed(e.neuM)} · ${deltaAnzeige(e.deltaM)}`;
+            betrag.title = `Jährlich: ${formatComputed(e.altY)} → ${formatComputed(e.neuY)}`;
+            zeile.appendChild(betrag);
+            eintrag.appendChild(zeile);
+
+            // Der Kommentar der Position, hier änderbar: Was in der neuen
+            // Version stehen soll, schreibt man dort, wo man über sie
+            // entscheidet (Punkt 4).
+            const kommentar = document.createElement('input');
+            kommentar.type = 'text';
+            kommentar.className = 'einloesen-kommentar';
+            kommentar.dataset.kommentarFuer = e.rowId;
+            kommentar.value = (comments && typeof comments[e.rowId] === 'string') ? comments[e.rowId] : '';
+            kommentar.placeholder = 'Kommentar für die neue Version (darf leer bleiben)';
+            kommentar.setAttribute('aria-label', `Kommentar zu ${name} in der neuen Version`);
+            eintrag.appendChild(kommentar);
+
+            liste.appendChild(eintrag);
+            return box;
+        });
+        const nachzaehlen = () => {
+            text.textContent = boxen.length
+                ? neueVersionAuswahlText(boxen.filter((b) => b.checked).length, boxen.length)
+                : '';
+        };
+        boxen.forEach((b) => b.addEventListener('change', nachzaehlen));
+        nachzaehlen();
+        return boxen;
     }
 
     function openRenameModal(versionId) {
@@ -2959,10 +5238,52 @@
         });
     }
 
+    // Die einlösbaren Anpassungen einer Version, für den Dialog. «offen»
+    // heisst hier «alle» — siehe einloesbareEintraege.
+    function einloesbareEintraegeVon(version) {
+        if (!version) return [];
+        const bekannt = bekannteAnpassungen(version.adjustments || {});
+        return einloesbareEintraege(bekannt, stichtagListe(bekannt, heuteIso()),
+            version.values || {}, 'offen');
+    }
+
+    // Beide Wege zum Dialog enden hier: der Knopf «Neue Version» in der
+    // Kopfleiste und «Neue Version aus diesem Stand» in der Anpassungsliste.
+    // Ohne Stand entsteht eine gewöhnliche Version, mit Stand eine, in der die
+    // angehakten Anpassungen eingerechnet sind.
+    function versionAnlegen(basis, result) {
+        // Kommentare (Punkt 4): die der aufgeführten Positionen so, wie sie im
+        // Dialog stehen; alle übrigen nur mit gesetztem Häkchen.
+        const kommentare = basis
+            ? kommentareFuerNeueVersion(basis.comments, result.kommentare, result.uebrigeKommentare)
+            : {};
+        if (!basis || !result.standKey) {
+            createVersion({ name: result.name, basedOnId: result.basedOnId, comments: kommentare });
+            return;
+        }
+        const alle = basis.adjustments || {};
+        const bekannt = bekannteAnpassungen(alle);
+        const werte = werteFuerStand(basis.values, bekannt, result.standKey, result.abgewaehlt);
+        const rest = anpassungenNachStand(bekannt, result.standKey, result.abgewaehlt);
+        // Einträge für Zeilen, die diese Seite nicht kennt, gehen nicht verloren.
+        const unbekannt = unbekannteAnpassungenBehalten(alle, Object.keys(ROW_INDEX));
+        Object.keys(unbekannt).forEach((id) => { rest[id] = { ...unbekannt[id] }; });
+        createVersion({ name: result.name, basedOnId: basis.id, values: werte, adjustments: rest, comments: kommentare });
+    }
+
     async function handleAddVersionClick() {
+        // Gleicher Ablauf wie aus der Anpassungsliste: Hat die gewählte
+        // Grundlage Anpassungen, führt der Dialog sie auf und rechnet die
+        // angehakten ein. Das war der einzige Weg, der gefehlt hat — alle
+        // Anpassungen auf einmal zu übernehmen.
+        captureFormToActiveVersion();
         const result = await openNewVersionModal();
         if (!result) return;
-        createVersion({ name: result.name, basedOnId: result.basedOnId });
+        captureFormToActiveVersion();
+        const basis = result.basedOnId
+            ? state.versions.find((v) => v.id === result.basedOnId) || null
+            : null;
+        versionAnlegen(basis, result);
         toast(`Version „${result.name}" erstellt.`);
     }
 
@@ -3017,14 +5338,14 @@
     // Toast notifications
     // ----------------------------------------------------------------
     let toastTimer = null;
-    function toast(message, type) {
+    function toast(message, type, dauer) {
         const t = $('#toast');
         t.textContent = message;
         t.className = 'toast is-visible' + (type ? ' is-' + type : '');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => {
             t.className = 'toast' + (type ? ' is-' + type : '');
-        }, 3200);
+        }, dauer || 3200);
     }
 
     // ----------------------------------------------------------------
@@ -3046,10 +5367,10 @@
                 if (!isValidPayload(payload)) throw new Error('Ungültiges Dateiformat');
                 state.fileHandle = handle;
                 state.currentFilename = file.name;
-                hydrate(payload);
+                const verworfen = hydrate(payload);
                 state.isDirty = false;
                 updateStatus();
-                toast(`«${file.name}» geöffnet`, 'success');
+                toast(ladeHinweis(`«${file.name}» geöffnet.`, verworfen), verworfen ? undefined : 'success', verworfen ? 9000 : undefined);
             } else {
                 // Fallback: hidden input upload
                 fallbackOpen();
@@ -3073,10 +5394,11 @@
                 const payload = JSON.parse(text);
                 if (!isValidPayload(payload)) throw new Error('Ungültiges Dateiformat');
                 state.currentFilename = file.name;
-                hydrate(payload);
+                const verworfen = hydrate(payload);
                 state.isDirty = false;
                 updateStatus();
-                toast(`«${file.name}» geladen. Speichern erstellt eine neue Datei.`, 'success');
+                toast(ladeHinweis(`«${file.name}» geladen. Speichern erstellt eine neue Datei.`, verworfen),
+                    verworfen ? undefined : 'success', verworfen ? 9000 : undefined);
             } catch (err) {
                 console.error(err);
                 toast('Datei konnte nicht gelesen werden: ' + (err.message || err), 'error');
@@ -3149,11 +5471,7 @@
     }
 
     function defaultFilename() {
-        const d = new Date();
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `budget-${yyyy}-${mm}-${dd}.json`;
+        return `budget-${heuteIso()}.json`;
     }
 
     // ----------------------------------------------------------------
@@ -3202,11 +5520,14 @@
     async function resetAll() {
         const ok = await confirmReset();
         if (!ok) return;
+        leavePreview();                  // sonst leerte es gesperrte Felder
         $$('input.amount-input').forEach((input) => { input.value = ''; });
         $$('textarea.comment-textarea').forEach((ta) => { ta.value = ''; });
+        $$('.adj-input').forEach((input) => { input.value = ''; });
+        $('#privateNote').value = '';
         // Collapse all expander rows; refresh their visual state.
         $$('.row-expander').forEach((btn) => {
-            const rowId = btn.getAttribute('aria-controls')?.replace(/^expander-/, '');
+            const rowId = btn.dataset.rowId;
             if (rowId) setRowExpanded(rowId, false);
         });
         // Wipe the active version's stored data so DOM and state stay aligned.
@@ -3214,6 +5535,8 @@
         if (active) {
             active.values = {};
             active.comments = {};
+            active.adjustments = {};
+            active.privateNote = '';
         }
         refreshAllExpanderUI();
         renderVersionsOverview();
@@ -3285,6 +5608,11 @@
         $$('textarea.comment-textarea').forEach((ta) => {
             ta.addEventListener('input', () => handleCommentInputEvent(ta));
         });
+        $$('.adj-input').forEach((input) => {
+            input.addEventListener('input',  () => handleAdjInputEvent(input));
+            input.addEventListener('change', () => handleAdjInputEvent(input));
+            input.addEventListener('blur',   (e) => handleAdjInputBlur(input, e));
+        });
     }
 
     function handleCommentInputEvent(ta) {
@@ -3321,6 +5649,14 @@
         }
         chkPrintComments.addEventListener('change', applyPrintComments);
         applyPrintComments();
+        // Die private Notiz druckt nur mit eigenem Häkchen, das nie vorgewählt ist.
+        const chkPrintPrivateNote = $('#chkPrintPrivateNote');
+        function applyPrintPrivateNote() {
+            document.body.classList.toggle('print-private-note', chkPrintPrivateNote.checked);
+        }
+        chkPrintPrivateNote.addEventListener('change', applyPrintPrivateNote);
+        applyPrintPrivateNote();
+        $('#privateNote').addEventListener('input', () => markDirty());
         // Vor dem Drucken Zeilen mit echtem Kommentartext markieren – unabhängig
         // davon, ob sie am Bildschirm auf- oder zugeklappt sind.
         // Der Text wandert dabei in den Druckblock, der – anders als die
@@ -3333,8 +5669,75 @@
                 const printBlock = tr.querySelector('.comment-print');
                 if (printBlock) printBlock.textContent = text;
             });
+            // Private Notiz: nur der Text wandert in den Druckblock; ob er
+            // gedruckt wird, entscheidet allein das Häkchen (CSS).
+            const notiz = $('#privateNote').value;
+            $('#privateNotePrint').textContent = notiz;
+            $('#privateNoteBox').classList.toggle('has-text', notiz.trim() !== '');
         });
         $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
+
+        // Anpassungsliste: Knopf schaltet um, Klick ausserhalb und Escape schliessen.
+        $('#adjustmentsBtn').addEventListener('click', toggleAdjustmentsPanel);
+        document.addEventListener('click', (e) => {
+            const wrap = $('#adjustmentsWrap');
+            if (!wrap || $('#adjustmentsPanel').hidden) return;
+            // composedPath: der angeklickte Knopf kann beim Neuzeichnen schon
+            // aus dem DOM sein, contains() fände ihn dann nicht mehr.
+            if (!e.composedPath().includes(wrap)) closeAdjustmentsPanel();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !$('#adjustmentsPanel').hidden) {
+                closeAdjustmentsPanel();
+                $('#adjustmentsBtn').focus();
+            }
+        });
+
+        // Hilfe-Panel: dasselbe Muster. In der Vorschau ist der Streifen
+        // verborgen und das Panel zu, darum braucht die Escape-Weiche der
+        // Vorschau keinen eigenen Zweig dafür.
+        $('#hilfeBtn').addEventListener('click', toggleHilfePanel);
+        document.addEventListener('click', (e) => {
+            const wrap = $('#hilfeWrap');
+            if (!wrap || $('#hilfePanel').hidden) return;
+            if (!e.composedPath().includes(wrap)) closeHilfePanel();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !$('#hilfePanel').hidden) {
+                closeHilfePanel();
+                $('#hilfeBtn').focus();
+            }
+        });
+
+        // Vorschau: der Knopf schaltet um, «Vorschau verlassen» und Escape
+        // führen hinaus. Drei sichtbare Wege zurück — ein gesperrtes Formular
+        // ohne Ausgang wäre das Schlimmste an dieser Ansicht.
+        $('#previewBtn').addEventListener('click', () => {
+            if (state.previewStand) {
+                leavePreview();
+            } else {
+                const active = getActiveVersion();
+                const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
+                enterPreview(ersterVorschauStand(stichtagListe(anpassungen, heuteIso())));
+            }
+            $('#previewBtn').focus();
+        });
+        $('#previewLeaveBtn').addEventListener('click', () => {
+            leavePreview();
+            const btn = $('#previewBtn');
+            if (btn && !btn.hidden) btn.focus();
+        });
+        document.addEventListener('keydown', (e) => {
+            // Nur wenn kein Dialog offen ist: der nimmt Escape für sich.
+            if (e.key !== 'Escape' || !state.previewStand) return;
+            if (document.querySelector('.modal-backdrop.is-open')) return;
+            // Ein offenes Anpassungs-Panel nimmt dieses Escape für sich (oben);
+            // sonst schlösse ein Tastendruck Panel und Vorschau zugleich.
+            if (!$('#adjustmentsPanel').hidden) return;
+            leavePreview();
+            const btn = $('#previewBtn');
+            if (btn && !btn.hidden) btn.focus();
+        });
 
         // Backdrop click on ANY modal triggers its cancel button.
         document.querySelectorAll('.modal-backdrop').forEach((m) => {
