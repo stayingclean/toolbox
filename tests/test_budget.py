@@ -1794,12 +1794,17 @@ def test_unterschiede_bekommen_das_paar_als_argument():
     assert "renderVersionsDetail(paar.a, paar.b)" in text
 
 
-def test_diagramm_drei_rechnet_nicht_ueber_die_dom_fassung():
-    """computeTotalsForVersion rechnet dasselbe wie summen -- eine alte
-    Doppelung. Das Diagramm vergroessert sie nicht."""
-    block = _funktionsblock("renderGrafikVersionen")
-    assert "summen(SCHEMA" in block
-    assert "computeTotalsForVersion" not in block
+def test_jede_zahl_steht_nur_an_einer_stelle():
+    """«Der Weg» und die Saeulen zeigen beide, was je Version bleibt -- ein
+    drittes Balkendiagramm derselben Zahl ist keine Uebersicht. Und das Paar
+    A/B wird einmal dargestellt, nicht als Wasserfall UND als Tabelle."""
+    text = _seite_text()
+    assert "grafikVersionen" not in text, "Diagramm 3 ist in den Saeulen aufgegangen"
+    assert "auswertungWasserfall" not in text, "der Wasserfall steckt in der Paar-Tabelle"
+    assert "zeichneWasserfall" not in text
+    # Die Paar-Tabelle traegt den Balken jetzt selbst.
+    block = _funktionsblock("renderVersionsDetail")
+    assert "wf-balken" in block and "wirkungZwischen(SCHEMA" in block
 
 
 # --- Die Auswertung: Waermekarte und Wirkung zwischen zwei Versionen ---------
@@ -1854,7 +1859,7 @@ def test_auswertung_zeigt_alle_vier_darstellungen():
     der Wasserfall."""
     text = _seite_text()
     abschnitt = text[text.index('id="auswertungSection"'):text.index('id="grafikSection"')]
-    for teil in ('auswertungWeg', 'auswertungKarte', 'auswertungSaeulen', 'auswertungWasserfall'):
+    for teil in ('auswertungWeg', 'auswertungKarte', 'auswertungSaeulen', 'versionsDetailBlock'):
         assert teil in abschnitt, teil
     # Die Auswahl des Paares steht hier, nicht zweimal auf der Seite.
     assert text.count('id="vergleichA"') == 1

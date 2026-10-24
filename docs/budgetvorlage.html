@@ -1070,6 +1070,20 @@
            ============================================================ */
         .auswertung-section[hidden] { display: none; }
         .auswertung-teil[hidden] { display: none; }
+        /* Die Auswertung bekommt die Breite, die das Formular nicht braucht:
+           eine Wärmekarte mit sechs Versionen ist breit, ein Eingabefeld
+           nicht. Darum hier weniger Rand und keine 1100-px-Grenze. */
+        body.mode-auswertung .page {
+            max-width: none;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        body.mode-auswertung .section {
+            padding: 1.25rem;
+        }
+        @media (min-width: 1400px) {
+            body.mode-auswertung .page { padding-left: 2rem; padding-right: 2rem; }
+        }
         body.mode-auswertung main > .section:not(#auswertungSection):not(#grafikSection):not(#versionsOverviewSection),
         body.mode-auswertung .private-note {
             display: none;
@@ -1140,7 +1154,9 @@
             border-collapse: collapse;
             font-size: .85rem;
         }
-        .karte td.name { overflow-wrap: anywhere; }
+        /* break-word statt anywhere: «Nahrungsmittel, Getränke» bricht am
+           Leerzeichen und nicht mitten im Wort. */
+        .karte td.name { overflow-wrap: break-word; }
         .karte th.gruppe, .karte td.gruppe {
             width: 8.5rem;
             overflow: hidden;
@@ -1162,14 +1178,23 @@
            senkrecht. Sonst bestimmte «Mit Prämienverbilligung», wie breit die
            Spalte wird, und die Karte wäre von Fassung zu Fassung anders
            geschnitten. */
+        /* Die Versionsspalten teilen sich den Platz, der nach Name und
+           Gruppe bleibt — darum ein Prozentwert, den zeichneKarte nach der
+           Anzahl Versionen setzt. Eine feste Breite reichte bei drei
+           Versionen und liess die Zahlen bei sechs aus den Zellen quellen.
+           4.6rem ist die Untergrenze; darunter scrollt die Hülle lieber. */
         .karte th.zahl, .karte td.zahl {
             text-align: right;
-            /* 5.3rem: breit genug für «+3'194.00» samt Polsterung — darunter
-               quoll die Zahl aus der Zelle und die Tabelle über den Rand. */
-            width: 5.3rem;
-            min-width: 5.3rem;
-            max-width: 5.3rem;
+            width: max(4.6rem, var(--karte-spalte, 5.3rem));
         }
+        /* Viele Versionen: etwas kleinere Schrift und weniger Polsterung,
+           damit «+2'315.09» auch dann in seine Zelle passt. */
+        .karte.viele .zelle { font-size: .76rem; padding: .3rem .3rem; }
+        .karte.viele th.zahl span { font-size: .72rem; }
+        /* Ab fünf Versionen braucht der Positionsname den Platz der Gruppe,
+           sonst bricht «Nahrungsmittel, Getränke» mitten im Wort. Die Gruppe
+           steckt ohnehin im Namen. */
+        .karte.viele th.gruppe, .karte.viele td.gruppe { display: none; }
         .karte th.zahl span {
             display: inline-block;
             writing-mode: vertical-rl;
@@ -1260,7 +1285,16 @@
         .saeule-diff.ist-gut      { color: var(--color-success); }
         .saeule-diff.ist-schlecht { color: var(--color-danger); }
 
-        /* --- Wasserfall zwischen zwei Versionen --- */
+        /* Die Balkenspalte in der Paar-Tabelle: das Bild steht neben den
+           Zahlen, nicht in einem eigenen Block darüber. */
+        .versions-detail-table .spur-spalte { width: 26%; min-width: 7rem; }
+        .versions-detail-table tr.detail-summe td {
+            border-top: 2px solid var(--color-border);
+            font-weight: 700;
+            padding-top: .5rem;
+        }
+
+        /* --- Balken in der Paar-Tabelle --- */
         .wasserfall { display: flex; flex-direction: column; gap: .15rem; }
         .wf-zeile {
             display: grid;
@@ -3125,7 +3159,28 @@
             <span class="vergleich-mit">mit</span>
             <select id="vergleichB" class="vergleich-select"></select>
         </div>
-        <div class="wasserfall" id="auswertungWasserfall"></div>
+        <!-- Ein Block für das Paar: Balken und Zahlen in derselben Zeile.
+             Vorher stand dasselbe zweimal da — einmal als Wasserfall, einmal
+             als Tabelle «Unterschiede pro Position». -->
+        <div class="versions-detail-block" id="versionsDetailBlock" hidden>
+            <p class="versions-detail-intro" id="versionsDetailIntro"></p>
+            <table class="versions-detail-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th class="num-cell" id="detailColBasis">A</th>
+                        <th class="num-cell" id="detailColActive">B</th>
+                        <th class="spur-spalte">Wirkung pro Monat</th>
+                        <th class="num-cell">Δ / Monat</th>
+                        <th class="num-cell">Δ / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody id="versionsDetailBody"></tbody>
+            </table>
+            <p class="versions-detail-empty" id="versionsDetailEmpty" hidden>
+                Keine Unterschiede – die beiden Versionen sind in jeder Position gleich.
+            </p>
+        </div>
         </div>
     </section>
 
@@ -3158,10 +3213,6 @@
             Die aktive Version ist hervorgehoben.
         </p>
 
-        <h3 class="grafik-titel">Die Versionen im Vergleich</h3>
-        <p class="grafik-untertitel">Was in jeder Version am Monatsende bleibt. Ein Klick wählt sie als A.</p>
-        <div class="balken-satz" id="grafikVersionen"></div>
-
         <table class="versions-overview-table">
             <thead>
                 <tr>
@@ -3179,25 +3230,6 @@
         <!-- Per-row detail diff: which positions changed vs. the active
              version's basedOn. Hidden when the active version is a root
              (no baseline) or when no rows have changed. -->
-        <div class="versions-detail-block" id="versionsDetailBlock" hidden>
-            <h3 class="versions-detail-title" id="versionsDetailTitle">Unterschiede pro Position</h3>
-            <p class="versions-detail-intro" id="versionsDetailIntro"></p>
-            <table class="versions-detail-table">
-                <thead>
-                    <tr>
-                        <th>Position</th>
-                        <th class="num-cell" id="detailColBasis">Basis</th>
-                        <th class="num-cell" id="detailColActive">Aktive Version</th>
-                        <th class="num-cell">Δ / Jahr</th>
-                        <th class="num-cell">Δ / Monat</th>
-                    </tr>
-                </thead>
-                <tbody id="versionsDetailBody"></tbody>
-            </table>
-            <p class="versions-detail-empty" id="versionsDetailEmpty" hidden>
-                Keine Unterschiede zur Basis-Version – diese Version ist identisch zu „<span id="detailEmptyBaseName"></span>".
-            </p>
-        </div>
     </section>
 
 </main>
@@ -5792,7 +5824,6 @@
         // ---- Das gewählte Paar: Auswahl, Diagramm, Unterschiede -------
         const paar = vergleichsPaar();
         renderVergleichWahl(paar);
-        renderGrafikVersionen(paar);
         renderVersionsDetail(paar.a, paar.b);
     }
 
@@ -5915,6 +5946,13 @@
             const grund = gut ? '5,150,105' : '220,38,38';
             return `background:rgba(${grund},${deckung});${anteil > 0.55 ? 'color:#fff;' : ''}`;
         };
+        // Die Spaltenbreite richtet sich nach der Anzahl Versionen: alle
+        // gleich breit, und was nach Name und Gruppe übrig bleibt, wird
+        // geteilt. Bei sehr vielen Versionen greift die Untergrenze im CSS
+        // und die Hülle scrollt.
+        tabelle.classList.toggle('viele', versionen.length >= 5);
+        tabelle.style.setProperty('--karte-spalte',
+            Math.max(7, Math.floor(62 / Math.max(1, versionen.length))) + '%');
         const kopf = '<thead><tr><th>Position</th><th class="gruppe">Gruppe</th>'
             + versionen.map((v) => `<th class="zahl"><span title="${escapeHtml(v.name)}">${escapeHtml(v.name)}</span></th>`).join('')
             + '</tr></thead>';
@@ -5962,32 +6000,6 @@
         }).join('');
     }
 
-    // Der Wasserfall nimmt dasselbe Paar wie die Unterschiede-Tabelle: eine
-    // Auswahl, zwei Anzeigen.
-    function zeichneWasserfall(paar) {
-        const box = $('#auswertungWasserfall');
-        if (!box) return;
-        if (!paar.a || !paar.b) { box.innerHTML = ''; return; }
-        const r = wirkungZwischen(SCHEMA, paar.a.values, paar.b.values);
-        if (r.eintraege.length === 0) {
-            box.innerHTML = '<p class="grafik-untertitel">Zwischen diesen beiden Versionen ändert sich keine Position.</p>';
-            return;
-        }
-        const groesste = Math.max(1, ...r.eintraege.map((e) => Math.abs(e.wirkung)), Math.abs(r.summe));
-        const zeile = (name, wert, istSumme) => {
-            const anteil = Math.abs(wert) / groesste * 50;       // je Seite höchstens die Hälfte
-            const klasse = wert >= 0 ? 'ist-gut' : 'ist-schlecht';
-            return `<div class="wf-zeile${istSumme ? ' summe' : ''}">
-                <span>${escapeHtml(name)}</span>
-                <span class="wf-spur"><i class="wf-null" style="left:50%"></i>
-                    <i class="wf-balken ${klasse}" style="left:${wert < 0 ? 50 - anteil : 50}%;width:${anteil}%"></i></span>
-                <span class="wf-wert ${klasse}">${deltaAnzeige(wert)}</span>
-            </div>`;
-        };
-        box.innerHTML = r.eintraege.map((e) => zeile(rowAnzeigename(e.rowId), e.wirkung, false)).join('')
-            + zeile('Bleibt mehr pro Monat', r.summe, true);
-    }
-
     function renderAuswertung() {
         if (!auswertungOffen()) return;
         const versionen = state.versions;
@@ -6000,7 +6012,7 @@
         if (!vergleichbar) return;
         zeichneWeg(versionen, je);
         zeichneKarte(versionen);
-        zeichneWasserfall(vergleichsPaar());
+        renderVersionsDetail(vergleichsPaar().a, vergleichsPaar().b);
     }
 
     function renderVergleichWahl(paar) {
@@ -6015,34 +6027,6 @@
                 if (gewaehlt && v.id === gewaehlt.id) opt.selected = true;
                 feld.appendChild(opt);
             });
-        });
-    }
-
-    // Diagramm 3: je Version ein Balken, in der Reihenfolge der Reiter. Die
-    // beiden gewählten tragen ein Abzeichen. Die Stände stehen hier bewusst
-    // nicht noch einmal — dreimal dieselbe Zahl ist keine Übersicht.
-    function renderGrafikVersionen(paar) {
-        const box = $('#grafikVersionen');
-        if (!box) return;
-        box.textContent = '';
-        const werte = state.versions.map((v) => summen(SCHEMA, v.values).diffM);
-        const geo = balkenAnteile(werte);
-        state.versions.forEach((v, i) => {
-            const abzeichen = (paar.a && v.id === paar.a.id) ? 'A'
-                : (paar.b && v.id === paar.b.id) ? 'B' : '';
-            const zeile = balkenZeile(
-                v.name, '', geo.balken[i], geo.nullBei,
-                formatComputed(werte[i]), werte[i] >= 0 ? 'gut' : 'schlecht',
-                `${v.name}: ${formatComputed(summen(SCHEMA, v.values).diffY)} pro Jahr · als A wählen`,
-                () => { state.vergleichA = v.id; renderVersionsOverview(); });
-            if (abzeichen) {
-                const marke = document.createElement('span');
-                marke.className = 'balken-abzeichen';
-                marke.textContent = abzeichen;
-                zeile.querySelector('.balken-name').prepend(marke);
-                zeile.classList.add('ist-gewaehlt');
-            }
-            box.appendChild(zeile);
         });
     }
 
@@ -6068,55 +6052,59 @@
         // Headline text
         detailIntro.textContent =
             `„${baseline.name}" verglichen mit „${active.name}". `
-            + `Es werden nur Positionen mit einer Wertabweichung gelistet.`;
+            + `Nur Positionen mit einer Abweichung, die grösste zuerst.`;
         colBasis.textContent  = baseline.name;
         colActive.textContent = active.name;
 
-        // Walk SCHEMA in declared order so the detail table mirrors the form.
+        // Die Reihenfolge und das Vorzeichen kommen aus dem Kern: «positiv
+        // heisst, es bleibt mehr». Wer nach dem blossen Unterschied sortierte,
+        // stellte eine gestiegene Einnahme neben eine gestiegene Ausgabe.
+        const wirkungen = wirkungZwischen(SCHEMA, baseline.values, active.values);
         detailBody.innerHTML = '';
-        const sign = (n) => (n > 0 ? '+' : '');
-        let diffCount = 0;
+        const groesste = Math.max(1, ...wirkungen.eintraege.map((e) => Math.abs(e.wirkung)),
+            Math.abs(wirkungen.summe));
+        const spur = (wert) => {
+            const anteil = Math.abs(wert) / groesste * 50;    // je Seite höchstens die Hälfte
+            const klasse = wert >= 0 ? 'ist-gut' : 'ist-schlecht';
+            return `<span class="wf-spur"><i class="wf-null" style="left:50%"></i>`
+                + `<i class="wf-balken ${klasse}" style="left:${wert < 0 ? 50 - anteil : 50}%;`
+                + `width:${anteil}%"></i></span>`;
+        };
 
-        Object.entries(SCHEMA).forEach(([groupId, rows]) => {
-            rows.forEach((row) => {
-                const baseY = rowYearlyInVersion(baseline, row.id);
-                const baseM = rowMonthlyInVersion(baseline, row.id);
-                const actY  = rowYearlyInVersion(active,   row.id);
-                const actM  = rowMonthlyInVersion(active,   row.id);
-                const diffY = actY - baseY;
-                const diffM = actM - baseM;
-
-                // Skip unchanged rows (also skip when both sides are zero).
-                if (Math.abs(diffY) < 0.005 && Math.abs(diffM) < 0.005) return;
-                diffCount++;
-
-                const groupLabel = GROUP_LABELS[groupId] || groupId;
-                const labelHtml =
-                    `<span class="row-group-label">${escapeHtml(groupLabel)}</span>`
-                    + (row.prefix ? `<span class="row-prefix">${escapeHtml(row.prefix)}</span> ` : '')
-                    + escapeHtml(row.label);
-
-                const diffCls = diffY < 0 ? 'is-negative' : (diffY > 0 ? 'is-positive' : '');
-
-                const tr = document.createElement('tr');
-                tr.dataset.rowId = row.id;
-                tr.innerHTML = `
-                    <td>${labelHtml}</td>
-                    <td class="num-cell">${formatComputed(baseY)}</td>
-                    <td class="num-cell">${formatComputed(actY)}</td>
-                    <td class="num-cell ${diffCls}">${sign(diffY)}${formatComputed(diffY)}</td>
-                    <td class="num-cell ${diffCls}">${sign(diffM)}${formatComputed(diffM)}</td>
-                `;
-                detailBody.appendChild(tr);
-            });
+        wirkungen.eintraege.forEach((e) => {
+            const treffer = lookupRow(e.rowId);
+            if (!treffer) return;
+            const groupLabel = GROUP_LABELS[treffer.groupId] || treffer.groupId;
+            const baseY = rowYearlyInVersion(baseline, e.rowId);
+            const actY  = rowYearlyInVersion(active,   e.rowId);
+            const klasse = e.wirkung >= 0 ? 'is-positive' : 'is-negative';
+            const tr = document.createElement('tr');
+            tr.dataset.rowId = e.rowId;
+            tr.innerHTML = `
+                <td><span class="row-group-label">${escapeHtml(groupLabel)}</span>${escapeHtml(rowAnzeigename(e.rowId))}</td>
+                <td class="num-cell">${formatComputed(baseY)}</td>
+                <td class="num-cell">${formatComputed(actY)}</td>
+                <td class="spur-spalte">${spur(e.wirkung)}</td>
+                <td class="num-cell ${klasse}">${deltaAnzeige(e.wirkung)}</td>
+                <td class="num-cell ${klasse}">${deltaAnzeige(e.wirkung * 12)}</td>
+            `;
+            detailBody.appendChild(tr);
         });
-
-        if (diffCount === 0) {
-            detailEmpty.hidden = false;
-            $('#detailEmptyBaseName').textContent = baseline.name;
-        } else {
-            detailEmpty.hidden = true;
+        const diffCount = wirkungen.eintraege.length;
+        if (diffCount > 0) {
+            const summeKlasse = wirkungen.summe >= 0 ? 'is-positive' : 'is-negative';
+            const tr = document.createElement('tr');
+            tr.className = 'detail-summe';
+            tr.innerHTML = `
+                <td>Bleibt mehr pro Monat</td><td></td><td></td>
+                <td class="spur-spalte">${spur(wirkungen.summe)}</td>
+                <td class="num-cell ${summeKlasse}">${deltaAnzeige(wirkungen.summe)}</td>
+                <td class="num-cell ${summeKlasse}">${deltaAnzeige(wirkungen.summe * 12)}</td>
+            `;
+            detailBody.appendChild(tr);
         }
+
+        detailEmpty.hidden = diffCount > 0;
     }
 
     // ----------------------------------------------------------------
@@ -6788,7 +6776,6 @@
             $(sel).addEventListener('change', (e) => {
                 state[feld] = e.target.value;
                 renderVersionsOverview();
-                zeichneWasserfall(vergleichsPaar());
             });
         });
 
