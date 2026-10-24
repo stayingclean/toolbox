@@ -1896,3 +1896,54 @@ def test_auswertung_und_vorschau_schliessen_sich_aus():
     text = _seite_text()
     assert "verlasseAuswertung(); enterPreview(" in text
     assert "verlasseAuswertung();" in _funktionsblock("springeZuZeile")
+
+
+def test_auswertung_hat_zwei_blaetter():
+    """Was alle Versionen zeigt, und was zwei miteinander vergleicht -- das
+    sind zwei Fragen und darum zwei Reiter."""
+    text = _seite_text()
+    assert 'id="reiterUebersicht"' in text and 'id="reiterVergleich"' in text
+    block = _funktionsblock("zeigeReiter")
+    # Die beiden Abschnitte ausserhalb des <section> folgen den Reitern mit.
+    assert "grafikSection" in block and "versionsOverviewSection" in block
+    assert "im-anderen-reiter" in block
+
+
+def test_kein_eigener_zurueck_knopf():
+    """Der Knopf in der Versionsleiste schaltet um und ist als gedrueckt
+    markiert, Escape fuehrt ebenfalls hinaus. Ein dritter Weg waere ein
+    dritter Ort zum Suchen."""
+    text = _seite_text()
+    assert "auswertungZurueckBtn" not in text
+    assert re.search(r'\.version-compare-btn\[aria-pressed="true"\]', text), \
+        "ohne sichtbaren Zustand waere nicht zu sehen, dass die Auswertung offen ist"
+
+
+def test_der_weg_nimmt_die_gemessene_breite():
+    """Mit fester viewBox zeichnet der Browser 900 Einheiten mittig in die
+    Flaeche und laesst links und rechts Rand stehen -- das Diagramm blieb
+    schmal, obwohl die Flaeche breiter wurde."""
+    block = _funktionsblock("zeichneWeg")
+    assert "svg.clientWidth" in block
+    assert "setAttribute('viewBox'" in block
+
+
+def test_die_betraege_im_weg_sind_lesbar():
+    """Sie liegen zwangslaeufig auf Linien und Flaechen."""
+    text = _seite_text()
+    assert re.search(r"paint-order:\s*stroke", text), "heller Rand hinter der Schrift"
+    assert "bandHoehe < 20" in text, "bei schmalem Band rueckt der Betrag hinaus"
+
+
+def test_die_gruppenspalte_bleibt():
+    """Der Einwand war, dass die Raender schmaler werden -- nicht, dass eine
+    Spalte verschwindet. Erst auf dem Telefon faellt sie weg."""
+    text = _seite_text()
+    assert not re.search(r"\.karte\.viele th\.gruppe[^}]*display:\s*none", text)
+    assert re.search(r"@media \(max-width: 560px\) \{\s*\.karte td\.gruppe", text)
+
+
+def test_die_spur_in_der_tabelle_ist_ein_block():
+    """Als inline-Element haette sie weder Hoehe noch Breite -- im alten
+    Wasserfall war sie ein Gitterkind und damit von selbst blockartig."""
+    assert re.search(r"\.wf-spur \{[^}]*display:\s*block", _seite_text())
