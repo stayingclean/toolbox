@@ -1294,7 +1294,83 @@
         .karte-legende .leicht-schlecht { background: rgba(220, 38, 38, .28); }
         .karte-legende .stark-schlecht { background: var(--color-danger); }
 
-        /* --- Säulen je Version --- */
+        /* --- «Wohin das Geld geht»: je Version ein geteilter Balken ---
+           Die Länge sind die Ausgaben, die Abschnitte die Gruppen, die Marke
+           die Einnahmen. Dieselbe Skala über alle Versionen, sonst wären die
+           Balken nicht vergleichbar. Kein Kreisdiagramm: elf Gruppen sehr
+           verschiedener Grösse ergeben keinen brauchbaren Kreis — die Miete
+           allein nimmt mehr als die Hälfte. */
+        .gruppen-balken {
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+        }
+        .gruppen-zeile {
+            display: grid;
+            grid-template-columns: minmax(7rem, 12rem) 1fr minmax(6.5rem, auto);
+            align-items: center;
+            gap: .7rem;
+        }
+        .gruppen-name { font-size: .88rem; font-weight: 600; }
+        .gruppen-name small {
+            display: block;
+            font-weight: 400;
+            font-size: .78rem;
+            color: var(--color-text-muted);
+        }
+        .gruppen-spur {
+            position: relative;
+            display: flex;
+            height: 26px;
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        .gruppen-stueck { height: 100%; }
+        /* Die Einnahmen als senkrechte Marke: was rechts davon liegt, ist
+           nicht gedeckt. Eine zweite Säule daneben sagte dasselbe, brauchte
+           aber die doppelte Fläche. */
+        .gruppen-marke {
+            position: absolute;
+            top: -3px;
+            bottom: -3px;
+            width: 2px;
+            background: var(--color-text);
+        }
+        .gruppen-marke::after {
+            content: attr(data-text);
+            position: absolute;
+            top: -1.15rem;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: .7rem;
+            color: var(--color-text-muted);
+        }
+        .gruppen-rest { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+        .gruppen-rest.ist-gut      { color: var(--color-success); }
+        .gruppen-rest.ist-schlecht { color: var(--color-danger); }
+        .gruppen-legende {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .3rem 1rem;
+            margin-top: 1.4rem;
+            font-size: .8rem;
+            color: var(--color-text-muted);
+        }
+        .gruppen-legende span { display: inline-flex; align-items: center; gap: .35rem; }
+        .gruppen-legende i {
+            display: inline-block;
+            width: .9rem;
+            height: .9rem;
+            border-radius: 2px;
+        }
+        @media (max-width: 560px) {
+            .gruppen-zeile { grid-template-columns: 1fr auto; }
+            .gruppen-spur { grid-column: 1 / -1; order: 3; }
+        }
+
+        /* --- Säulen je Version (nicht mehr verwendet) --- */
         .saeulen {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -3213,9 +3289,10 @@
         </div>
         </div>
 
-        <h3 class="grafik-titel">Einnahmen und Ausgaben je Version</h3>
-        <p class="grafik-untertitel">Zwei Säulen pro Version – das Bild zeigt, ob die Einnahmen gestiegen oder die Ausgaben gesunken sind.</p>
-        <div class="saeulen" id="auswertungSaeulen"></div>
+        <h3 class="grafik-titel">Wohin das Geld geht</h3>
+        <p class="grafik-untertitel">Je Version ein Balken: die Ausgaben, aufgeteilt nach Gruppen. Die Marke zeigt, wo die Einnahmen stehen – was rechts davon liegt, ist nicht gedeckt.</p>
+        <div class="gruppen-balken" id="auswertungGruppen"></div>
+        <div class="gruppen-legende" id="auswertungGruppenLegende"></div>
 
         </div><!-- /Übersicht -->
 
@@ -4007,6 +4084,42 @@
         const y = istZahl(values[rowId + '.jaehrlich']) ? values[rowId + '.jaehrlich'] : 0;
         const m = istZahl(values[rowId + '.monatlich']) ? values[rowId + '.monatlich'] : 0;
         return m || (y / 12);
+    }
+
+    // Ein lesbarer Abstand für die Linien einer Achse: 1, 2, 2.5 oder 5 mal
+    // einer Zehnerpotenz, so dass etwa fünf Linien entstehen. Ein fester
+    // Abstand von 1'000 zeigt bei einem Haushalt mit 800 Franken Einnahmen
+    // eine einzige Linie und bei 90'000 deren neunzig.
+    function rasterSchritt(max, ziel) {
+        const n = (istZahl(ziel) && ziel > 0) ? ziel : 5;
+        if (!istZahl(max) || max <= 0) return 1;
+        const roh = max / n;
+        const groesse = Math.pow(10, Math.floor(Math.log10(roh)));
+        const rest = roh / groesse;
+        // Aufrunden auf den nächsten runden Faktor: so entstehen höchstens
+        // `ziel` Linien, nie mehr. Abrunden ergäbe bei 900 einen Abstand von
+        // 100 und damit neun Linien.
+        const faktor = [1, 2, 2.5, 5, 10].find((k) => rest <= k) || 10;
+        return faktor * groesse;
+    }
+
+    // Die Summen je Gruppe — für «Wohin das Geld geht». Jede Gruppe des
+    // Schemas kommt vor, auch eine leere: sonst fehlte sie im Bild, sobald
+    // jemand eine Kategorie nicht ausfüllt, und die Farben verschöben sich
+    // von Version zu Version.
+    function gruppenSummen(schema, values) {
+        const r = {};
+        Object.keys(schema).forEach((groupId) => {
+            let jaehrlich = 0, monatlich = 0;
+            schema[groupId].forEach((row) => {
+                const y = istZahl(values[row.id + '.jaehrlich']) ? values[row.id + '.jaehrlich'] : 0;
+                const m = istZahl(values[row.id + '.monatlich']) ? values[row.id + '.monatlich'] : 0;
+                jaehrlich += y || (m * 12);
+                monatlich += m || (y / 12);
+            });
+            r[groupId] = { jaehrlich: jaehrlich, monatlich: monatlich };
+        });
+        return r;
     }
 
     // Die Wärmekarte: welche Positionen sich über die Versionen überhaupt
@@ -5991,7 +6104,7 @@
         const y = (w) => oben + (H - oben - unten) * (1 - w / max);
 
         const teile = [];
-        const schritt = max > 6000 ? 2000 : 1000;
+        const schritt = rasterSchritt(max, 5);
         for (let w = 0; w <= max; w += schritt) {
             teile.push(`<line class="raster" x1="${links}" y1="${y(w)}" x2="${B - rechts}" y2="${y(w)}"/>`);
             teile.push(`<text x="${links - 8}" y="${y(w) + 4}" text-anchor="end">${w.toLocaleString('de-CH')}</text>`);
@@ -6076,27 +6189,55 @@
         tabelle.innerHTML = kopf + '<tbody>' + leib + fuss + '</tbody>';
     }
 
-    function zeichneSaeulen(versionen, summenJeVersion) {
-        const box = $('#auswertungSaeulen');
+    // Die Farben der Gruppen. Bewusst eine feste, kurze Liste statt
+    // gerechneter Farbtöne: elf Gruppen sollen unterscheidbar sein, und
+    // gerechnete Abstufungen einer Farbe sind es ab der vierten nicht mehr.
+    const GRUPPEN_FARBEN = [
+        '#0f766e', '#b45309', '#1d4ed8', '#9d174d', '#4d7c0f', '#7c3aed',
+        '#0e7490', '#a16207', '#be123c', '#3f6212', '#475569',
+    ];
+
+    // «Wohin das Geld geht»: je Version ein Balken über die Ausgaben,
+    // geteilt nach Gruppen, mit einer Marke bei den Einnahmen. Beantwortet
+    // eine andere Frage als «Der Weg» — nicht wie es sich entwickelt hat,
+    // sondern woraus es besteht.
+    function zeichneGruppen(versionen, summenJeVersion) {
+        const box = $('#auswertungGruppen');
+        const legende = $('#auswertungGruppenLegende');
         if (!box) return;
-        const hoechste = Math.max(1, ...summenJeVersion.map((s) => Math.max(s.einnahmenM, s.ausgabenM)));
+        const ausgabenGruppen = Object.keys(SCHEMA).filter((g) => g !== 'einnahmen');
+        const jeVersion = versionen.map((v) => gruppenSummen(SCHEMA, v.values));
+        // Eine gemeinsame Skala, sonst wären die Balken nicht vergleichbar.
+        const skala = Math.max(1, ...summenJeVersion.map((s) => Math.max(s.ausgabenM, s.einnahmenM)));
+
         box.innerHTML = versionen.map((v, i) => {
             const s = summenJeVersion[i];
-            const aktiv = v.id === state.activeVersionId;
-            return `<div class="saeule-block${aktiv ? ' ist-aktiv' : ''}">
-                <div class="saeule-name">${escapeHtml(v.name)}</div>
-                <div class="saeule-rest">${aktiv ? 'aktive Version' : '&nbsp;'}</div>
-                <div class="saeule-paar">
-                    <div class="saeule"><span class="ein" style="height:${Math.round(100 * s.einnahmenM / hoechste)}%"></span></div>
-                    <div class="saeule"><span class="aus" style="height:${Math.round(100 * s.ausgabenM / hoechste)}%"></span></div>
-                </div>
-                <div class="saeule-fuss">
-                    <small>ein<br>${formatComputed(s.einnahmenM)}</small>
-                    <small>aus<br>${formatComputed(s.ausgabenM)}</small>
-                </div>
-                <div class="saeule-diff ${s.diffM >= 0 ? 'ist-gut' : 'ist-schlecht'}">${deltaAnzeige(s.diffM)} pro Monat</div>
+            const stuecke = ausgabenGruppen.map((g, nr) => {
+                const betrag = jeVersion[i][g] ? jeVersion[i][g].monatlich : 0;
+                if (betrag <= 0) return '';
+                const farbe = GRUPPEN_FARBEN[nr % GRUPPEN_FARBEN.length];
+                return `<span class="gruppen-stueck" style="width:${betrag / skala * 100}%;background:${farbe}" `
+                    + `title="${escapeHtml(GROUP_LABELS[g] || g)}: ${formatComputed(betrag)} pro Monat"></span>`;
+            }).join('');
+            const wirkung = s.diffM >= 0 ? 'ist-gut' : 'ist-schlecht';
+            return `<div class="gruppen-zeile">
+                <span class="gruppen-name">${escapeHtml(v.name)}<small>Ausgaben ${formatComputed(s.ausgabenM)}</small></span>
+                <span class="gruppen-spur">${stuecke}<i class="gruppen-marke" style="left:${s.einnahmenM / skala * 100}%" `
+                    + `data-text="${i === 0 ? 'Einnahmen' : ''}" title="Einnahmen: ${formatComputed(s.einnahmenM)} pro Monat"></i></span>
+                <span class="gruppen-rest ${wirkung}">${deltaAnzeige(s.diffM)}</span>
             </div>`;
         }).join('');
+
+        if (legende) {
+            // Nur Gruppen, die in mindestens einer Version vorkommen — sonst
+            // stünden elf Farben da, von denen die Hälfte nirgends auftaucht.
+            legende.innerHTML = ausgabenGruppen.map((g, nr) => {
+                const kommtVor = jeVersion.some((gs) => gs[g] && gs[g].monatlich > 0);
+                if (!kommtVor) return '';
+                const farbe = GRUPPEN_FARBEN[nr % GRUPPEN_FARBEN.length];
+                return `<span><i style="background:${farbe}"></i>${escapeHtml(GROUP_LABELS[g] || g)}</span>`;
+            }).join('');
+        }
     }
 
     function renderAuswertung() {
@@ -6107,7 +6248,7 @@
         const vergleichbar = versionen.length > 1;
         ['#auswertungTeilWeg', '#auswertungTeilKarte', '#auswertungTeilWasserfall']
             .forEach((sel) => { const el = $(sel); if (el) el.hidden = !vergleichbar; });
-        zeichneSaeulen(versionen, je);
+        zeichneGruppen(versionen, je);
         if (!vergleichbar) return;
         zeichneWeg(versionen, je);
         zeichneKarte(versionen);

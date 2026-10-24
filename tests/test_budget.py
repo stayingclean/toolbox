@@ -1859,7 +1859,7 @@ def test_auswertung_zeigt_alle_vier_darstellungen():
     der Wasserfall."""
     text = _seite_text()
     abschnitt = text[text.index('id="auswertungSection"'):text.index('id="grafikSection"')]
-    for teil in ('auswertungWeg', 'auswertungKarte', 'auswertungSaeulen', 'versionsDetailBlock'):
+    for teil in ('auswertungWeg', 'auswertungKarte', 'auswertungGruppen', 'versionsDetailBlock'):
         assert teil in abschnitt, teil
     # Die Auswahl des Paares steht hier, nicht zweimal auf der Seite.
     assert text.count('id="vergleichA"') == 1
@@ -1871,8 +1871,8 @@ def test_was_versionen_vergleicht_braucht_zwei():
     sagen; uebrig bleibt, was auch zu einer Version gehoert."""
     block = _funktionsblock("renderAuswertung")
     assert "versionen.length > 1" in block
-    assert "zeichneSaeulen" in block.split("if (!vergleichbar) return;")[0], \
-        "die Saeulen gehoeren zum Teil, der auch mit einer Version steht"
+    assert "zeichneGruppen" in block.split("if (!vergleichbar) return;")[0], \
+        "«Wohin das Geld geht» sagt auch mit einer einzigen Version etwas"
 
 
 def test_der_weg_zeichnet_einnahmen_und_ausgaben():
@@ -1947,3 +1947,33 @@ def test_die_spur_in_der_tabelle_ist_ein_block():
     """Als inline-Element haette sie weder Hoehe noch Breite -- im alten
     Wasserfall war sie ein Gitterkind und damit von selbst blockartig."""
     assert re.search(r"\.wf-spur \{[^}]*display:\s*block", _seite_text())
+
+
+def test_gruppensummen_je_gruppe():
+    """«Wohin das Geld geht»: die Ausgaben nach Gruppen. Der Entwurf vom
+    23.10. hatte diese Funktion als Rueckweg vorgesehen, falls die
+    Kategorien doch gebraucht werden -- jetzt werden sie."""
+    values = {"lohn.monatlich": 5000, "miete.monatlich": 1500,
+              "strom.jaehrlich": 1200}
+    r = kern("gruppenSummen", SCHEMA_MINI, values)
+    assert r["einnahmen"]["monatlich"] == 5000
+    assert r["einnahmen"]["jaehrlich"] == 60000
+    assert r["wohnen"]["monatlich"] == 1600          # 1500 + 1200/12
+    assert r["wohnen"]["jaehrlich"] == 19200
+    # Jede Gruppe des Schemas kommt vor, auch eine leere.
+    leer = kern("gruppenSummen", {"einnahmen": [], "wohnen": [{"id": "miete"}]}, {})
+    assert leer["einnahmen"] == {"jaehrlich": 0, "monatlich": 0}
+    assert leer["wohnen"] == {"jaehrlich": 0, "monatlich": 0}
+
+
+def test_rasterschritt_passt_sich_den_zahlen_an():
+    """Ein fester Abstand von 1'000 zeigt bei einem Haushalt mit 800 Franken
+    Einnahmen eine einzige Linie und bei 90'000 deren neunzig."""
+    assert kern("rasterSchritt", 900, 5) == 200
+    assert kern("rasterSchritt", 8000, 5) == 2000
+    assert kern("rasterSchritt", 90000, 5) == 20000
+    assert kern("rasterSchritt", 450, 5) == 100
+    assert kern("rasterSchritt", 60, 5) == 20     # lieber drei Linien als sechs
+    # Eine leere Seite darf nicht durch null teilen.
+    assert kern("rasterSchritt", 0, 5) == 1
+    assert kern("rasterSchritt", None, 5) == 1
