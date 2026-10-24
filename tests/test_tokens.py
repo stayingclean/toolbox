@@ -112,6 +112,11 @@ def token_deklarationen(pfad: Path) -> dict[str, list[str]]:
 
     Gelesen werden die **innersten** Blöcke: eine `@media`-Hülle enthält
     selbst Klammern und fällt dadurch heraus, ihr Inhalt nicht.
+
+    Die Kehrseite derselben Regel: steht eine Deklaration **neben** einem
+    verschachtelten Block (`:root { --a: 1; @media ... { ... } }`), fällt
+    sie mit der Hülle heraus. Verschachteltes CSS kommt in diesem Projekt
+    nicht vor; die drei Rueckfallformen oben fängt er.
     """
     gefunden: dict[str, list[str]] = {}
     text = ohne_kommentare(pfad.read_text(encoding="utf-8"))
@@ -258,8 +263,10 @@ def test_wachposten_build_liefert_die_uebrigen_eingecheckten_generate(
 
 
 # Seiten, die bewusst keine Token aus tokens.css beziehen -- mit Grund. Der
-# Grund steht hier und nur hier; er wandert in die Fehlermeldung, wenn eine
-# Seite fehlt.
+# Grund steht hier und nur hier, in keiner Fehlermeldung -- und er kann dort
+# auch nicht stehen: eine Seite, die der Wachposten unten meldet, fehlt ja
+# gerade in dieser Liste. Er richtet sich an den, der die Liste liest und
+# entscheiden muss, ob eine neue Seite dazugehoert.
 AUSGENOMMEN: dict[str, str] = {
     "docs/skillsliste.html": "muss in sich geschlossen bleiben (ohne Netz benutzbar)",
     "docs/flyer-editor.html": "exportiert sich selbst als Datei, alles muss im Dokument stehen",
@@ -481,7 +488,10 @@ def test_token_deklarationen_sammelt_jeden_block_und_jeden_selektor(probe):
 
 def test_token_deklarationen_ohne_block_ist_leer(tmp_path):
     datei = tmp_path / "leer.css"
-    datei.write_text("/* nur ein Kommentar mit --accent: #008080; */\n", encoding="utf-8")
+    # Mit Klammern, sonst waere der Test auch ohne `ohne_kommentare` gruen:
+    # ohne Block gaebe es nichts zu finden, und die Kommentarbehandlung
+    # truege nichts bei.
+    datei.write_text("/* :root { --accent: #008080; } */\n", encoding="utf-8")
     assert token_deklarationen(datei) == {}
 
 
