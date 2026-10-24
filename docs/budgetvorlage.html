@@ -1250,7 +1250,11 @@
             display: grid;
             grid-template-columns: minmax(0, 1fr) calc(var(--zahl-anzahl, 1) * var(--zahl-breite, 7.4rem));
             gap: 0 1rem;
-            align-items: end;
+            /* stretch statt end: beide Spalten sind gleich hoch, darum stehen
+               ihre Überschriften auf derselben Höhe. Dass die Inhalte
+               trotzdem unten abschliessen — das Diagramm also direkt über der
+               Tabelle sitzt — macht `margin-top: auto` weiter unten. */
+            align-items: stretch;
             margin-bottom: .4rem;
         }
         .grafik-untertitel-fett {
@@ -1259,8 +1263,13 @@
             font-weight: 700;
             color: var(--color-text-muted);
         }
-        .kopf-rechts { min-width: 0; }
-        .kopf-links { min-width: 0; }
+        .kopf-links, .kopf-rechts {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        /* Schiebt den Inhalt an den unteren Rand seiner Spalte. */
+        .kopf-links .gruppen-balken, .kopf-rechts .weg { margin-top: auto; }
         /* Schmal übereinander statt nebeneinander: unter 900 px bliebe für
            beides nebeneinander zu wenig, und die Ausrichtung auf die Spalten
            hilft dort ohnehin nichts mehr. */
