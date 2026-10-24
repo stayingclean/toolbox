@@ -1143,7 +1143,8 @@
         }
 
         /* --- «Der Weg»: zwei Linien, dazwischen was bleibt --- */
-        .weg { width: 100%; height: 300px; display: block; }
+        .weg { width: 100%; height: 240px; display: block; }
+        .weg text.achsenwert { font-size: 10px; fill: var(--color-text-muted); }
         .weg .achse { stroke: var(--color-border); stroke-width: 1; }
         .weg .raster { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 2 4; }
         /* Die Fläche zwischen den Linien IST der Überschuss — darum gefüllt
@@ -1219,13 +1220,16 @@
            4.6rem ist die Untergrenze; darunter scrollt die Hülle lieber. */
         .karte td.zahl { text-align: right; }
         .karte th.zahl { text-align: center; }      /* der senkrechte Name mittig über der Spalte */
+        /* Die Breite einer Versionsspalte ist eine gemeinsame Grösse: die
+           Tabelle und das Diagramm darüber müssen sich dieselbe Achse teilen.
+           7.4rem, damit «+999'999.99» samt Vorzeichen und Polsterung
+           hineinpasst — breit genug bemessen heisst auch, dass die Spalten
+           gleich breit BLEIBEN. */
+        #auswertungUebersicht { --zahl-breite: 7.4rem; }
+        #auswertungUebersicht.viele { --zahl-breite: 7rem; }
         .karte th.zahl, .karte td.zahl {
-            /* 7.4rem: «+999'999.99» passt samt Vorzeichen und Polsterung
-               hinein. Breit genug bemessen heisst, dass die Spalten gleich
-               breit BLEIBEN — eine zu knappe Breite liesse die Spalte mit
-               dem grössten Betrag aus der Reihe wachsen. */
-            width: 7.4rem;
-            min-width: 7.4rem;
+            width: var(--zahl-breite, 7.4rem);
+            min-width: var(--zahl-breite, 7.4rem);
             white-space: nowrap;
         }
         /* Viele Versionen: etwas kleinere Schrift und weniger Polsterung,
@@ -1235,8 +1239,34 @@
         /* Viele Versionen: kleinere Schrift, also brauchen die Zahlen auch
            weniger Platz. Die Gruppe bleibt, sie sagt, wo die Position im
            Formular steht. */
-        .karte.viele th.zahl, .karte.viele td.zahl { width: 7rem; min-width: 7rem; }
         .karte.viele th.gruppe, .karte.viele td.gruppe { font-size: .72rem; }
+
+        /* Der Kopf über der Tabelle: rechts so breit wie alle Versionsspalten
+           zusammen, links der Rest — genau die Aufteilung, die die Tabelle
+           darunter hat. Damit steht jeder Punkt des Diagramms über seiner
+           Spalte, und die senkrechten Spaltennamen sind die gemeinsame
+           Zeitachse. */
+        .uebersicht-kopf {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) calc(var(--zahl-anzahl, 1) * var(--zahl-breite, 7.4rem));
+            gap: 0 1rem;
+            align-items: end;
+            margin-bottom: .4rem;
+        }
+        .grafik-untertitel-fett {
+            margin: 0 0 .4rem;
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--color-text-muted);
+        }
+        .kopf-rechts { min-width: 0; }
+        .kopf-links { min-width: 0; }
+        /* Schmal übereinander statt nebeneinander: unter 900 px bliebe für
+           beides nebeneinander zu wenig, und die Ausrichtung auf die Spalten
+           hilft dort ohnehin nichts mehr. */
+        @media (max-width: 900px) {
+            .uebersicht-kopf { grid-template-columns: 1fr; gap: 1rem; }
+        }
         .karte th.zahl span {
             display: inline-block;
             writing-mode: vertical-rl;
@@ -3269,16 +3299,29 @@
              einzigen Version haben sie nichts zu sagen und bleiben weg;
              übrig bleibt, was auch zu einer Version gehört: die Säulen und
              die Diagramme zu den Anpassungen. -->
-        <div class="auswertung-teil" id="auswertungTeilWeg" hidden>
-        <h3 class="grafik-titel">Der Weg</h3>
-        <p class="grafik-untertitel">Einnahmen und Ausgaben über alle Versionen – dazwischen als Fläche, was am Monatsende bleibt.</p>
-        <svg class="weg" id="auswertungWeg" viewBox="0 0 900 300" role="img"
-             aria-label="Einnahmen und Ausgaben über alle Versionen, dazwischen der Überschuss"></svg>
-        </div>
-
+        <!-- Ein Block statt dreier: Die Zeitachse von «Der Weg» und die
+             Spalten der Tabelle sind dieselbe Achse, darum liegen sie
+             übereinander. Links daneben, wo die Tabelle ihre Textspalten
+             hat, steht «Wohin das Geld geht» — sonst bliebe dort über der
+             Tabelle eine leere Fläche. Eine gemeinsame Überschrift hält die
+             drei Teile zusammen. -->
         <div class="auswertung-teil" id="auswertungTeilKarte" hidden>
         <h3 class="grafik-titel">Wo sich etwas bewegt</h3>
-        <p class="grafik-untertitel">Nur die Positionen, die sich über die Versionen überhaupt ändern. Die Farbe zeigt den Unterschied zur ersten Version; bei Einnahmen umgekehrt gelesen.</p>
+        <p class="grafik-untertitel">Oben links, woraus die Ausgaben bestehen; oben rechts der Verlauf über die Versionen; darunter Position für Position, was sich geändert hat. Die Spalten gelten für alles drei.</p>
+
+        <div class="uebersicht-kopf" id="uebersichtKopf">
+            <div class="kopf-links">
+                <h4 class="grafik-untertitel-fett">Wohin das Geld geht</h4>
+                <div class="gruppen-balken" id="auswertungGruppen"></div>
+                <div class="gruppen-legende" id="auswertungGruppenLegende"></div>
+            </div>
+            <div class="kopf-rechts">
+                <h4 class="grafik-untertitel-fett">Der Weg: Einnahmen, Ausgaben, und was bleibt</h4>
+                <svg class="weg" id="auswertungWeg" role="img"
+                     aria-label="Einnahmen und Ausgaben über alle Versionen, dazwischen der Überschuss"></svg>
+            </div>
+        </div>
+
         <div class="karte-huelle"><table class="karte" id="auswertungKarte"></table></div>
         <div class="karte-legende">
             <span><i class="stark-gut"></i>deutlich günstiger</span>
@@ -3288,11 +3331,6 @@
             <span><i class="stark-schlecht"></i>deutlich teurer</span>
         </div>
         </div>
-
-        <h3 class="grafik-titel">Wohin das Geld geht</h3>
-        <p class="grafik-untertitel">Je Version ein Balken: die Ausgaben, aufgeteilt nach Gruppen. Die Marke zeigt, wo die Einnahmen stehen – was rechts davon liegt, ist nicht gedeckt.</p>
-        <div class="gruppen-balken" id="auswertungGruppen"></div>
-        <div class="gruppen-legende" id="auswertungGruppenLegende"></div>
 
         </div><!-- /Übersicht -->
 
@@ -6086,30 +6124,34 @@
     // «Der Weg»: zwei Linien auf einer gemeinsamen Skala, dazwischen als
     // Fläche der Überschuss. Eine dritte Linie dafür wäre neben Beträgen von
     // 5'000 ein Strich am Boden.
+    // «Der Weg» steht über den Versionsspalten der Tabelle: Punkt i liegt in
+    // der Mitte der Spalte i. Darum trägt das Diagramm selbst KEINE
+    // Beschriftung der Zeitachse — die senkrechten Spaltennamen darunter
+    // sind die Achse, und zweimal dieselben Namen untereinander wären eine
+    // Wiederholung, die nur Platz kostet.
     function zeichneWeg(versionen, summenJeVersion) {
         const svg = $('#auswertungWeg');
         if (!svg) return;
         if (versionen.length === 0) { svg.innerHTML = ''; return; }
-        // Die Breite kommt aus dem Element: mit fester viewBox 900 und
-        // «meet» zeichnet der Browser 900 Einheiten mittig in die Fläche und
-        // lässt links und rechts Rand stehen — das Diagramm blieb schmal,
-        // obwohl die Fläche breiter wurde.
-        const B = Math.max(600, Math.round(svg.clientWidth || svg.getBoundingClientRect().width || 900));
-        const H = 300, links = 56, rechts = 12, oben = 26, unten = 48;
+        const B = Math.max(200, Math.round(svg.clientWidth || svg.getBoundingClientRect().width || 600));
+        const H = 240, oben = 22, unten = 10;
         svg.setAttribute('viewBox', `0 0 ${B} ${H}`);
         const ein = summenJeVersion.map((s) => s.einnahmenM);
         const aus = summenJeVersion.map((s) => s.ausgabenM);
         const max = Math.max(1, ...ein, ...aus) * 1.08;
-        const x = (i) => links + (B - links - rechts) * (versionen.length === 1 ? .5 : i / (versionen.length - 1));
+        const spalte = B / versionen.length;
+        const x = (i) => spalte * (i + 0.5);
         const y = (w) => oben + (H - oben - unten) * (1 - w / max);
 
         const teile = [];
-        const schritt = rasterSchritt(max, 5);
+        // Die Werte der Achse stehen innen links über dem Raster: aussen
+        // bräuchten sie Platz, den die Ausrichtung auf die Spalten nicht
+        // hergibt.
+        const schritt = rasterSchritt(max, 4);
         for (let w = 0; w <= max; w += schritt) {
-            teile.push(`<line class="raster" x1="${links}" y1="${y(w)}" x2="${B - rechts}" y2="${y(w)}"/>`);
-            teile.push(`<text x="${links - 8}" y="${y(w) + 4}" text-anchor="end">${w.toLocaleString('de-CH')}</text>`);
+            teile.push(`<line class="raster" x1="0" y1="${y(w)}" x2="${B}" y2="${y(w)}"/>`);
+            teile.push(`<text class="achsenwert" x="2" y="${y(w) - 3}">${w.toLocaleString('de-CH')}</text>`);
         }
-        teile.push(`<line class="achse" x1="${links}" y1="${y(0)}" x2="${B - rechts}" y2="${y(0)}"/>`);
         for (let i = 0; i < versionen.length - 1; i++) {
             const minus = (ein[i] - aus[i] < 0) || (ein[i + 1] - aus[i + 1] < 0);
             teile.push(`<polygon class="band${minus ? ' ist-minus' : ''}" points="`
@@ -6119,27 +6161,19 @@
         teile.push(`<polyline class="linie-ein" points="${ein.map((w, i) => x(i) + ',' + y(w)).join(' ')}"/>`);
         teile.push(`<polyline class="linie-aus" points="${aus.map((w, i) => x(i) + ',' + y(w)).join(' ')}"/>`);
         versionen.forEach((v, i) => {
-            const anker = i === 0 ? 'start' : i === versionen.length - 1 ? 'end' : 'middle';
             const rest = summenJeVersion[i].diffM;
-            teile.push(`<circle class="punkt-ein" cx="${x(i)}" cy="${y(ein[i])}" r="5"/>`);
-            teile.push(`<circle class="punkt-aus" cx="${x(i)}" cy="${y(aus[i])}" r="5"/>`);
-            // Was bleibt, steht in der Mitte des Bandes — dort, wo es
-            // entsteht. Ist das Band zu schmal für die Schrift, rückt der
-            // Betrag über die obere Linie, sonst läge er auf ihr.
+            teile.push(`<circle class="punkt-ein" cx="${x(i)}" cy="${y(ein[i])}" r="5"><title>`
+                + `${escapeHtml(v.name)} · Einnahmen ${formatComputed(ein[i])}</title></circle>`);
+            teile.push(`<circle class="punkt-aus" cx="${x(i)}" cy="${y(aus[i])}" r="5"><title>`
+                + `${escapeHtml(v.name)} · Ausgaben ${formatComputed(aus[i])}</title></circle>`);
             const bandHoehe = Math.abs(y(ein[i]) - y(aus[i]));
             const mitte = (y(ein[i]) + y(aus[i])) / 2 + 4;
             const yWert = bandHoehe < 20 ? Math.min(y(ein[i]), y(aus[i])) - 8 : mitte;
             teile.push(`<text class="bleibt${rest < 0 ? ' ist-minus' : ''}" x="${x(i)}" `
-                + `y="${yWert}" text-anchor="${anker}">${deltaAnzeige(rest)}</text>`);
-            teile.push(`<text x="${x(i)}" y="${H - unten + 20}" text-anchor="${anker}">${escapeHtml(v.name)}</text>`);
+                + `y="${yWert}" text-anchor="middle">${deltaAnzeige(rest)}</text>`);
         });
-        teile.push(`<text class="spur-name ein" x="${links}" y="${y(ein[0]) - 12}">Einnahmen</text>`);
-        teile.push(`<text class="spur-name aus" x="${links}" y="${y(aus[0]) + 18}">Ausgaben</text>`);
-        if (versionen.length > 1) {
-            const ganz = summenJeVersion[versionen.length - 1].diffM - summenJeVersion[0].diffM;
-            teile.push(`<text class="wert" x="${B - rechts}" y="${H - unten + 38}" text-anchor="end">`
-                + `über alle Versionen ${deltaAnzeige(ganz)} pro Monat</text>`);
-        }
+        teile.push(`<text class="spur-name ein" x="4" y="${y(ein[0]) - 10}">Einnahmen</text>`);
+        teile.push(`<text class="spur-name aus" x="4" y="${y(aus[0]) + 16}">Ausgaben</text>`);
         svg.innerHTML = teile.join('');
     }
 
@@ -6246,8 +6280,17 @@
         const je = versionen.map((v) => summen(SCHEMA, v.values));
         // Was Versionen miteinander vergleicht, braucht mindestens zwei.
         const vergleichbar = versionen.length > 1;
-        ['#auswertungTeilWeg', '#auswertungTeilKarte', '#auswertungTeilWasserfall']
+        ['#auswertungTeilKarte', '#auswertungTeilWasserfall']
             .forEach((sel) => { const el = $(sel); if (el) el.hidden = !vergleichbar; });
+        // Zuerst die gemeinsame Spaltengrösse setzen: das Diagramm misst
+        // seine eigene Breite, und die hängt an dieser Zahl. Wird sie erst
+        // beim Zeichnen der Tabelle gesetzt, zeichnet der Weg in eine zu
+        // schmale Fläche und der Browser streckt ihn anschliessend.
+        const blatt = $('#auswertungUebersicht');
+        if (blatt) {
+            blatt.classList.toggle('viele', versionen.length >= 5);
+            blatt.style.setProperty('--zahl-anzahl', versionen.length);
+        }
         zeichneGruppen(versionen, je);
         if (!vergleichbar) return;
         zeichneWeg(versionen, je);

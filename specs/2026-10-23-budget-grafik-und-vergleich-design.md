@@ -171,6 +171,18 @@ Neu darin, aus der Skizze `skizzen/vergleich-seite.html`:
 - **Ein Wasserfall** für den Wechsel zwischen zwei Versionen; er nimmt
   dasselbe Paar wie «Unterschiede pro Position».
 
+**Nachtrag 2026-10-24, zweiter Teil: ein Block statt dreier.** Die Übersicht
+zeigt «Wohin das Geld geht», «Der Weg» und die Wärmekarte unter **einer**
+Überschrift. Der Weg steht dabei genau über den Versionsspalten der Tabelle —
+seine Zeitachse und die Spalten sind dieselbe Achse, darum trägt er selbst
+keine Beschriftung mehr, und die senkrechten Spaltennamen gelten für beides.
+Links daneben, wo die Tabelle ihre Textspalten hat, steht «Wohin das Geld
+geht»; sonst bliebe dort eine leere Fläche. Die Breite einer Versionsspalte
+ist dafür eine gemeinsame Grösse (`--zahl-breite`, `--zahl-anzahl`), die vor
+dem Zeichnen gesetzt wird: das Diagramm misst seine eigene Breite, und wer sie
+erst mit der Tabelle setzt, zeichnet in eine zu schmale Fläche und lässt den
+Browser strecken.
+
 Zwei Regeln, die der Modus mitbringt: Ein Klick auf einen Stand-Balken und ein
 Sprung zu einer Zeile **verlassen die Auswertung** — beide Ziele liegen im
 Formular, das im Modus nicht da ist. Und was Versionen miteinander vergleicht,
