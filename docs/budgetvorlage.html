@@ -1174,18 +1174,23 @@
 
         /* --- Die Wärmekarte --- */
         .karte-huelle { overflow-x: auto; }
-        /* Feste Aufteilung: die Zahlenspalten haben ihre Breite, die Gruppe
-           ihre, und der Positionsname bekommt den Rest. Ohne das bestimmt der
-           längste Name die Breite und die Tabelle läuft über den Rand. */
+        /* Die Zahlenspalten haben eine feste Breite — bemessen am grössten
+           Betrag, der vorkommen kann («+999'999.99»); Position und Gruppe
+           nehmen, was übrig bleibt. Umgekehrt (Zahlen in Prozent) wurden die
+           Zahlen bei vielen Versionen zu eng, und mit table-layout: fixed
+           konnte der Text nicht wachsen. Passt die Tabelle nicht mehr,
+           scrollt die Hülle. */
         .karte {
             width: 100%;
-            table-layout: fixed;
             border-collapse: collapse;
             font-size: .85rem;
         }
         /* break-word statt anywhere: «Nahrungsmittel, Getränke» bricht am
-           Leerzeichen und nicht mitten im Wort. */
-        .karte td.name { overflow-wrap: break-word; }
+           Leerzeichen und nicht mitten im Wort. Die Untergrenze verhindert,
+           dass die Zahlenspalten den Namen auf schmalem Schirm zu einer
+           Buchstabensäule quetschen — dann scrollt lieber die Hülle. */
+        .karte td.name, .karte th:first-child { overflow-wrap: break-word; min-width: 11rem; }
+        .karte td.gruppe, .karte th.gruppe { min-width: 6rem; }
         .karte th.gruppe, .karte td.gruppe {
             width: 8.5rem;
             overflow: hidden;
@@ -1215,15 +1220,23 @@
         .karte td.zahl { text-align: right; }
         .karte th.zahl { text-align: center; }      /* der senkrechte Name mittig über der Spalte */
         .karte th.zahl, .karte td.zahl {
-            width: max(4.4rem, var(--karte-spalte, 5.3rem));
+            /* 7.4rem: «+999'999.99» passt samt Vorzeichen und Polsterung
+               hinein. Breit genug bemessen heisst, dass die Spalten gleich
+               breit BLEIBEN — eine zu knappe Breite liesse die Spalte mit
+               dem grössten Betrag aus der Reihe wachsen. */
+            width: 7.4rem;
+            min-width: 7.4rem;
+            white-space: nowrap;
         }
         /* Viele Versionen: etwas kleinere Schrift und weniger Polsterung,
            damit «+2'315.09» auch dann in seine Zelle passt. */
         .karte.viele .zelle { font-size: .76rem; padding: .3rem .3rem; }
         .karte.viele th.zahl span { font-size: .72rem; }
-        /* Viele Versionen: die Gruppe wird schmaler, nicht weggenommen —
-           sie sagt, wo die Position im Formular steht. */
-        .karte.viele th.gruppe, .karte.viele td.gruppe { width: 5.5rem; font-size: .68rem; }
+        /* Viele Versionen: kleinere Schrift, also brauchen die Zahlen auch
+           weniger Platz. Die Gruppe bleibt, sie sagt, wo die Position im
+           Formular steht. */
+        .karte.viele th.zahl, .karte.viele td.zahl { width: 7rem; min-width: 7rem; }
+        .karte.viele th.gruppe, .karte.viele td.gruppe { font-size: .72rem; }
         .karte th.zahl span {
             display: inline-block;
             writing-mode: vertical-rl;
@@ -2116,6 +2129,13 @@
             border-style: solid;
             border-color: var(--color-primary);
             color: var(--color-primary);
+        }
+        /* Gedrückt UND überfahren: ohne diese Regel setzte die Regel darüber
+           die Schrift auf Teal — auf tealem Grund, also unsichtbar. */
+        .version-compare-btn[aria-pressed="true"]:hover {
+            background: var(--color-primary-dark);
+            border-color: var(--color-primary-dark);
+            color: white;
         }
         .version-compare-btn:focus-visible {
             outline: none;
@@ -6028,13 +6048,10 @@
             const grund = gut ? '5,150,105' : '220,38,38';
             return `background:rgba(${grund},${deckung});${anteil > 0.55 ? 'color:#fff;' : ''}`;
         };
-        // Die Spaltenbreite richtet sich nach der Anzahl Versionen: alle
-        // gleich breit, und was nach Name und Gruppe übrig bleibt, wird
-        // geteilt. Bei sehr vielen Versionen greift die Untergrenze im CSS
-        // und die Hülle scrollt.
+        // Ab fünf Versionen etwas kleinere Schrift; die Breite der
+        // Zahlenspalten steht im CSS und richtet sich nach dem grössten
+        // Betrag, nicht nach der Anzahl Versionen.
         tabelle.classList.toggle('viele', versionen.length >= 5);
-        tabelle.style.setProperty('--karte-spalte',
-            Math.max(7, Math.floor(62 / Math.max(1, versionen.length))) + '%');
         const kopf = '<thead><tr><th>Position</th><th class="gruppe">Gruppe</th>'
             + versionen.map((v) => `<th class="zahl"><span title="${escapeHtml(v.name)}">${escapeHtml(v.name)}</span></th>`).join('')
             + '</tr></thead>';
