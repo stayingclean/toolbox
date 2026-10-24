@@ -17,6 +17,9 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/flyer-editor.html` = Flyer-Editor (self-contained, Bilder eingebettet).
 - `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
 - `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
+- `docs/tokens.css` = die gemeinsamen Farben und Schriften der Seiten, die
+  sie einbinden (Übersicht, Vorschlagsformular, Anleitung, Plakat). Eigener
+  Absatz in Punkt 3 unten — **vor einer Änderung dort lesen.**
 - `docs/claude-anleitung/` = Mehrseiten-Anleitung „Mit Claude arbeiten",
   Seitenleiste als Navigation. Die Seiten teilen sich `stil.css` und
   `anleitung.js`; ein Teil von ihnen kommt beim Deployment aus einem zweiten
@@ -98,11 +101,85 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    bei der Budgetvorlage also, dass jemand ein Budget bearbeitet. Dasselbe
    Argument steht unten bei den Händler-Symbolen.
 
-   **Eingebettetes CSS bleibt, wo es heute steht** — nicht wegen Offline,
-   sondern weil es nichts kostet: eine Datei, ein Abruf, kein Cache-Problem beim
+   **Eingebettetes CSS bleibt, wo es heute steht** — ausser den Farben und
+   Schriften, die der Abschnitt gleich darunter in `docs/tokens.css`
+   herausgezogen hat. Für alles Übrige gilt: nicht wegen Offline, sondern
+   weil es nichts kostet: eine Datei, ein Abruf, kein Cache-Problem beim
    Deploy. Ein eigenes Stylesheet lohnt sich erst, wenn mehrere Seiten es
    teilen, wie in `docs/claude-anleitung/` (eigener Abschnitt unten, dort teilen
    alle Seiten `stil.css` und `anleitung.js`).
+
+   **Farben und Schriften kommen aus `docs/tokens.css`** (entschieden am
+   2026-10-23, Hintergrund: `specs/2026-10-23-stil-bibliothek-design.md`).
+   Vorher trug jede der vier Seiten Übersicht, Vorschlagsformular, Anleitung
+   und Plakat ihre eigene Kopie, bei acht der elf Namen mit demselben Wert;
+   wer an einer dieser Farben drehte, musste an vier Orten drehen und merkte
+   es nicht, wenn er einen vergass. Bei drei Namen stimmte es nicht:
+   `--card-hover` hatten nur Übersicht und Anleitung, und die zwei
+   Schrift-Token des Plakats waren immer eigene — darum überschreibt es sie
+   bis heute, begründet weiter unten.
+   Seither stehen die elf Werte einmal in der Datei (`--bg`, `--card`,
+   `--card-hover`, `--border`, `--text`, `--muted`, `--accent`,
+   `--accent-dark`, `--accent-tint`, `--font-display`, `--font-body`).
+
+   - **Hinein gehört nur, was Seiten wirklich teilen.** Nicht hinein: die
+     Signalfarben (`--warn`, `--ok` und ihre Tönungen), **solange ihre Werte
+     auseinandergehen** — Plakat und Anleitung haben verschiedene, und welcher
+     gilt, ist offen; ein Wert in `tokens.css` entschiede es stillschweigend
+     für beide. Ebenso wenig Radien, Abstände und Übergänge (keine der Seiten
+     benutzt solche Token) und das CSS der Fusszeile: entschieden ist «nur
+     Tokens», keine Komponenten.
+   - **Eine neue Seite bindet die Datei ein, statt eigene Farben zu setzen:**
+     `<link rel="stylesheet" href="tokens.css">` im `<head>`, Pfad relativ
+     zur Seite, und zwar **vor** dem eigenen `<style>`. Im CSS dann
+     `var(--accent)` statt `#008080`. Setzt die Seite einen der elf Token
+     selbst, ist das ein Rückfall in den alten Zustand.
+   - **`tests/test_tokens.py` meldet, wenn jemand das vergisst:** jede Seite
+     in `docs/` (HTML und CSS), die einen der elf Token selbst setzt — in
+     welchem Block und unter welchem Selektor auch immer —, muss in
+     `MIGRIERT` (eingebunden, Ausnahmen je Token begründet) oder in
+     `AUSGENOMMEN` (bewusst draussen, mit Grund) stehen.
+   - **Eine Seite, die in keiner der beiden Listen steht, darf auch keine
+     der neun Token-Farben als Hex im Text tragen.** Sonst fiele der
+     Rückfall nicht auf, der **eigene Namen** bei gleichen Werten vergibt —
+     und genau so lief hier bisher alles auseinander. `#fff` statt
+     `#FFFFFF` rutscht durch; abgeschrieben wird aus Budgetvorlage und
+     Skillsliste, und die schreiben beide sechsstellig. Bei den Seiten in
+     `MIGRIERT` zählt nur die Namensprüfung, dort ist jeder Hex-Wert
+     angeschaut (`stil.css` setzt `#FFFFFF` für einen Code-Block, das
+     Plakat eines als JPEG-Grund im JavaScript).
+   - **Dazu prüft derselbe Test:** dass jeder Verweis **aufgelöst** auf die
+     Datei zeigt — gefangen wird der ganze Attributwert, nicht der Teil
+     `tokens.css` darin, und Kommentare sind vorher weg (`tokens.css.bak`
+     und ein auskommentierter `<link>` kamen sonst durch); dass der `<link>`
+     vor dem `<style>` steht (bei `stil.css`: dass der `@import` die erste
+     Regel ist und die Token holt); dass `deploy.yml` den Ordner hochlädt,
+     in dem `tokens.css` liegt; und dass `docs/skill-vorschlagen.html` und
+     `docs/skills-daten.json` dem frisch gebauten Stand entsprechen.
+   - **Bei einem Wert in `tokens.css` mitziehen:** `TOKENS` in demselben
+     Test hält den Satz fest. Das ist Absicht — ein Wert dort verändert das
+     Aussehen der halben Website und soll nicht nebenbei geschehen.
+   - **Ausnahmen, in `AUSGENOMMEN` mit Grund eingetragen:** `skillsliste.html`
+     und `flyer-editor.html` bleiben in sich geschlossen (Gründe: siehe die
+     beiden folgenden Ausnahmen); sie setzen ihre Farben weiter selbst. Die
+     Budgetvorlage ist draussen, weil sie eigene Namen (`--color-*`) und
+     eigene Werte trägt — ihre Grautöne weichen von denen der übrigen Seiten
+     ab — und als Werkzeug mit eigener Logik `.json` speichert (siehe unten).
+     **Das Ob ist entschieden** (Benutzer, 2026-10-23, nach einer
+     Vorher-Nachher-Vorschau: «Budgetvorlage mit den warmen Farben»): sie
+     bekommt die Werte der übrigen Seiten, sichtbar ist das bei drei Farben —
+     `--color-text` `#1a1a1a` → `#1C1C1C`, `--color-text-muted` `#6b7280`
+     (kühl, Tailwind `gray-500`) → `#7A7268`, `--color-border` `#e5e7eb`
+     (kühl, Tailwind `gray-200`) → `#E8E4DF`. **Offen ist nur das Wann:**
+     der Umbau ist ein eigener Schritt, getrennt wegen Umfang und Risiko der
+     Seite (2181 Zeilen CSS, ein Druck-Layout, 171 eigene Tests in `tests/test_budget.py`). Begründung
+     in `specs/2026-10-23-stil-bibliothek-design.md`, Abschnitt «4.
+     Budgetvorlage: warme Farben». **Nicht gedeckt** ist ihr Signalfarben-Trio
+     (`--color-success`, `--color-warning`, `--color-danger`), das aus
+     demselben fremden System stammt; das bleibt eine eigene Frage. Wird die
+     Seite umgebaut, kommt sie aus `AUSGENOMMEN` nach `MIGRIERT`.
+     `neutral_flyer.html` ist eine blosse Weiterleitung, `docs/altbau/` ein
+     fremder Viewer mit eigenem `vendor/` und ganz ausserhalb.
 
    **Ausnahme: `docs/skillsliste.html` muss ohne Netz funktionieren.** Auch sie
    lädt wohl niemand herunter, aber sie soll es aushalten — und dort fällt die
@@ -129,10 +206,49 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    der PNG-Export wäre also nicht nur anders, er wäre kaputt. Die Datei
    dokumentiert das bei `loadSvgImage` für den Fall der Blob-URL.
 
-   **`docs/plakat.html` lädt ebenfalls keine Schrift**, aber aus einem dritten
-   Grund: sie rendert PNG und PDF selbst, und eine erst später eintreffende
-   Schrift ergäbe ein anderes Bild. Ein Test hält das fest
-   (`tests/test_plakat.py`, `test_seite_laedt_nichts_von_aussen_ausser_dem_avatar`).
+   **`docs/plakat.html` lädt keine Schrift, aber eine eigene Stilvorlage darf
+   es** (entschieden am 2026-10-23). Hier stand vorher, die Seite sei die
+   dritte Ausnahme, «weil sie PNG und PDF selbst rendert und eine erst später
+   eintreffende Schrift ein anderes Bild ergäbe». **Das war falsch**, am Code
+   nachgeprüft:
+
+   - Die Seite **rendert das Plakat nicht**. Sie liefert die fertige Datei
+     `docs/plakat-skillsliste.png` aus und holt sie per `fetch`.
+   - `pdfAusPng` reicht die **Bildpunkte unverändert** ins PDF durch; der Kern
+     sagt es selbst: «Reine Funktionen: kein DOM, kein fetch, kein Canvas.»
+   - Die Rückfallebene `pdfAusJpeg` benutzt zwar ein Canvas, zeichnet darauf
+     aber `drawImage(bild, 0, 0)` — **die Bilddatei**, nicht die Seite.
+
+   Das Aussehen der Seite hat damit **keinen Einfluss** auf PNG oder PDF, und
+   eine Stilvorlage verunreinigt kein Canvas (das tun nur gezeichnete Bilder
+   und Medien) — anders als beim Flyer-Editor, der wirklich das DOM zeichnet.
+
+   **Was bleibt, ist der Datenschutz-Grund, und der gilt unverändert:** von
+   einem fremden Server darf nichts kommen. Zwei Tests halten das fest
+   (`tests/test_plakat.py`): `test_seite_laedt_nichts_von_aussen_ausser_dem_avatar`
+   prüft, was die Seite **lädt** (`src`, und `href` an einem `<link>`) — nicht,
+   wohin sie verlinkt; `<a href="https://buymeacoffee.com/…">` ist ein Ziel für
+   einen Klick und meldet niemandem etwas. `test_eine_stilvorlage_der_seite_kaeme_aus_demselben_ordner`
+   verlangt, dass ein `<link rel="stylesheet">` einen relativen Pfad trägt.
+   Hintergrund: `specs/2026-10-23-stil-bibliothek-design.md`.
+
+   **Das Plakat muss die beiden Schrift-Token selbst überschreiben.**
+   `tokens.css` setzt `--font-body` auf Inter und `--font-display` auf
+   Playfair Display. Die Seite lädt keine Schrift von aussen; ohne
+   Überschreibung bekäme Inter nur, wer es lokal installiert hat, alle anderen
+   die Ersatzschrift dahinter — das Plakat sähe bei jedem anders aus, und
+   niemand meldete es, weil es fast niemand sieht. Darum setzt sie beide in
+   ihrem eigenen `:root` auf Systemschriften (`test_plakat_ueberschreibt_die_schrift_tokens`;
+   in `MIGRIERT` als begründete Ausnahme eingetragen).
+
+   **Dass die Überschreibung gewinnt, entscheidet allein die Reihenfolge:**
+   `:root` gegen `:root` hat gleiche Spezifität, also gilt, was später
+   kommt. Der `<link>` auf `tokens.css` muss deshalb **vor** dem
+   `<style>`-Block stehen. Schöbe jemand ihn dahinter, bliebe jeder andere
+   Test grün — die Überschreibung stünde ja weiterhin im `:root` —, und
+   die Tokens übersteuerten sie. Festgehalten ist das in
+   `test_die_tokens_werden_vor_dem_eigenen_stil_geladen` (belegt rot, wenn
+   der `<link>` hinter das `<style>` wandert).
 
    **Die Budgetvorlage speichert `.json`, nicht HTML** (`saveFile`) — Werkzeug
    und Daten sind getrennt, kein ausgefülltes Budget steckt je in einer
@@ -166,8 +282,20 @@ Leere. Das ist kein Fehler, sondern der Preis dafür, dass sie sich mit dem
 Ordner zusammen ändern. Geprüft wird die Anleitung darum am
 **zusammenkopierten** Stand, nicht am Repo allein.
 
-Daraus folgen vier Dinge, die keine Sperre meldet:
+Daraus folgen einige Dinge, die keine Sperre meldet:
 
+- **`stil.css` holt die Token per `@import url("../tokens.css")`, die Seiten
+  tragen keinen eigenen Verweis.** Acht der vierzehn Seiten kommen aus
+  `stayingclean/ki-tasks`; ein `<link>` auf `tokens.css` müsste in jeder
+  davon stehen, also in einem zweiten Repo, und ein verschobener Pfad ginge
+  dort niemandem auf. Über `stil.css` steht der Verweis an **einer** Stelle,
+  und die ki-tasks-Seiten bekommen die Farben mit, ohne etwas zu wissen.
+  Der `@import` muss die **erste** Regel der Datei sein, sonst verwirft ihn
+  der Browser — und die ganze Anleitung stünde ohne Farben da, während die
+  übrigen Tests grün blieben. Das hält
+  `test_die_tokens_werden_vor_dem_eigenen_stil_geladen` fest (nach Abzug der
+  Kommentare muss der `@import` an erster Stelle stehen). Der Pfad ist
+  relativ zu `stil.css`, nicht zur Seite.
 - **`stil.css` und `anleitung.js` gehören der Toolbox.** Die ki-tasks-Seiten
   verweisen nur darauf. Liegt drüben eine gleichnamige Datei, überschreibt das
   `cp` die hiesige — also dort **keine** mitliefern.
@@ -528,7 +656,12 @@ hier etwas umbaut, muss es dort nachziehen.
 
 Die Formularseite ist generiert (`template-vorschlag.html` + `build.py`) — nicht
 direkt bearbeiten. Sie ist die einzige Seite in `docs/`, die Internet braucht
-(Spam-Schutz und Absenden); das CSS bleibt trotzdem eingebettet.
+(Spam-Schutz und Absenden). Die Farben und Schriften bezieht sie aus
+`docs/tokens.css` (`<link>` in `template-vorschlag.html`, vom Build
+übernommen); das übrige CSS bleibt eingebettet. Die Token-Datei liegt auf
+demselben Server wie die Seite, es kommt also nichts von einem Dritten dazu.
+Wer `template-vorschlag.html` ändert, muss neu bauen — `tests/test_tokens.py`
+meldet eine veraltete `docs/skill-vorschlagen.html`.
 
 Der Worker liegt in `worker/`, wird aber **nicht** veröffentlicht. Details und
 Notbremse: `worker/README.md`.
