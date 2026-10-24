@@ -1062,6 +1062,240 @@
             font-size: 0.88rem;
             color: var(--color-text-muted);
         }
+        /* ============================================================
+           Auswertung — der Vollbild-Modus
+           Alles Grafische liegt hier; das Formular bleibt eine Erfassung.
+           Im Modus zeigt die Seite genau drei Abschnitte, sonst keinen
+           davon — ein Knopf, ein Ort.
+           ============================================================ */
+        .auswertung-section[hidden] { display: none; }
+        .auswertung-teil[hidden] { display: none; }
+        body.mode-auswertung main > .section:not(#auswertungSection):not(#grafikSection):not(#versionsOverviewSection),
+        body.mode-auswertung .private-note {
+            display: none;
+        }
+        body:not(.mode-auswertung) #grafikSection,
+        body:not(.mode-auswertung) #versionsOverviewSection {
+            display: none;
+        }
+        .auswertung-kopf {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            margin-bottom: .5rem;
+        }
+        .auswertung-kopf .section-title { margin-bottom: 0; }
+        .auswertung-zurueck {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border: 1px solid var(--color-primary);
+            border-radius: var(--radius-sm);
+            background: var(--color-bg);
+            color: var(--color-primary-dark);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .auswertung-zurueck:hover { background: var(--color-primary); color: white; }
+        .auswertung-zurueck:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+
+        /* --- «Der Weg»: zwei Linien, dazwischen was bleibt --- */
+        .weg { width: 100%; height: 300px; display: block; }
+        .weg .achse { stroke: var(--color-border); stroke-width: 1; }
+        .weg .raster { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 2 4; }
+        /* Die Fläche zwischen den Linien IST der Überschuss — darum gefüllt
+           und nicht als dritte Linie gezeichnet: neben Beträgen von 5'000
+           klebte die am Boden. */
+        .weg .band { fill: rgba(5, 150, 105, .16); }
+        .weg .band.ist-minus { fill: rgba(220, 38, 38, .16); }
+        .weg .linie-ein { fill: none; stroke: var(--color-success); stroke-width: 2.5; }
+        .weg .linie-aus { fill: none; stroke: var(--color-danger); stroke-width: 2.5; }
+        .weg .punkt-ein { fill: var(--color-bg); stroke: var(--color-success); stroke-width: 2.5; }
+        .weg .punkt-aus { fill: var(--color-bg); stroke: var(--color-danger); stroke-width: 2.5; }
+        .weg text { font-size: 11px; fill: var(--color-text-muted); font-family: var(--font-body); }
+        .weg text.wert { font-size: 12px; font-weight: 600; fill: var(--color-text); }
+        .weg text.bleibt { font-size: 12px; font-weight: 700; fill: var(--color-success); }
+        .weg text.bleibt.ist-minus { fill: var(--color-danger); }
+        .weg text.spur-name { font-size: 11px; font-weight: 600; }
+        .weg text.spur-name.ein { fill: var(--color-success); }
+        .weg text.spur-name.aus { fill: var(--color-danger); }
+
+        /* --- Die Wärmekarte --- */
+        .karte-huelle { overflow-x: auto; }
+        /* Feste Aufteilung: die Zahlenspalten haben ihre Breite, die Gruppe
+           ihre, und der Positionsname bekommt den Rest. Ohne das bestimmt der
+           längste Name die Breite und die Tabelle läuft über den Rand. */
+        .karte {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            font-size: .85rem;
+        }
+        .karte td.name { overflow-wrap: anywhere; }
+        .karte th.gruppe, .karte td.gruppe {
+            width: 8.5rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .karte th {
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            padding: .3rem .4rem;
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: bottom;
+        }
+        /* Gleich breite Spalten, unabhängig vom Namen der Version: er steht
+           senkrecht. Sonst bestimmte «Mit Prämienverbilligung», wie breit die
+           Spalte wird, und die Karte wäre von Fassung zu Fassung anders
+           geschnitten. */
+        .karte th.zahl, .karte td.zahl {
+            text-align: right;
+            /* 5.3rem: breit genug für «+3'194.00» samt Polsterung — darunter
+               quoll die Zahl aus der Zelle und die Tabelle über den Rand. */
+            width: 5.3rem;
+            min-width: 5.3rem;
+            max-width: 5.3rem;
+        }
+        .karte th.zahl span {
+            display: inline-block;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);      /* von unten nach oben lesen */
+            white-space: nowrap;
+            max-height: 11rem;              /* darüber kürzt «…», voller Name im title */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: left;
+            line-height: 1.1;
+        }
+        .karte td {
+            padding: .25rem .4rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .karte td.name { font-weight: 500; }
+        .karte td.gruppe {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--color-text-muted);
+        }
+        .karte tr.summe td { border-bottom: none; font-weight: 700; padding-top: .5rem; }
+        /* Zahlen rechtsbündig: so stehen Hunderter unter Hunderttern und das
+           Auge vergleicht die Spalte, statt jede Zahl einzeln zu lesen. */
+        .zelle {
+            display: block;
+            padding: .3rem .45rem;
+            border-radius: var(--radius-sm);
+            font-variant-numeric: tabular-nums;
+            font-size: .82rem;
+            text-align: right;
+        }
+        .zelle.leer { color: var(--color-text-muted); }
+        .karte-legende {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem 1rem;
+            margin-top: .8rem;
+            font-size: .8rem;
+            color: var(--color-text-muted);
+            align-items: center;
+        }
+        .karte-legende i {
+            display: inline-block;
+            width: 1.6rem;
+            height: .7rem;
+            border-radius: 2px;
+            margin-right: .3rem;
+            vertical-align: middle;
+        }
+        .karte-legende .stark-gut      { background: var(--color-success); }
+        .karte-legende .leicht-gut     { background: rgba(5, 150, 105, .28); }
+        .karte-legende .neutral        { background: var(--color-bg-alt); border: 1px solid var(--color-border); }
+        .karte-legende .leicht-schlecht { background: rgba(220, 38, 38, .28); }
+        .karte-legende .stark-schlecht { background: var(--color-danger); }
+
+        /* --- Säulen je Version --- */
+        .saeulen {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        .saeule-block {
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: .7rem .8rem .8rem;
+        }
+        .saeule-block.ist-aktiv { border-color: var(--color-primary); background: var(--color-primary-faint); }
+        .saeule-name { font-weight: 600; font-size: .9rem; }
+        .saeule-rest { font-size: .8rem; color: var(--color-text-muted); margin-bottom: .6rem; min-height: 1.2em; }
+        .saeule-paar { display: flex; align-items: flex-end; gap: .5rem; height: 120px; }
+        .saeule { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+        .saeule span { display: block; border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+        .saeule .ein { background: var(--color-success); }
+        .saeule .aus { background: var(--color-danger); }
+        .saeule-fuss { display: flex; gap: .5rem; }
+        .saeule-fuss small {
+            flex: 1;
+            display: block;
+            margin-top: .25rem;
+            font-size: .72rem;
+            color: var(--color-text-muted);
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .saeule-diff { margin-top: .5rem; font-size: .88rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .saeule-diff.ist-gut      { color: var(--color-success); }
+        .saeule-diff.ist-schlecht { color: var(--color-danger); }
+
+        /* --- Wasserfall zwischen zwei Versionen --- */
+        .wasserfall { display: flex; flex-direction: column; gap: .15rem; }
+        .wf-zeile {
+            display: grid;
+            grid-template-columns: minmax(8rem, 16rem) 1fr minmax(6rem, auto);
+            align-items: center;
+            gap: .6rem;
+            padding: .25rem .4rem;
+            font-size: .88rem;
+        }
+        .wf-zeile.summe {
+            margin-top: .3rem;
+            border-top: 2px solid var(--color-border);
+            padding-top: .5rem;
+            font-weight: 700;
+        }
+        .wf-spur { position: relative; height: 16px; background: var(--color-bg-alt); border-radius: var(--radius-sm); }
+        .wf-null { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--color-border); }
+        .wf-balken { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+        .wf-balken.ist-gut      { background: var(--color-success); }
+        .wf-balken.ist-schlecht { background: var(--color-danger); }
+        .wf-wert { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+        .wf-wert.ist-gut      { color: var(--color-success); }
+        .wf-wert.ist-schlecht { color: var(--color-danger); }
+
+        /* Die Gruppe ist Nebensache: der Positionsname trägt sie ohnehin.
+           Unter 900 px nimmt sie den Platz weg, den die Versionsspalten
+           brauchen — dann lieber weg als eine Tabelle mit Querbalken. */
+        @media (max-width: 900px) {
+            .karte td.gruppe, .karte th.gruppe { display: none; }
+        }
+        @media (max-width: 480px) {
+            .wf-zeile { grid-template-columns: 1fr auto; }
+            .wf-spur { grid-column: 1 / -1; order: 3; }
+        }
+
         /* Schmal: Beschriftung und Zahl in einer Zeile, die Spur darunter über
            die ganze Breite. Ein Balken von 40 % einer 120 px breiten Spur sagt
            nichts mehr; über die volle Breite sagt er wieder etwas. */
@@ -2482,12 +2716,14 @@
 <div class="version-bar" id="versionBar">
     <div class="version-bar-label">Versionen:</div>
     <div class="version-tabs" id="versionTabs" role="tablist" aria-label="Budget-Versionen"></div>
-    <!-- «Vergleichen» steht bei den Reitern, weil er auf sie wirkt, während
-         «Neue Version» einen neuen anlegt. Er trägt keine Rolle «tab»: die
-         Leiste selbst ist keine Reiterliste, nur #versionTabs ist es. -->
-    <button class="version-compare-btn" id="compareBtn" type="button" hidden
-            title="Zwei Versionen nebeneinanderlegen">
-        <span aria-hidden="true">⇄</span><span>Vergleichen</span>
+    <!-- «Auswertung» steht bei den Reitern, weil sie die Versionen
+         nebeneinanderlegt, während «Neue Version» einen neuen anlegt. Der
+         Knopf trägt keine Rolle «tab»: die Leiste selbst ist keine
+         Reiterliste, nur #versionTabs ist es. -->
+    <button class="version-compare-btn" id="auswertungBtn" type="button" hidden
+            aria-pressed="false"
+            title="Alle Diagramme und der Vergleich der Versionen">
+        <span aria-hidden="true">◫</span><span>Auswertung</span>
     </button>
     <button class="version-add-btn" id="addVersionBtn" type="button"
             aria-label="Neue Budget-Version anlegen" title="Neue Budget-Version anlegen">
@@ -2839,6 +3075,61 @@
     </section>
 
     <!-- ============================================================
+         Auswertung — alles Grafische an einem Ort, erreichbar über den
+         Knopf «Auswertung» in der Versionsleiste. Das Formular bleibt
+         dadurch, was es ist: eine Erfassung. Sichtbar nur im Modus
+         (body.mode-auswertung).
+         ============================================================ -->
+    <section class="section auswertung-section" id="auswertungSection" hidden>
+        <div class="auswertung-kopf">
+            <h2 class="section-title">Auswertung</h2>
+            <button class="auswertung-zurueck" id="auswertungZurueckBtn" type="button">
+                <span aria-hidden="true">←</span><span>Zurück zum Budget</span>
+            </button>
+        </div>
+
+        <!-- Diese drei Teile vergleichen Versionen miteinander. Mit einer
+             einzigen Version haben sie nichts zu sagen und bleiben weg;
+             übrig bleibt, was auch zu einer Version gehört: die Säulen und
+             die Diagramme zu den Anpassungen. -->
+        <div class="auswertung-teil" id="auswertungTeilWeg" hidden>
+        <h3 class="grafik-titel">Der Weg</h3>
+        <p class="grafik-untertitel">Einnahmen und Ausgaben über alle Versionen – dazwischen als Fläche, was am Monatsende bleibt.</p>
+        <svg class="weg" id="auswertungWeg" viewBox="0 0 900 300" role="img"
+             aria-label="Einnahmen und Ausgaben über alle Versionen, dazwischen der Überschuss"></svg>
+        </div>
+
+        <div class="auswertung-teil" id="auswertungTeilKarte" hidden>
+        <h3 class="grafik-titel">Wo sich etwas bewegt</h3>
+        <p class="grafik-untertitel">Nur die Positionen, die sich über die Versionen überhaupt ändern. Die Farbe zeigt den Unterschied zur ersten Version; bei Einnahmen umgekehrt gelesen.</p>
+        <div class="karte-huelle"><table class="karte" id="auswertungKarte"></table></div>
+        <div class="karte-legende">
+            <span><i class="stark-gut"></i>deutlich günstiger</span>
+            <span><i class="leicht-gut"></i>etwas günstiger</span>
+            <span><i class="neutral"></i>unverändert</span>
+            <span><i class="leicht-schlecht"></i>etwas teurer</span>
+            <span><i class="stark-schlecht"></i>deutlich teurer</span>
+        </div>
+        </div>
+
+        <h3 class="grafik-titel">Einnahmen und Ausgaben je Version</h3>
+        <p class="grafik-untertitel">Zwei Säulen pro Version – das Bild zeigt, ob die Einnahmen gestiegen oder die Ausgaben gesunken sind.</p>
+        <div class="saeulen" id="auswertungSaeulen"></div>
+
+        <div class="auswertung-teil" id="auswertungTeilWasserfall" hidden>
+        <h3 class="grafik-titel">Was sich zwischen zwei Versionen bewegt</h3>
+        <p class="grafik-untertitel">Hier – und nur hier – braucht es eine Auswahl: Position für Position, was der Wechsel ausmacht. Dieselbe Wahl bestimmt auch die Unterschiede-Tabelle weiter unten.</p>
+        <div class="vergleich-wahl" id="vergleichWahl">
+            <label class="vergleich-label" for="vergleichA">Vergleichen:</label>
+            <select id="vergleichA" class="vergleich-select"></select>
+            <span class="vergleich-mit">mit</span>
+            <select id="vergleichB" class="vergleich-select"></select>
+        </div>
+        <div class="wasserfall" id="auswertungWasserfall"></div>
+        </div>
+    </section>
+
+    <!-- ============================================================
          Diagramme zu den Anpassungen — eigener Abschnitt, nicht in der
          Zusammenfassung: die hat ihre eigenen Druckregeln, und ein
          eigener Abschnitt lässt sich als Ganzes ein- und ausblenden.
@@ -2866,17 +3157,6 @@
             Übersicht aller erfassten Budget-Versionen mit den Differenzen zur jeweiligen Basis-Version.
             Die aktive Version ist hervorgehoben.
         </p>
-
-        <!-- Die freie Wahl des Paares. Vorbelegt mit dem, was ohne jede
-             Bedienung ohnehin gilt: A = Basis der aktiven Version, B = die
-             aktive Version. Die Wahl steht nicht in der Datei — sie ist eine
-             Blickrichtung, kein Inhalt. -->
-        <div class="vergleich-wahl" id="vergleichWahl">
-            <label class="vergleich-label" for="vergleichA">Vergleichen:</label>
-            <select id="vergleichA" class="vergleich-select"></select>
-            <span class="vergleich-mit">mit</span>
-            <select id="vergleichB" class="vergleich-select"></select>
-        </div>
 
         <h3 class="grafik-titel">Die Versionen im Vergleich</h3>
         <p class="grafik-untertitel">Was in jeder Version am Monatsende bleibt. Ein Klick wählt sie als A.</p>
@@ -3614,6 +3894,65 @@
             eintraege: alle.slice(0, grenze),
             restAnzahl: rest.length,
             restDeltaM: rest.reduce((s, e) => s + e.deltaM, 0),
+        };
+    }
+
+    // Der Monatsbetrag einer Zeile aus einem Wertesatz: erfasst wird jährlich
+    // oder monatlich, gerechnet wird mit dem, was dasteht.
+    function zeilenWertM(values, rowId) {
+        const y = istZahl(values[rowId + '.jaehrlich']) ? values[rowId + '.jaehrlich'] : 0;
+        const m = istZahl(values[rowId + '.monatlich']) ? values[rowId + '.monatlich'] : 0;
+        return m || (y / 12);
+    }
+
+    // Die Wärmekarte: welche Positionen sich über die Versionen überhaupt
+    // bewegen, und wie stark gegenüber der ersten. Von sechzig Zeilen eines
+    // Budgets ändern sich meist acht — die übrigen gehören nicht hinein,
+    // sonst sucht man die Bewegung zwischen lauter Strichen.
+    // `staerkste` gibt die Farbskala vor: ohne sie sähe eine Änderung von
+    // 20 Franken aus wie eine von 400.
+    function karteZeilen(schema, versionen) {
+        const zeilen = [];
+        let staerkste = 0;
+        Object.keys(schema).forEach((groupId) => {
+            schema[groupId].forEach((row) => {
+                const werte = (versionen || []).map((v) => zeilenWertM(v.values || {}, row.id));
+                const erste = werte.length ? werte[0] : 0;
+                if (!werte.some((w) => Math.abs(w - erste) > 0.005)) return;
+                const abweichungen = werte.map((w) => w - erste);
+                abweichungen.forEach((a) => { staerkste = Math.max(staerkste, Math.abs(a)); });
+                zeilen.push({
+                    rowId: row.id,
+                    gruppe: groupId,
+                    istEinnahme: groupId === 'einnahmen',
+                    werte: werte,
+                    abweichungen: abweichungen,
+                });
+            });
+        });
+        return { zeilen: zeilen, staerkste: staerkste };
+    }
+
+    // Was der Wechsel von A nach B je Position ausmacht. Positiv heisst «es
+    // bleibt mehr»: bei einer Ausgabe zählt die Senkung, bei einer Einnahme
+    // die Erhöhung. Wer hier nur subtrahiert, zeigt eine gestiegene Einnahme
+    // als Verschlechterung.
+    function wirkungZwischen(schema, werteA, werteB) {
+        const eintraege = [];
+        Object.keys(schema).forEach((groupId) => {
+            schema[groupId].forEach((row) => {
+                const alt = zeilenWertM(werteA || {}, row.id);
+                const neu = zeilenWertM(werteB || {}, row.id);
+                const wirkung = groupId === 'einnahmen' ? neu - alt : alt - neu;
+                if (Math.abs(wirkung) <= 0.005) return;
+                eintraege.push({ rowId: row.id, wirkung: wirkung });
+            });
+        });
+        eintraege.sort((a, b) => (Math.abs(b.wirkung) - Math.abs(a.wirkung))
+            || (a.rowId < b.rowId ? -1 : a.rowId > b.rowId ? 1 : 0));
+        return {
+            eintraege: eintraege,
+            summe: eintraege.reduce((s, e) => s + e.wirkung, 0),
         };
     }
 
@@ -4641,7 +4980,7 @@
                 stand.faellig ? 'Datum schon verstrichen' : '',
                 geo.balken[i], geo.nullBei,
                 formatComputed(stand.diffM), wirkung, titel,
-                () => enterPreview(stand.key));
+                () => { verlasseAuswertung(); enterPreview(stand.key); });
             zeile.dataset.stand = stand.key;
             if (stand.key === state.previewStand) zeile.classList.add('is-preview');
             standBox.appendChild(zeile);
@@ -4744,6 +5083,9 @@
     // Klappt die Zeile auf und scrollt sie in den Blick. Die Kopfleiste klebt
     // oben (.sticky-head); ohne ihre Höhe abzuziehen läge die Zeile darunter.
     function springeZuZeile(rowId) {
+        // Das Ziel ist eine Zeile im Formular — in der Auswertung ist das
+        // Formular nicht da.
+        verlasseAuswertung();
         closeAdjustmentsPanel();
         // Sonst läge die Überlagerung genau über der Zeile, zu der gesprungen
         // wurde — die Kopfleiste ist der Anker des Panels.
@@ -5097,6 +5439,7 @@
         });
 
         renderGrafik(verlauf, anpassungen, basisWerte);
+        renderAuswertung();     // tut nichts, solange der Modus zu ist
         renderAdjustmentList(basisWerte);
     }
 
@@ -5300,11 +5643,17 @@
         const multi = isMultiVersion();
         document.body.classList.toggle('mode-multi-version', multi);
         document.body.classList.toggle('mode-single-version', !multi);
-        // Mit einer Version gibt es nichts zu vergleichen, und der
-        // Zielabschnitt ist dann selbst versteckt — ein Knopf, der ins Nichts
-        // führt, wäre schlimmer als keiner.
-        const vergleich = $('#compareBtn');
-        if (vergleich) vergleich.hidden = !multi;
+        // Der Knopf zeigt sich, sobald es etwas auszuwerten gibt: mehrere
+        // Versionen oder eine Anpassung. Mit einer leeren Seite führte er ins
+        // Nichts, und das wäre schlimmer als kein Knopf.
+        const aktiv = getActiveVersion();
+        const hatAnpassung = Object.keys(bekannteAnpassungen(aktiv ? aktiv.adjustments : {}))
+            .some((id) => anpassungHatBetrag(aktiv.adjustments[id]));
+        const auswertung = $('#auswertungBtn');
+        if (auswertung) {
+            auswertung.hidden = !(multi || hatAnpassung);
+            if (auswertung.hidden) verlasseAuswertung();
+        }
     }
 
     function suggestVersionName() {
@@ -5469,24 +5818,189 @@
         return { a: getVersionById(a) || null, b: getVersionById(b) || null };
     }
 
-    // Dasselbe Muster wie springeZuZeile: die klebende Kopfleiste abziehen,
-    // kurz hervorheben und den Fokus setzen, damit sichtbar ist, wo man
-    // gelandet ist — und die Tastatur nicht von vorn beginnen muss.
-    function springeZumVergleich() {
-        const abschnitt = $('#versionsOverviewSection');
-        if (!abschnitt || abschnitt.hidden) return;
+    // ----------------------------------------------------------------
+    // Die Auswertung: ein Ort für alles Grafische
+    // ----------------------------------------------------------------
+    function auswertungOffen() {
+        return document.body.classList.contains('mode-auswertung');
+    }
+
+    function zeigeAuswertung() {
+        captureFormToActiveVersion();
         closeAdjustmentsPanel();
         closeHilfePanel();
-        const kopf = $('.sticky-head');
-        const abstand = (kopf ? kopf.offsetHeight : 0) + 12;
-        const oben = abschnitt.getBoundingClientRect().top + window.scrollY - abstand;
-        window.scrollTo({ top: Math.max(0, oben) });
-        abschnitt.classList.remove('adj-sprung');
-        void abschnitt.offsetWidth;
-        abschnitt.classList.add('adj-sprung');
-        setTimeout(() => abschnitt.classList.remove('adj-sprung'), 1700);
-        const wahl = $('#vergleichA');
-        if (wahl) wahl.focus({ preventScroll: true });
+        document.body.classList.add('mode-auswertung');
+        $('#auswertungSection').hidden = false;
+        $('#auswertungBtn').setAttribute('aria-pressed', 'true');
+        renderAuswertung();
+        renderVersionsOverview();
+        window.scrollTo({ top: 0 });
+        const zurueck = $('#auswertungZurueckBtn');
+        if (zurueck) zurueck.focus({ preventScroll: true });
+    }
+
+    function verlasseAuswertung() {
+        if (!auswertungOffen()) return;
+        document.body.classList.remove('mode-auswertung');
+        $('#auswertungSection').hidden = true;
+        $('#auswertungBtn').setAttribute('aria-pressed', 'false');
+        const btn = $('#auswertungBtn');
+        if (btn && !btn.hidden) btn.focus({ preventScroll: true });
+    }
+
+    // «Der Weg»: zwei Linien auf einer gemeinsamen Skala, dazwischen als
+    // Fläche der Überschuss. Eine dritte Linie dafür wäre neben Beträgen von
+    // 5'000 ein Strich am Boden.
+    function zeichneWeg(versionen, summenJeVersion) {
+        const svg = $('#auswertungWeg');
+        if (!svg) return;
+        if (versionen.length === 0) { svg.innerHTML = ''; return; }
+        const B = 900, H = 300, links = 56, rechts = 12, oben = 26, unten = 48;
+        const ein = summenJeVersion.map((s) => s.einnahmenM);
+        const aus = summenJeVersion.map((s) => s.ausgabenM);
+        const max = Math.max(1, ...ein, ...aus) * 1.08;
+        const x = (i) => links + (B - links - rechts) * (versionen.length === 1 ? .5 : i / (versionen.length - 1));
+        const y = (w) => oben + (H - oben - unten) * (1 - w / max);
+
+        const teile = [];
+        const schritt = max > 6000 ? 2000 : 1000;
+        for (let w = 0; w <= max; w += schritt) {
+            teile.push(`<line class="raster" x1="${links}" y1="${y(w)}" x2="${B - rechts}" y2="${y(w)}"/>`);
+            teile.push(`<text x="${links - 8}" y="${y(w) + 4}" text-anchor="end">${w.toLocaleString('de-CH')}</text>`);
+        }
+        teile.push(`<line class="achse" x1="${links}" y1="${y(0)}" x2="${B - rechts}" y2="${y(0)}"/>`);
+        for (let i = 0; i < versionen.length - 1; i++) {
+            const minus = (ein[i] - aus[i] < 0) || (ein[i + 1] - aus[i + 1] < 0);
+            teile.push(`<polygon class="band${minus ? ' ist-minus' : ''}" points="`
+                + `${x(i)},${y(ein[i])} ${x(i + 1)},${y(ein[i + 1])} `
+                + `${x(i + 1)},${y(aus[i + 1])} ${x(i)},${y(aus[i])}"/>`);
+        }
+        teile.push(`<polyline class="linie-ein" points="${ein.map((w, i) => x(i) + ',' + y(w)).join(' ')}"/>`);
+        teile.push(`<polyline class="linie-aus" points="${aus.map((w, i) => x(i) + ',' + y(w)).join(' ')}"/>`);
+        versionen.forEach((v, i) => {
+            const anker = i === 0 ? 'start' : i === versionen.length - 1 ? 'end' : 'middle';
+            const rest = summenJeVersion[i].diffM;
+            teile.push(`<circle class="punkt-ein" cx="${x(i)}" cy="${y(ein[i])}" r="5"/>`);
+            teile.push(`<circle class="punkt-aus" cx="${x(i)}" cy="${y(aus[i])}" r="5"/>`);
+            // Was bleibt, steht in der Mitte des Bandes — dort, wo es entsteht.
+            teile.push(`<text class="bleibt${rest < 0 ? ' ist-minus' : ''}" x="${x(i)}" `
+                + `y="${(y(ein[i]) + y(aus[i])) / 2 + 4}" text-anchor="${anker}">${deltaAnzeige(rest)}</text>`);
+            teile.push(`<text x="${x(i)}" y="${H - unten + 20}" text-anchor="${anker}">${escapeHtml(v.name)}</text>`);
+        });
+        teile.push(`<text class="spur-name ein" x="${links}" y="${y(ein[0]) - 12}">Einnahmen</text>`);
+        teile.push(`<text class="spur-name aus" x="${links}" y="${y(aus[0]) + 18}">Ausgaben</text>`);
+        if (versionen.length > 1) {
+            const ganz = summenJeVersion[versionen.length - 1].diffM - summenJeVersion[0].diffM;
+            teile.push(`<text class="wert" x="${B - rechts}" y="${H - unten + 38}" text-anchor="end">`
+                + `über alle Versionen ${deltaAnzeige(ganz)} pro Monat</text>`);
+        }
+        svg.innerHTML = teile.join('');
+    }
+
+    // Die Wärmekarte. Die Farbe trägt die Aussage, die Zahl bestätigt sie.
+    function zeichneKarte(versionen) {
+        const tabelle = $('#auswertungKarte');
+        if (!tabelle) return;
+        const daten = karteZeilen(SCHEMA, versionen);
+        if (daten.zeilen.length === 0) {
+            tabelle.innerHTML = '<tbody><tr><td class="name">Keine Position ändert sich über die Versionen.</td></tr></tbody>';
+            return;
+        }
+        const farbe = (abw, einnahme) => {
+            if (Math.abs(abw) <= 0.005) return 'background:var(--color-bg-alt)';
+            // Gut heisst: Ausgabe sinkt oder Einnahme steigt.
+            const gut = einnahme ? abw > 0 : abw < 0;
+            const anteil = Math.min(1, Math.abs(abw) / (daten.staerkste || 1));
+            const deckung = (0.18 + 0.72 * anteil).toFixed(2);
+            const grund = gut ? '5,150,105' : '220,38,38';
+            return `background:rgba(${grund},${deckung});${anteil > 0.55 ? 'color:#fff;' : ''}`;
+        };
+        const kopf = '<thead><tr><th>Position</th><th class="gruppe">Gruppe</th>'
+            + versionen.map((v) => `<th class="zahl"><span title="${escapeHtml(v.name)}">${escapeHtml(v.name)}</span></th>`).join('')
+            + '</tr></thead>';
+        const leib = daten.zeilen.map((z) => {
+            const zellen = z.werte.map((wert, i) => {
+                const abw = z.abweichungen[i];
+                const inhalt = i === 0 ? formatComputed(wert) : (Math.abs(abw) <= 0.005 ? '–' : deltaAnzeige(abw));
+                const stil = i === 0 ? 'background:var(--color-bg-alt)' : farbe(abw, z.istEinnahme);
+                return `<td class="zahl"><span class="zelle${i > 0 && Math.abs(abw) <= 0.005 ? ' leer' : ''}" `
+                    + `style="${stil}" title="${escapeHtml(versionen[i].name)}: ${formatComputed(wert)} pro Monat">${inhalt}</span></td>`;
+            }).join('');
+            return `<tr><td class="name">${escapeHtml(rowAnzeigename(z.rowId))}</td>`
+                + `<td class="gruppe">${escapeHtml(GROUP_LABELS[z.gruppe] || z.gruppe)}</td>${zellen}</tr>`;
+        }).join('');
+        const fuss = '<tr class="summe"><td class="name">Bleibt pro Monat</td><td class="gruppe"></td>'
+            + versionen.map((v) => {
+                const s = summen(SCHEMA, v.values);
+                return `<td class="zahl"><span class="zelle ${s.diffM >= 0 ? 'ist-gut' : 'ist-schlecht'}" `
+                    + `style="color:${s.diffM >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}">`
+                    + `${deltaAnzeige(s.diffM)}</span></td>`;
+            }).join('') + '</tr>';
+        tabelle.innerHTML = kopf + '<tbody>' + leib + fuss + '</tbody>';
+    }
+
+    function zeichneSaeulen(versionen, summenJeVersion) {
+        const box = $('#auswertungSaeulen');
+        if (!box) return;
+        const hoechste = Math.max(1, ...summenJeVersion.map((s) => Math.max(s.einnahmenM, s.ausgabenM)));
+        box.innerHTML = versionen.map((v, i) => {
+            const s = summenJeVersion[i];
+            const aktiv = v.id === state.activeVersionId;
+            return `<div class="saeule-block${aktiv ? ' ist-aktiv' : ''}">
+                <div class="saeule-name">${escapeHtml(v.name)}</div>
+                <div class="saeule-rest">${aktiv ? 'aktive Version' : '&nbsp;'}</div>
+                <div class="saeule-paar">
+                    <div class="saeule"><span class="ein" style="height:${Math.round(100 * s.einnahmenM / hoechste)}%"></span></div>
+                    <div class="saeule"><span class="aus" style="height:${Math.round(100 * s.ausgabenM / hoechste)}%"></span></div>
+                </div>
+                <div class="saeule-fuss">
+                    <small>ein<br>${formatComputed(s.einnahmenM)}</small>
+                    <small>aus<br>${formatComputed(s.ausgabenM)}</small>
+                </div>
+                <div class="saeule-diff ${s.diffM >= 0 ? 'ist-gut' : 'ist-schlecht'}">${deltaAnzeige(s.diffM)} pro Monat</div>
+            </div>`;
+        }).join('');
+    }
+
+    // Der Wasserfall nimmt dasselbe Paar wie die Unterschiede-Tabelle: eine
+    // Auswahl, zwei Anzeigen.
+    function zeichneWasserfall(paar) {
+        const box = $('#auswertungWasserfall');
+        if (!box) return;
+        if (!paar.a || !paar.b) { box.innerHTML = ''; return; }
+        const r = wirkungZwischen(SCHEMA, paar.a.values, paar.b.values);
+        if (r.eintraege.length === 0) {
+            box.innerHTML = '<p class="grafik-untertitel">Zwischen diesen beiden Versionen ändert sich keine Position.</p>';
+            return;
+        }
+        const groesste = Math.max(1, ...r.eintraege.map((e) => Math.abs(e.wirkung)), Math.abs(r.summe));
+        const zeile = (name, wert, istSumme) => {
+            const anteil = Math.abs(wert) / groesste * 50;       // je Seite höchstens die Hälfte
+            const klasse = wert >= 0 ? 'ist-gut' : 'ist-schlecht';
+            return `<div class="wf-zeile${istSumme ? ' summe' : ''}">
+                <span>${escapeHtml(name)}</span>
+                <span class="wf-spur"><i class="wf-null" style="left:50%"></i>
+                    <i class="wf-balken ${klasse}" style="left:${wert < 0 ? 50 - anteil : 50}%;width:${anteil}%"></i></span>
+                <span class="wf-wert ${klasse}">${deltaAnzeige(wert)}</span>
+            </div>`;
+        };
+        box.innerHTML = r.eintraege.map((e) => zeile(rowAnzeigename(e.rowId), e.wirkung, false)).join('')
+            + zeile('Bleibt mehr pro Monat', r.summe, true);
+    }
+
+    function renderAuswertung() {
+        if (!auswertungOffen()) return;
+        const versionen = state.versions;
+        const je = versionen.map((v) => summen(SCHEMA, v.values));
+        // Was Versionen miteinander vergleicht, braucht mindestens zwei.
+        const vergleichbar = versionen.length > 1;
+        ['#auswertungTeilWeg', '#auswertungTeilKarte', '#auswertungTeilWasserfall']
+            .forEach((sel) => { const el = $(sel); if (el) el.hidden = !vergleichbar; });
+        zeichneSaeulen(versionen, je);
+        if (!vergleichbar) return;
+        zeichneWeg(versionen, je);
+        zeichneKarte(versionen);
+        zeichneWasserfall(vergleichsPaar());
     }
 
     function renderVergleichWahl(paar) {
@@ -6265,13 +6779,16 @@
         });
         $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
 
-        // «Vergleichen»: kein zweites Fenster und keine zweite Tabelle — der
-        // Knopf bringt den Benutzer an den Abschnitt, den es schon gibt.
-        $('#compareBtn').addEventListener('click', springeZumVergleich);
+        // «Auswertung»: ein Knopf, ein Ort für alles Grafische.
+        $('#auswertungBtn').addEventListener('click', () => {
+            if (auswertungOffen()) verlasseAuswertung(); else zeigeAuswertung();
+        });
+        $('#auswertungZurueckBtn').addEventListener('click', verlasseAuswertung);
         [['#vergleichA', 'vergleichA'], ['#vergleichB', 'vergleichB']].forEach(([sel, feld]) => {
             $(sel).addEventListener('change', (e) => {
                 state[feld] = e.target.value;
                 renderVersionsOverview();
+                zeichneWasserfall(vergleichsPaar());
             });
         });
 
@@ -6305,6 +6822,17 @@
                 closeHilfePanel();
                 $('#hilfeBtn').focus();
             }
+        });
+
+        // Escape fuehrt aus der Auswertung zurueck ins Formular. Kein Streit
+        // mit der Vorschau: beide koennen nicht gleichzeitig offen sein.
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || !auswertungOffen()) return;
+            // Ein Dialog nimmt Escape für sich, ebenso ein offenes Panel —
+            // sonst schlösse ein Tastendruck zwei Dinge auf einmal.
+            if (document.querySelector('.modal-backdrop.is-open')) return;
+            if (!$('#adjustmentsPanel').hidden || !$('#hilfePanel').hidden) return;
+            verlasseAuswertung();
         });
 
         // Vorschau: der Knopf schaltet um, «Vorschau verlassen» und Escape

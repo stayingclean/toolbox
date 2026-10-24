@@ -143,6 +143,45 @@ wo der Benutzer ihn sucht. Eine zweite Vergleichsansicht entsteht nicht — sieh
 
 ---
 
+## Nachtrag 2026-10-24: alles Grafische wird ein eigener Ort
+
+Der Entwurf unten legt die Diagramme als Abschnitt unter die Zusammenfassung
+und lässt «⇄ Vergleichen» an den bestehenden Vergleichsabschnitt springen.
+Beides ist überholt. Der Benutzer wollte **einen zentralen Punkt**, über den
+die Diagramme aufgerufen werden, und eine Darstellung, die **alle** Versionen
+nimmt statt zwei ausgewählter.
+
+Gebaut ist darum ein **Vollbild-Modus «Auswertung»** (`body.mode-auswertung`),
+erreichbar über einen Knopf in der Versionsleiste, der «Vergleichen» ersetzt.
+Im Modus zeigt die Seite genau drei Abschnitte — die Auswertung, die
+Anpassungs-Diagramme und den Versionsvergleich —, ausserhalb keinen davon. Das
+Formular bleibt, was es ist: eine Erfassung.
+
+Neu darin, aus der Skizze `skizzen/vergleich-seite.html`:
+
+- **«Der Weg»** — Einnahmen und Ausgaben als zwei Linien über alle Versionen,
+  der Überschuss als Fläche dazwischen. Eine dritte Linie dafür klebte neben
+  Beträgen von 5'000 am Boden.
+- **«Wo sich etwas bewegt»** — eine Wärmekarte: Zeile = Position, Spalte =
+  Version, nur die Positionen, die sich überhaupt je ändern. Die Farbe zeigt
+  den Unterschied zur ersten Version, bei Einnahmen umgekehrt gelesen. Die
+  Versionsnamen stehen senkrecht, damit die Spalten gleich breit bleiben.
+- **Säulen je Version** — der einzige Teil, der auch mit einer einzigen
+  Version etwas sagt.
+- **Ein Wasserfall** für den Wechsel zwischen zwei Versionen; er nimmt
+  dasselbe Paar wie «Unterschiede pro Position».
+
+Zwei Regeln, die der Modus mitbringt: Ein Klick auf einen Stand-Balken und ein
+Sprung zu einer Zeile **verlassen die Auswertung** — beide Ziele liegen im
+Formular, das im Modus nicht da ist. Und was Versionen miteinander vergleicht,
+bleibt mit einer einzigen Version weg, statt leer dazustehen.
+
+Was aus dem Entwurf unten gilt weiter: die Werkzeugwahl (Balken aus CSS, kein
+SVG-Framework, keine Bibliothek), die Rechnung im Kern, die Farblogik über
+`anpassungWirkung`, und dass die Vorschau bleibt.
+
+---
+
 ## Entscheidungen auf einen Blick
 
 1. **Werkzeug: Balken aus HTML und CSS**, kein SVG — und keine Bibliothek,

@@ -1739,35 +1739,36 @@ def test_diagramme_drucken_mit():
 # --- Punkt 9: zwei frei gewaehlte Versionen vergleichen -----------------------
 
 
-def test_vergleichen_steht_bei_den_reitern():
-    """Er wirkt auf die Reiter, waehrend «Neue Version» einen neuen anlegt --
-    darum dort und nicht daneben. Und er traegt keine Rolle «tab»: die Leiste
-    selbst ist keine Reiterliste."""
+def test_auswertung_steht_bei_den_reitern():
+    """Sie legt die Versionen nebeneinander, waehrend «Neue Version» einen
+    neuen anlegt -- darum dort und nicht daneben. Und der Knopf traegt keine
+    Rolle «tab»: die Leiste selbst ist keine Reiterliste."""
     text = _seite_text()
     leiste = text[text.index('id="versionBar"'):text.index('id="previewBar"')]
-    assert leiste.index('id="versionTabs"') < leiste.index('id="compareBtn"')
-    assert leiste.index('id="compareBtn"') < leiste.index('id="addVersionBtn"')
-    knopf = text[text.index('id="compareBtn"') - 200:text.index('id="compareBtn"') + 200]
+    assert leiste.index('id="versionTabs"') < leiste.index('id="auswertungBtn"')
+    assert leiste.index('id="auswertungBtn"') < leiste.index('id="addVersionBtn"')
+    knopf = text[text.index('id="auswertungBtn"') - 200:text.index('id="auswertungBtn"') + 200]
     assert 'role="tab"' not in knopf
 
 
-def test_vergleichen_nur_mit_mehreren_versionen():
-    """Mit einer Version gibt es nichts zu vergleichen, und der Zielabschnitt
-    ist dann selbst versteckt -- ein Knopf, der ins Nichts fuehrt, waere
-    schlimmer als keiner."""
-    assert 'id="compareBtn" type="button" hidden' in _seite_text()
+def test_auswertung_nur_wenn_es_etwas_auszuwerten_gibt():
+    """Mehrere Versionen oder eine Anpassung. Auf einer leeren Seite fuehrte
+    der Knopf ins Nichts, und das waere schlimmer als kein Knopf."""
+    assert 'id="auswertungBtn" type="button" hidden' in _seite_text()
     block = _funktionsblock("applyModeToUI")
-    assert "compareBtn" in block and "multi" in block
+    assert "auswertungBtn" in block
+    assert "multi || hatAnpassung" in block
 
 
-def test_der_vergleich_baut_keine_zweite_ansicht():
-    """Kein Fenster, keine zweite Tabelle: der Knopf bringt den Benutzer an
-    den Abschnitt, den es schon gibt."""
-    block = _funktionsblock("springeZumVergleich")
-    assert "versionsOverviewSection" in block
-    assert "sticky-head" in block, "die klebende Kopfleiste gehoert abgezogen"
-    assert "focus(" in block
-    assert "openModal" not in block
+def test_die_auswertung_ist_ein_modus_und_kein_zweites_fenster():
+    """Ein Knopf, ein Ort: der Modus zeigt genau die drei grafischen
+    Abschnitte, das Formular bleibt eine Erfassung."""
+    text = _seite_text()
+    assert "function zeigeAuswertung" in text and "function verlasseAuswertung" in text
+    assert "mode-auswertung" in text
+    assert re.search(r"body\.mode-auswertung main > \.section:not\(#auswertungSection\)", text),         "im Modus bleiben nur die grafischen Abschnitte stehen"
+    assert re.search(r"body:not\(\.mode-auswertung\) #grafikSection", text),         "ausserhalb des Modus sind sie weg -- sonst stuenden sie zweimal da"
+    assert "openModal" not in _funktionsblock("zeigeAuswertung")
 
 
 def test_das_paar_ist_vorbelegt_mit_dem_was_ohnehin_gilt():
@@ -1799,3 +1800,94 @@ def test_diagramm_drei_rechnet_nicht_ueber_die_dom_fassung():
     block = _funktionsblock("renderGrafikVersionen")
     assert "summen(SCHEMA" in block
     assert "computeTotalsForVersion" not in block
+
+
+# --- Die Auswertung: Waermekarte und Wirkung zwischen zwei Versionen ---------
+
+
+def test_kartezeilen_zeigt_nur_was_sich_bewegt():
+    """Von sechzig Zeilen eines Budgets aendern sich ueber die Versionen
+    meist acht. Die uebrigen gehoeren nicht in die Karte -- sonst sucht man
+    die Bewegung zwischen lauter Strichen."""
+    versionen = [
+        {"values": {"lohn.monatlich": 5000, "miete.monatlich": 1500, "strom.monatlich": 100}},
+        {"values": {"lohn.monatlich": 5000, "miete.monatlich": 1400, "strom.monatlich": 100}},
+        {"values": {"lohn.monatlich": 5200, "miete.monatlich": 1400, "strom.monatlich": 100}},
+    ]
+    r = kern("karteZeilen", SCHEMA_MINI, versionen)
+    assert [z["rowId"] for z in r["zeilen"]] == ["lohn", "miete"], "strom steht still"
+    lohn = r["zeilen"][0]
+    assert lohn["istEinnahme"] is True
+    assert lohn["werte"] == [5000, 5000, 5200]
+    assert lohn["abweichungen"] == [0, 0, 200]
+    miete = r["zeilen"][1]
+    assert miete["abweichungen"] == [0, -100, -100]
+    # Die staerkste Abweichung gibt die Farbskala vor: sonst saehe eine
+    # Aenderung von 20 Franken aus wie eine von 400.
+    assert r["staerkste"] == 200
+
+
+def test_kartezeilen_rechnet_jahresbetraege_auf_den_monat():
+    versionen = [
+        {"values": {"miete.jaehrlich": 18000}},
+        {"values": {"miete.monatlich": 1400}},
+    ]
+    r = kern("karteZeilen", SCHEMA_MINI, versionen)
+    assert r["zeilen"][0]["werte"] == [1500, 1400]
+
+
+def test_wirkung_zwischen_zwei_versionen():
+    """Positiv heisst «es bleibt mehr»: bei einer Ausgabe zaehlt die Senkung,
+    bei einer Einnahme die Erhoehung. Wer hier nur subtrahiert, zeigt eine
+    gestiegene Einnahme als Verschlechterung."""
+    a = {"lohn.monatlich": 5000, "miete.monatlich": 1500, "strom.monatlich": 100}
+    b = {"lohn.monatlich": 5200, "miete.monatlich": 1250, "strom.monatlich": 100}
+    r = kern("wirkungZwischen", SCHEMA_MINI, a, b)
+    assert [e["rowId"] for e in r["eintraege"]] == ["miete", "lohn"]
+    assert [e["wirkung"] for e in r["eintraege"]] == [250, 200]
+    assert r["summe"] == 450
+    assert kern("wirkungZwischen", SCHEMA_MINI, a, a)["eintraege"] == []
+
+
+def test_auswertung_zeigt_alle_vier_darstellungen():
+    """Ein Ort fuer alles Grafische: der Weg, die Waermekarte, die Saeulen und
+    der Wasserfall."""
+    text = _seite_text()
+    abschnitt = text[text.index('id="auswertungSection"'):text.index('id="grafikSection"')]
+    for teil in ('auswertungWeg', 'auswertungKarte', 'auswertungSaeulen', 'auswertungWasserfall'):
+        assert teil in abschnitt, teil
+    # Die Auswahl des Paares steht hier, nicht zweimal auf der Seite.
+    assert text.count('id="vergleichA"') == 1
+    assert 'id="vergleichA"' in abschnitt
+
+
+def test_was_versionen_vergleicht_braucht_zwei():
+    """Mit einer einzigen Version haben drei der vier Darstellungen nichts zu
+    sagen; uebrig bleibt, was auch zu einer Version gehoert."""
+    block = _funktionsblock("renderAuswertung")
+    assert "versionen.length > 1" in block
+    assert "zeichneSaeulen" in block.split("if (!vergleichbar) return;")[0], \
+        "die Saeulen gehoeren zum Teil, der auch mit einer Version steht"
+
+
+def test_der_weg_zeichnet_einnahmen_und_ausgaben():
+    """Eine dritte Linie fuer den Ueberschuss klebte neben Betraegen von
+    5'000 am Boden -- darum ist er die Flaeche zwischen den beiden Linien."""
+    block = _funktionsblock("zeichneWeg")
+    assert "linie-ein" in block and "linie-aus" in block
+    assert "polygon class=\"band" in block or 'class="band' in block
+    assert "einnahmenM" in block and "ausgabenM" in block
+
+
+def test_waermekarte_faerbt_nach_wirkung_nicht_nach_vorzeichen():
+    block = _funktionsblock("zeichneKarte")
+    assert "istEinnahme" in block
+    assert "staerkste" in block, "ohne Bezugsgroesse saehe 20 Franken aus wie 400"
+
+
+def test_auswertung_und_vorschau_schliessen_sich_aus():
+    """Ein Klick auf einen Stand zeigt das ganze Budget -- das Formular ist im
+    Modus aber nicht da."""
+    text = _seite_text()
+    assert "verlasseAuswertung(); enterPreview(" in text
+    assert "verlasseAuswertung();" in _funktionsblock("springeZuZeile")
