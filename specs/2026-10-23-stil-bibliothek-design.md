@@ -3,10 +3,12 @@
 **Datum:** 2026-10-23
 **Betrifft:** alle Seiten in `docs/`, dazu `template.html` und
 `template-vorschlag.html` als deren Quellen
-**Stand:** **Entwurf im Werden.** Der Ist-Zustand ist erhoben und nachgeprüft,
-die Randbedingungen stehen. Was noch fehlt, sind vier Entscheide des Benutzers —
-Abschnitt «Offene Punkte» am Ende. Bis die beantwortet sind, ist dies **keine
-Umsetzungsvorlage**.
+**Stand:** **Entschieden und umgesetzt.** Der Ist-Zustand ist erhoben und
+nachgeprüft, die Randbedingungen stehen, und die vier Entscheide des Benutzers
+sind am 2026-10-23 gefallen — Abschnitt «Entscheide des Benutzers, 2026-10-23».
+Damit ist dies die verbindliche Vorlage des Umbaus, nicht mehr ein Entwurf im
+Werden. Was danach offen blieb, steht unter «Offen geblieben» und blockiert
+nichts; der Umbau der Budgetvorlage ist bewusst ein eigener Schritt.
 **Mitlesen:** `CLAUDE.md`, Abschnitt «Neue HTML-Seite veröffentlichen» Punkt 3
 (der Entscheid, der das hier erst erlaubt) und Abschnitt «Konvention: Fusszeile
 mit Urheber-Credit und Kaffee-Link»
@@ -293,7 +295,7 @@ jener Anleitung, kein Vorbild für eine Bibliothek.
 | `docs/flyer-editor.html` | **nicht anfassen** |
 
 Die Budgetvorlage getrennt zu halten ist richtig: 2181 Zeilen CSS, Druck-Layout,
-gerade erst umgebaut, 435 Tests. Sie gehört in einen eigenen Schritt mit eigenem
+gerade erst umgebaut, 171 Tests. Sie gehört in einen eigenen Schritt mit eigenem
 Commit, damit ein Fehler dort nicht die übrigen vier Seiten mitnimmt.
 
 ### 3. Verteilung: `<link>` statt Einbetten

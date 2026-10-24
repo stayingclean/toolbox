@@ -101,8 +101,10 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    bei der Budgetvorlage also, dass jemand ein Budget bearbeitet. Dasselbe
    Argument steht unten bei den Händler-Symbolen.
 
-   **Eingebettetes CSS bleibt, wo es heute steht** — nicht wegen Offline,
-   sondern weil es nichts kostet: eine Datei, ein Abruf, kein Cache-Problem beim
+   **Eingebettetes CSS bleibt, wo es heute steht** — ausser den Farben und
+   Schriften, die der Abschnitt gleich darunter in `docs/tokens.css`
+   herausgezogen hat. Für alles Übrige gilt: nicht wegen Offline, sondern
+   weil es nichts kostet: eine Datei, ein Abruf, kein Cache-Problem beim
    Deploy. Ein eigenes Stylesheet lohnt sich erst, wenn mehrere Seiten es
    teilen, wie in `docs/claude-anleitung/` (eigener Abschnitt unten, dort teilen
    alle Seiten `stil.css` und `anleitung.js`).
@@ -110,8 +112,12 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
    **Farben und Schriften kommen aus `docs/tokens.css`** (entschieden am
    2026-10-23, Hintergrund: `specs/2026-10-23-stil-bibliothek-design.md`).
    Vorher trug jede der vier Seiten Übersicht, Vorschlagsformular, Anleitung
-   und Plakat dieselben Werte als eigene Kopie; wer an einer Farbe drehte,
-   musste an vier Orten drehen und merkte es nicht, wenn er einen vergass.
+   und Plakat ihre eigene Kopie, bei acht der elf Namen mit demselben Wert;
+   wer an einer dieser Farben drehte, musste an vier Orten drehen und merkte
+   es nicht, wenn er einen vergass. Bei drei Namen stimmte es nicht:
+   `--card-hover` hatten nur Übersicht und Anleitung, und die zwei
+   Schrift-Token des Plakats waren immer eigene — darum überschreibt es sie
+   bis heute, begründet weiter unten.
    Seither stehen die elf Werte einmal in der Datei (`--bg`, `--card`,
    `--card-hover`, `--border`, `--text`, `--muted`, `--accent`,
    `--accent-dark`, `--accent-tint`, `--font-display`, `--font-body`).
@@ -129,12 +135,26 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
      `var(--accent)` statt `#008080`. Setzt die Seite einen der elf Token
      selbst, ist das ein Rückfall in den alten Zustand.
    - **`tests/test_tokens.py` meldet, wenn jemand das vergisst:** jede Seite
-     in `docs/` (HTML und CSS), die einen der elf Token selbst setzt, muss in
+     in `docs/` (HTML und CSS), die einen der elf Token selbst setzt — in
+     welchem Block und unter welchem Selektor auch immer —, muss in
      `MIGRIERT` (eingebunden, Ausnahmen je Token begründet) oder in
-     `AUSGENOMMEN` (bewusst draussen, mit Grund) stehen. Dazu prüft der Test,
-     dass jeder Verweis wirklich auf die Datei zeigt, dass der `<link>` vor
-     dem `<style>` steht (bei `stil.css`: dass der `@import` die erste Regel
-     ist), dass `deploy.yml` den Ordner hochlädt, in dem `tokens.css` liegt, und dass `docs/skill-vorschlagen.html` und
+     `AUSGENOMMEN` (bewusst draussen, mit Grund) stehen.
+   - **Eine Seite, die in keiner der beiden Listen steht, darf auch keine
+     der neun Token-Farben als Hex im Text tragen.** Sonst fiele der
+     Rückfall nicht auf, der **eigene Namen** bei gleichen Werten vergibt —
+     und genau so lief hier bisher alles auseinander. `#fff` statt
+     `#FFFFFF` rutscht durch; abgeschrieben wird aus Budgetvorlage und
+     Skillsliste, und die schreiben beide sechsstellig. Bei den Seiten in
+     `MIGRIERT` zählt nur die Namensprüfung, dort ist jeder Hex-Wert
+     angeschaut (`stil.css` setzt `#FFFFFF` für einen Code-Block, das
+     Plakat eines als JPEG-Grund im JavaScript).
+   - **Dazu prüft derselbe Test:** dass jeder Verweis **aufgelöst** auf die
+     Datei zeigt — gefangen wird der ganze Attributwert, nicht der Teil
+     `tokens.css` darin, und Kommentare sind vorher weg (`tokens.css.bak`
+     und ein auskommentierter `<link>` kamen sonst durch); dass der `<link>`
+     vor dem `<style>` steht (bei `stil.css`: dass der `@import` die erste
+     Regel ist und die Token holt); dass `deploy.yml` den Ordner hochlädt,
+     in dem `tokens.css` liegt; und dass `docs/skill-vorschlagen.html` und
      `docs/skills-daten.json` dem frisch gebauten Stand entsprechen.
    - **Bei einem Wert in `tokens.css` mitziehen:** `TOKENS` in demselben
      Test hält den Satz fest. Das ist Absicht — ein Wert dort verändert das

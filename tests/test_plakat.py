@@ -201,9 +201,16 @@ def test_seite_laedt_nichts_von_aussen_ausser_dem_avatar():
     """Keine Ressource von einem Dritten — der Avatar der Fusszeile ist die
     vereinbarte Ausnahme aus CLAUDE.md.
 
-    Geprüft wird, was die Seite **lädt** (`src`, und `href` an einem `<link>`),
-    nicht, wohin sie verlinkt: `<a href="https://buymeacoffee.com/…">` ist ein
-    Ziel für einen Klick und meldet niemandem etwas.
+    Geprüft wird, was die Seite **lädt** — `src`, `href` an einem `<link>`
+    und jedes `url(...)` im eigenen CSS, also auch ein `@import`. Nicht
+    geprüft wird, wohin sie verlinkt: `<a href="https://buymeacoffee.com/…">`
+    ist ein Ziel für einen Klick und meldet niemandem etwas.
+
+    Der `@import`-Weg steht eigens da, weil er die Lücke der vorherigen
+    Fassung war: die sah nur Attribute an einem Tag, und ein `@import`
+    url("https://irgendwo/x.css") im eigenen `<style>` kam durch —
+    `fonts.googleapis.com` ist unten gesperrt, ein beliebiger Dritter war
+    es nicht. Einfache Anführungszeichen zählen mit, aus demselben Grund.
 
     Eine eigene Stilvorlage aus demselben Ordner ist seit 2026-10-23 erlaubt
     (Entscheid in `specs/2026-10-23-stil-bibliothek-design.md`). Die frühere
@@ -219,8 +226,10 @@ def test_seite_laedt_nichts_von_aussen_ausser_dem_avatar():
     """
     text = SEITE.read_text(encoding="utf-8")
 
-    geladen = re.findall(r'\bsrc="([^"]*)"', text)
-    geladen += re.findall(r'<link\b[^>]*\bhref="([^"]*)"', text)
+    geladen = re.findall(r"""\bsrc\s*=\s*["']([^"']*)["']""", text)
+    geladen += re.findall(r"""<link\b[^>]*\bhref\s*=\s*["']([^"']*)["']""", text)
+    geladen += re.findall(r"""@import\s+["']([^"']*)["']""", text)
+    geladen += re.findall(r"""\burl\(\s*["']?([^"')]*)""", text)
 
     fremd = [
         u
