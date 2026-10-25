@@ -2027,3 +2027,9 @@ def test_die_spalten_sind_im_diagramm_sichtbar():
     text = _seite_text()
     assert re.search(r"\.weg line\.spalte \{[^}]*stroke-dasharray", text)
     assert re.search(r"\.karte thead th\.zahl \+ th\.zahl \{[^}]*border-left:\s*1px dashed", text)
+    # In --color-border waren sie vom waagrechten Raster nicht zu
+    # unterscheiden und auf dem Schirm kaum zu sehen. Eine Farbe fuer beide
+    # Haelften, sonst liefen Diagramm und Tabellenkopf auseinander.
+    assert re.search(r"#auswertungUebersicht \{[^}]*--spalten-linie:", text)
+    assert text.count("var(--spalten-linie") == 2
+    assert not re.search(r"\.weg line\.spalte \{[^}]*var\(--color-border\)", text)

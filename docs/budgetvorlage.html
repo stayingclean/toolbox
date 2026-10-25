@@ -1166,7 +1166,15 @@
             stroke-width: 3px;
             stroke-linejoin: round;
         }
-        .weg line.spalte { stroke: var(--color-border); stroke-dasharray: 3 5; }
+        /* Deutlich dunkler und breiter als das Raster: in --color-border
+           waren die Trennlinien von den waagrechten Rasterlinien kaum zu
+           unterscheiden und auf dem Schirm fast nicht zu sehen. Laengere
+           Striche aus demselben Grund. */
+        .weg line.spalte {
+            stroke: var(--spalten-linie, #9ca3af);
+            stroke-width: 1.5;
+            stroke-dasharray: 6 4;
+        }
         .weg text.wert { font-size: 12px; font-weight: 600; fill: var(--color-text); }
         .weg text.bleibt { font-size: 12px; font-weight: 700; fill: var(--color-success); }
         .weg text.bleibt.ist-minus { fill: var(--color-danger); }
@@ -1248,7 +1256,14 @@
            die Spalte bei sieben Versionen auf null — das Diagramm war
            einfach weg. Unter 900 px steht alles untereinander, dort gilt
            wieder die alte Untergrenze. */
-        #auswertungUebersicht { --zahl-breite: 7.4rem; --gruppe-breite: 8.5rem; --links-min: 26rem; }
+        #auswertungUebersicht {
+            --zahl-breite: 7.4rem;
+            --gruppe-breite: 8.5rem;
+            --links-min: 26rem;
+            /* Eine Farbe fuer beide Haelften der Trennlinie: im Diagramm
+               und im Kopf der Tabelle. Zwei Werte liefen auseinander. */
+            --spalten-linie: #9ca3af;
+        }
         #auswertungUebersicht.viele { --zahl-breite: 7rem; }
         .karte th.zahl, .karte td.zahl {
             width: var(--zahl-breite, 7.4rem);
@@ -1308,7 +1323,7 @@
         /* Die Fortsetzung der Trennlinien aus «Der Weg»: nur im Kopf, wo
            die Namen stehen. Durch die Zeilen gezogen zerschnitten sie die
            Waermekarte, deren Farbflaechen ohnehin Spalten bilden. */
-        .karte thead th.zahl + th.zahl { border-left: 1px dashed var(--color-border); }
+        .karte thead th.zahl + th.zahl { border-left: 1px dashed var(--spalten-linie, #9ca3af); }
         .karte th.zahl span {
             display: inline-block;
             writing-mode: vertical-rl;
