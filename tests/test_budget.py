@@ -716,6 +716,9 @@ def test_nur_die_reiter_stehen_in_der_tablist():
     # Die Rolle haengt an der Reiterliste, nicht an der ganzen Leiste.
     assert re.search(r'id="versionTabs"[^>]*role="tablist"', text)
     kopf = text[text.index('id="versionBar"'):text.index('id="versionTabs"')]
+    # Ohne die Kommentare: sie erklaeren genau diese Regel und enthalten das
+    # Wort darum zwangslaeufig.
+    kopf = re.sub(r"<!--.*?-->", "", kopf, flags=re.S)
     assert "tablist" not in kopf, "die Leiste selbst darf keine tablist sein"
 
 
@@ -1740,15 +1743,35 @@ def test_diagramme_drucken_mit():
 
 
 def test_auswertung_steht_bei_den_reitern():
-    """Sie legt die Versionen nebeneinander, waehrend «Neue Version» einen
-    neuen anlegt -- darum dort und nicht daneben. Und der Knopf traegt keine
-    Rolle «tab»: die Leiste selbst ist keine Reiterliste."""
+    """Sie legt die Versionen nebeneinander und gehoert darum zu ihnen. Und
+    der Knopf traegt keine Rolle «tab»: die Leiste selbst ist keine
+    Reiterliste."""
     text = _seite_text()
     leiste = text[text.index('id="versionBar"'):text.index('id="previewBar"')]
     assert leiste.index('id="versionTabs"') < leiste.index('id="auswertungBtn"')
-    assert leiste.index('id="auswertungBtn"') < leiste.index('id="addVersionBtn"')
+    assert leiste.index('id="auswertungBtn"') < leiste.index('id="adjustmentsBtn"')
     knopf = text[text.index('id="auswertungBtn"') - 200:text.index('id="auswertungBtn"') + 200]
     assert 'role="tab"' not in knopf
+
+
+def test_neue_version_steht_hinter_der_letzten_version():
+    """Dort entstuende die naechste. Vorher sass der Knopf hinter
+    «Auswertung» am rechten Rand der Leiste, also weit weg von den Reitern.
+    Er liegt dafuer in derselben Zeile wie sie, aber nicht IN der Liste --
+    ein Kind ohne Rolle «tab» in einer tablist ist ungueltiges ARIA."""
+    text = _seite_text()
+    leiste = text[text.index('id="versionBar"'):text.index('id="previewBar"')]
+    assert leiste.index('id="versionTabs"') < leiste.index('id="addVersionBtn"')
+    assert leiste.index('id="addVersionBtn"') < leiste.index('id="auswertungBtn"')
+    zeile = leiste[leiste.index('<div class="version-zeile">'):leiste.index('id="auswertungBtn"')]
+    assert 'id="versionTabs"' in zeile and 'id="addVersionBtn"' in zeile
+    # Der Knopf steht NACH dem schliessenden Tag der Reiterliste.
+    assert zeile.index('</div>') < zeile.index('id="addVersionBtn"')
+    # Der Platz in der Leiste gehoert jetzt der Zeile, nicht der Reiterliste;
+    # sonst draengte sie «Neue Version» wieder an den rechten Rand.
+    reiter = text[text.index(".version-tabs {"):]
+    assert "flex: 1" not in reiter[:reiter.index("}")]
+    assert re.search(r"\.version-zeile \{[^}]*flex: 1", text)
 
 
 def test_auswertung_nur_wenn_es_etwas_auszuwerten_gibt():

@@ -2195,8 +2195,13 @@
             letter-spacing: 0.08em;
             color: var(--color-text-muted);
         }
-        .version-tabs {
+        /* Reiter und «Neue Version» in einem Kasten: so steht der Knopf
+           hinter der letzten Version und rutscht mit ihr um, statt am
+           rechten Rand der Leiste zu kleben. Der Platz gehoert jetzt diesem
+           Kasten (flex: 1), nicht mehr der Reiterliste. */
+        .version-zeile {
             display: flex;
+            align-items: center;
             gap: 0.4rem;
             flex-wrap: wrap;
             flex: 1;
@@ -2205,6 +2210,11 @@
                und lag über «Neue Version». Die Leiste bricht jetzt lieber um —
                eine Zeile mehr auf dem Telefon statt überlappender Schrift. */
             min-width: fit-content;
+        }
+        .version-tabs {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
         }
         .version-tab-wrapper {
             position: relative;
@@ -2974,23 +2984,28 @@
      ist der Weg aus einem gesperrten Formular heraus. -->
 <div class="version-bar" id="versionBar">
     <div class="version-bar-label">Versionen:</div>
-    <div class="version-tabs" id="versionTabs" role="tablist" aria-label="Budget-Versionen"></div>
-    <!-- «Auswertung» steht bei den Reitern, weil sie die Versionen
-         nebeneinanderlegt, während «Neue Version» einen neuen anlegt. Der
-         Knopf trägt keine Rolle «tab»: die Leiste selbst ist keine
-         Reiterliste, nur #versionTabs ist es. -->
+    <!-- «Neue Version» steht hinter der letzten Version, dort, wo die
+         naechste entstehen wuerde. Er liegt dafuer in derselben Zeile wie
+         die Reiter, aber NICHT in #versionTabs: die Liste traegt die Rolle
+         tablist, und ein Kind ohne Rolle tab darin ist ungueltiges ARIA —
+         Screenreader duerfen es in der Reiter-Navigation ueberspringen. -->
+    <div class="version-zeile">
+        <div class="version-tabs" id="versionTabs" role="tablist" aria-label="Budget-Versionen"></div>
+        <button class="version-add-btn" id="addVersionBtn" type="button"
+                aria-label="Neue Budget-Version anlegen" title="Neue Budget-Version anlegen">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Neue Version</span>
+        </button>
+    </div>
+    <!-- «Auswertung» legt die Versionen nebeneinander und gehoert darum zu
+         ihnen; der Knopf traegt aus demselben Grund wie oben keine Rolle. -->
     <button class="version-compare-btn" id="auswertungBtn" type="button" hidden
             aria-pressed="false"
             title="Alle Diagramme und der Vergleich der Versionen">
         <span aria-hidden="true">◫</span><span>Auswertung</span>
-    </button>
-    <button class="version-add-btn" id="addVersionBtn" type="button"
-            aria-label="Neue Budget-Version anlegen" title="Neue Budget-Version anlegen">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        <span>Neue Version</span>
     </button>
     <div class="adj-wrap" id="adjustmentsWrap">
         <button class="adj-btn" id="adjustmentsBtn" type="button" hidden
