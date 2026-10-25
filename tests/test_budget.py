@@ -1965,6 +1965,19 @@ def test_auswertung_hat_zwei_blaetter():
     assert "im-anderen-reiter" in block
 
 
+def test_keine_ueberschrift_ueber_den_reitern():
+    """Hierher kommt man ueber den Knopf, der «Auswertung» heisst und
+    gedrueckt dasteht. Die Ueberschrift sagte nur noch einmal, wo man ist --
+    und schob die Reiter nach rechts, weg vom Rand, an dem alles darunter
+    beginnt."""
+    text = _seite_text()
+    kopf = text[text.index('class="auswertung-kopf"'):text.index('id="auswertungUebersicht"')]
+    assert "section-title" not in kopf
+    assert "<h2" not in kopf
+    assert 'id="reiterUebersicht"' in kopf
+    assert not re.search(r"\.auswertung-kopf \{[^}]*justify-content: space-between", text),         "ohne Ueberschrift gibt es nichts mehr auseinanderzuziehen"
+
+
 def test_kein_eigener_zurueck_knopf():
     """Der Knopf in der Versionsleiste schaltet um und ist als gedrueckt
     markiert, Escape fuehrt ebenfalls hinaus. Ein dritter Weg waere ein
@@ -2003,14 +2016,26 @@ def test_der_weg_zeichnet_nicht_in_eine_unsichtbare_flaeche():
 def test_beide_teile_tragen_titel_und_beschreibung():
     """Rechts stand nur ein Titel, links las sich die Beschreibung des
     ganzen Abschnitts wie seine. Beide beginnen oben in ihrer Spalte, darum
-    stehen die Titel ohne weiteres Zutun auf derselben Hoehe."""
+    stehen die Titel ohne weiteres Zutun auf derselben Hoehe -- und beide
+    tragen denselben Titelstil."""
     text = _seite_text()
     kopf = text[text.index('<div class="uebersicht-kopf"'):text.index('<table class="karte"')]
     links = kopf[kopf.index('class="kopf-links"'):kopf.index('class="kopf-rechts"')]
     rechts = kopf[kopf.index('class="kopf-rechts"'):]
     for teil, name in ((links, "links"), (rechts, "rechts")):
-        assert 'class="grafik-untertitel-fett"' in teil, name
+        assert 'class="grafik-titel"' in teil, name
         assert 'class="grafik-untertitel-klein"' in teil, name
+
+
+def test_keine_gemeinsame_ueberschrift_mehr():
+    """«Wo sich etwas bewegt» sagte nichts, was die beiden Titel nicht schon
+    sagen, und schob den Block eine Zeile tiefer."""
+    text = _seite_text()
+    assert "Wo sich etwas bewegt" not in text
+    teil = text[text.index('id="auswertungTeilKarte"'):text.index('<table class="karte"')]
+    assert 'class="grafik-untertitel"' not in teil, "die Beschreibung dazu ebenfalls"
+    # Der Abstand des Titelstils haette im Gitter nichts zu trennen.
+    assert re.search(r"\.uebersicht-kopf \.grafik-titel \{[^}]*margin-top: 0", text)
 
 
 def test_der_weg_fuellt_seine_spalte():

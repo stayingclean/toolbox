@@ -1093,15 +1093,16 @@
         body:not(.mode-auswertung) #versionsOverviewSection {
             display: none;
         }
+        /* Die Reiter stehen links, am selben Rand wie alles darunter.
+           Rechts standen sie, solange die Überschrift «Auswertung» die linke
+           Seite belegte. */
         .auswertung-kopf {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            justify-content: space-between;
             gap: .75rem;
             margin-bottom: .5rem;
         }
-        .auswertung-kopf .section-title { margin-bottom: 0; }
         /* Die zwei Blätter der Auswertung. Reiter wie bei den Versionen,
            damit die Seite nur eine Art Reiter kennt. */
         .auswertung-reiter {
@@ -1306,12 +1307,10 @@
             align-items: stretch;
             margin-bottom: .4rem;
         }
-        .grafik-untertitel-fett {
-            margin: 0 0 .15rem;
-            font-size: .8rem;
-            font-weight: 700;
-            color: var(--color-text-muted);
-        }
+        /* Im Kopf beginnt der Titel oben in seiner Spalte: der Abstand, der
+           sonst einen Abschnitt vom vorigen trennt, haette hier nichts zu
+           trennen und schoebe nur beide Spalten nach unten. */
+        .uebersicht-kopf .grafik-titel { margin-top: 0; }
         /* Beide Teile tragen Titel und Beschreibung, und beide beginnen oben
            in ihrer Spalte — darum stehen die Titel auf derselben Hoehe, ohne
            dass jemand sie ausrichten muesste. */
@@ -3372,11 +3371,14 @@
          (body.mode-auswertung).
          ============================================================ -->
     <section class="section auswertung-section" id="auswertungSection" hidden>
+        <!-- Keine Überschrift «Auswertung»: hierher kommt man über den
+             Knopf, der so heisst und gedrückt dasteht. Sie sagte nur noch
+             einmal, wo man ist, und kostete eine Zeile.
+
+             Kein «Zurück»-Knopf aus demselben Grund: derselbe Knopf schaltet
+             zurück, Escape führt ebenfalls hinaus. Ein dritter Weg wäre ein
+             dritter Ort zum Suchen. -->
         <div class="auswertung-kopf">
-            <h2 class="section-title">Auswertung</h2>
-            <!-- Kein «Zurück»-Knopf: der Knopf in der Versionsleiste schaltet
-                 um und ist als gedrückt markiert, Escape führt ebenfalls
-                 hinaus. Ein dritter Weg wäre ein dritter Ort zum Suchen. -->
             <div class="auswertung-reiter" role="tablist" aria-label="Auswertung">
                 <button type="button" role="tab" id="reiterUebersicht"
                         aria-controls="auswertungUebersicht" aria-selected="true">Übersicht</button>
@@ -3395,22 +3397,25 @@
              Spalten der Tabelle sind dieselbe Achse, darum liegen sie
              übereinander. Links daneben, wo die Tabelle ihre Textspalten
              hat, steht «Wohin das Geld geht» — sonst bliebe dort über der
-             Tabelle eine leere Fläche. Eine gemeinsame Überschrift hält die
-             drei Teile zusammen. -->
-        <div class="auswertung-teil" id="auswertungTeilKarte" hidden>
-        <h3 class="grafik-titel">Wo sich etwas bewegt</h3>
-        <p class="grafik-untertitel">Drei Blickwinkel auf dieselben Versionen – und auf dieselben Spalten: je Version eine. Unten steht Position für Position, was sich geändert hat.</p>
+             Tabelle eine leere Fläche.
 
+             Eine gemeinsame Überschrift darüber gibt es nicht mehr: «Wo
+             sich etwas bewegt» sagte nichts, was die beiden Titel nicht
+             schon sagen, und schob den Block eine Zeile tiefer. Beide
+             tragen jetzt denselben Titelstil, und weil beide oben in ihrer
+             Spalte beginnen, stehen sie auf derselben Höhe. Die Tabelle
+             darunter gehört zu beiden — sie zeigt dieselben Spalten. -->
+        <div class="auswertung-teil" id="auswertungTeilKarte" hidden>
         <div class="uebersicht-huelle"><div class="uebersicht-inhalt">
         <div class="uebersicht-kopf" id="uebersichtKopf">
             <div class="kopf-links">
-                <h4 class="grafik-untertitel-fett">Wohin das Geld geht</h4>
+                <h3 class="grafik-titel">Wohin das Geld geht</h3>
                 <p class="grafik-untertitel-klein">Woraus die Ausgaben bestehen – je Version ein Balken, die Marke sind die Einnahmen.</p>
                 <div class="gruppen-balken" id="auswertungGruppen"></div>
                 <div class="gruppen-legende" id="auswertungGruppenLegende"></div>
             </div>
             <div class="kopf-rechts">
-                <h4 class="grafik-untertitel-fett">Der Weg: Einnahmen, Ausgaben, und was bleibt</h4>
+                <h3 class="grafik-titel">Der Weg: Einnahmen, Ausgaben, und was bleibt</h3>
                 <p class="grafik-untertitel-klein">Zwei Linien über alle Versionen – die Fläche dazwischen ist, was bleibt.</p>
                 <svg class="weg" id="auswertungWeg" role="img"
                      aria-label="Einnahmen und Ausgaben über alle Versionen, dazwischen der Überschuss"></svg>
