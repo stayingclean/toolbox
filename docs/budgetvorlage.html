@@ -1093,13 +1093,15 @@
         body:not(.mode-auswertung) #versionsOverviewSection {
             display: none;
         }
-        /* Die Reiter stehen links, am selben Rand wie alles darunter.
-           Rechts standen sie, solange die Überschrift «Auswertung» die linke
-           Seite belegte. */
+        /* Die Reiter stehen mittig über dem Blatt. Rechts standen sie,
+           solange die Überschrift «Auswertung» die linke Seite belegte; ohne
+           sie gibt es nichts mehr auseinanderzuziehen, und am Rand sähen zwei
+           Knöpfe über der ganzen Breite verloren aus. */
         .auswertung-kopf {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
+            justify-content: center;
             gap: .75rem;
             margin-bottom: .5rem;
         }

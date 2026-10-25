@@ -1976,6 +1976,7 @@ def test_keine_ueberschrift_ueber_den_reitern():
     assert "<h2" not in kopf
     assert 'id="reiterUebersicht"' in kopf
     assert not re.search(r"\.auswertung-kopf \{[^}]*justify-content: space-between", text),         "ohne Ueberschrift gibt es nichts mehr auseinanderzuziehen"
+    assert re.search(r"\.auswertung-kopf \{[^}]*justify-content: center", text),         "zwei Knoepfe am Rand saehen ueber der ganzen Breite verloren aus"
 
 
 def test_kein_eigener_zurueck_knopf():
