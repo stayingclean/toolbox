@@ -1794,12 +1794,45 @@ def test_die_auswertung_ist_ein_modus_und_kein_zweites_fenster():
     assert "openModal" not in _funktionsblock("zeigeAuswertung")
 
 
-def test_das_paar_ist_vorbelegt_mit_dem_was_ohnehin_gilt():
-    """A = Basis der aktiven Version, B = die aktive. Damit zeigt der
-    Abschnitt ohne jede Bedienung genau das, was er vorher zeigte."""
+def test_links_steht_immer_die_aktive_version():
+    """Vorher war die linke Wahl mal abgeleitet (ein Klick in der Kopfzeile
+    verschob sie stillschweigend) und nach der ersten Handauswahl eingefroren
+    (derselbe Klick bewirkte dann gar nichts) -- dieselbe Handlung mit zwei
+    Wirkungen, je nach unsichtbarem Zustand. Jetzt IST sie die aktive
+    Version, es gibt also gar keinen zweiten Zustand mehr."""
+    text = _seite_text()
     block = _funktionsblock("vergleichsPaar")
-    assert "basedOn" in block and "getActiveVersion" in block
-    assert "state.versions.find" in block, "Wurzelversion: die erste andere Version"
+    assert "getActiveVersion" in block
+    assert "return { a: aktiv," in block, "links ist die aktive Version, nicht eine gemerkte"
+    assert "state.vergleichA" not in text, "die linke Wahl hat keinen eigenen Zustand mehr"
+
+
+def test_die_linke_wahl_wechselt_die_version():
+    """Die Rueckrichtung: wer in der Auswertung links waehlt, wechselt die
+    Version, die im Formular offen ist -- sonst zeigte die Kopfzeile etwas
+    anderes an als die Auswertung."""
+    text = _seite_text()
+    stelle = text[text.index("$('#vergleichA').addEventListener"):]
+    stelle = stelle[:stelle.index("$('#vergleichB')")]
+    assert "switchVersion(e.target.value)" in stelle
+    assert "renderAuswertung" in stelle, "die Auswertung bleibt offen und zeichnet neu"
+
+
+def test_nie_dieselbe_version_auf_beiden_seiten():
+    """Wer in der Kopfzeile die Version waehlt, die rechts steht, bekaeme
+    sonst einen Vergleich mit sich selbst."""
+    block = _funktionsblock("vergleichsPaar")
+    assert "gewaehlt !== aktiv.id" in block
+    assert "basedOn" in block, "dann weicht die rechte auf die Basis aus"
+    assert "state.versions.find" in block, "Wurzelversion: die erste andere"
+
+
+def test_gerechnet_wird_von_der_gewaehlten_zur_aktuellen():
+    """Positiv heisst «in der aktuellen bleibt mehr». Andersherum erschiene
+    jede Einsparung als Mehrausgabe, sobald rechts eine aeltere Version
+    steht -- und das ist der Normalfall."""
+    block = _funktionsblock("renderVersionsDetail")
+    assert "wirkungZwischen(SCHEMA, vergleich.values, aktuell.values)" in block
 
 
 def test_die_wahl_steht_nicht_in_der_datei():
@@ -2056,3 +2089,41 @@ def test_die_spalten_sind_im_diagramm_sichtbar():
     assert re.search(r"#auswertungUebersicht \{[^}]*--spalten-linie:", text)
     assert text.count("var(--spalten-linie") == 2
     assert not re.search(r"\.weg line\.spalte \{[^}]*var\(--color-border\)", text)
+
+
+def test_achsenbereich_umschliesst_die_werte_mit_puffer():
+    """Von null an gezeichnet lagen Einnahmen von 7'600 und Ausgaben von
+    7'500 in einer Haarlinie uebereinander, waehrend die untere Haelfte des
+    Diagramms leer blieb."""
+    r = kern("achsenBereich", [7500, 7600, 7550], 4)
+    assert r["basis"] > 0, "die Achse beginnt nicht mehr zwangslaeufig bei null"
+    assert r["basis"] <= 7500 and r["dach"] >= 7600, "alle Werte liegen drin"
+    # Die Raender sind der Puffer, nicht das naechste runde Mass -- sonst
+    # verschenkte der Ausschnitt bis zu einem ganzen Schritt je Seite. Rund
+    # ist die erste Linie, und sie liegt im Ausschnitt.
+    assert r["ersteLinie"] % r["schritt"] == 0
+    assert r["basis"] <= r["ersteLinie"] <= r["dach"]
+    assert r["ersteLinie"] - r["schritt"] < r["basis"], "die erste, nicht irgendeine"
+
+
+def test_achsenbereich_geht_nie_unter_null():
+    """Einnahmen und Ausgaben sind nie negativ; eine Achse, die unter null
+    begaenne, behauptete einen Bereich, den es nicht gibt."""
+    assert kern("achsenBereich", [20, 400], 4)["basis"] == 0
+
+
+def test_achsenbereich_ohne_spanne_hat_trotzdem_hoehe():
+    """Eine einzige Version, oder in allen dieselben Zahlen: ohne Spanne
+    waere der Puffer null und das Diagramm ohne Hoehe."""
+    for werte in ([5000], [5000, 5000], []):
+        r = kern("achsenBereich", werte, 4)
+        assert r["dach"] > r["basis"], werte
+
+
+def test_der_weg_zeichnet_den_ausschnitt_nicht_die_ganze_hoehe():
+    """Der Wert null kommt in der Schleife nicht mehr vor -- sie beginnt am
+    unteren Rand des Ausschnitts."""
+    block = _funktionsblock("zeichneWeg")
+    assert "achsenBereich(" in block
+    assert "for (let w = bereich.ersteLinie;" in block
+    assert "bereich.dach - bereich.basis" in block, "die Skala misst den Ausschnitt"

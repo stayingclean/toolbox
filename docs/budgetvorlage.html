@@ -3415,11 +3415,19 @@
              aria-labelledby="reiterVergleich" hidden>
         <div class="auswertung-teil" id="auswertungTeilWasserfall" hidden>
         <h3 class="grafik-titel">Was sich zwischen zwei Versionen bewegt</h3>
-        <p class="grafik-untertitel">Position für Position, was der Wechsel von A nach B ausmacht – die grösste Wirkung zuerst.</p>
+        <p class="grafik-untertitel">Position für Position, was die aktuelle Version gegenüber der gewählten ausmacht – die grösste Wirkung zuerst.</p>
+        <!-- Links steht die aktive Version aus der Kopfzeile, und zwar in
+             beide Richtungen: wer hier wählt, wechselt zugleich die Version,
+             die im Formular offen ist. Vorher war die Wahl mal abgeleitet
+             (dann verschob ein Klick in der Kopfzeile sie stillschweigend)
+             und nach der ersten Handauswahl eingefroren (dann bewirkte
+             derselbe Klick gar nichts) — dieselbe Handlung mit zwei
+             Wirkungen, je nach unsichtbarem Zustand. -->
         <div class="vergleich-wahl" id="vergleichWahl">
-            <label class="vergleich-label" for="vergleichA">Vergleichen:</label>
-            <select id="vergleichA" class="vergleich-select"></select>
-            <span class="vergleich-mit">mit</span>
+            <label class="vergleich-label" for="vergleichA">Aktuelle Version:</label>
+            <select id="vergleichA" class="vergleich-select"
+                    title="Zugleich die Version, die im Formular offen ist"></select>
+            <span class="vergleich-mit">verglichen mit</span>
             <select id="vergleichB" class="vergleich-select"></select>
         </div>
         <!-- Ein Block für das Paar: Balken und Zahlen in derselben Zeile.
@@ -3431,8 +3439,8 @@
                 <thead>
                     <tr>
                         <th>Position</th>
-                        <th class="num-cell" id="detailColBasis">A</th>
-                        <th class="num-cell" id="detailColActive">B</th>
+                        <th class="num-cell" id="detailColAktuell">Aktuelle Version</th>
+                        <th class="num-cell" id="detailColVergleich">Verglichen mit</th>
                         <th class="spur-spalte">Wirkung pro Monat</th>
                         <th class="num-cell">Δ / Monat</th>
                         <th class="num-cell">Δ / Jahr</th>
@@ -4205,6 +4213,39 @@
     // einer Zehnerpotenz, so dass etwa fünf Linien entstehen. Ein fester
     // Abstand von 1'000 zeigt bei einem Haushalt mit 800 Franken Einnahmen
     // eine einzige Linie und bei 90'000 deren neunzig.
+    // Der sichtbare Ausschnitt der senkrechten Achse. Von null an gezeichnet
+    // lagen Einnahmen von 7'600 und Ausgaben von 7'500 in einer Haarlinie
+    // uebereinander, waehrend die untere Haelfte des Diagramms leer blieb —
+    // sichtbar war die Hoehe der Betraege, nicht ihr Unterschied, und um den
+    // geht es hier. Der Ausschnitt rastet auf dem Linienabstand ein, damit
+    // die Achse runde Zahlen traegt.
+    //
+    // Preis dieser Darstellung: ein Unterschied sieht groesser aus, als er im
+    // Verhaeltnis zum Betrag ist. Darum stehen die Werte an der Achse.
+    function achsenBereich(werte, zielLinien) {
+        const zahlen = (werte || []).filter((w) => istZahl(w));
+        if (zahlen.length === 0) return { basis: 0, dach: 1, schritt: 1 };
+        const kleinster = Math.min(...zahlen);
+        const groesster = Math.max(...zahlen);
+        // Ohne Spanne — eine einzige Version, oder in allen dieselben Zahlen —
+        // waere der Puffer null und das Diagramm ohne Hoehe. Dann spannt ein
+        // Zehntel des Betrags den Ausschnitt auf.
+        const spanne = Math.max(groesster - kleinster, Math.abs(groesster) * 0.1, 1);
+        const puffer = spanne * 0.12;
+        let basis = kleinster - puffer;
+        const dach = groesster + puffer;
+        // Einnahmen und Ausgaben sind nie negativ; eine Achse, die unter null
+        // begaenne, behauptete einen Bereich, den es nicht gibt.
+        if (kleinster >= 0 && basis < 0) basis = 0;
+        // Die Raender sind der Puffer, nicht das naechste runde Mass: auf den
+        // Linienabstand gerundet verschenkte der Ausschnitt bis zu einem
+        // ganzen Schritt je Seite, und das Diagramm war wieder halb leer.
+        // Rund sind darum nur die Linien darin, und die erste ist die erste,
+        // die ueber den unteren Rand ragt.
+        const schritt = rasterSchritt(dach - basis, zielLinien || 4);
+        return { basis, dach, schritt, ersteLinie: Math.ceil(basis / schritt) * schritt };
+    }
+
     function rasterSchritt(max, ziel) {
         const n = (istZahl(ziel) && ziel > 0) ? ziel : 5;
         if (!istZahl(max) || max <= 0) return 1;
@@ -6130,23 +6171,26 @@
     // ----------------------------------------------------------------
     // Punkt 9: zwei frei gewählte Versionen vergleichen
     // ----------------------------------------------------------------
-    // Die Wahl lebt nur zur Laufzeit: sie steht nicht in der Datei (v5 bleibt
-    // unverändert) und überlebt kein Neuladen — eine Blickrichtung, kein
-    // Inhalt. Vorbelegt ist, was ohne jede Bedienung ohnehin gilt.
+    // Links die aktive Version, rechts die gewählte. Nur die rechte lebt als
+    // eigener Zustand, und der nur zur Laufzeit: er steht nicht in der Datei
+    // (v5 bleibt unverändert) und überlebt kein Neuladen — eine
+    // Blickrichtung, kein Inhalt. Die linke braucht keinen: sie IST
+    // state.activeVersionId. Damit gibt es die Stelle nicht mehr, an der
+    // zwei Angaben zur selben Frage auseinanderlaufen konnten.
     function vergleichsPaar() {
         const aktiv = getActiveVersion();
-        const vorhanden = (id) => !!(id && getVersionById(id));
-        let b = vorhanden(state.vergleichB) ? state.vergleichB : (aktiv ? aktiv.id : null);
-        let a = vorhanden(state.vergleichA) ? state.vergleichA : (aktiv && aktiv.basedOn ? aktiv.basedOn : null);
-        if (!a) {
-            // Wurzelversion: die erste andere Version. Früher versteckte sich
-            // der Detailblock in diesem Fall ganz; mit freier Wahl gibt es
-            // immer ein Paar, und die leere Aussage heisst «keine
-            // Unterschiede» statt «nichts zu sehen».
-            const andere = state.versions.find((v) => v.id !== b);
-            a = andere ? andere.id : b;
+        if (!aktiv) return { a: null, b: null };
+        const gewaehlt = state.vergleichB;
+        // Nie dieselbe auf beiden Seiten: wer in der Kopfzeile die Version
+        // wählt, die rechts steht, schiebt die rechte weiter — zur Basis,
+        // aus der die aktive hervorging, sonst zur ersten anderen.
+        let b = (gewaehlt && gewaehlt !== aktiv.id && getVersionById(gewaehlt)) ? gewaehlt : null;
+        if (!b && aktiv.basedOn && getVersionById(aktiv.basedOn)) b = aktiv.basedOn;
+        if (!b) {
+            const andere = state.versions.find((v) => v.id !== aktiv.id);
+            b = andere ? andere.id : null;
         }
-        return { a: getVersionById(a) || null, b: getVersionById(b) || null };
+        return { a: aktiv, b: getVersionById(b) || null };
     }
 
     // ----------------------------------------------------------------
@@ -6215,10 +6259,11 @@
         svg.setAttribute('viewBox', `0 0 ${B} ${H}`);
         const ein = summenJeVersion.map((s) => s.einnahmenM);
         const aus = summenJeVersion.map((s) => s.ausgabenM);
-        const max = Math.max(1, ...ein, ...aus) * 1.08;
+        const bereich = achsenBereich([...ein, ...aus], 4);
         const spalte = B / versionen.length;
         const x = (i) => spalte * (i + 0.5);
-        const y = (w) => oben + (H - oben - unten) * (1 - w / max);
+        const y = (w) => oben + (H - oben - unten)
+            * (1 - (w - bereich.basis) / (bereich.dach - bereich.basis));
 
         const teile = [];
         // Senkrechte Trennlinien an den Spaltengrenzen — als Erstes, also
@@ -6233,8 +6278,7 @@
         // Die Werte der Achse stehen innen links über dem Raster: aussen
         // bräuchten sie Platz, den die Ausrichtung auf die Spalten nicht
         // hergibt.
-        const schritt = rasterSchritt(max, 4);
-        for (let w = 0; w <= max; w += schritt) {
+        for (let w = bereich.ersteLinie; w <= bereich.dach; w += bereich.schritt) {
             teile.push(`<line class="raster" x1="0" y1="${y(w)}" x2="${B}" y2="${y(w)}"/>`);
             teile.push(`<text class="achsenwert" x="2" y="${y(w) - 3}">${w.toLocaleString('de-CH')}</text>`);
         }
@@ -6406,13 +6450,14 @@
         const detailBody  = $('#versionsDetailBody');
         const detailIntro = $('#versionsDetailIntro');
         const detailEmpty = $('#versionsDetailEmpty');
-        const colBasis    = $('#detailColBasis');
-        const colActive   = $('#detailColActive');
+        const colAktuell   = $('#detailColAktuell');
+        const colVergleich = $('#detailColVergleich');
         if (!block || !detailBody) return;
 
-        const baseline = a;
-        const active   = b;
-        if (!active || !baseline) {
+        // a ist die aktive Version (links), b die gewählte (rechts).
+        const aktuell   = a;
+        const vergleich = b;
+        if (!aktuell || !vergleich) {
             block.hidden = true;
             return;
         }
@@ -6420,15 +6465,19 @@
 
         // Headline text
         detailIntro.textContent =
-            `„${baseline.name}" verglichen mit „${active.name}". `
+            `„${aktuell.name}" gegenüber „${vergleich.name}". `
             + `Nur Positionen mit einer Abweichung, die grösste zuerst.`;
-        colBasis.textContent  = baseline.name;
-        colActive.textContent = active.name;
+        colAktuell.textContent   = aktuell.name;
+        colVergleich.textContent = vergleich.name;
 
         // Die Reihenfolge und das Vorzeichen kommen aus dem Kern: «positiv
         // heisst, es bleibt mehr». Wer nach dem blossen Unterschied sortierte,
         // stellte eine gestiegene Einnahme neben eine gestiegene Ausgabe.
-        const wirkungen = wirkungZwischen(SCHEMA, baseline.values, active.values);
+        // Gerechnet wird von der gewählten zur aktuellen Version: positiv
+        // heisst dann «in der aktuellen bleibt mehr». Andersherum erschiene
+        // jede Einsparung als Mehrausgabe, sobald rechts eine ältere Version
+        // steht — und das ist der Normalfall.
+        const wirkungen = wirkungZwischen(SCHEMA, vergleich.values, aktuell.values);
         detailBody.innerHTML = '';
         const groesste = Math.max(1, ...wirkungen.eintraege.map((e) => Math.abs(e.wirkung)),
             Math.abs(wirkungen.summe));
@@ -6444,15 +6493,15 @@
             const treffer = lookupRow(e.rowId);
             if (!treffer) return;
             const groupLabel = GROUP_LABELS[treffer.groupId] || treffer.groupId;
-            const baseY = rowYearlyInVersion(baseline, e.rowId);
-            const actY  = rowYearlyInVersion(active,   e.rowId);
+            const aktY = rowYearlyInVersion(aktuell,   e.rowId);
+            const vglY = rowYearlyInVersion(vergleich, e.rowId);
             const klasse = e.wirkung >= 0 ? 'is-positive' : 'is-negative';
             const tr = document.createElement('tr');
             tr.dataset.rowId = e.rowId;
             tr.innerHTML = `
                 <td><span class="row-group-label">${escapeHtml(groupLabel)}</span>${escapeHtml(rowAnzeigename(e.rowId))}</td>
-                <td class="num-cell">${formatComputed(baseY)}</td>
-                <td class="num-cell">${formatComputed(actY)}</td>
+                <td class="num-cell">${formatComputed(aktY)}</td>
+                <td class="num-cell">${formatComputed(vglY)}</td>
                 <td class="spur-spalte">${spur(e.wirkung)}</td>
                 <td class="num-cell ${klasse}">${deltaAnzeige(e.wirkung)}</td>
                 <td class="num-cell ${klasse}">${deltaAnzeige(e.wirkung * 12)}</td>
@@ -7145,11 +7194,16 @@
         window.addEventListener('resize', () => { if (auswertungOffen()) renderAuswertung(); });
         $('#reiterUebersicht').addEventListener('click', () => zeigeReiter('uebersicht'));
         $('#reiterVergleich').addEventListener('click', () => zeigeReiter('vergleich'));
-        [['#vergleichA', 'vergleichA'], ['#vergleichB', 'vergleichB']].forEach(([sel, feld]) => {
-            $(sel).addEventListener('change', (e) => {
-                state[feld] = e.target.value;
-                renderVersionsOverview();
-            });
+        // Links: dieselbe Handlung wie ein Klick in der Kopfzeile.
+        // switchVersion schreibt das Formular vorher weg und zeichnet die
+        // Reiter neu; die Auswertung bleibt dabei offen.
+        $('#vergleichA').addEventListener('change', (e) => {
+            switchVersion(e.target.value);
+            if (auswertungOffen()) renderAuswertung();
+        });
+        $('#vergleichB').addEventListener('change', (e) => {
+            state.vergleichB = e.target.value;
+            renderVersionsOverview();
         });
 
         // Anpassungsliste: Knopf schaltet um, Klick ausserhalb und Escape schliessen.
