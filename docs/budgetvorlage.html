@@ -1154,7 +1154,7 @@
            Hoehe und setzt die viewBox danach. */
         .weg { width: 100%; flex: 1 1 auto; min-height: 15rem; display: block; }
         .weg text.achsenwert { font-size: 10px; fill: var(--color-text-muted); }
-        .weg .achse { stroke: var(--color-border); stroke-width: 1; }
+        .weg .achse { stroke: var(--color-border-strong); stroke-width: 1.5; }
         .weg .raster { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 2 4; }
         /* Die Fläche zwischen den Linien IST der Überschuss — darum gefüllt
            und nicht als dritte Linie gezeichnet: neben Beträgen von 5'000
@@ -4263,13 +4263,14 @@
         // Einnahmen und Ausgaben sind nie negativ; eine Achse, die unter null
         // begaenne, behauptete einen Bereich, den es nicht gibt.
         if (kleinster >= 0 && basis < 0) basis = 0;
-        // Die Raender sind der Puffer, nicht das naechste runde Mass: auf den
-        // Linienabstand gerundet verschenkte der Ausschnitt bis zu einem
-        // ganzen Schritt je Seite, und das Diagramm war wieder halb leer.
-        // Rund sind darum nur die Linien darin, und die erste ist die erste,
-        // die ueber den unteren Rand ragt.
         const schritt = rasterSchritt(dach - basis, zielLinien || 4);
-        return { basis, dach, schritt, ersteLinie: Math.ceil(basis / schritt) * schritt };
+        // Der untere Rand ist eine runde Zahl und traegt die Grundlinie: ein
+        // Diagramm, das irgendwo bei 3'143.76 aufhoert, sagt nicht, worauf es
+        // steht. Oben gilt das nicht — dort rundet nichts auf, sonst
+        // verschenkte der Ausschnitt einen ganzen Schritt an leere Flaeche.
+        basis = Math.floor(basis / schritt) * schritt;
+        if (kleinster >= 0 && basis < 0) basis = 0;
+        return { basis, dach, schritt, ersteLinie: basis };
     }
 
     function rasterSchritt(max, ziel) {
@@ -6338,7 +6339,11 @@
         // bräuchten sie Platz, den die Ausrichtung auf die Spalten nicht
         // hergibt.
         for (let w = bereich.ersteLinie; w <= bereich.dach; w += bereich.schritt) {
-            teile.push(`<line class="raster" x1="0" y1="${y(w)}" x2="${B}" y2="${y(w)}"/>`);
+            // Die unterste Linie ist die Grundlinie: durchgezogen, damit zu
+            // sehen ist, worauf das Diagramm steht — es beginnt ja nicht bei
+            // null. Die uebrigen bleiben gestricheltes Raster.
+            const art = w === bereich.basis ? 'achse' : 'raster';
+            teile.push(`<line class="${art}" x1="0" y1="${y(w)}" x2="${B}" y2="${y(w)}"/>`);
             teile.push(`<text class="achsenwert" x="2" y="${y(w) - 3}">${w.toLocaleString('de-CH')}</text>`);
         }
         for (let i = 0; i < versionen.length - 1; i++) {

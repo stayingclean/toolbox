@@ -2178,12 +2178,21 @@ def test_achsenbereich_umschliesst_die_werte_mit_puffer():
     r = kern("achsenBereich", [7500, 7600, 7550], 4)
     assert r["basis"] > 0, "die Achse beginnt nicht mehr zwangslaeufig bei null"
     assert r["basis"] <= 7500 and r["dach"] >= 7600, "alle Werte liegen drin"
-    # Die Raender sind der Puffer, nicht das naechste runde Mass -- sonst
-    # verschenkte der Ausschnitt bis zu einem ganzen Schritt je Seite. Rund
-    # ist die erste Linie, und sie liegt im Ausschnitt.
-    assert r["ersteLinie"] % r["schritt"] == 0
-    assert r["basis"] <= r["ersteLinie"] <= r["dach"]
-    assert r["ersteLinie"] - r["schritt"] < r["basis"], "die erste, nicht irgendeine"
+    # Unten eine runde Zahl: dort liegt die Grundlinie, und ein Diagramm,
+    # das bei 3'143.76 aufhoert, sagt nicht, worauf es steht. Oben rundet
+    # nichts auf -- das verschenkte einen ganzen Schritt an leere Flaeche.
+    assert r["basis"] % r["schritt"] == 0
+    assert r["ersteLinie"] == r["basis"], "die unterste Linie IST die Grundlinie"
+    assert r["dach"] % r["schritt"] != 0 or r["dach"] - 7600 < r["schritt"]
+
+
+def test_die_grundlinie_ist_die_unterste_runde_zahl():
+    """Sie liegt hoechstens einen Schritt unter dem kleinsten Wert -- sonst
+    stuende das Diagramm auf einem leeren Streifen."""
+    r = kern("achsenBereich", [5200, 7600], 4)
+    assert r["basis"] <= 5200 < r["basis"] + r["schritt"] * 2
+    block = _funktionsblock("zeichneWeg")
+    assert "w === bereich.basis ? 'achse' : 'raster'" in block,         "durchgezogen statt gestrichelt: sie sagt, worauf das Diagramm steht"
 
 
 def test_achsenbereich_geht_nie_unter_null():
