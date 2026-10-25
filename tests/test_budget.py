@@ -1975,13 +1975,67 @@ def test_kein_eigener_zurueck_knopf():
         "ohne sichtbaren Zustand waere nicht zu sehen, dass die Auswertung offen ist"
 
 
-def test_der_weg_nimmt_die_gemessene_breite():
-    """Mit fester viewBox zeichnet der Browser 900 Einheiten mittig in die
-    Flaeche und laesst links und rechts Rand stehen -- das Diagramm blieb
-    schmal, obwohl die Flaeche breiter wurde."""
+def test_der_weg_nimmt_die_gemessene_flaeche():
+    """Die viewBox muss genau auf den Kasten passen. Weicht sie ab, skaliert
+    der Browser das Bild aufs kleinere Mass und stellt es mittig hinein --
+    die Punkte stehen dann neben ihren Spalten, obwohl die Rechnung stimmt
+    (gemessen: 30, 18, 6, -6, -18, -30 Bildpunkte bei sechs Versionen)."""
     block = _funktionsblock("zeichneWeg")
-    assert "svg.clientWidth" in block
+    assert "svg.getBoundingClientRect()" in block
+    assert "Math.round(kasten.width)" in block and "Math.round(kasten.height)" in block
     assert "setAttribute('viewBox'" in block
+
+
+def test_der_weg_zeichnet_nicht_in_eine_unsichtbare_flaeche():
+    """Genau das passierte, wenn die Auswertung auf dem Reiter «Vergleich»
+    geoeffnet wurde: die Uebersicht war versteckt, die gemessene Breite also
+    null, und gezeichnet wurde in eine Ersatzbreite, die spaeter nicht mehr
+    stimmte. Lieber nichts zeichnen -- der Beobachter meldet sich, sobald die
+    Flaeche eine Groesse hat."""
+    block = _funktionsblock("zeichneWeg")
+    assert "if (B < 2 || H < 2) return;" in block
+    text = _seite_text()
+    assert "new ResizeObserver(" in text
+    assert "gezeichneteFlaeche" in text, "sonst zeichnete jede Meldung neu, auch die eigene"
+    assert "window.addEventListener('resize', () => { if (auswertungOffen())" not in text,         "der Beobachter sieht mehr als das Fensterereignis und ersetzt es"
+
+
+def test_beide_teile_tragen_titel_und_beschreibung():
+    """Rechts stand nur ein Titel, links las sich die Beschreibung des
+    ganzen Abschnitts wie seine. Beide beginnen oben in ihrer Spalte, darum
+    stehen die Titel ohne weiteres Zutun auf derselben Hoehe."""
+    text = _seite_text()
+    kopf = text[text.index('<div class="uebersicht-kopf"'):text.index('<table class="karte"')]
+    links = kopf[kopf.index('class="kopf-links"'):kopf.index('class="kopf-rechts"')]
+    rechts = kopf[kopf.index('class="kopf-rechts"'):]
+    for teil, name in ((links, "links"), (rechts, "rechts")):
+        assert 'class="grafik-untertitel-fett"' in teil, name
+        assert 'class="grafik-untertitel-klein"' in teil, name
+
+
+def test_der_weg_fuellt_seine_spalte():
+    """Neben sechs Balken war das Diagramm ein Streifen in der unteren
+    Haelfte, darueber eine leere Flaeche."""
+    text = _seite_text()
+    assert re.search(r"\.weg \{[^}]*flex: 1 1 auto", text)
+    assert not re.search(r"\.weg \{[^}]*height: 240px", text)
+    # Links bleiben die Balken unten, direkt ueber der Tabelle.
+    assert re.search(r"\.kopf-links \.gruppen-balken \{ margin-top: auto", text)
+    assert not re.search(r"\.kopf-rechts \.weg \{ margin-top: auto", text)
+
+
+def test_die_anleitung_reicht_bis_zum_unteren_rand():
+    """Mit 60vh blieb darunter Platz frei, waehrend im Panel gescrollt
+    werden musste. Gemessen statt gerechnet: wie tief die Kopfleiste reicht,
+    haengt an der Zahl der Versionen und daran, ob schon gescrollt ist."""
+    text = _seite_text()
+    block = _funktionsblock("hilfePanelHoeheSetzen")
+    assert "getBoundingClientRect().top" in block
+    assert "window.innerHeight" in block
+    assert "maxHeight" in block
+    assert "if (oeffnen) hilfePanelHoeheSetzen();" in _funktionsblock("toggleHilfePanel")
+    # Die Leiste klebt oben, steht vor dem ersten Scrollen aber tiefer.
+    assert "['resize', 'scroll'].forEach" in text
 
 
 def test_die_betraege_im_weg_sind_lesbar():

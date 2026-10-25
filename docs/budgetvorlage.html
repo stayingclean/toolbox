@@ -1143,7 +1143,13 @@
         }
 
         /* --- «Der Weg»: zwei Linien, dazwischen was bleibt --- */
-        .weg { width: 100%; height: 240px; display: block; }
+        /* Keine feste Hoehe mehr: das Diagramm nimmt in seiner Spalte den
+           Platz bis zur Beschreibung ueber ihm. Daneben stehen bei sechs
+           Versionen sechs Balken, und dazu war das Diagramm ein Streifen in
+           der unteren Haelfte, mit einer leeren Flaeche darueber. Die
+           Untergrenze gilt, wenn links wenig steht. zeichneWeg misst die
+           Hoehe und setzt die viewBox danach. */
+        .weg { width: 100%; flex: 1 1 auto; min-height: 15rem; display: block; }
         .weg text.achsenwert { font-size: 10px; fill: var(--color-text-muted); }
         .weg .achse { stroke: var(--color-border); stroke-width: 1; }
         .weg .raster { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 2 4; }
@@ -1301,9 +1307,18 @@
             margin-bottom: .4rem;
         }
         .grafik-untertitel-fett {
-            margin: 0 0 .4rem;
+            margin: 0 0 .15rem;
             font-size: .8rem;
             font-weight: 700;
+            color: var(--color-text-muted);
+        }
+        /* Beide Teile tragen Titel und Beschreibung, und beide beginnen oben
+           in ihrer Spalte — darum stehen die Titel auf derselben Hoehe, ohne
+           dass jemand sie ausrichten muesste. */
+        .grafik-untertitel-klein {
+            margin: 0 0 .5rem;
+            font-size: .78rem;
+            line-height: 1.35;
             color: var(--color-text-muted);
         }
         .kopf-links, .kopf-rechts {
@@ -1311,8 +1326,10 @@
             flex-direction: column;
             min-width: 0;
         }
-        /* Schiebt den Inhalt an den unteren Rand seiner Spalte. */
-        .kopf-links .gruppen-balken, .kopf-rechts .weg { margin-top: auto; }
+        /* Links an den unteren Rand: die Balken sollen direkt ueber der
+           Tabelle stehen. Rechts nicht mehr — dort fuellt das Diagramm den
+           Platz selbst (flex: 1 auf .weg). */
+        .kopf-links .gruppen-balken { margin-top: auto; }
         /* Schmal übereinander statt nebeneinander: unter 900 px bliebe für
            beides nebeneinander zu wenig, und die Ausrichtung auf die Spalten
            hilft dort ohnehin nichts mehr. */
@@ -3382,17 +3399,19 @@
              drei Teile zusammen. -->
         <div class="auswertung-teil" id="auswertungTeilKarte" hidden>
         <h3 class="grafik-titel">Wo sich etwas bewegt</h3>
-        <p class="grafik-untertitel">Oben links, woraus die Ausgaben bestehen; oben rechts der Verlauf über die Versionen; darunter Position für Position, was sich geändert hat. Die Spalten gelten für alles drei.</p>
+        <p class="grafik-untertitel">Drei Blickwinkel auf dieselben Versionen – und auf dieselben Spalten: je Version eine. Unten steht Position für Position, was sich geändert hat.</p>
 
         <div class="uebersicht-huelle"><div class="uebersicht-inhalt">
         <div class="uebersicht-kopf" id="uebersichtKopf">
             <div class="kopf-links">
                 <h4 class="grafik-untertitel-fett">Wohin das Geld geht</h4>
+                <p class="grafik-untertitel-klein">Woraus die Ausgaben bestehen – je Version ein Balken, die Marke sind die Einnahmen.</p>
                 <div class="gruppen-balken" id="auswertungGruppen"></div>
                 <div class="gruppen-legende" id="auswertungGruppenLegende"></div>
             </div>
             <div class="kopf-rechts">
                 <h4 class="grafik-untertitel-fett">Der Weg: Einnahmen, Ausgaben, und was bleibt</h4>
+                <p class="grafik-untertitel-klein">Zwei Linien über alle Versionen – die Fläche dazwischen ist, was bleibt.</p>
                 <svg class="weg" id="auswertungWeg" role="img"
                      aria-label="Einnahmen und Ausgaben über alle Versionen, dazwischen der Überschuss"></svg>
             </div>
@@ -5431,11 +5450,25 @@
 
     // Die Anleitung: derselbe Mechanismus wie bei der Anpassungsliste. Das
     // Panel überlagert, darum ändert sich die Höhe der Kopfleiste nicht.
+    // Die Anleitung reicht von der Unterkante der Kopfleiste bis an den
+    // unteren Bildschirmrand. Mit 60vh blieb darunter Platz frei, waehrend im
+    // Panel gescrollt werden musste. Gemessen statt gerechnet: wie tief die
+    // Kopfleiste reicht, haengt davon ab, wie viele Versionen sie traegt und
+    // ob die Seite schon gescrollt ist (die Leiste klebt oben).
+    function hilfePanelHoeheSetzen() {
+        const panel = $('#hilfePanel');
+        if (!panel || panel.hidden) return;
+        const oben = panel.getBoundingClientRect().top;
+        const platz = window.innerHeight - oben - 12;    // 12px Luft nach unten
+        panel.style.maxHeight = Math.max(180, platz) + 'px';
+    }
+
     function toggleHilfePanel() {
         const panel = $('#hilfePanel');
         const oeffnen = panel.hidden;
         panel.hidden = !oeffnen;
         $('#hilfeBtn').setAttribute('aria-expanded', oeffnen ? 'true' : 'false');
+        if (oeffnen) hilfePanelHoeheSetzen();
     }
 
     function closeHilfePanel() {
@@ -6250,12 +6283,31 @@
     // Beschriftung der Zeitachse — die senkrechten Spaltennamen darunter
     // sind die Achse, und zweimal dieselben Namen untereinander wären eine
     // Wiederholung, die nur Platz kostet.
+    // Die zuletzt gezeichnete Flaeche von «Der Weg». Der Beobachter unten
+    // vergleicht damit, sonst zeichnete jede Meldung neu — auch die, die der
+    // eigene Strich ausgeloest hat.
+    let gezeichneteFlaeche = '';
+
     function zeichneWeg(versionen, summenJeVersion) {
         const svg = $('#auswertungWeg');
         if (!svg) return;
         if (versionen.length === 0) { svg.innerHTML = ''; return; }
-        const B = Math.max(200, Math.round(svg.clientWidth || svg.getBoundingClientRect().width || 600));
-        const H = 240, oben = 22, unten = 10;
+        // Breite UND Hoehe aus dem gemessenen Kasten, und die viewBox genau
+        // darauf: nur dann zeichnet der Browser 1:1. Weicht sie ab, skaliert
+        // er das Bild auf das kleinere Mass und stellt es mittig in die
+        // Flaeche — die Punkte stehen dann neben ihren Spalten, obwohl die
+        // Rechnung stimmt. Genau das passierte, wenn die Auswertung auf dem
+        // Reiter «Vergleich» geoeffnet wurde: die Uebersicht war versteckt,
+        // clientWidth also 0, und gezeichnet wurde in die Ersatzbreite.
+        const kasten = svg.getBoundingClientRect();
+        const B = Math.round(kasten.width);
+        const H = Math.round(kasten.height);
+        // Versteckt (hidden, oder im anderen Reiter): gar nicht zeichnen. Was
+        // dasteht, bleibt stehen, bis die Flaeche wieder eine Groesse hat;
+        // der ResizeObserver meldet sich dann von selbst.
+        if (B < 2 || H < 2) return;
+        gezeichneteFlaeche = B + 'x' + H;
+        const oben = 22, unten = 10;
         svg.setAttribute('viewBox', `0 0 ${B} ${H}`);
         const ein = summenJeVersion.map((s) => s.einnahmenM);
         const aus = summenJeVersion.map((s) => s.ausgabenM);
@@ -7190,8 +7242,29 @@
             if (auswertungOffen()) verlasseAuswertung(); else zeigeAuswertung();
         });
         // Das Diagramm rechnet mit der gemessenen Breite — ändert sie sich,
-        // muss es neu gezeichnet werden.
-        window.addEventListener('resize', () => { if (auswertungOffen()) renderAuswertung(); });
+        // muss es neu gezeichnet werden. Das besorgt der Beobachter unten:
+        // er sieht jede Aenderung der Flaeche, nicht nur die des Fensters.
+        // Die Hoehe der Anleitung haengt an der Lage der Kopfleiste: sie
+        // klebt oben, steht vor dem ersten Scrollen aber tiefer.
+        ['resize', 'scroll'].forEach((ereignis) => {
+            window.addEventListener(ereignis, hilfePanelHoeheSetzen, { passive: true });
+        });
+
+        // Ein Beobachter statt des Fensterereignisses: er meldet jede
+        // Aenderung der Flaeche — auch die, die kein resize ist (ein Reiter
+        // wird sichtbar, eine Bildlaufleiste kommt dazu, die Spalte wird mit
+        // einer Version breiter). Vorher blieb eine veraltete viewBox stehen,
+        // bis zufaellig etwas anderes neu zeichnete.
+        if (window.ResizeObserver) {
+            new ResizeObserver(() => {
+                const svg = $('#auswertungWeg');
+                if (!svg || !auswertungOffen()) return;
+                const k = svg.getBoundingClientRect();
+                const jetzt = Math.round(k.width) + 'x' + Math.round(k.height);
+                if (k.width < 2 || k.height < 2 || jetzt === gezeichneteFlaeche) return;
+                renderAuswertung();
+            }).observe($('#auswertungWeg'));
+        }
         $('#reiterUebersicht').addEventListener('click', () => zeigeReiter('uebersicht'));
         $('#reiterVergleich').addEventListener('click', () => zeigeReiter('vergleich'));
         // Links: dieselbe Handlung wie ein Klick in der Kopfzeile.
