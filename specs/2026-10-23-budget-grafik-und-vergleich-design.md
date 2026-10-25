@@ -157,7 +157,9 @@ Im Modus zeigt die Seite genau drei Abschnitte — die Auswertung, die
 Anpassungs-Diagramme und den Versionsvergleich —, ausserhalb keinen davon. Das
 Formular bleibt, was es ist: eine Erfassung.
 
-Neu darin, aus der Skizze `skizzen/vergleich-seite.html`:
+Neu darin, aus einer Skizze, die bewusst **nicht** im Repo liegt
+(`skizzen/` steht in der `.gitignore`): ein Entwurf mit erfundenen Zahlen,
+der seinen Zweck mit dem Umbau erfüllt hat.
 
 - **«Der Weg»** — Einnahmen und Ausgaben als zwei Linien über alle Versionen,
   der Überschuss als Fläche dazwischen. Eine dritte Linie dafür klebte neben

@@ -42,3 +42,6 @@ Budgetvorlage-Ausdruck*.pdf
 
 # Lokale Sitzungsdaten von Claude Code (Dev-Server, Worktrees)
 .claude/
+
+# Entwuerfe, die nicht veroeffentlicht werden (Skizzen zu kuenftigen Seiten)
+skizzen/
