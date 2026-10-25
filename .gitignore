@@ -39,3 +39,6 @@ neue_docs/
 
 # Eigene Ausdrucke der Budgetvorlage mit echten Zahlen — nie ins oeffentliche Repo
 Budgetvorlage-Ausdruck*.pdf
+
+# Lokale Sitzungsdaten von Claude Code (Dev-Server, Worktrees)
+.claude/

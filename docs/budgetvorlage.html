@@ -1166,6 +1166,7 @@
             stroke-width: 3px;
             stroke-linejoin: round;
         }
+        .weg line.spalte { stroke: var(--color-border); stroke-dasharray: 3 5; }
         .weg text.wert { font-size: 12px; font-weight: 600; fill: var(--color-text); }
         .weg text.bleibt { font-size: 12px; font-weight: 700; fill: var(--color-success); }
         .weg text.bleibt.ist-minus { fill: var(--color-danger); }
@@ -1174,7 +1175,15 @@
         .weg text.spur-name.aus { fill: var(--color-danger); }
 
         /* --- Die Wärmekarte --- */
-        .karte-huelle { overflow-x: auto; }
+        /* Kopf und Tabelle stecken in EINER Huelle: beide zeigen dieselben
+           Spalten, also muessen sie zusammen scrollen. Scrollte die Tabelle
+           allein, stuende «Der Weg» danach ueber den falschen Spalten.
+           `min-width: min-content` gibt beiden dieselbe Breite — das Grid im
+           Kopf und die Tabelle rechnen aus denselben Groessen, darum ist ihr
+           min-content gleich. `auto` zeigt die Leiste nur, wenn sie
+           gebraucht wird. */
+        .uebersicht-huelle { overflow-x: auto; }
+        .uebersicht-inhalt { min-width: min-content; }
         /* Die Zahlenspalten haben eine feste Breite — bemessen am grössten
            Betrag, der vorkommen kann («+999'999.99»); Position und Gruppe
            nehmen, was übrig bleibt. Umgekehrt (Zahlen in Prozent) wurden die
@@ -1190,10 +1199,18 @@
            Leerzeichen und nicht mitten im Wort. Die Untergrenze verhindert,
            dass die Zahlenspalten den Namen auf schmalem Schirm zu einer
            Buchstabensäule quetschen — dann scrollt lieber die Hülle. */
-        .karte td.name, .karte th:first-child { overflow-wrap: break-word; min-width: 11rem; }
-        .karte td.gruppe, .karte th.gruppe { min-width: 6rem; }
+        .karte td.name, .karte th:first-child {
+            overflow-wrap: break-word;
+            min-width: var(--links-min, 11rem);
+        }
+        /* Die Gruppenspalte ist ebenso eine gemeinsame Groesse wie die
+           Zahlenspalten: ihre Breite ist oben der Abstand zwischen den
+           beiden Diagrammen (siehe .uebersicht-kopf). Darum width UND
+           min-width — gaebe die Spalte nach, stimmte der Abstand nicht
+           mehr; passt die Tabelle dann nicht, scrollt lieber die Huelle. */
         .karte th.gruppe, .karte td.gruppe {
-            width: 8.5rem;
+            width: var(--gruppe-breite, 8.5rem);
+            min-width: var(--gruppe-breite, 8.5rem);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1225,7 +1242,13 @@
            7.4rem, damit «+999'999.99» samt Vorzeichen und Polsterung
            hineinpasst — breit genug bemessen heisst auch, dass die Spalten
            gleich breit BLEIBEN. */
-        #auswertungUebersicht { --zahl-breite: 7.4rem; }
+        /* --links-min ist die Untergrenze der Textspalte und damit die
+           Breite, die dem Diagramm «Wohin das Geld geht» darueber bleibt:
+           Name, Betrag und ein Balken, der noch etwas zeigt. Ohne sie fiel
+           die Spalte bei sieben Versionen auf null — das Diagramm war
+           einfach weg. Unter 900 px steht alles untereinander, dort gilt
+           wieder die alte Untergrenze. */
+        #auswertungUebersicht { --zahl-breite: 7.4rem; --gruppe-breite: 8.5rem; --links-min: 26rem; }
         #auswertungUebersicht.viele { --zahl-breite: 7rem; }
         .karte th.zahl, .karte td.zahl {
             width: var(--zahl-breite, 7.4rem);
@@ -1248,8 +1271,13 @@
            Zeitachse. */
         .uebersicht-kopf {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) calc(var(--zahl-anzahl, 1) * var(--zahl-breite, 7.4rem));
-            gap: 0 2.5rem;      /* sichtbarer Abstand zwischen den beiden */
+            grid-template-columns:
+                minmax(var(--links-min, 0), 1fr)
+                calc(var(--zahl-anzahl, 1) * var(--zahl-breite, 7.4rem));
+            /* Der Abstand ist die Breite der Spalte Gruppe: so endet das
+               linke Diagramm genau dort, wo die Spalte Position endet, und
+               das rechte beginnt ueber der ersten Zahlenspalte. */
+            gap: 0 var(--gruppe-breite, 8.5rem);
             /* stretch statt end: beide Spalten sind gleich hoch, darum stehen
                ihre Überschriften auf derselben Höhe. Dass die Inhalte
                trotzdem unten abschliessen — das Diagramm also direkt über der
@@ -1274,8 +1302,13 @@
            beides nebeneinander zu wenig, und die Ausrichtung auf die Spalten
            hilft dort ohnehin nichts mehr. */
         @media (max-width: 900px) {
+            #auswertungUebersicht { --links-min: 11rem; }
             .uebersicht-kopf { grid-template-columns: 1fr; gap: 1rem; }
         }
+        /* Die Fortsetzung der Trennlinien aus «Der Weg»: nur im Kopf, wo
+           die Namen stehen. Durch die Zeilen gezogen zerschnitten sie die
+           Waermekarte, deren Farbflaechen ohnehin Spalten bilden. */
+        .karte thead th.zahl + th.zahl { border-left: 1px dashed var(--color-border); }
         .karte th.zahl span {
             display: inline-block;
             writing-mode: vertical-rl;
@@ -3321,6 +3354,7 @@
         <h3 class="grafik-titel">Wo sich etwas bewegt</h3>
         <p class="grafik-untertitel">Oben links, woraus die Ausgaben bestehen; oben rechts der Verlauf über die Versionen; darunter Position für Position, was sich geändert hat. Die Spalten gelten für alles drei.</p>
 
+        <div class="uebersicht-huelle"><div class="uebersicht-inhalt">
         <div class="uebersicht-kopf" id="uebersichtKopf">
             <div class="kopf-links">
                 <h4 class="grafik-untertitel-fett">Wohin das Geld geht</h4>
@@ -3334,7 +3368,8 @@
             </div>
         </div>
 
-        <div class="karte-huelle"><table class="karte" id="auswertungKarte"></table></div>
+        <table class="karte" id="auswertungKarte"></table>
+        </div></div><!-- /Hülle: Kopf und Tabelle scrollen zusammen -->
         <div class="karte-legende">
             <span><i class="stark-gut"></i>deutlich günstiger</span>
             <span><i class="leicht-gut"></i>etwas günstiger</span>
@@ -6156,6 +6191,15 @@
         const y = (w) => oben + (H - oben - unten) * (1 - w / max);
 
         const teile = [];
+        // Senkrechte Trennlinien an den Spaltengrenzen — als Erstes, also
+        // hinter allem anderen. Sie zeigen, welcher Teil des Diagramms zu
+        // welcher Version gehoert; im Kopf der Tabelle laufen sie als
+        // gestrichelte Zellgrenze weiter (.karte thead th.zahl + th.zahl).
+        // Gestrichelt und bis an den unteren Rand: durchgezogen saehe es
+        // nach einer zweiten Achse aus.
+        for (let i = 1; i < versionen.length; i++) {
+            teile.push(`<line class="spalte" x1="${spalte * i}" y1="0" x2="${spalte * i}" y2="${H}"/>`);
+        }
         // Die Werte der Achse stehen innen links über dem Raster: aussen
         // bräuchten sie Platz, den die Ausrichtung auf die Spalten nicht
         // hergibt.

@@ -1977,3 +1977,53 @@ def test_rasterschritt_passt_sich_den_zahlen_an():
     # Eine leere Seite darf nicht durch null teilen.
     assert kern("rasterSchritt", 0, 5) == 1
     assert kern("rasterSchritt", None, 5) == 1
+
+
+def test_der_abstand_zwischen_den_diagrammen_ist_die_gruppenspalte():
+    """Dieselbe Groesse an beiden Stellen: dann endet «Wohin das Geld geht»
+    genau dort, wo die Spalte Position endet, und «Der Weg» beginnt ueber
+    der ersten Zahlenspalte. Zwei getrennte Werte liefen auseinander."""
+    text = _seite_text()
+    assert re.search(r"#auswertungUebersicht \{[^}]*--gruppe-breite:", text)
+    assert re.search(r"\.karte th\.gruppe, \.karte td\.gruppe \{[^}]*"
+                     r"width: var\(--gruppe-breite", text)
+    kopf = text[text.index(".uebersicht-kopf {"):]
+    kopf = kopf[:kopf.index("}")]
+    assert "gap: 0 var(--gruppe-breite" in kopf
+    assert "2.5rem" not in kopf
+
+
+def test_kopf_und_tabelle_scrollen_in_einer_huelle():
+    """Beide zeigen dieselben Spalten. Scrollte die Tabelle allein, stuende
+    «Der Weg» danach ueber den falschen Spalten."""
+    text = _seite_text()
+    assert ".karte-huelle" not in text, "die alte Huelle um die Tabelle allein"
+    assert re.search(r"\.uebersicht-huelle \{[^}]*overflow-x:\s*auto", text)
+    assert re.search(r"\.uebersicht-inhalt \{[^}]*min-width:\s*min-content", text),         "ohne min-content waere der Kopf so breit wie die Huelle und die Tabelle breiter"
+    huelle = text[text.index('<div class="uebersicht-huelle">'):]
+    huelle = huelle[:huelle.index("<!-- /Hülle")]
+    assert 'id="uebersichtKopf"' in huelle and 'id="auswertungKarte"' in huelle
+
+
+def test_die_textspalte_hat_eine_untergrenze():
+    """Bei sieben Versionen fiel die linke Spalte auf null -- «Wohin das
+    Geld geht» war schlicht weg. Die Leiste erscheint dafuer nur, wenn der
+    Platz wirklich nicht reicht; untereinander gilt die alte Grenze."""
+    text = _seite_text()
+    assert re.search(r"#auswertungUebersicht \{[^}]*--links-min:", text)
+    assert re.search(r"minmax\(var\(--links-min", text), "die Untergrenze im Gitter"
+    assert re.search(r"\.karte td\.name, \.karte th:first-child \{[^}]*"
+                     r"min-width: var\(--links-min", text), "dieselbe Grenze in der Tabelle"
+    schmal = text[text.index("@media (max-width: 900px) {"):]
+    assert "--links-min: 11rem" in schmal[:schmal.index("}")+200]
+
+
+def test_die_spalten_sind_im_diagramm_sichtbar():
+    """Ohne Trennlinien war nicht zu sehen, welcher Teil von «Der Weg» zu
+    welcher Version gehoert. Im Kopf der Tabelle laufen sie weiter, durch
+    die Zeilen aber nicht -- dort zerschnitten sie die Waermekarte."""
+    block = _funktionsblock("zeichneWeg")
+    assert 'line class="spalte"' in block
+    text = _seite_text()
+    assert re.search(r"\.weg line\.spalte \{[^}]*stroke-dasharray", text)
+    assert re.search(r"\.karte thead th\.zahl \+ th\.zahl \{[^}]*border-left:\s*1px dashed", text)

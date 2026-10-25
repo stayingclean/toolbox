@@ -183,6 +183,30 @@ dem Zeichnen gesetzt wird: das Diagramm misst seine eigene Breite, und wer sie
 erst mit der Tabelle setzt, zeichnet in eine zu schmale Fläche und lässt den
 Browser strecken.
 
+**Nachtrag 2026-10-25: eine Hülle, eine Untergrenze, sichtbare Spalten.**
+Der Block aus Kopf und Tabelle hat drei Grössen, die an je zwei Stellen
+dieselben sein müssen, und darum als CSS-Variable an einer Stelle stehen:
+
+- `--zahl-breite` × `--zahl-anzahl` — die Breite der Versionsspalten
+  (schon vorher).
+- `--gruppe-breite` — die Spalte Gruppe **und** der Abstand zwischen den
+  beiden Diagrammen. So endet «Wohin das Geld geht» genau dort, wo die
+  Spalte Position endet, und «Der Weg» beginnt über der ersten Zahlenspalte.
+- `--links-min` — die Untergrenze der Textspalte und damit die Breite, die
+  dem linken Diagramm bleibt. Ohne sie fiel die Spalte bei sieben Versionen
+  auf null, und das Diagramm war schlicht weg.
+
+Passt der Block nicht mehr, scrollt **eine gemeinsame Hülle** waagrecht
+(`.uebersicht-huelle` / `.uebersicht-inhalt`, `min-width: min-content`) —
+nicht mehr die Tabelle allein, denn nach einem Scroll stünde «Der Weg» sonst
+über den falschen Spalten. Die Leiste erscheint nur, wenn der Platz nicht
+reicht; untereinander (unter 900 px) gilt wieder die alte Untergrenze.
+
+Dass das Diagramm und die Spalte zusammengehören, zeigen **gestrichelte
+Trennlinien** an den Spaltengrenzen: im SVG über die ganze Höhe, im Kopf der
+Tabelle als Zellgrenze weiter — durch die Zeilen nicht, dort zerschnitten sie
+die Wärmekarte.
+
 Zwei Regeln, die der Modus mitbringt: Ein Klick auf einen Stand-Balken und ein
 Sprung zu einer Zeile **verlassen die Auswertung** — beide Ziele liegen im
 Formular, das im Modus nicht da ist. Und was Versionen miteinander vergleicht,
