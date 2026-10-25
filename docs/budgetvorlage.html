@@ -946,6 +946,644 @@
         }
 
         /* ============================================================
+           Diagramme — Balken aus CSS, keine Bibliothek und kein SVG.
+           Jedes Diagramm hier ist ein Balken an einer gemeinsamen
+           Nulllinie; genau dort ist CSS dem SVG überlegen, weil die
+           Beschriftung Text bleibt (auswählbar, durchsuchbar, skalierend).
+           Die Geometrie rechnet `balkenAnteile` im Kern, hier steht nur,
+           wie sie aussieht.
+           ============================================================ */
+        .grafik-section[hidden] { display: none; }
+        .grafik-titel {
+            font-size: 0.86rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--color-primary-dark);
+            margin: 1.4rem 0 0.1rem;
+        }
+        .grafik-titel:first-of-type { margin-top: 0.6rem; }
+        .grafik-untertitel {
+            margin: 0 0 0.6rem;
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+        }
+        .balken-satz {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+        /* Eine Zeile: Beschriftung, Spur, Zahl. Als <button>, weil jede Zeile
+           irgendwohin führt — zum Stand in der Vorschau oder zur Position. */
+        .balken-zeile {
+            display: grid;
+            grid-template-columns: minmax(6rem, 14rem) 1fr minmax(5.5rem, auto);
+            align-items: center;
+            gap: 0.6rem;
+            width: 100%;
+            padding: 0.3rem 0.5rem;
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            background: none;
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            color: var(--color-text);
+            text-align: left;
+            cursor: pointer;
+            transition: background var(--transition-fast), border-color var(--transition-fast);
+        }
+        .balken-zeile:hover { background: var(--color-primary-faint); }
+        .balken-zeile:focus-visible {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px var(--color-primary-tint);
+        }
+        .balken-zeile.is-preview {
+            background: var(--color-warning-bg);
+            border-color: var(--color-warning);
+        }
+        .balken-name {
+            min-width: 0;
+            overflow-wrap: anywhere;
+            line-height: 1.3;
+        }
+        .balken-name .balken-zusatz {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--color-text-muted);
+        }
+        /* Die Spur trägt die Nulllinie als eigenes Element: ein Rand am Balken
+           verschöbe sie um seine Breite. */
+        .balken-spur {
+            position: relative;
+            min-height: 14px;
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        .balken-null {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--color-border);
+        }
+        .balken {
+            position: absolute;
+            top: 2px;
+            bottom: 2px;
+            border-radius: 2px;
+            background: var(--color-text-muted);
+        }
+        /* Dieselbe Zuordnung wie bei den Stand-Zeilen: eine zweite Farblogik
+           auf demselben Blatt wäre eine Falle. */
+        .balken.ist-gut      { background: var(--color-success); }
+        .balken.ist-schlecht { background: var(--color-danger); }
+        .balken-wert {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .balken-wert.ist-gut      { color: var(--color-success); }
+        .balken-wert.ist-schlecht { color: var(--color-danger); }
+        /* Die Restzeile ist keine Schaltfläche: sie führt nirgendwohin. */
+        .balken-rest {
+            display: grid;
+            grid-template-columns: minmax(6rem, 14rem) 1fr minmax(5.5rem, auto);
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+        }
+        .grafik-leer {
+            margin: 0.4rem 0 0;
+            font-size: 0.88rem;
+            color: var(--color-text-muted);
+        }
+        /* ============================================================
+           Auswertung — der Vollbild-Modus
+           Alles Grafische liegt hier; das Formular bleibt eine Erfassung.
+           Im Modus zeigt die Seite genau drei Abschnitte, sonst keinen
+           davon — ein Knopf, ein Ort.
+           ============================================================ */
+        .auswertung-section[hidden] { display: none; }
+        .auswertung-teil[hidden] { display: none; }
+        /* Die Auswertung bekommt die Breite, die das Formular nicht braucht:
+           eine Wärmekarte mit sechs Versionen ist breit, ein Eingabefeld
+           nicht. Darum hier weniger Rand und keine 1100-px-Grenze. */
+        body.mode-auswertung .page {
+            max-width: none;
+            padding-left: .6rem;
+            padding-right: .6rem;
+        }
+        body.mode-auswertung .section {
+            padding: 1.25rem .9rem;
+        }
+        @media (min-width: 1600px) {
+            body.mode-auswertung .page { padding-left: 1.5rem; padding-right: 1.5rem; }
+            body.mode-auswertung .section { padding: 1.5rem; }
+        }
+        body.mode-auswertung main > .section:not(#auswertungSection):not(#grafikSection):not(#versionsOverviewSection),
+        body.mode-auswertung .private-note {
+            display: none;
+        }
+        body:not(.mode-auswertung) #grafikSection,
+        body:not(.mode-auswertung) #versionsOverviewSection {
+            display: none;
+        }
+        /* Die Reiter stehen mittig über dem Blatt. Rechts standen sie,
+           solange die Überschrift «Auswertung» die linke Seite belegte; ohne
+           sie gibt es nichts mehr auseinanderzuziehen, und am Rand sähen zwei
+           Knöpfe über der ganzen Breite verloren aus. */
+        .auswertung-kopf {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: .75rem;
+            margin-bottom: .5rem;
+        }
+        /* Die zwei Blätter der Auswertung. Reiter wie bei den Versionen,
+           damit die Seite nur eine Art Reiter kennt. */
+        .auswertung-reiter {
+            display: flex;
+            gap: 0.4rem;
+        }
+        .auswertung-reiter [role="tab"] {
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-bg);
+            color: var(--color-text-muted);
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .auswertung-reiter [role="tab"]:hover { border-color: var(--color-primary); color: var(--color-primary); }
+        .auswertung-reiter [role="tab"][aria-selected="true"] {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: white;
+        }
+        .auswertung-reiter [role="tab"]:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+        .auswertung-blatt[hidden] { display: none; }
+        /* Die beiden Abschnitte ausserhalb der Auswertung folgen den Reitern. */
+        .section.im-anderen-reiter { display: none; }
+        /* Der Knopf in der Versionsleiste zeigt, dass die Auswertung offen
+           ist — er ist der einzige Weg hinein und hinaus (neben Escape). */
+        .version-compare-btn[aria-pressed="true"] {
+            border-style: solid;
+            border-color: var(--color-primary);
+            background: var(--color-primary);
+            color: white;
+        }
+
+        /* --- «Der Weg»: zwei Linien, dazwischen was bleibt --- */
+        /* Keine feste Hoehe mehr: das Diagramm nimmt in seiner Spalte den
+           Platz bis zur Beschreibung ueber ihm. Daneben stehen bei sechs
+           Versionen sechs Balken, und dazu war das Diagramm ein Streifen in
+           der unteren Haelfte, mit einer leeren Flaeche darueber. Die
+           Untergrenze gilt, wenn links wenig steht. zeichneWeg misst die
+           Hoehe und setzt die viewBox danach. */
+        .weg { width: 100%; flex: 1 1 auto; min-height: 15rem; display: block; }
+        .weg text.achsenwert { font-size: 10px; fill: var(--color-text-muted); }
+        .weg .achse { stroke: var(--color-border-strong); stroke-width: 1.5; }
+        .weg .raster { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 2 4; }
+        /* Die Fläche zwischen den Linien IST der Überschuss — darum gefüllt
+           und nicht als dritte Linie gezeichnet: neben Beträgen von 5'000
+           klebte die am Boden. */
+        .weg .band { fill: rgba(5, 150, 105, .16); }
+        .weg .band.ist-minus { fill: rgba(220, 38, 38, .16); }
+        .weg .linie-ein { fill: none; stroke: var(--color-success); stroke-width: 2.5; }
+        .weg .linie-aus { fill: none; stroke: var(--color-danger); stroke-width: 2.5; }
+        .weg .punkt-ein { fill: var(--color-bg); stroke: var(--color-success); stroke-width: 2.5; }
+        .weg .punkt-aus { fill: var(--color-bg); stroke: var(--color-danger); stroke-width: 2.5; }
+        .weg text { font-size: 11px; fill: var(--color-text-muted); font-family: var(--font-body); }
+        /* Heller Rand hinter der Schrift: die Beträge liegen zwangsläufig auf
+           Linien und Flächen, und ohne ihn sind sie dort nicht zu lesen.
+           paint-order zeichnet den Rand zuerst, die Schrift darüber. */
+        .weg text.bleibt, .weg text.spur-name, .weg text.wert {
+            paint-order: stroke;
+            stroke: var(--color-bg);
+            stroke-width: 3px;
+            stroke-linejoin: round;
+        }
+        /* Deutlich dunkler und breiter als das Raster: in --color-border
+           waren die Trennlinien von den waagrechten Rasterlinien kaum zu
+           unterscheiden und auf dem Schirm fast nicht zu sehen. Laengere
+           Striche aus demselben Grund. */
+        .weg line.spalte {
+            stroke: var(--spalten-linie, #9ca3af);
+            stroke-width: 1.5;
+            stroke-dasharray: 6 4;
+        }
+        .weg text.wert { font-size: 12px; font-weight: 600; fill: var(--color-text); }
+        .weg text.bleibt { font-size: 12px; font-weight: 700; fill: var(--color-success); }
+        .weg text.bleibt.ist-minus { fill: var(--color-danger); }
+        .weg text.spur-name { font-size: 11px; font-weight: 600; }
+        .weg text.spur-name.ein { fill: var(--color-success); }
+        .weg text.spur-name.aus { fill: var(--color-danger); }
+
+        /* --- Die Wärmekarte --- */
+        /* Kopf und Tabelle stecken in EINER Huelle: beide zeigen dieselben
+           Spalten, also muessen sie zusammen scrollen. Scrollte die Tabelle
+           allein, stuende «Der Weg» danach ueber den falschen Spalten.
+           `min-width: min-content` gibt beiden dieselbe Breite — das Grid im
+           Kopf und die Tabelle rechnen aus denselben Groessen, darum ist ihr
+           min-content gleich. `auto` zeigt die Leiste nur, wenn sie
+           gebraucht wird. */
+        .uebersicht-huelle { overflow-x: auto; }
+        .uebersicht-inhalt { min-width: min-content; }
+        /* Die Zahlenspalten haben eine feste Breite — bemessen am grössten
+           Betrag, der vorkommen kann («+999'999.99»); Position und Gruppe
+           nehmen, was übrig bleibt. Umgekehrt (Zahlen in Prozent) wurden die
+           Zahlen bei vielen Versionen zu eng, und mit table-layout: fixed
+           konnte der Text nicht wachsen. Passt die Tabelle nicht mehr,
+           scrollt die Hülle. */
+        .karte {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .85rem;
+        }
+        /* break-word statt anywhere: «Nahrungsmittel, Getränke» bricht am
+           Leerzeichen und nicht mitten im Wort. Die Untergrenze verhindert,
+           dass die Zahlenspalten den Namen auf schmalem Schirm zu einer
+           Buchstabensäule quetschen — dann scrollt lieber die Hülle. */
+        .karte td.name, .karte th:first-child {
+            overflow-wrap: break-word;
+            min-width: var(--links-min, 11rem);
+        }
+        /* Die Gruppenspalte ist ebenso eine gemeinsame Groesse wie die
+           Zahlenspalten: ihre Breite ist oben der Abstand zwischen den
+           beiden Diagrammen (siehe .uebersicht-kopf). Darum width UND
+           min-width — gaebe die Spalte nach, stimmte der Abstand nicht
+           mehr; passt die Tabelle dann nicht, scrollt lieber die Huelle. */
+        .karte th.gruppe, .karte td.gruppe {
+            width: var(--gruppe-breite, 8.5rem);
+            min-width: var(--gruppe-breite, 8.5rem);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .karte th {
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            padding: .3rem .4rem;
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: bottom;
+        }
+        /* Gleich breite Spalten, unabhängig vom Namen der Version: er steht
+           senkrecht. Sonst bestimmte «Mit Prämienverbilligung», wie breit die
+           Spalte wird, und die Karte wäre von Fassung zu Fassung anders
+           geschnitten. */
+        /* Die Versionsspalten teilen sich den Platz, der nach Name und
+           Gruppe bleibt — darum ein Prozentwert, den zeichneKarte nach der
+           Anzahl Versionen setzt. Eine feste Breite reichte bei drei
+           Versionen und liess die Zahlen bei sechs aus den Zellen quellen.
+           4.6rem ist die Untergrenze; darunter scrollt die Hülle lieber. */
+        .karte td.zahl { text-align: right; }
+        .karte th.zahl { text-align: center; }      /* der senkrechte Name mittig über der Spalte */
+        /* Die Breite einer Versionsspalte ist eine gemeinsame Grösse: die
+           Tabelle und das Diagramm darüber müssen sich dieselbe Achse teilen.
+           7.4rem, damit «+999'999.99» samt Vorzeichen und Polsterung
+           hineinpasst — breit genug bemessen heisst auch, dass die Spalten
+           gleich breit BLEIBEN. */
+        /* --links-min ist die Untergrenze der Textspalte und damit die
+           Breite, die dem Diagramm «Wohin das Geld geht» darueber bleibt:
+           Name, Betrag und ein Balken, der noch etwas zeigt. Ohne sie fiel
+           die Spalte bei sieben Versionen auf null — das Diagramm war
+           einfach weg. Unter 900 px steht alles untereinander, dort gilt
+           wieder die alte Untergrenze. */
+        #auswertungUebersicht {
+            --zahl-breite: 7.4rem;
+            --gruppe-breite: 8.5rem;
+            --links-min: 26rem;
+            /* Eine Farbe fuer beide Haelften der Trennlinie: im Diagramm
+               und im Kopf der Tabelle. Zwei Werte liefen auseinander. */
+            --spalten-linie: #9ca3af;
+        }
+        #auswertungUebersicht.viele { --zahl-breite: 7rem; }
+        .karte th.zahl, .karte td.zahl {
+            width: var(--zahl-breite, 7.4rem);
+            min-width: var(--zahl-breite, 7.4rem);
+            white-space: nowrap;
+        }
+        /* Viele Versionen: etwas kleinere Schrift und weniger Polsterung,
+           damit «+2'315.09» auch dann in seine Zelle passt. */
+        .karte.viele .zelle { font-size: .76rem; padding: .3rem .3rem; }
+        .karte.viele th.zahl span { font-size: .72rem; }
+        /* Viele Versionen: kleinere Schrift, also brauchen die Zahlen auch
+           weniger Platz. Die Gruppe bleibt, sie sagt, wo die Position im
+           Formular steht. */
+        .karte.viele th.gruppe, .karte.viele td.gruppe { font-size: .72rem; }
+
+        /* Der Kopf über der Tabelle: rechts so breit wie alle Versionsspalten
+           zusammen, links der Rest — genau die Aufteilung, die die Tabelle
+           darunter hat. Damit steht jeder Punkt des Diagramms über seiner
+           Spalte, und die senkrechten Spaltennamen sind die gemeinsame
+           Zeitachse. */
+        .uebersicht-kopf {
+            display: grid;
+            grid-template-columns:
+                minmax(var(--links-min, 0), 1fr)
+                calc(var(--zahl-anzahl, 1) * var(--zahl-breite, 7.4rem));
+            /* Der Abstand ist die Breite der Spalte Gruppe: so endet das
+               linke Diagramm genau dort, wo die Spalte Position endet, und
+               das rechte beginnt ueber der ersten Zahlenspalte. */
+            gap: 0 var(--gruppe-breite, 8.5rem);
+            /* stretch statt end: beide Spalten sind gleich hoch, darum stehen
+               ihre Überschriften auf derselben Höhe. Dass die Inhalte
+               trotzdem unten abschliessen — das Diagramm also direkt über der
+               Tabelle sitzt — macht `margin-top: auto` weiter unten. */
+            align-items: stretch;
+            margin-bottom: .4rem;
+        }
+        /* Im Kopf beginnt der Titel oben in seiner Spalte: der Abstand, der
+           sonst einen Abschnitt vom vorigen trennt, haette hier nichts zu
+           trennen und schoebe nur beide Spalten nach unten. */
+        .uebersicht-kopf .grafik-titel { margin-top: 0; }
+        /* Beide Teile tragen Titel und Beschreibung, und beide beginnen oben
+           in ihrer Spalte — darum stehen die Titel auf derselben Hoehe, ohne
+           dass jemand sie ausrichten muesste. */
+        .grafik-untertitel-klein {
+            margin: 0 0 .5rem;
+            font-size: .78rem;
+            line-height: 1.35;
+            color: var(--color-text-muted);
+        }
+        .kopf-links, .kopf-rechts {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        /* Links an den unteren Rand: die Balken sollen direkt ueber der
+           Tabelle stehen. Rechts nicht mehr — dort fuellt das Diagramm den
+           Platz selbst (flex: 1 auf .weg). */
+        .kopf-links .gruppen-balken { margin-top: auto; }
+        /* Schmal übereinander statt nebeneinander: unter 900 px bliebe für
+           beides nebeneinander zu wenig, und die Ausrichtung auf die Spalten
+           hilft dort ohnehin nichts mehr. */
+        @media (max-width: 900px) {
+            #auswertungUebersicht { --links-min: 11rem; }
+            .uebersicht-kopf { grid-template-columns: 1fr; gap: 1rem; }
+        }
+        /* Die Fortsetzung der Trennlinien aus «Der Weg»: nur im Kopf, wo
+           die Namen stehen. Durch die Zeilen gezogen zerschnitten sie die
+           Waermekarte, deren Farbflaechen ohnehin Spalten bilden. */
+        .karte thead th.zahl + th.zahl { border-left: 1px dashed var(--spalten-linie, #9ca3af); }
+        .karte th.zahl span {
+            display: inline-block;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);      /* von unten nach oben lesen */
+            white-space: nowrap;
+            max-height: 11rem;              /* darüber kürzt «…», voller Name im title */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: left;
+            line-height: 1.1;
+        }
+        .karte td {
+            padding: .25rem .4rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .karte td.name { font-weight: 500; }
+        .karte td.gruppe {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--color-text-muted);
+        }
+        .karte tr.summe td { border-bottom: none; font-weight: 700; padding-top: .5rem; }
+        /* Zahlen rechtsbündig: so stehen Hunderter unter Hunderttern und das
+           Auge vergleicht die Spalte, statt jede Zahl einzeln zu lesen. */
+        .zelle {
+            display: block;
+            padding: .3rem .45rem;
+            border-radius: var(--radius-sm);
+            font-variant-numeric: tabular-nums;
+            font-size: .82rem;
+            text-align: right;
+        }
+        .zelle.leer { color: var(--color-text-muted); }
+        .karte-legende {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem 1rem;
+            margin-top: .8rem;
+            font-size: .8rem;
+            color: var(--color-text-muted);
+            align-items: center;
+        }
+        .karte-legende i {
+            display: inline-block;
+            width: 1.6rem;
+            height: .7rem;
+            border-radius: 2px;
+            margin-right: .3rem;
+            vertical-align: middle;
+        }
+        .karte-legende .stark-gut      { background: var(--color-success); }
+        .karte-legende .leicht-gut     { background: rgba(5, 150, 105, .28); }
+        .karte-legende .neutral        { background: var(--color-bg-alt); border: 1px solid var(--color-border); }
+        .karte-legende .leicht-schlecht { background: rgba(220, 38, 38, .28); }
+        .karte-legende .stark-schlecht { background: var(--color-danger); }
+
+        /* --- «Wohin das Geld geht»: je Version ein geteilter Balken ---
+           Die Länge sind die Ausgaben, die Abschnitte die Gruppen, die Marke
+           die Einnahmen. Dieselbe Skala über alle Versionen, sonst wären die
+           Balken nicht vergleichbar. Kein Kreisdiagramm: elf Gruppen sehr
+           verschiedener Grösse ergeben keinen brauchbaren Kreis — die Miete
+           allein nimmt mehr als die Hälfte. */
+        .gruppen-balken {
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+        }
+        /* Name, Betrag, Balken — in dieser Reihenfolge. Rechts vom Balken
+           stand der Betrag direkt neben «Der Weg» und sah aus, als gehörte
+           er dorthin. */
+        .gruppen-zeile {
+            display: grid;
+            grid-template-columns: minmax(7rem, 12rem) minmax(5.5rem, auto) 1fr;
+            align-items: center;
+            gap: .7rem;
+        }
+        .gruppen-name { font-size: .88rem; font-weight: 600; }
+        .gruppen-name small {
+            display: block;
+            font-weight: 400;
+            font-size: .78rem;
+            color: var(--color-text-muted);
+        }
+        .gruppen-spur {
+            position: relative;
+            display: flex;
+            height: 26px;
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        .gruppen-stueck { height: 100%; }
+        /* Die Einnahmen als senkrechte Marke: was rechts davon liegt, ist
+           nicht gedeckt. Eine zweite Säule daneben sagte dasselbe, brauchte
+           aber die doppelte Fläche. */
+        .gruppen-marke {
+            position: absolute;
+            top: -3px;
+            bottom: -3px;
+            width: 2px;
+            background: var(--color-text);
+        }
+        .gruppen-marke::after {
+            content: attr(data-text);
+            position: absolute;
+            top: -1.15rem;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: .7rem;
+            color: var(--color-text-muted);
+        }
+        .gruppen-rest { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+        .gruppen-rest.ist-gut      { color: var(--color-success); }
+        .gruppen-rest.ist-schlecht { color: var(--color-danger); }
+        .gruppen-legende {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .3rem 1rem;
+            margin-top: 1.4rem;
+            font-size: .8rem;
+            color: var(--color-text-muted);
+        }
+        .gruppen-legende span { display: inline-flex; align-items: center; gap: .35rem; }
+        .gruppen-legende i {
+            display: inline-block;
+            width: .9rem;
+            height: .9rem;
+            border-radius: 2px;
+        }
+        @media (max-width: 560px) {
+            .gruppen-zeile { grid-template-columns: 1fr auto; }
+            .gruppen-spur { grid-column: 1 / -1; }
+        }
+
+        /* --- Säulen je Version (nicht mehr verwendet) --- */
+        .saeulen {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        .saeule-block {
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: .7rem .8rem .8rem;
+        }
+        .saeule-block.ist-aktiv { border-color: var(--color-primary); background: var(--color-primary-faint); }
+        .saeule-name { font-weight: 600; font-size: .9rem; }
+        .saeule-rest { font-size: .8rem; color: var(--color-text-muted); margin-bottom: .6rem; min-height: 1.2em; }
+        .saeule-paar { display: flex; align-items: flex-end; gap: .5rem; height: 120px; }
+        .saeule { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+        .saeule span { display: block; border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+        .saeule .ein { background: var(--color-success); }
+        .saeule .aus { background: var(--color-danger); }
+        .saeule-fuss { display: flex; gap: .5rem; }
+        .saeule-fuss small {
+            flex: 1;
+            display: block;
+            margin-top: .25rem;
+            font-size: .72rem;
+            color: var(--color-text-muted);
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .saeule-diff { margin-top: .5rem; font-size: .88rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .saeule-diff.ist-gut      { color: var(--color-success); }
+        .saeule-diff.ist-schlecht { color: var(--color-danger); }
+
+        /* Die Balkenspalte in der Paar-Tabelle: das Bild steht neben den
+           Zahlen, nicht in einem eigenen Block darüber. */
+        .versions-detail-table .spur-spalte { width: 26%; min-width: 7rem; }
+        .versions-detail-table tr.detail-summe td {
+            border-top: 2px solid var(--color-border);
+            font-weight: 700;
+            padding-top: .5rem;
+        }
+
+        /* --- Balken in der Paar-Tabelle --- */
+        .wasserfall { display: flex; flex-direction: column; gap: .15rem; }
+        .wf-zeile {
+            display: grid;
+            grid-template-columns: minmax(8rem, 16rem) 1fr minmax(6rem, auto);
+            align-items: center;
+            gap: .6rem;
+            padding: .25rem .4rem;
+            font-size: .88rem;
+        }
+        .wf-zeile.summe {
+            margin-top: .3rem;
+            border-top: 2px solid var(--color-border);
+            padding-top: .5rem;
+            font-weight: 700;
+        }
+        /* display: block, weil die Spur in der Tabelle ein <span> in einer
+           Zelle ist — als inline-Element hätte sie weder Höhe noch Breite.
+           Im alten Wasserfall war sie ein Gitterkind und damit von selbst
+           blockartig; dort fiel das nicht auf. */
+        .wf-spur {
+            display: block;
+            position: relative;
+            width: 100%;
+            height: 16px;
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-sm);
+        }
+        .wf-null { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--color-border); }
+        .wf-balken { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+        .wf-balken.ist-gut      { background: var(--color-success); }
+        .wf-balken.ist-schlecht { background: var(--color-danger); }
+        .wf-wert { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+        .wf-wert.ist-gut      { color: var(--color-success); }
+        .wf-wert.ist-schlecht { color: var(--color-danger); }
+
+        /* Erst auf dem Telefon fällt die Gruppe weg: dort reicht der Platz
+           für Name, Zahlen UND Gruppe nicht, und der Name wiegt schwerer. */
+        @media (max-width: 560px) {
+            .karte td.gruppe, .karte th.gruppe { display: none; }
+        }
+        @media (max-width: 480px) {
+            .wf-zeile { grid-template-columns: 1fr auto; }
+            .wf-spur { grid-column: 1 / -1; order: 3; }
+        }
+
+        /* Schmal: Beschriftung und Zahl in einer Zeile, die Spur darunter über
+           die ganze Breite. Ein Balken von 40 % einer 120 px breiten Spur sagt
+           nichts mehr; über die volle Breite sagt er wieder etwas. */
+        @media (max-width: 480px) {
+            .balken-zeile,
+            .balken-rest {
+                grid-template-columns: 1fr auto;
+                gap: 0.2rem 0.6rem;
+            }
+            .balken-zeile .balken-spur,
+            .balken-rest span:nth-child(2) {
+                grid-column: 1 / -1;
+                order: 3;
+            }
+            .balken-wert { order: 2; }
+        }
+
+        /* ============================================================
            Info Box / Wegleitung — der Volltext der Anleitung.
            Sie stand bis 2026-10-23 als Kasten oben in <main> und war nach dem
            ersten Scrollen weg: gelesen, wenn man noch nichts tut, gebraucht,
@@ -1362,6 +2000,27 @@
             .sticky-head, .toolbar, .footer, .info-box, .version-bar, .toast, .modal-backdrop {
                 display: none !important;
             }
+            /* Die Diagramme drucken mit — auf dem Blatt, das in einer Beratung
+               oder bei einer Stiftung landet, sind sie das Beste, was die
+               Seite zu bieten hat. Hintergründe druckt der Browser von sich
+               aus nicht: die Spur bekommt darum einen Rahmen, der Balken eine
+               ausdrücklich erzwungene Füllung und zusätzlich einen Rand, damit
+               er auch ohne Hintergrundgrafiken als Fläche lesbar bleibt. */
+            .grafik-section { page-break-inside: avoid; }
+            .balken-zeile { border-color: transparent; }
+            .balken-spur {
+                border: 1px solid #999;
+                background: transparent;
+            }
+            .balken {
+                background: #444 !important;
+                border: 1px solid #444;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            .balken.ist-gut     { background: #0f5132 !important; border-color: #0f5132; }
+            .balken.ist-schlecht { background: #842029 !important; border-color: #842029; }
+            .balken-null { background: #999; }
             /* Gedruckt wird in der Vorschau eine gerechnete Tabelle. Die
                Stand-Leiste steckt in .sticky-head und ist hier weg – die
                Kennzeichnung steht im Blattkopf an ihrer Stelle. Leer (Stand
@@ -1554,8 +2213,13 @@
             letter-spacing: 0.08em;
             color: var(--color-text-muted);
         }
-        .version-tabs {
+        /* Reiter und «Neue Version» in einem Kasten: so steht der Knopf
+           hinter der letzten Version und rutscht mit ihr um, statt am
+           rechten Rand der Leiste zu kleben. Der Platz gehoert jetzt diesem
+           Kasten (flex: 1), nicht mehr der Reiterliste. */
+        .version-zeile {
             display: flex;
+            align-items: center;
             gap: 0.4rem;
             flex-wrap: wrap;
             flex: 1;
@@ -1564,6 +2228,11 @@
                und lag über «Neue Version». Die Leiste bricht jetzt lieber um —
                eine Zeile mehr auf dem Telefon statt überlappender Schrift. */
             min-width: fit-content;
+        }
+        .version-tabs {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
         }
         .version-tab-wrapper {
             position: relative;
@@ -1631,7 +2300,10 @@
         /* Hide × on the last remaining tab (cannot delete the last version). */
         .version-tabs[data-count="1"] .version-tab-close { display: none !important; }
 
-        .version-add-btn {
+        /* «Vergleichen» sieht aus wie «Neue Version» und «Vorschau»:
+           gestrichelt umrandet, weil keiner von ihnen eine Version ist. */
+        .version-add-btn,
+        .version-compare-btn {
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
@@ -1645,6 +2317,77 @@
             font-weight: 600;
             cursor: pointer;
             transition: all var(--transition-fast);
+        }
+        .version-compare-btn[hidden] { display: none; }
+        .version-compare-btn:hover {
+            border-style: solid;
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+        /* Gedrückt UND überfahren: ohne diese Regel setzte die Regel darüber
+           die Schrift auf Teal — auf tealem Grund, also unsichtbar. */
+        .version-compare-btn[aria-pressed="true"]:hover {
+            background: var(--color-primary-dark);
+            border-color: var(--color-primary-dark);
+            color: white;
+        }
+        .version-compare-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+        /* Die Auswahl des Paares. Schmal brechen die beiden Listen
+           untereinander, mit «mit» als eigener Zeile — nicht mitten im Satz. */
+        .vergleich-wahl {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 1rem;
+        }
+        .vergleich-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-primary-dark);
+        }
+        .vergleich-mit {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+        }
+        .vergleich-select {
+            padding: 0.35rem 0.6rem;
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            max-width: 16rem;
+        }
+        .vergleich-select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-tint);
+        }
+        /* Das Abzeichen der gewählten Versionen im Diagramm. */
+        .balken-abzeichen {
+            display: inline-block;
+            min-width: 1.1rem;
+            margin-right: 0.35rem;
+            padding: 0 0.25rem;
+            border-radius: var(--radius-sm);
+            background: var(--color-primary);
+            color: var(--color-bg);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        .balken-zeile.ist-gewaehlt {
+            border-color: var(--color-primary);
+            background: var(--color-primary-faint);
+        }
+        @media (max-width: 480px) {
+            .vergleich-wahl { flex-direction: column; align-items: stretch; }
+            .vergleich-select { max-width: none; }
         }
         .version-add-btn:hover {
             background: var(--color-primary-faint);
@@ -2178,14 +2921,16 @@
             border-style: solid;
         }
         /* Nach dem Sprung kurz hervorheben, damit man die Zeile findet. */
-        tr[data-row-id].adj-sprung > td {
+        tr[data-row-id].adj-sprung > td,
+        .section.adj-sprung {
             animation: adj-sprung 1.6s ease-out;
         }
         @keyframes adj-sprung {
             0%, 40% { background: rgba(0, 128, 128, 0.18); }
         }
         @media (prefers-reduced-motion: reduce) {
-            tr[data-row-id].adj-sprung > td { animation: none; }
+            tr[data-row-id].adj-sprung > td,
+            .section.adj-sprung { animation: none; }
         }
     </style>
 </head>
@@ -2257,14 +3002,28 @@
      ist der Weg aus einem gesperrten Formular heraus. -->
 <div class="version-bar" id="versionBar">
     <div class="version-bar-label">Versionen:</div>
-    <div class="version-tabs" id="versionTabs" role="tablist" aria-label="Budget-Versionen"></div>
-    <button class="version-add-btn" id="addVersionBtn" type="button"
-            aria-label="Neue Budget-Version anlegen" title="Neue Budget-Version anlegen">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        <span>Neue Version</span>
+    <!-- «Neue Version» steht hinter der letzten Version, dort, wo die
+         naechste entstehen wuerde. Er liegt dafuer in derselben Zeile wie
+         die Reiter, aber NICHT in #versionTabs: die Liste traegt die Rolle
+         tablist, und ein Kind ohne Rolle tab darin ist ungueltiges ARIA —
+         Screenreader duerfen es in der Reiter-Navigation ueberspringen. -->
+    <div class="version-zeile">
+        <div class="version-tabs" id="versionTabs" role="tablist" aria-label="Budget-Versionen"></div>
+        <button class="version-add-btn" id="addVersionBtn" type="button"
+                aria-label="Neue Budget-Version anlegen" title="Neue Budget-Version anlegen">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Neue Version</span>
+        </button>
+    </div>
+    <!-- «Auswertung» legt die Versionen nebeneinander und gehoert darum zu
+         ihnen; der Knopf traegt aus demselben Grund wie oben keine Rolle. -->
+    <button class="version-compare-btn" id="auswertungBtn" type="button" hidden
+            aria-pressed="false"
+            title="Alle Diagramme und der Vergleich der Versionen">
+        <span aria-hidden="true">◫</span><span>Auswertung</span>
     </button>
     <div class="adj-wrap" id="adjustmentsWrap">
         <button class="adj-btn" id="adjustmentsBtn" type="button" hidden
@@ -2608,6 +3367,141 @@
     </section>
 
     <!-- ============================================================
+         Auswertung — alles Grafische an einem Ort, erreichbar über den
+         Knopf «Auswertung» in der Versionsleiste. Das Formular bleibt
+         dadurch, was es ist: eine Erfassung. Sichtbar nur im Modus
+         (body.mode-auswertung).
+         ============================================================ -->
+    <section class="section auswertung-section" id="auswertungSection" hidden>
+        <!-- Keine Überschrift «Auswertung»: hierher kommt man über den
+             Knopf, der so heisst und gedrückt dasteht. Sie sagte nur noch
+             einmal, wo man ist, und kostete eine Zeile.
+
+             Kein «Zurück»-Knopf aus demselben Grund: derselbe Knopf schaltet
+             zurück, Escape führt ebenfalls hinaus. Ein dritter Weg wäre ein
+             dritter Ort zum Suchen. -->
+        <div class="auswertung-kopf">
+            <div class="auswertung-reiter" role="tablist" aria-label="Auswertung">
+                <button type="button" role="tab" id="reiterUebersicht"
+                        aria-controls="auswertungUebersicht" aria-selected="true">Übersicht</button>
+                <button type="button" role="tab" id="reiterVergleich"
+                        aria-controls="auswertungVergleich" aria-selected="false">Vergleich</button>
+            </div>
+        </div>
+
+        <div class="auswertung-blatt" id="auswertungUebersicht" role="tabpanel" aria-labelledby="reiterUebersicht">
+
+        <!-- Diese drei Teile vergleichen Versionen miteinander. Mit einer
+             einzigen Version haben sie nichts zu sagen und bleiben weg;
+             übrig bleibt, was auch zu einer Version gehört: die Säulen und
+             die Diagramme zu den Anpassungen. -->
+        <!-- Ein Block statt dreier: Die Zeitachse von «Der Weg» und die
+             Spalten der Tabelle sind dieselbe Achse, darum liegen sie
+             übereinander. Links daneben, wo die Tabelle ihre Textspalten
+             hat, steht «Wohin das Geld geht» — sonst bliebe dort über der
+             Tabelle eine leere Fläche.
+
+             Eine gemeinsame Überschrift darüber gibt es nicht mehr: «Wo
+             sich etwas bewegt» sagte nichts, was die beiden Titel nicht
+             schon sagen, und schob den Block eine Zeile tiefer. Beide
+             tragen jetzt denselben Titelstil, und weil beide oben in ihrer
+             Spalte beginnen, stehen sie auf derselben Höhe. Die Tabelle
+             darunter gehört zu beiden — sie zeigt dieselben Spalten. -->
+        <div class="auswertung-teil" id="auswertungTeilKarte" hidden>
+        <div class="uebersicht-huelle"><div class="uebersicht-inhalt">
+        <div class="uebersicht-kopf" id="uebersichtKopf">
+            <div class="kopf-links">
+                <h3 class="grafik-titel">Wohin das Geld geht</h3>
+                <p class="grafik-untertitel-klein">Woraus die Ausgaben bestehen – je Version ein Balken, die Marke sind die Einnahmen.</p>
+                <div class="gruppen-balken" id="auswertungGruppen"></div>
+                <div class="gruppen-legende" id="auswertungGruppenLegende"></div>
+            </div>
+            <div class="kopf-rechts">
+                <h3 class="grafik-titel">Der Weg: Einnahmen, Ausgaben, und was bleibt</h3>
+                <p class="grafik-untertitel-klein">Zwei Linien über alle Versionen – die Fläche dazwischen ist, was bleibt.</p>
+                <svg class="weg" id="auswertungWeg" role="img"
+                     aria-label="Einnahmen und Ausgaben über alle Versionen, dazwischen der Überschuss"></svg>
+            </div>
+        </div>
+
+        <table class="karte" id="auswertungKarte"></table>
+        </div></div><!-- /Hülle: Kopf und Tabelle scrollen zusammen -->
+        <div class="karte-legende">
+            <span><i class="stark-gut"></i>deutlich günstiger</span>
+            <span><i class="leicht-gut"></i>etwas günstiger</span>
+            <span><i class="neutral"></i>unverändert</span>
+            <span><i class="leicht-schlecht"></i>etwas teurer</span>
+            <span><i class="stark-schlecht"></i>deutlich teurer</span>
+        </div>
+        </div>
+
+        </div><!-- /Übersicht -->
+
+        <div class="auswertung-blatt" id="auswertungVergleich" role="tabpanel"
+             aria-labelledby="reiterVergleich" hidden>
+        <div class="auswertung-teil" id="auswertungTeilWasserfall" hidden>
+        <h3 class="grafik-titel">Was sich zwischen zwei Versionen bewegt</h3>
+        <p class="grafik-untertitel">Position für Position, was die aktuelle Version gegenüber der gewählten ausmacht – die grösste Wirkung zuerst.</p>
+        <!-- Links steht die aktive Version aus der Kopfzeile, und zwar in
+             beide Richtungen: wer hier wählt, wechselt zugleich die Version,
+             die im Formular offen ist. Vorher war die Wahl mal abgeleitet
+             (dann verschob ein Klick in der Kopfzeile sie stillschweigend)
+             und nach der ersten Handauswahl eingefroren (dann bewirkte
+             derselbe Klick gar nichts) — dieselbe Handlung mit zwei
+             Wirkungen, je nach unsichtbarem Zustand. -->
+        <div class="vergleich-wahl" id="vergleichWahl">
+            <label class="vergleich-label" for="vergleichA">Aktuelle Version:</label>
+            <select id="vergleichA" class="vergleich-select"
+                    title="Zugleich die Version, die im Formular offen ist"></select>
+            <span class="vergleich-mit">verglichen mit</span>
+            <select id="vergleichB" class="vergleich-select"></select>
+        </div>
+        <!-- Ein Block für das Paar: Balken und Zahlen in derselben Zeile.
+             Vorher stand dasselbe zweimal da — einmal als Wasserfall, einmal
+             als Tabelle «Unterschiede pro Position». -->
+        <div class="versions-detail-block" id="versionsDetailBlock" hidden>
+            <p class="versions-detail-intro" id="versionsDetailIntro"></p>
+            <table class="versions-detail-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th class="num-cell" id="detailColAktuell">Aktuelle Version</th>
+                        <th class="num-cell" id="detailColVergleich">Verglichen mit</th>
+                        <th class="spur-spalte">Wirkung pro Monat</th>
+                        <th class="num-cell">Δ / Monat</th>
+                        <th class="num-cell">Δ / Jahr</th>
+                    </tr>
+                </thead>
+                <tbody id="versionsDetailBody"></tbody>
+            </table>
+            <p class="versions-detail-empty" id="versionsDetailEmpty" hidden>
+                Keine Unterschiede – die beiden Versionen sind in jeder Position gleich.
+            </p>
+        </div>
+        </div>
+        </div><!-- /Vergleich -->
+    </section>
+
+    <!-- ============================================================
+         Diagramme zu den Anpassungen — eigener Abschnitt, nicht in der
+         Zusammenfassung: die hat ihre eigenen Druckregeln, und ein
+         eigener Abschnitt lässt sich als Ganzes ein- und ausblenden.
+         Sichtbar, sobald es eine Anpassung gibt (renderGrafik) — auf
+         einer frisch geöffneten Seite steht kein leeres Diagramm.
+         ============================================================ -->
+    <section class="section grafik-section" id="grafikSection" hidden>
+        <h2 class="section-title">Was die Anpassungen ausmachen</h2>
+
+        <h3 class="grafik-titel">Stand für Stand</h3>
+        <p class="grafik-untertitel">Was am Monatsende bleibt – heute und zu jedem Stichtag. Ein Klick zeigt das ganze Budget zu diesem Stand.</p>
+        <div class="balken-satz" id="grafikStaende"></div>
+
+        <h3 class="grafik-titel">Woher die Veränderung kommt</h3>
+        <p class="grafik-untertitel">Was jede angepasste Position pro Monat ausmacht. Ein Klick springt zur Zeile.</p>
+        <div class="balken-satz" id="grafikPositionen"></div>
+    </section>
+
+    <!-- ============================================================
          Versionsvergleich — visible only in multi-version mode
          ============================================================ -->
     <section class="section versions-overview-section" id="versionsOverviewSection" hidden>
@@ -2616,6 +3510,7 @@
             Übersicht aller erfassten Budget-Versionen mit den Differenzen zur jeweiligen Basis-Version.
             Die aktive Version ist hervorgehoben.
         </p>
+
         <table class="versions-overview-table">
             <thead>
                 <tr>
@@ -2633,25 +3528,6 @@
         <!-- Per-row detail diff: which positions changed vs. the active
              version's basedOn. Hidden when the active version is a root
              (no baseline) or when no rows have changed. -->
-        <div class="versions-detail-block" id="versionsDetailBlock" hidden>
-            <h3 class="versions-detail-title" id="versionsDetailTitle">Unterschiede pro Position</h3>
-            <p class="versions-detail-intro" id="versionsDetailIntro"></p>
-            <table class="versions-detail-table">
-                <thead>
-                    <tr>
-                        <th>Position</th>
-                        <th class="num-cell" id="detailColBasis">Basis</th>
-                        <th class="num-cell" id="detailColActive">Aktive Version</th>
-                        <th class="num-cell">Δ / Jahr</th>
-                        <th class="num-cell">Δ / Monat</th>
-                    </tr>
-                </thead>
-                <tbody id="versionsDetailBody"></tbody>
-            </table>
-            <p class="versions-detail-empty" id="versionsDetailEmpty" hidden>
-                Keine Unterschiede zur Basis-Version – diese Version ist identisch zu „<span id="detailEmptyBaseName"></span>".
-            </p>
-        </div>
     </section>
 
 </main>
@@ -3293,6 +4169,212 @@
         r.diffM = r.einnahmenM - r.ausgabenM;
         return r;
     }
+
+    // ----------------------------------------------------------------
+    // Die Diagramme: gerechnet wird hier, gezeichnet im DOM
+    // ----------------------------------------------------------------
+
+    // Die Stände einer Version mit ihren Summen — eine Quelle für drei
+    // Anzeigen: die Stand-Zeilen der Zusammenfassung, die der Übersicht und
+    // die Balken des Diagramms. Dieselbe Schleife stand vorher zweimal fast
+    // gleich da; mit dem Diagramm wäre eine dritte dazugekommen.
+    // `deltaY`/`deltaM` ist der Unterschied zum Stand «heute», der selbst 0
+    // trägt — er ist der Bezugspunkt und steht immer zuerst.
+    function standVerlauf(schema, values, adjustments, heuteIso) {
+        let basis = null;
+        return stichtagListe(adjustments, heuteIso).map((stand) => {
+            const s = summen(schema, werteFuerStand(values, adjustments, stand.key));
+            if (basis === null) basis = s;
+            return {
+                key: stand.key, ab: stand.ab, faellig: stand.faellig,
+                einnahmenY: s.einnahmenY, einnahmenM: s.einnahmenM,
+                ausgabenY: s.ausgabenY, ausgabenM: s.ausgabenM,
+                diffY: s.diffY, diffM: s.diffM,
+                deltaY: s.diffY - basis.diffY,
+                deltaM: s.diffM - basis.diffM,
+            };
+        });
+    }
+
+    // Woher die Veränderung kommt: je angepasste Position ein Eintrag, nach
+    // Betrag absteigend. `einnahmeRowIds` muss sein, weil der Kern SCHEMA
+    // nicht kennt — ohne diese Liste landete das Vorzeichen wieder im
+    // DOM-Code, und «+200 beim Lohn» stünde in Rot da.
+    // Bei gleichem Betrag entscheidet die rowId, damit das Ergebnis nicht von
+    // der Schlüsselreihenfolge des Objekts abhängt.
+    function anpassungsRangliste(adjustments, staende, values, einnahmeRowIds, maxAnzahl) {
+        const einnahmen = {};
+        (einnahmeRowIds || []).forEach((id) => { einnahmen[id] = true; });
+        const alle = [];
+        anpassungsGruppen(adjustments, staende, values).forEach((gruppe) => {
+            gruppe.eintraege.forEach((e) => {
+                alle.push({
+                    rowId: e.rowId,
+                    deltaY: e.deltaY,
+                    deltaM: e.deltaM,
+                    wirkung: anpassungWirkung(e.deltaM, !!einnahmen[e.rowId]),
+                });
+            });
+        });
+        alle.sort((a, b) => (Math.abs(b.deltaM) - Math.abs(a.deltaM))
+            || (a.rowId < b.rowId ? -1 : a.rowId > b.rowId ? 1 : 0));
+        const grenze = istZahl(maxAnzahl) && maxAnzahl > 0 ? maxAnzahl : alle.length;
+        const rest = alle.slice(grenze);
+        return {
+            eintraege: alle.slice(0, grenze),
+            restAnzahl: rest.length,
+            restDeltaM: rest.reduce((s, e) => s + e.deltaM, 0),
+        };
+    }
+
+    // Der Monatsbetrag einer Zeile aus einem Wertesatz: erfasst wird jährlich
+    // oder monatlich, gerechnet wird mit dem, was dasteht.
+    function zeilenWertM(values, rowId) {
+        const y = istZahl(values[rowId + '.jaehrlich']) ? values[rowId + '.jaehrlich'] : 0;
+        const m = istZahl(values[rowId + '.monatlich']) ? values[rowId + '.monatlich'] : 0;
+        return m || (y / 12);
+    }
+
+    // Ein lesbarer Abstand für die Linien einer Achse: 1, 2, 2.5 oder 5 mal
+    // einer Zehnerpotenz, so dass etwa fünf Linien entstehen. Ein fester
+    // Abstand von 1'000 zeigt bei einem Haushalt mit 800 Franken Einnahmen
+    // eine einzige Linie und bei 90'000 deren neunzig.
+    // Der sichtbare Ausschnitt der senkrechten Achse. Von null an gezeichnet
+    // lagen Einnahmen von 7'600 und Ausgaben von 7'500 in einer Haarlinie
+    // uebereinander, waehrend die untere Haelfte des Diagramms leer blieb —
+    // sichtbar war die Hoehe der Betraege, nicht ihr Unterschied, und um den
+    // geht es hier. Der Ausschnitt rastet auf dem Linienabstand ein, damit
+    // die Achse runde Zahlen traegt.
+    //
+    // Preis dieser Darstellung: ein Unterschied sieht groesser aus, als er im
+    // Verhaeltnis zum Betrag ist. Darum stehen die Werte an der Achse.
+    function achsenBereich(werte, zielLinien) {
+        const zahlen = (werte || []).filter((w) => istZahl(w));
+        if (zahlen.length === 0) return { basis: 0, dach: 1, schritt: 1 };
+        const kleinster = Math.min(...zahlen);
+        const groesster = Math.max(...zahlen);
+        // Ohne Spanne — eine einzige Version, oder in allen dieselben Zahlen —
+        // waere der Puffer null und das Diagramm ohne Hoehe. Dann spannt ein
+        // Zehntel des Betrags den Ausschnitt auf.
+        const spanne = Math.max(groesster - kleinster, Math.abs(groesster) * 0.1, 1);
+        const puffer = spanne * 0.12;
+        let basis = kleinster - puffer;
+        const dach = groesster + puffer;
+        // Einnahmen und Ausgaben sind nie negativ; eine Achse, die unter null
+        // begaenne, behauptete einen Bereich, den es nicht gibt.
+        if (kleinster >= 0 && basis < 0) basis = 0;
+        const schritt = rasterSchritt(dach - basis, zielLinien || 4);
+        // Der untere Rand ist eine runde Zahl und traegt die Grundlinie: ein
+        // Diagramm, das irgendwo bei 3'143.76 aufhoert, sagt nicht, worauf es
+        // steht. Oben gilt das nicht — dort rundet nichts auf, sonst
+        // verschenkte der Ausschnitt einen ganzen Schritt an leere Flaeche.
+        basis = Math.floor(basis / schritt) * schritt;
+        if (kleinster >= 0 && basis < 0) basis = 0;
+        return { basis, dach, schritt, ersteLinie: basis };
+    }
+
+    function rasterSchritt(max, ziel) {
+        const n = (istZahl(ziel) && ziel > 0) ? ziel : 5;
+        if (!istZahl(max) || max <= 0) return 1;
+        const roh = max / n;
+        const groesse = Math.pow(10, Math.floor(Math.log10(roh)));
+        const rest = roh / groesse;
+        // Aufrunden auf den nächsten runden Faktor: so entstehen höchstens
+        // `ziel` Linien, nie mehr. Abrunden ergäbe bei 900 einen Abstand von
+        // 100 und damit neun Linien.
+        const faktor = [1, 2, 2.5, 5, 10].find((k) => rest <= k) || 10;
+        return faktor * groesse;
+    }
+
+    // Die Summen je Gruppe — für «Wohin das Geld geht». Jede Gruppe des
+    // Schemas kommt vor, auch eine leere: sonst fehlte sie im Bild, sobald
+    // jemand eine Kategorie nicht ausfüllt, und die Farben verschöben sich
+    // von Version zu Version.
+    function gruppenSummen(schema, values) {
+        const r = {};
+        Object.keys(schema).forEach((groupId) => {
+            let jaehrlich = 0, monatlich = 0;
+            schema[groupId].forEach((row) => {
+                const y = istZahl(values[row.id + '.jaehrlich']) ? values[row.id + '.jaehrlich'] : 0;
+                const m = istZahl(values[row.id + '.monatlich']) ? values[row.id + '.monatlich'] : 0;
+                jaehrlich += y || (m * 12);
+                monatlich += m || (y / 12);
+            });
+            r[groupId] = { jaehrlich: jaehrlich, monatlich: monatlich };
+        });
+        return r;
+    }
+
+    // Die Wärmekarte: welche Positionen sich über die Versionen überhaupt
+    // bewegen, und wie stark gegenüber der ersten. Von sechzig Zeilen eines
+    // Budgets ändern sich meist acht — die übrigen gehören nicht hinein,
+    // sonst sucht man die Bewegung zwischen lauter Strichen.
+    // `staerkste` gibt die Farbskala vor: ohne sie sähe eine Änderung von
+    // 20 Franken aus wie eine von 400.
+    function karteZeilen(schema, versionen) {
+        const zeilen = [];
+        let staerkste = 0;
+        Object.keys(schema).forEach((groupId) => {
+            schema[groupId].forEach((row) => {
+                const werte = (versionen || []).map((v) => zeilenWertM(v.values || {}, row.id));
+                const erste = werte.length ? werte[0] : 0;
+                if (!werte.some((w) => Math.abs(w - erste) > 0.005)) return;
+                const abweichungen = werte.map((w) => w - erste);
+                abweichungen.forEach((a) => { staerkste = Math.max(staerkste, Math.abs(a)); });
+                zeilen.push({
+                    rowId: row.id,
+                    gruppe: groupId,
+                    istEinnahme: groupId === 'einnahmen',
+                    werte: werte,
+                    abweichungen: abweichungen,
+                });
+            });
+        });
+        return { zeilen: zeilen, staerkste: staerkste };
+    }
+
+    // Was der Wechsel von A nach B je Position ausmacht. Positiv heisst «es
+    // bleibt mehr»: bei einer Ausgabe zählt die Senkung, bei einer Einnahme
+    // die Erhöhung. Wer hier nur subtrahiert, zeigt eine gestiegene Einnahme
+    // als Verschlechterung.
+    function wirkungZwischen(schema, werteA, werteB) {
+        const eintraege = [];
+        Object.keys(schema).forEach((groupId) => {
+            schema[groupId].forEach((row) => {
+                const alt = zeilenWertM(werteA || {}, row.id);
+                const neu = zeilenWertM(werteB || {}, row.id);
+                const wirkung = groupId === 'einnahmen' ? neu - alt : alt - neu;
+                if (Math.abs(wirkung) <= 0.005) return;
+                eintraege.push({ rowId: row.id, wirkung: wirkung });
+            });
+        });
+        eintraege.sort((a, b) => (Math.abs(b.wirkung) - Math.abs(a.wirkung))
+            || (a.rowId < b.rowId ? -1 : a.rowId > b.rowId ? 1 : 0));
+        return {
+            eintraege: eintraege,
+            summe: eintraege.reduce((s, e) => s + e.wirkung, 0),
+        };
+    }
+
+    // Die Geometrie eines Balkensatzes, in Prozent der Spur. Die Spanne
+    // umfasst immer die Null — sonst stünde ein Balken im Plus links von
+    // einem im Minus. Ohne Spanne (alle Werte 0) bleibt die Breite 0: ein
+    // voller Balken behauptete eine Grösse, die es nicht gibt.
+    function balkenAnteile(werte) {
+        const zahlen = (werte || []).map((w) => (istZahl(w) ? w : 0));
+        const min = Math.min.apply(null, [0].concat(zahlen));
+        const max = Math.max.apply(null, [0].concat(zahlen));
+        const spanne = max - min;
+        const nullBei = spanne === 0 ? 0 : (-min / spanne) * 100;
+        return {
+            nullBei: nullBei,
+            balken: zahlen.map((w) => {
+                if (spanne === 0) return { von: nullBei, breite: 0 };
+                const breite = Math.abs(w) / spanne * 100;
+                return { von: w < 0 ? nullBei - breite : nullBei, breite: breite };
+            }),
+        };
+    }
     /* == budget-kern:ende == */
 
     const FILE_FORMAT_VERSION = 5;
@@ -3674,6 +4756,12 @@
     // Ausgaben: «neue Stelle ab 01.03.» ist eine Anpassung einer Einnahme,
     // «Wechsel zu günstigerer Versicherung ab April» eine einer Ausgabe.
     const EXPANDABLE_GROUPS = new Set(['einnahmen', ...AUSGABEN_GROUPS]);
+
+    // Höchstzahl der Balken im Diagramm «Woher die Veränderung kommt».
+    // Darüber fasst eine Restzeile zusammen: zwanzig Balken wären eine
+    // zweite Tabelle, keine Grafik — und die Anpassungsliste in der
+    // Kopfleiste zeigt ohnehin alle.
+    const GRAFIK_MAX_BALKEN = 8;
 
     // Chevron icon used by the comment expander button.
     const CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
@@ -4198,6 +5286,150 @@
     }
 
     // ----------------------------------------------------------------
+    // Die Diagramme (Punkte 8 und 9)
+    // ----------------------------------------------------------------
+    // Gerechnet wird im Kern (standVerlauf, anpassungsRangliste,
+    // balkenAnteile), hier steht nur das Zusammensetzen der Zeilen.
+
+    function standName(stand) {
+        if (stand.key === 'heute') return 'heute';
+        if (stand.key === 'offen') return 'mit allen Vorschlägen';
+        return 'ab ' + datumAnzeige(stand.ab);
+    }
+
+    // Die Reihenfolge der Positions-Balken wird eingefroren, solange ein
+    // Anpassungsfeld den Fokus hat: recomputeAll läuft bei jedem Tastendruck,
+    // und eine mitlaufende Sortierung liesse die Balken unter dem Finger
+    // wegwandern. Die Breiten ziehen trotzdem nach.
+    let grafikReihenfolge = null;
+
+    function imAnpassungsfeld() {
+        const el = document.activeElement;
+        return !!(el && el.classList && el.classList.contains('adj-input'));
+    }
+
+    // Spur mit Nulllinie und Balken. Die Nulllinie ist ein eigenes Element:
+    // als Rand am Balken verschöbe sie sich mit dessen Breite.
+    function balkenSpur(anteil, nullBei) {
+        const spur = document.createElement('div');
+        spur.className = 'balken-spur';
+        const linie = document.createElement('span');
+        linie.className = 'balken-null';
+        linie.style.left = nullBei + '%';
+        spur.appendChild(linie);
+        const balken = document.createElement('span');
+        balken.className = 'balken';
+        balken.style.left = anteil.von + '%';
+        // Mindestbreite: eine kleine Anpassung soll sichtbar bleiben.
+        balken.style.width = anteil.breite === 0 ? '0' : `max(2px, ${anteil.breite}%)`;
+        spur.appendChild(balken);
+        return { spur: spur, balken: balken };
+    }
+
+    function balkenZeile(name, zusatz, anteil, nullBei, wert, wirkung, titel, beiKlick) {
+        const zeile = document.createElement('button');
+        zeile.type = 'button';
+        zeile.className = 'balken-zeile';
+        zeile.title = titel;
+
+        const beschriftung = document.createElement('span');
+        beschriftung.className = 'balken-name';
+        beschriftung.textContent = name;
+        if (zusatz) {
+            const klein = document.createElement('span');
+            klein.className = 'balken-zusatz';
+            klein.textContent = zusatz;
+            beschriftung.appendChild(klein);
+        }
+        zeile.appendChild(beschriftung);
+
+        const spur = balkenSpur(anteil, nullBei);
+        if (wirkung) spur.balken.classList.add('ist-' + wirkung);
+        zeile.appendChild(spur.spur);
+
+        const zahl = document.createElement('span');
+        zahl.className = 'balken-wert' + (wirkung ? ' ist-' + wirkung : '');
+        zahl.textContent = wert;
+        zeile.appendChild(zahl);
+
+        zeile.addEventListener('click', beiKlick);
+        return zeile;
+    }
+
+    function renderGrafik(verlauf, anpassungen, werte) {
+        const section = $('#grafikSection');
+        if (!section) return;
+        // Dasselbe Tor wie bei #adjustmentsBtn und #previewBtn.
+        const hatAnpassung = Object.keys(anpassungen || {})
+            .some((id) => anpassungHatBetrag(anpassungen[id]));
+        section.hidden = !hatAnpassung;
+        if (!hatAnpassung) return;
+
+        // ---- Diagramm 1: Stand für Stand ----
+        const standBox = $('#grafikStaende');
+        standBox.textContent = '';
+        const geo = balkenAnteile(verlauf.map((s) => s.diffM));
+        verlauf.forEach((stand, i) => {
+            // Ein Überschuss ist gut, ein Fehlbetrag nicht — dieselbe Lesart
+            // wie bei den Stand-Zeilen darüber.
+            const wirkung = stand.diffM >= 0 ? 'gut' : 'schlecht';
+            const titel = `${standName(stand)}: ${formatComputed(stand.diffY)} pro Jahr`
+                + (stand.key === 'heute' ? '' : ` · ${deltaAnzeige(stand.deltaM)} pro Monat gegenüber heute`);
+            const zeile = balkenZeile(
+                standName(stand),
+                stand.faellig ? 'Datum schon verstrichen' : '',
+                geo.balken[i], geo.nullBei,
+                formatComputed(stand.diffM), wirkung, titel,
+                () => { verlasseAuswertung(); enterPreview(stand.key); });
+            zeile.dataset.stand = stand.key;
+            if (stand.key === state.previewStand) zeile.classList.add('is-preview');
+            standBox.appendChild(zeile);
+        });
+
+        // ---- Diagramm 2: Woher die Veränderung kommt ----
+        const posBox = $('#grafikPositionen');
+        posBox.textContent = '';
+        const einnahmeIds = (SCHEMA.einnahmen || []).map((r) => r.id);
+        const rang = anpassungsRangliste(anpassungen, verlauf, werte || {}, einnahmeIds, GRAFIK_MAX_BALKEN);
+        const ids = rang.eintraege.map((e) => e.rowId);
+        if (imAnpassungsfeld() && grafikReihenfolge
+            && grafikReihenfolge.length === ids.length
+            && grafikReihenfolge.every((id) => ids.indexOf(id) >= 0)) {
+            rang.eintraege.sort((a, b) =>
+                grafikReihenfolge.indexOf(a.rowId) - grafikReihenfolge.indexOf(b.rowId));
+        } else {
+            grafikReihenfolge = ids;
+        }
+        const geo2 = balkenAnteile(rang.eintraege.map((e) => e.deltaM));
+        rang.eintraege.forEach((e, i) => {
+            const name = rowAnzeigename(e.rowId);
+            const zeile = balkenZeile(
+                name, '', geo2.balken[i], geo2.nullBei,
+                deltaAnzeige(e.deltaM), e.wirkung,
+                `${name}: ${deltaAnzeige(e.deltaY)} pro Jahr · zur Zeile springen`,
+                () => springeZuZeile(e.rowId));
+            zeile.dataset.rowId = e.rowId;
+            posBox.appendChild(zeile);
+        });
+        if (rang.restAnzahl > 0) {
+            // Keine Schaltfläche: die Zeile führt nirgendwohin. Alle Einträge
+            // stehen in der Anpassungsliste der Kopfleiste.
+            const rest = document.createElement('div');
+            rest.className = 'balken-rest';
+            const text = document.createElement('span');
+            text.textContent = `weitere ${rang.restAnzahl} Positionen`;
+            const leer = document.createElement('span');
+            const zahl = document.createElement('span');
+            zahl.className = 'balken-wert';
+            zahl.textContent = deltaAnzeige(rang.restDeltaM);
+            rest.appendChild(text);
+            rest.appendChild(leer);
+            rest.appendChild(zahl);
+            posBox.appendChild(rest);
+        }
+    }
+
+    // ----------------------------------------------------------------
     // Anpassungsliste in der Kopfleiste
     // ----------------------------------------------------------------
     // Das Datum ist nur die Überschrift einer Gruppe: mehrere Positionen können
@@ -4226,11 +5458,25 @@
 
     // Die Anleitung: derselbe Mechanismus wie bei der Anpassungsliste. Das
     // Panel überlagert, darum ändert sich die Höhe der Kopfleiste nicht.
+    // Die Anleitung reicht von der Unterkante der Kopfleiste bis an den
+    // unteren Bildschirmrand. Mit 60vh blieb darunter Platz frei, waehrend im
+    // Panel gescrollt werden musste. Gemessen statt gerechnet: wie tief die
+    // Kopfleiste reicht, haengt davon ab, wie viele Versionen sie traegt und
+    // ob die Seite schon gescrollt ist (die Leiste klebt oben).
+    function hilfePanelHoeheSetzen() {
+        const panel = $('#hilfePanel');
+        if (!panel || panel.hidden) return;
+        const oben = panel.getBoundingClientRect().top;
+        const platz = window.innerHeight - oben - 12;    // 12px Luft nach unten
+        panel.style.maxHeight = Math.max(180, platz) + 'px';
+    }
+
     function toggleHilfePanel() {
         const panel = $('#hilfePanel');
         const oeffnen = panel.hidden;
         panel.hidden = !oeffnen;
         $('#hilfeBtn').setAttribute('aria-expanded', oeffnen ? 'true' : 'false');
+        if (oeffnen) hilfePanelHoeheSetzen();
     }
 
     function closeHilfePanel() {
@@ -4251,6 +5497,9 @@
     // Klappt die Zeile auf und scrollt sie in den Blick. Die Kopfleiste klebt
     // oben (.sticky-head); ohne ihre Höhe abzuziehen läge die Zeile darunter.
     function springeZuZeile(rowId) {
+        // Das Ziel ist eine Zeile im Formular — in der Auswertung ist das
+        // Formular nicht da.
+        verlasseAuswertung();
         closeAdjustmentsPanel();
         // Sonst läge die Überlagerung genau über der Zeile, zu der gesprungen
         // wurde — die Kopfleiste ist der Anker des Panels.
@@ -4591,16 +5840,20 @@
         const active = getActiveVersion();
         const basisWerte = (state.previewStand && active) ? active.values : formWerte;
         const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
-        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+        // Eine Rechnung, drei Anzeigen: diese Zeilen, die Stände in der
+        // Versions-Übersicht und die Balken des Diagramms.
+        const verlauf = standVerlauf(SCHEMA, basisWerte, anpassungen, heuteIso());
+        verlauf.forEach((stand) => {
             if (stand.key === 'heute') return;
-            const summe = summen(SCHEMA, werteFuerStand(basisWerte, anpassungen, stand.key));
             // Der Stand, der gerade im Formular steht, wird hervorgehoben:
             // dieselbe Zahl wie in der Differenz-Zeile darüber.
-            const zeile = standZeile(stand, summe);
+            const zeile = standZeile(stand, stand);
             if (stand.key === state.previewStand) zeile.classList.add('is-preview');
             standBlock.appendChild(zeile);
         });
 
+        renderGrafik(verlauf, anpassungen, basisWerte);
+        renderAuswertung();     // tut nichts, solange der Modus zu ist
         renderAdjustmentList(basisWerte);
     }
 
@@ -4804,6 +6057,17 @@
         const multi = isMultiVersion();
         document.body.classList.toggle('mode-multi-version', multi);
         document.body.classList.toggle('mode-single-version', !multi);
+        // Der Knopf zeigt sich, sobald es etwas auszuwerten gibt: mehrere
+        // Versionen oder eine Anpassung. Mit einer leeren Seite führte er ins
+        // Nichts, und das wäre schlimmer als kein Knopf.
+        const aktiv = getActiveVersion();
+        const hatAnpassung = Object.keys(bekannteAnpassungen(aktiv ? aktiv.adjustments : {}))
+            .some((id) => anpassungHatBetrag(aktiv.adjustments[id]));
+        const auswertung = $('#auswertungBtn');
+        if (auswertung) {
+            auswertung.hidden = !(multi || hatAnpassung);
+            if (auswertung.hidden) verlasseAuswertung();
+        }
     }
 
     function suggestVersionName() {
@@ -4914,12 +6178,11 @@
         // Vorschau stehen dort gerechnete Zahlen. Das Gate oben bleibt: die
         // Stände kommen nur dazu, wo die Übersicht ohnehin sichtbar ist.
         const aktiv = getActiveVersion();
-        const standBasis = summen(SCHEMA, aktiv ? aktiv.values : {});
         const anpassungen = bekannteAnpassungen(aktiv ? aktiv.adjustments : {});
-        stichtagListe(anpassungen, heuteIso()).forEach((stand) => {
+        standVerlauf(SCHEMA, aktiv ? aktiv.values : {}, anpassungen, heuteIso()).forEach((stand) => {
             if (stand.key === 'heute') return;   // steht als Version schon in der Tabelle
-            const summe = summen(SCHEMA, werteFuerStand(aktiv.values, anpassungen, stand.key));
-            const delta = summe.diffY - standBasis.diffY;
+            const summe = stand;                 // dieselbe Rechnung wie in der Zusammenfassung
+            const delta = stand.deltaY;
             const tr = document.createElement('tr');
             tr.className = 'overview-stand-row';
             tr.dataset.stand = stand.key;
@@ -4940,24 +6203,325 @@
             tbody.appendChild(tr);
         });
 
-        // ---- Per-row diff detail block --------------------------------
-        renderVersionsDetail();
+        // ---- Das gewählte Paar: Auswahl, Diagramm, Unterschiede -------
+        const paar = vergleichsPaar();
+        renderVergleichWahl(paar);
+        renderVersionsDetail(paar.a, paar.b);
     }
 
-    function renderVersionsDetail() {
-        // Show, position by position, where the active version differs from
-        // its basedOn. Hidden when active is a root version (no baseline).
+    // ----------------------------------------------------------------
+    // Punkt 9: zwei frei gewählte Versionen vergleichen
+    // ----------------------------------------------------------------
+    // Links die aktive Version, rechts die gewählte. Nur die rechte lebt als
+    // eigener Zustand, und der nur zur Laufzeit: er steht nicht in der Datei
+    // (v5 bleibt unverändert) und überlebt kein Neuladen — eine
+    // Blickrichtung, kein Inhalt. Die linke braucht keinen: sie IST
+    // state.activeVersionId. Damit gibt es die Stelle nicht mehr, an der
+    // zwei Angaben zur selben Frage auseinanderlaufen konnten.
+    function vergleichsPaar() {
+        const aktiv = getActiveVersion();
+        if (!aktiv) return { a: null, b: null };
+        const gewaehlt = state.vergleichB;
+        // Nie dieselbe auf beiden Seiten: wer in der Kopfzeile die Version
+        // wählt, die rechts steht, schiebt die rechte weiter — zur Basis,
+        // aus der die aktive hervorging, sonst zur ersten anderen.
+        let b = (gewaehlt && gewaehlt !== aktiv.id && getVersionById(gewaehlt)) ? gewaehlt : null;
+        if (!b && aktiv.basedOn && getVersionById(aktiv.basedOn)) b = aktiv.basedOn;
+        if (!b) {
+            const andere = state.versions.find((v) => v.id !== aktiv.id);
+            b = andere ? andere.id : null;
+        }
+        return { a: aktiv, b: getVersionById(b) || null };
+    }
+
+    // ----------------------------------------------------------------
+    // Die Auswertung: ein Ort für alles Grafische
+    // ----------------------------------------------------------------
+    function auswertungOffen() {
+        return document.body.classList.contains('mode-auswertung');
+    }
+
+    function zeigeAuswertung() {
+        captureFormToActiveVersion();
+        closeAdjustmentsPanel();
+        closeHilfePanel();
+        document.body.classList.add('mode-auswertung');
+        $('#auswertungSection').hidden = false;
+        $('#auswertungBtn').setAttribute('aria-pressed', 'true');
+        zeigeReiter(state.auswertungReiter || 'uebersicht');
+        renderAuswertung();
+        renderVersionsOverview();
+        window.scrollTo({ top: 0 });
+    }
+
+    // Die Auswertung hat zwei Blätter: was alle Versionen zeigt, und was zwei
+    // miteinander vergleicht. Die zwei Abschnitte, die ausserhalb dieses
+    // <section> liegen, gehören fachlich dazu und wandern mit: die Diagramme
+    // zu den Anpassungen zur Übersicht, die Versionstabelle zum Vergleich.
+    function zeigeReiter(name) {
+        state.auswertungReiter = name;
+        const istVergleich = name === 'vergleich';
+        $('#auswertungUebersicht').hidden = istVergleich;
+        $('#auswertungVergleich').hidden = !istVergleich;
+        const grafik = $('#grafikSection');
+        if (grafik) grafik.classList.toggle('im-anderen-reiter', istVergleich);
+        const uebersicht = $('#versionsOverviewSection');
+        if (uebersicht) uebersicht.classList.toggle('im-anderen-reiter', !istVergleich);
+        [['#reiterUebersicht', !istVergleich], ['#reiterVergleich', istVergleich]]
+            .forEach(([sel, aktiv]) => {
+                const b = $(sel);
+                if (b) b.setAttribute('aria-selected', aktiv ? 'true' : 'false');
+            });
+    }
+
+    function verlasseAuswertung() {
+        if (!auswertungOffen()) return;
+        document.body.classList.remove('mode-auswertung');
+        $('#auswertungSection').hidden = true;
+        $('#auswertungBtn').setAttribute('aria-pressed', 'false');
+        const btn = $('#auswertungBtn');
+        if (btn && !btn.hidden) btn.focus({ preventScroll: true });
+    }
+
+    // «Der Weg»: zwei Linien auf einer gemeinsamen Skala, dazwischen als
+    // Fläche der Überschuss. Eine dritte Linie dafür wäre neben Beträgen von
+    // 5'000 ein Strich am Boden.
+    // «Der Weg» steht über den Versionsspalten der Tabelle: Punkt i liegt in
+    // der Mitte der Spalte i. Darum trägt das Diagramm selbst KEINE
+    // Beschriftung der Zeitachse — die senkrechten Spaltennamen darunter
+    // sind die Achse, und zweimal dieselben Namen untereinander wären eine
+    // Wiederholung, die nur Platz kostet.
+    // Die zuletzt gezeichnete Flaeche von «Der Weg». Der Beobachter unten
+    // vergleicht damit, sonst zeichnete jede Meldung neu — auch die, die der
+    // eigene Strich ausgeloest hat.
+    let gezeichneteFlaeche = '';
+
+    function zeichneWeg(versionen, summenJeVersion) {
+        const svg = $('#auswertungWeg');
+        if (!svg) return;
+        if (versionen.length === 0) { svg.innerHTML = ''; return; }
+        // Breite UND Hoehe aus dem gemessenen Kasten, und die viewBox genau
+        // darauf: nur dann zeichnet der Browser 1:1. Weicht sie ab, skaliert
+        // er das Bild auf das kleinere Mass und stellt es mittig in die
+        // Flaeche — die Punkte stehen dann neben ihren Spalten, obwohl die
+        // Rechnung stimmt. Genau das passierte, wenn die Auswertung auf dem
+        // Reiter «Vergleich» geoeffnet wurde: die Uebersicht war versteckt,
+        // clientWidth also 0, und gezeichnet wurde in die Ersatzbreite.
+        const kasten = svg.getBoundingClientRect();
+        const B = Math.round(kasten.width);
+        const H = Math.round(kasten.height);
+        // Versteckt (hidden, oder im anderen Reiter): gar nicht zeichnen. Was
+        // dasteht, bleibt stehen, bis die Flaeche wieder eine Groesse hat;
+        // der ResizeObserver meldet sich dann von selbst.
+        if (B < 2 || H < 2) return;
+        gezeichneteFlaeche = B + 'x' + H;
+        const oben = 22, unten = 10;
+        svg.setAttribute('viewBox', `0 0 ${B} ${H}`);
+        const ein = summenJeVersion.map((s) => s.einnahmenM);
+        const aus = summenJeVersion.map((s) => s.ausgabenM);
+        const bereich = achsenBereich([...ein, ...aus], 4);
+        const spalte = B / versionen.length;
+        const x = (i) => spalte * (i + 0.5);
+        const y = (w) => oben + (H - oben - unten)
+            * (1 - (w - bereich.basis) / (bereich.dach - bereich.basis));
+
+        const teile = [];
+        // Senkrechte Trennlinien an den Spaltengrenzen — als Erstes, also
+        // hinter allem anderen. Sie zeigen, welcher Teil des Diagramms zu
+        // welcher Version gehoert; im Kopf der Tabelle laufen sie als
+        // gestrichelte Zellgrenze weiter (.karte thead th.zahl + th.zahl).
+        // Gestrichelt und bis an den unteren Rand: durchgezogen saehe es
+        // nach einer zweiten Achse aus.
+        for (let i = 1; i < versionen.length; i++) {
+            teile.push(`<line class="spalte" x1="${spalte * i}" y1="0" x2="${spalte * i}" y2="${H}"/>`);
+        }
+        // Die Werte der Achse stehen innen links über dem Raster: aussen
+        // bräuchten sie Platz, den die Ausrichtung auf die Spalten nicht
+        // hergibt.
+        for (let w = bereich.ersteLinie; w <= bereich.dach; w += bereich.schritt) {
+            // Die unterste Linie ist die Grundlinie: durchgezogen, damit zu
+            // sehen ist, worauf das Diagramm steht — es beginnt ja nicht bei
+            // null. Die uebrigen bleiben gestricheltes Raster.
+            const art = w === bereich.basis ? 'achse' : 'raster';
+            teile.push(`<line class="${art}" x1="0" y1="${y(w)}" x2="${B}" y2="${y(w)}"/>`);
+            teile.push(`<text class="achsenwert" x="2" y="${y(w) - 3}">${w.toLocaleString('de-CH')}</text>`);
+        }
+        for (let i = 0; i < versionen.length - 1; i++) {
+            const minus = (ein[i] - aus[i] < 0) || (ein[i + 1] - aus[i + 1] < 0);
+            teile.push(`<polygon class="band${minus ? ' ist-minus' : ''}" points="`
+                + `${x(i)},${y(ein[i])} ${x(i + 1)},${y(ein[i + 1])} `
+                + `${x(i + 1)},${y(aus[i + 1])} ${x(i)},${y(aus[i])}"/>`);
+        }
+        teile.push(`<polyline class="linie-ein" points="${ein.map((w, i) => x(i) + ',' + y(w)).join(' ')}"/>`);
+        teile.push(`<polyline class="linie-aus" points="${aus.map((w, i) => x(i) + ',' + y(w)).join(' ')}"/>`);
+        versionen.forEach((v, i) => {
+            const rest = summenJeVersion[i].diffM;
+            teile.push(`<circle class="punkt-ein" cx="${x(i)}" cy="${y(ein[i])}" r="5"><title>`
+                + `${escapeHtml(v.name)} · Einnahmen ${formatComputed(ein[i])}</title></circle>`);
+            teile.push(`<circle class="punkt-aus" cx="${x(i)}" cy="${y(aus[i])}" r="5"><title>`
+                + `${escapeHtml(v.name)} · Ausgaben ${formatComputed(aus[i])}</title></circle>`);
+            const bandHoehe = Math.abs(y(ein[i]) - y(aus[i]));
+            const mitte = (y(ein[i]) + y(aus[i])) / 2 + 4;
+            const yWert = bandHoehe < 20 ? Math.min(y(ein[i]), y(aus[i])) - 8 : mitte;
+            teile.push(`<text class="bleibt${rest < 0 ? ' ist-minus' : ''}" x="${x(i)}" `
+                + `y="${yWert}" text-anchor="middle">${deltaAnzeige(rest)}</text>`);
+        });
+        teile.push(`<text class="spur-name ein" x="4" y="${y(ein[0]) - 10}">Einnahmen</text>`);
+        teile.push(`<text class="spur-name aus" x="4" y="${y(aus[0]) + 16}">Ausgaben</text>`);
+        svg.innerHTML = teile.join('');
+    }
+
+    // Die Wärmekarte. Die Farbe trägt die Aussage, die Zahl bestätigt sie.
+    function zeichneKarte(versionen) {
+        const tabelle = $('#auswertungKarte');
+        if (!tabelle) return;
+        const daten = karteZeilen(SCHEMA, versionen);
+        if (daten.zeilen.length === 0) {
+            tabelle.innerHTML = '<tbody><tr><td class="name">Keine Position ändert sich über die Versionen.</td></tr></tbody>';
+            return;
+        }
+        const farbe = (abw, einnahme) => {
+            if (Math.abs(abw) <= 0.005) return 'background:var(--color-bg-alt)';
+            // Gut heisst: Ausgabe sinkt oder Einnahme steigt.
+            const gut = einnahme ? abw > 0 : abw < 0;
+            const anteil = Math.min(1, Math.abs(abw) / (daten.staerkste || 1));
+            const deckung = (0.18 + 0.72 * anteil).toFixed(2);
+            const grund = gut ? '5,150,105' : '220,38,38';
+            return `background:rgba(${grund},${deckung});${anteil > 0.55 ? 'color:#fff;' : ''}`;
+        };
+        // Ab fünf Versionen etwas kleinere Schrift; die Breite der
+        // Zahlenspalten steht im CSS und richtet sich nach dem grössten
+        // Betrag, nicht nach der Anzahl Versionen.
+        tabelle.classList.toggle('viele', versionen.length >= 5);
+        const kopf = '<thead><tr><th>Position</th><th class="gruppe">Gruppe</th>'
+            + versionen.map((v) => `<th class="zahl"><span title="${escapeHtml(v.name)}">${escapeHtml(v.name)}</span></th>`).join('')
+            + '</tr></thead>';
+        const leib = daten.zeilen.map((z) => {
+            const zellen = z.werte.map((wert, i) => {
+                const abw = z.abweichungen[i];
+                const inhalt = i === 0 ? formatComputed(wert) : (Math.abs(abw) <= 0.005 ? '–' : deltaAnzeige(abw));
+                const stil = i === 0 ? 'background:var(--color-bg-alt)' : farbe(abw, z.istEinnahme);
+                return `<td class="zahl"><span class="zelle${i > 0 && Math.abs(abw) <= 0.005 ? ' leer' : ''}" `
+                    + `style="${stil}" title="${escapeHtml(versionen[i].name)}: ${formatComputed(wert)} pro Monat">${inhalt}</span></td>`;
+            }).join('');
+            return `<tr><td class="name">${escapeHtml(rowAnzeigename(z.rowId))}</td>`
+                + `<td class="gruppe">${escapeHtml(GROUP_LABELS[z.gruppe] || z.gruppe)}</td>${zellen}</tr>`;
+        }).join('');
+        const fuss = '<tr class="summe"><td class="name">Bleibt pro Monat</td><td class="gruppe"></td>'
+            + versionen.map((v) => {
+                const s = summen(SCHEMA, v.values);
+                return `<td class="zahl"><span class="zelle ${s.diffM >= 0 ? 'ist-gut' : 'ist-schlecht'}" `
+                    + `style="color:${s.diffM >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}">`
+                    + `${deltaAnzeige(s.diffM)}</span></td>`;
+            }).join('') + '</tr>';
+        tabelle.innerHTML = kopf + '<tbody>' + leib + fuss + '</tbody>';
+    }
+
+    // Die Farben der Gruppen. Bewusst eine feste, kurze Liste statt
+    // gerechneter Farbtöne: elf Gruppen sollen unterscheidbar sein, und
+    // gerechnete Abstufungen einer Farbe sind es ab der vierten nicht mehr.
+    const GRUPPEN_FARBEN = [
+        '#0f766e', '#b45309', '#1d4ed8', '#9d174d', '#4d7c0f', '#7c3aed',
+        '#0e7490', '#a16207', '#be123c', '#3f6212', '#475569',
+    ];
+
+    // «Wohin das Geld geht»: je Version ein Balken über die Ausgaben,
+    // geteilt nach Gruppen, mit einer Marke bei den Einnahmen. Beantwortet
+    // eine andere Frage als «Der Weg» — nicht wie es sich entwickelt hat,
+    // sondern woraus es besteht.
+    function zeichneGruppen(versionen, summenJeVersion) {
+        const box = $('#auswertungGruppen');
+        const legende = $('#auswertungGruppenLegende');
+        if (!box) return;
+        const ausgabenGruppen = Object.keys(SCHEMA).filter((g) => g !== 'einnahmen');
+        const jeVersion = versionen.map((v) => gruppenSummen(SCHEMA, v.values));
+        // Eine gemeinsame Skala, sonst wären die Balken nicht vergleichbar.
+        const skala = Math.max(1, ...summenJeVersion.map((s) => Math.max(s.ausgabenM, s.einnahmenM)));
+
+        box.innerHTML = versionen.map((v, i) => {
+            const s = summenJeVersion[i];
+            const stuecke = ausgabenGruppen.map((g, nr) => {
+                const betrag = jeVersion[i][g] ? jeVersion[i][g].monatlich : 0;
+                if (betrag <= 0) return '';
+                const farbe = GRUPPEN_FARBEN[nr % GRUPPEN_FARBEN.length];
+                return `<span class="gruppen-stueck" style="width:${betrag / skala * 100}%;background:${farbe}" `
+                    + `title="${escapeHtml(GROUP_LABELS[g] || g)}: ${formatComputed(betrag)} pro Monat"></span>`;
+            }).join('');
+            const wirkung = s.diffM >= 0 ? 'ist-gut' : 'ist-schlecht';
+            return `<div class="gruppen-zeile">
+                <span class="gruppen-name">${escapeHtml(v.name)}<small>Ausgaben ${formatComputed(s.ausgabenM)}</small></span>
+                <span class="gruppen-rest ${wirkung}">${deltaAnzeige(s.diffM)}</span>
+                <span class="gruppen-spur">${stuecke}<i class="gruppen-marke" style="left:${s.einnahmenM / skala * 100}%" `
+                    + `data-text="${i === 0 ? 'Einnahmen' : ''}" title="Einnahmen: ${formatComputed(s.einnahmenM)} pro Monat"></i></span>
+            </div>`;
+        }).join('');
+
+        if (legende) {
+            // Nur Gruppen, die in mindestens einer Version vorkommen — sonst
+            // stünden elf Farben da, von denen die Hälfte nirgends auftaucht.
+            legende.innerHTML = ausgabenGruppen.map((g, nr) => {
+                const kommtVor = jeVersion.some((gs) => gs[g] && gs[g].monatlich > 0);
+                if (!kommtVor) return '';
+                const farbe = GRUPPEN_FARBEN[nr % GRUPPEN_FARBEN.length];
+                return `<span><i style="background:${farbe}"></i>${escapeHtml(GROUP_LABELS[g] || g)}</span>`;
+            }).join('');
+        }
+    }
+
+    function renderAuswertung() {
+        if (!auswertungOffen()) return;
+        const versionen = state.versions;
+        const je = versionen.map((v) => summen(SCHEMA, v.values));
+        // Was Versionen miteinander vergleicht, braucht mindestens zwei.
+        const vergleichbar = versionen.length > 1;
+        ['#auswertungTeilKarte', '#auswertungTeilWasserfall']
+            .forEach((sel) => { const el = $(sel); if (el) el.hidden = !vergleichbar; });
+        // Zuerst die gemeinsame Spaltengrösse setzen: das Diagramm misst
+        // seine eigene Breite, und die hängt an dieser Zahl. Wird sie erst
+        // beim Zeichnen der Tabelle gesetzt, zeichnet der Weg in eine zu
+        // schmale Fläche und der Browser streckt ihn anschliessend.
+        const blatt = $('#auswertungUebersicht');
+        if (blatt) {
+            blatt.classList.toggle('viele', versionen.length >= 5);
+            blatt.style.setProperty('--zahl-anzahl', versionen.length);
+        }
+        zeichneGruppen(versionen, je);
+        if (!vergleichbar) return;
+        zeichneWeg(versionen, je);
+        zeichneKarte(versionen);
+        renderVersionsDetail(vergleichsPaar().a, vergleichsPaar().b);
+    }
+
+    function renderVergleichWahl(paar) {
+        [['#vergleichA', paar.a], ['#vergleichB', paar.b]].forEach(([sel, gewaehlt]) => {
+            const feld = $(sel);
+            if (!feld) return;
+            feld.innerHTML = '';
+            state.versions.forEach((v) => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = v.name;
+                if (gewaehlt && v.id === gewaehlt.id) opt.selected = true;
+                feld.appendChild(opt);
+            });
+        });
+    }
+
+    function renderVersionsDetail(a, b) {
+        // Zeigt Position für Position, worin sich zwei Versionen
+        // unterscheiden — welche zwei, bestimmt die Auswahl darüber.
         const block       = $('#versionsDetailBlock');
         const detailBody  = $('#versionsDetailBody');
         const detailIntro = $('#versionsDetailIntro');
         const detailEmpty = $('#versionsDetailEmpty');
-        const colBasis    = $('#detailColBasis');
-        const colActive   = $('#detailColActive');
+        const colAktuell   = $('#detailColAktuell');
+        const colVergleich = $('#detailColVergleich');
         if (!block || !detailBody) return;
 
-        const active   = getActiveVersion();
-        const baseline = getBaselineVersion();
-        if (!active || !baseline) {
+        // a ist die aktive Version (links), b die gewählte (rechts).
+        const aktuell   = a;
+        const vergleich = b;
+        if (!aktuell || !vergleich) {
             block.hidden = true;
             return;
         }
@@ -4965,56 +6529,64 @@
 
         // Headline text
         detailIntro.textContent =
-            `Aktive Version „${active.name}" verglichen mit Basis „${baseline.name}". `
-            + `Es werden nur Positionen mit einer Wertabweichung gelistet.`;
-        colBasis.textContent  = baseline.name;
-        colActive.textContent = active.name;
+            `„${aktuell.name}" gegenüber „${vergleich.name}". `
+            + `Nur Positionen mit einer Abweichung, die grösste zuerst.`;
+        colAktuell.textContent   = aktuell.name;
+        colVergleich.textContent = vergleich.name;
 
-        // Walk SCHEMA in declared order so the detail table mirrors the form.
+        // Die Reihenfolge und das Vorzeichen kommen aus dem Kern: «positiv
+        // heisst, es bleibt mehr». Wer nach dem blossen Unterschied sortierte,
+        // stellte eine gestiegene Einnahme neben eine gestiegene Ausgabe.
+        // Gerechnet wird von der gewählten zur aktuellen Version: positiv
+        // heisst dann «in der aktuellen bleibt mehr». Andersherum erschiene
+        // jede Einsparung als Mehrausgabe, sobald rechts eine ältere Version
+        // steht — und das ist der Normalfall.
+        const wirkungen = wirkungZwischen(SCHEMA, vergleich.values, aktuell.values);
         detailBody.innerHTML = '';
-        const sign = (n) => (n > 0 ? '+' : '');
-        let diffCount = 0;
+        const groesste = Math.max(1, ...wirkungen.eintraege.map((e) => Math.abs(e.wirkung)),
+            Math.abs(wirkungen.summe));
+        const spur = (wert) => {
+            const anteil = Math.abs(wert) / groesste * 50;    // je Seite höchstens die Hälfte
+            const klasse = wert >= 0 ? 'ist-gut' : 'ist-schlecht';
+            return `<span class="wf-spur"><i class="wf-null" style="left:50%"></i>`
+                + `<i class="wf-balken ${klasse}" style="left:${wert < 0 ? 50 - anteil : 50}%;`
+                + `width:${anteil}%"></i></span>`;
+        };
 
-        Object.entries(SCHEMA).forEach(([groupId, rows]) => {
-            rows.forEach((row) => {
-                const baseY = rowYearlyInVersion(baseline, row.id);
-                const baseM = rowMonthlyInVersion(baseline, row.id);
-                const actY  = rowYearlyInVersion(active,   row.id);
-                const actM  = rowMonthlyInVersion(active,   row.id);
-                const diffY = actY - baseY;
-                const diffM = actM - baseM;
-
-                // Skip unchanged rows (also skip when both sides are zero).
-                if (Math.abs(diffY) < 0.005 && Math.abs(diffM) < 0.005) return;
-                diffCount++;
-
-                const groupLabel = GROUP_LABELS[groupId] || groupId;
-                const labelHtml =
-                    `<span class="row-group-label">${escapeHtml(groupLabel)}</span>`
-                    + (row.prefix ? `<span class="row-prefix">${escapeHtml(row.prefix)}</span> ` : '')
-                    + escapeHtml(row.label);
-
-                const diffCls = diffY < 0 ? 'is-negative' : (diffY > 0 ? 'is-positive' : '');
-
-                const tr = document.createElement('tr');
-                tr.dataset.rowId = row.id;
-                tr.innerHTML = `
-                    <td>${labelHtml}</td>
-                    <td class="num-cell">${formatComputed(baseY)}</td>
-                    <td class="num-cell">${formatComputed(actY)}</td>
-                    <td class="num-cell ${diffCls}">${sign(diffY)}${formatComputed(diffY)}</td>
-                    <td class="num-cell ${diffCls}">${sign(diffM)}${formatComputed(diffM)}</td>
-                `;
-                detailBody.appendChild(tr);
-            });
+        wirkungen.eintraege.forEach((e) => {
+            const treffer = lookupRow(e.rowId);
+            if (!treffer) return;
+            const groupLabel = GROUP_LABELS[treffer.groupId] || treffer.groupId;
+            const aktY = rowYearlyInVersion(aktuell,   e.rowId);
+            const vglY = rowYearlyInVersion(vergleich, e.rowId);
+            const klasse = e.wirkung >= 0 ? 'is-positive' : 'is-negative';
+            const tr = document.createElement('tr');
+            tr.dataset.rowId = e.rowId;
+            tr.innerHTML = `
+                <td><span class="row-group-label">${escapeHtml(groupLabel)}</span>${escapeHtml(rowAnzeigename(e.rowId))}</td>
+                <td class="num-cell">${formatComputed(aktY)}</td>
+                <td class="num-cell">${formatComputed(vglY)}</td>
+                <td class="spur-spalte">${spur(e.wirkung)}</td>
+                <td class="num-cell ${klasse}">${deltaAnzeige(e.wirkung)}</td>
+                <td class="num-cell ${klasse}">${deltaAnzeige(e.wirkung * 12)}</td>
+            `;
+            detailBody.appendChild(tr);
         });
-
-        if (diffCount === 0) {
-            detailEmpty.hidden = false;
-            $('#detailEmptyBaseName').textContent = baseline.name;
-        } else {
-            detailEmpty.hidden = true;
+        const diffCount = wirkungen.eintraege.length;
+        if (diffCount > 0) {
+            const summeKlasse = wirkungen.summe >= 0 ? 'is-positive' : 'is-negative';
+            const tr = document.createElement('tr');
+            tr.className = 'detail-summe';
+            tr.innerHTML = `
+                <td>Bleibt mehr pro Monat</td><td></td><td></td>
+                <td class="spur-spalte">${spur(wirkungen.summe)}</td>
+                <td class="num-cell ${summeKlasse}">${deltaAnzeige(wirkungen.summe)}</td>
+                <td class="num-cell ${summeKlasse}">${deltaAnzeige(wirkungen.summe * 12)}</td>
+            `;
+            detailBody.appendChild(tr);
         }
+
+        detailEmpty.hidden = diffCount > 0;
     }
 
     // ----------------------------------------------------------------
@@ -5677,6 +7249,48 @@
         });
         $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
 
+        // «Auswertung»: ein Knopf, ein Ort für alles Grafische.
+        $('#auswertungBtn').addEventListener('click', () => {
+            if (auswertungOffen()) verlasseAuswertung(); else zeigeAuswertung();
+        });
+        // Das Diagramm rechnet mit der gemessenen Breite — ändert sie sich,
+        // muss es neu gezeichnet werden. Das besorgt der Beobachter unten:
+        // er sieht jede Aenderung der Flaeche, nicht nur die des Fensters.
+        // Die Hoehe der Anleitung haengt an der Lage der Kopfleiste: sie
+        // klebt oben, steht vor dem ersten Scrollen aber tiefer.
+        ['resize', 'scroll'].forEach((ereignis) => {
+            window.addEventListener(ereignis, hilfePanelHoeheSetzen, { passive: true });
+        });
+
+        // Ein Beobachter statt des Fensterereignisses: er meldet jede
+        // Aenderung der Flaeche — auch die, die kein resize ist (ein Reiter
+        // wird sichtbar, eine Bildlaufleiste kommt dazu, die Spalte wird mit
+        // einer Version breiter). Vorher blieb eine veraltete viewBox stehen,
+        // bis zufaellig etwas anderes neu zeichnete.
+        if (window.ResizeObserver) {
+            new ResizeObserver(() => {
+                const svg = $('#auswertungWeg');
+                if (!svg || !auswertungOffen()) return;
+                const k = svg.getBoundingClientRect();
+                const jetzt = Math.round(k.width) + 'x' + Math.round(k.height);
+                if (k.width < 2 || k.height < 2 || jetzt === gezeichneteFlaeche) return;
+                renderAuswertung();
+            }).observe($('#auswertungWeg'));
+        }
+        $('#reiterUebersicht').addEventListener('click', () => zeigeReiter('uebersicht'));
+        $('#reiterVergleich').addEventListener('click', () => zeigeReiter('vergleich'));
+        // Links: dieselbe Handlung wie ein Klick in der Kopfzeile.
+        // switchVersion schreibt das Formular vorher weg und zeichnet die
+        // Reiter neu; die Auswertung bleibt dabei offen.
+        $('#vergleichA').addEventListener('change', (e) => {
+            switchVersion(e.target.value);
+            if (auswertungOffen()) renderAuswertung();
+        });
+        $('#vergleichB').addEventListener('change', (e) => {
+            state.vergleichB = e.target.value;
+            renderVersionsOverview();
+        });
+
         // Anpassungsliste: Knopf schaltet um, Klick ausserhalb und Escape schliessen.
         $('#adjustmentsBtn').addEventListener('click', toggleAdjustmentsPanel);
         document.addEventListener('click', (e) => {
@@ -5707,6 +7321,17 @@
                 closeHilfePanel();
                 $('#hilfeBtn').focus();
             }
+        });
+
+        // Escape fuehrt aus der Auswertung zurueck ins Formular. Kein Streit
+        // mit der Vorschau: beide koennen nicht gleichzeitig offen sein.
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || !auswertungOffen()) return;
+            // Ein Dialog nimmt Escape für sich, ebenso ein offenes Panel —
+            // sonst schlösse ein Tastendruck zwei Dinge auf einmal.
+            if (document.querySelector('.modal-backdrop.is-open')) return;
+            if (!$('#adjustmentsPanel').hidden || !$('#hilfePanel').hidden) return;
+            verlasseAuswertung();
         });
 
         // Vorschau: der Knopf schaltet um, «Vorschau verlassen» und Escape

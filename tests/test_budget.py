@@ -263,19 +263,34 @@ def test_staende_haengen_nicht_am_versionsvergleich():
 
 
 def test_staende_kommen_aus_dem_kern():
+    """Die Zusammenfassung rechnet nicht selbst. Sie nimmt standVerlauf, und
+    das steht im Kern und ruft dort die drei Funktionen auf, die frueher hier
+    einzeln standen."""
     text = SEITE.read_text(encoding="utf-8")
     block = text[text.index("function recomputeAll"):][:6000]
+    assert "standVerlauf(SCHEMA" in block
+    kernfunktion = _funktionsblock("standVerlauf")
     for fn in ("stichtagListe", "werteFuerStand", "summen"):
-        assert fn in block, fn
+        assert fn in kernfunktion, fn
 
 
 def test_jede_leseseite_filtert_unbekannte_zeilen():
     """Eine Anpassung auf einer rowId, die das Schema nicht kennt, darf
-    weder gerechnet noch angezeigt werden."""
+    weder gerechnet noch angezeigt werden.
+
+    `standVerlauf` ruft die beiden anderen selbst auf und ist damit die
+    dritte Leseseite: Geprueft werden seine Aufrufstellen, waehrend seine
+    eigenen zwei Aufrufe ausgenommen sind -- dort hat der Aufrufer schon
+    gefiltert. So bleibt die Zusicherung eine echte und wird nicht durch
+    eine Funktion im Kern umgangen."""
     text = SEITE.read_text(encoding="utf-8")
-    for name in ("stichtagListe", "werteFuerStand"):
+    innen = _funktionsblock("standVerlauf")
+    ab_innen = text.index(innen)
+    for name in ("stichtagListe", "werteFuerStand", "standVerlauf"):
         # Die Definition im Kern ausnehmen, nur Aufrufstellen pruefen.
         for treffer in re.finditer(r"(?<!function )\b" + name + r"\(", text):
+            if ab_innen <= treffer.start() < ab_innen + len(innen):
+                continue
             umfeld = text[max(0, treffer.start() - 300):treffer.end() + 300]
             assert "bekannteAnpassungen" in umfeld, f"ungefiltert bei {name}"
 
@@ -701,6 +716,9 @@ def test_nur_die_reiter_stehen_in_der_tablist():
     # Die Rolle haengt an der Reiterliste, nicht an der ganzen Leiste.
     assert re.search(r'id="versionTabs"[^>]*role="tablist"', text)
     kopf = text[text.index('id="versionBar"'):text.index('id="versionTabs"')]
+    # Ohne die Kommentare: sie erklaeren genau diese Regel und enthalten das
+    # Wort darum zwangslaeufig.
+    kopf = re.sub(r"<!--.*?-->", "", kopf, flags=re.S)
     assert "tablist" not in kopf, "die Leiste selbst darf keine tablist sein"
 
 
@@ -1550,3 +1568,651 @@ def test_liste_im_dialog_scrollt_und_ist_per_tastatur_erreichbar():
     assert re.search(r"\.einloesen-liste\s*\{[^}]*overflow-y:\s*auto", text)
     assert '<fieldset class="modal-field" id="newVersionEinloesen"' in text
     assert "<legend" in text[text.index('id="newVersionEinloesen"'):][:300]
+
+
+# --- Die Diagramme: eine Rechnung im Kern, drei Anzeigen ----------------------
+# Punkte 8 und 9 (specs/2026-10-23-budget-grafik-und-vergleich-design.md).
+# Gerechnet wird im Kern, gezeichnet im DOM -- darum stehen die Tests hier und
+# nicht als Textsuche in der ausgelieferten Datei.
+
+
+SCHEMA_MINI = {
+    "einnahmen": [{"id": "lohn"}],
+    "wohnen": [{"id": "miete"}, {"id": "strom"}],
+}
+
+
+def test_standverlauf_rechnet_jeden_stand_und_den_unterschied_zu_heute():
+    """Eine Quelle fuer drei Anzeigen: die Stand-Zeilen der Zusammenfassung,
+    die der Uebersicht und das Diagramm. Bisher stand dieselbe Schleife
+    zweimal fast gleich da."""
+    values = {"lohn.monatlich": 5000, "miete.monatlich": 1500, "strom.monatlich": 100}
+    adjustments = {
+        "miete": {"jaehrlich": None, "monatlich": 1400, "ab": "2027-01-01"},
+        "strom": {"jaehrlich": None, "monatlich": 80, "ab": None},
+    }
+    staende = kern("standVerlauf", SCHEMA_MINI, values, adjustments, "2026-10-23")
+    assert [s["key"] for s in staende] == ["heute", "2027-01-01", "offen"]
+
+    heute = staende[0]
+    assert heute["diffM"] == 3400          # 5000 - 1600
+    assert heute["deltaM"] == 0            # der Bezugspunkt
+    assert heute["einnahmenM"] == 5000 and heute["ausgabenM"] == 1600
+
+    ab2027 = staende[1]
+    assert ab2027["diffM"] == 3500         # Miete 100 tiefer
+    assert ab2027["deltaM"] == 100
+    assert ab2027["deltaY"] == 1200
+
+    offen = staende[2]
+    assert offen["diffM"] == 3520          # dazu der Strom-Vorschlag
+    assert offen["deltaM"] == 120
+
+
+def test_standverlauf_ohne_anpassung_kennt_nur_heute():
+    """Auf einer frisch geoeffneten Seite steht kein leeres Diagramm."""
+    staende = kern("standVerlauf", SCHEMA_MINI, {"lohn.monatlich": 100}, {}, "2026-10-23")
+    assert [s["key"] for s in staende] == ["heute"]
+    assert staende[0]["deltaM"] == 0
+
+
+def test_rangliste_sortiert_nach_betrag_und_kennt_die_wirkung():
+    """Woher die Veraenderung kommt: je Position ein Balken, nach Betrag
+    absteigend. Die Wirkung haengt an der Gruppe -- bei einer Einnahme ist
+    mehr gut."""
+    values = {"lohn.monatlich": 5000, "miete.monatlich": 1500, "strom.monatlich": 100}
+    adjustments = {
+        "strom": {"jaehrlich": None, "monatlich": 80, "ab": None},      # -20, Ausgabe
+        "miete": {"jaehrlich": None, "monatlich": 1400, "ab": None},    # -100, Ausgabe
+        "lohn": {"jaehrlich": None, "monatlich": 5200, "ab": None},     # +200, Einnahme
+    }
+    staende = kern("standVerlauf", SCHEMA_MINI, values, adjustments, "2026-10-23")
+    r = kern("anpassungsRangliste", adjustments, staende, values, ["lohn"], 8)
+    assert [e["rowId"] for e in r["eintraege"]] == ["lohn", "miete", "strom"]
+    assert [e["deltaM"] for e in r["eintraege"]] == [200, -100, -20]
+    assert [e["wirkung"] for e in r["eintraege"]] == ["gut", "gut", "gut"]
+    assert r["restAnzahl"] == 0 and r["restDeltaM"] == 0
+
+
+def test_rangliste_kappt_und_fasst_den_rest_zusammen():
+    """Zwanzig Balken waeren eine zweite Tabelle, keine Grafik."""
+    values = {}
+    adjustments = {}
+    for i in range(10):
+        rid = "p%02d" % i
+        values[rid + ".monatlich"] = 100
+        adjustments[rid] = {"jaehrlich": None, "monatlich": 100 - (i + 1), "ab": None}
+    schema = {"einnahmen": [], "ausgaben": [{"id": "p%02d" % i} for i in range(10)]}
+    staende = kern("standVerlauf", schema, values, adjustments, "2026-10-23")
+    r = kern("anpassungsRangliste", adjustments, staende, values, [], 8)
+    assert len(r["eintraege"]) == 8
+    assert r["eintraege"][0]["deltaM"] == -10      # groesster Betrag zuerst
+    assert r["restAnzahl"] == 2
+    assert r["restDeltaM"] == -3                   # -1 und -2
+
+
+def test_balkenanteile_haengen_immer_an_der_null():
+    """Die Spanne umfasst immer die Null -- sonst stuende ein Balken im
+    Plus links von einem im Minus."""
+    r = kern("balkenAnteile", [-120, 29, 43, 113])
+    assert 0 < r["nullBei"] < 100
+    assert len(r["balken"]) == 4
+    # Der negative Balken endet an der Nulllinie, der groesste positive beginnt dort.
+    assert abs(r["balken"][0]["von"] + r["balken"][0]["breite"] - r["nullBei"]) < 0.01
+    assert abs(r["balken"][3]["von"] - r["nullBei"]) < 0.01
+    assert r["balken"][3]["breite"] > r["balken"][1]["breite"]
+
+
+def test_balkenanteile_nur_positive_werte():
+    r = kern("balkenAnteile", [10, 20, 40])
+    assert r["nullBei"] == 0
+    assert r["balken"][2]["breite"] == 100
+    assert r["balken"][0]["von"] == 0
+
+
+def test_balkenanteile_ohne_spanne_springt_nicht_auf_hundert():
+    """Alle Werte null: ein Balken behauptete eine Groesse, die es nicht gibt.
+
+    Der Entwurf sagt «alle Werte gleich ODER alle 0 -> Breite 0». Das gilt hier
+    nur fuer den zweiten Fall: Weil die Spanne immer die Null einschliesst,
+    haben zwei gleiche Werte von 50 sehr wohl eine Spanne (0 bis 50), und zwei
+    volle Balken sind dann die Wahrheit -- «beide gleich, beide im Plus».
+    Breite 0 hiesse dort «nichts da»."""
+    assert kern("balkenAnteile", [0, 0])["balken"][0]["breite"] == 0
+    assert kern("balkenAnteile", [])["balken"] == []
+    gleich = kern("balkenAnteile", [50, 50])
+    assert gleich["nullBei"] == 0
+    assert gleich["balken"][0]["breite"] == 100
+
+
+def test_diagramme_stehen_in_einem_eigenen_abschnitt():
+    """Nicht in der Zusammenfassung: die hat ihre eigenen Druckregeln, und ein
+    eigener Abschnitt laesst sich als Ganzes ein- und ausblenden."""
+    text = _seite_text()
+    assert 'id="grafikSection"' in text
+    assert 'id="grafikStaende"' in text and 'id="grafikPositionen"' in text
+    # Direkt nach der Zusammenfassung, vor dem Versionsvergleich.
+    assert text.index('id="summaryStands"') < text.index('id="grafikSection"')
+    assert text.index('id="grafikSection"') < text.index('id="versionsOverviewSection"')
+
+
+def test_diagramm_erscheint_erst_mit_einer_anpassung():
+    """Auf einer frisch geoeffneten Seite steht kein leeres Diagramm."""
+    block = _funktionsblock("renderGrafik")
+    assert "anpassungHatBetrag" in block
+    assert "section.hidden" in block
+
+
+def test_diagramm_faerbt_nach_der_wirkung_nicht_nach_dem_vorzeichen():
+    """Wer hier allein nach dem Betrag einfaerbt, laesst «+200 beim Lohn» in
+    Rot stehen — genau der Fehler, den anpassungWirkung verhindert."""
+    block = _funktionsblock("renderGrafik")
+    assert "anpassungsRangliste" in block
+    assert "e.wirkung" in block, "die Wirkung kommt aus dem Kern, nicht aus dem Vorzeichen"
+
+
+def test_diagramm_sortiert_nicht_unter_den_tippenden_fingern():
+    """recomputeAll laeuft bei jedem Tastendruck; eine mitlaufende Sortierung
+    liesse die Balken unter dem Finger wegwandern."""
+    block = _funktionsblock("renderGrafik")
+    assert "imAnpassungsfeld()" in block and "grafikReihenfolge" in block
+
+
+def test_eine_rechnung_fuer_die_staende_statt_drei():
+    """standVerlauf ersetzt die beiden fast gleichen Schleifen; mit dem
+    Diagramm waere eine dritte dazugekommen."""
+    text = _seite_text()
+    assert text.count("standVerlauf(SCHEMA") == 2, \
+        "Zusammenfassung und Versions-Uebersicht rechnen ueber dieselbe Funktion"
+    # Die alte Doppelung ist weg: kein summen(...werteFuerStand...) mehr im DOM-Teil.
+    assert "summen(SCHEMA, werteFuerStand(" not in text
+
+
+def test_diagramme_drucken_mit():
+    """Auf dem Blatt sind sie das Beste, was die Seite zu bieten hat — und das
+    Gegenmittel gegen die 60 leeren Kaestchen."""
+    css = _druck_css()
+    assert "grafik-section" in css
+    assert re.search(r"\.balken\s*\{[^}]*print-color-adjust:\s*exact", css), \
+        "ohne erzwungene Fuellung druckt der Balken als leere Flaeche"
+    assert re.search(r"\.balken-spur\s*\{[^}]*border:", css), \
+        "die Spur braucht einen Rahmen, Hintergruende druckt der Browser nicht"
+
+
+# --- Punkt 9: zwei frei gewaehlte Versionen vergleichen -----------------------
+
+
+def test_auswertung_steht_bei_den_reitern():
+    """Sie legt die Versionen nebeneinander und gehoert darum zu ihnen. Und
+    der Knopf traegt keine Rolle «tab»: die Leiste selbst ist keine
+    Reiterliste."""
+    text = _seite_text()
+    leiste = text[text.index('id="versionBar"'):text.index('id="previewBar"')]
+    assert leiste.index('id="versionTabs"') < leiste.index('id="auswertungBtn"')
+    assert leiste.index('id="auswertungBtn"') < leiste.index('id="adjustmentsBtn"')
+    knopf = text[text.index('id="auswertungBtn"') - 200:text.index('id="auswertungBtn"') + 200]
+    assert 'role="tab"' not in knopf
+
+
+def test_neue_version_steht_hinter_der_letzten_version():
+    """Dort entstuende die naechste. Vorher sass der Knopf hinter
+    «Auswertung» am rechten Rand der Leiste, also weit weg von den Reitern.
+    Er liegt dafuer in derselben Zeile wie sie, aber nicht IN der Liste --
+    ein Kind ohne Rolle «tab» in einer tablist ist ungueltiges ARIA."""
+    text = _seite_text()
+    leiste = text[text.index('id="versionBar"'):text.index('id="previewBar"')]
+    assert leiste.index('id="versionTabs"') < leiste.index('id="addVersionBtn"')
+    assert leiste.index('id="addVersionBtn"') < leiste.index('id="auswertungBtn"')
+    zeile = leiste[leiste.index('<div class="version-zeile">'):leiste.index('id="auswertungBtn"')]
+    assert 'id="versionTabs"' in zeile and 'id="addVersionBtn"' in zeile
+    # Der Knopf steht NACH dem schliessenden Tag der Reiterliste.
+    assert zeile.index('</div>') < zeile.index('id="addVersionBtn"')
+    # Der Platz in der Leiste gehoert jetzt der Zeile, nicht der Reiterliste;
+    # sonst draengte sie «Neue Version» wieder an den rechten Rand.
+    reiter = text[text.index(".version-tabs {"):]
+    assert "flex: 1" not in reiter[:reiter.index("}")]
+    assert re.search(r"\.version-zeile \{[^}]*flex: 1", text)
+
+
+def test_auswertung_nur_wenn_es_etwas_auszuwerten_gibt():
+    """Mehrere Versionen oder eine Anpassung. Auf einer leeren Seite fuehrte
+    der Knopf ins Nichts, und das waere schlimmer als kein Knopf."""
+    assert 'id="auswertungBtn" type="button" hidden' in _seite_text()
+    block = _funktionsblock("applyModeToUI")
+    assert "auswertungBtn" in block
+    assert "multi || hatAnpassung" in block
+
+
+def test_die_auswertung_ist_ein_modus_und_kein_zweites_fenster():
+    """Ein Knopf, ein Ort: der Modus zeigt genau die drei grafischen
+    Abschnitte, das Formular bleibt eine Erfassung."""
+    text = _seite_text()
+    assert "function zeigeAuswertung" in text and "function verlasseAuswertung" in text
+    assert "mode-auswertung" in text
+    assert re.search(r"body\.mode-auswertung main > \.section:not\(#auswertungSection\)", text),         "im Modus bleiben nur die grafischen Abschnitte stehen"
+    assert re.search(r"body:not\(\.mode-auswertung\) #grafikSection", text),         "ausserhalb des Modus sind sie weg -- sonst stuenden sie zweimal da"
+    assert "openModal" not in _funktionsblock("zeigeAuswertung")
+
+
+def test_links_steht_immer_die_aktive_version():
+    """Vorher war die linke Wahl mal abgeleitet (ein Klick in der Kopfzeile
+    verschob sie stillschweigend) und nach der ersten Handauswahl eingefroren
+    (derselbe Klick bewirkte dann gar nichts) -- dieselbe Handlung mit zwei
+    Wirkungen, je nach unsichtbarem Zustand. Jetzt IST sie die aktive
+    Version, es gibt also gar keinen zweiten Zustand mehr."""
+    text = _seite_text()
+    block = _funktionsblock("vergleichsPaar")
+    assert "getActiveVersion" in block
+    assert "return { a: aktiv," in block, "links ist die aktive Version, nicht eine gemerkte"
+    assert "state.vergleichA" not in text, "die linke Wahl hat keinen eigenen Zustand mehr"
+
+
+def test_die_linke_wahl_wechselt_die_version():
+    """Die Rueckrichtung: wer in der Auswertung links waehlt, wechselt die
+    Version, die im Formular offen ist -- sonst zeigte die Kopfzeile etwas
+    anderes an als die Auswertung."""
+    text = _seite_text()
+    stelle = text[text.index("$('#vergleichA').addEventListener"):]
+    stelle = stelle[:stelle.index("$('#vergleichB')")]
+    assert "switchVersion(e.target.value)" in stelle
+    assert "renderAuswertung" in stelle, "die Auswertung bleibt offen und zeichnet neu"
+
+
+def test_nie_dieselbe_version_auf_beiden_seiten():
+    """Wer in der Kopfzeile die Version waehlt, die rechts steht, bekaeme
+    sonst einen Vergleich mit sich selbst."""
+    block = _funktionsblock("vergleichsPaar")
+    assert "gewaehlt !== aktiv.id" in block
+    assert "basedOn" in block, "dann weicht die rechte auf die Basis aus"
+    assert "state.versions.find" in block, "Wurzelversion: die erste andere"
+
+
+def test_gerechnet_wird_von_der_gewaehlten_zur_aktuellen():
+    """Positiv heisst «in der aktuellen bleibt mehr». Andersherum erschiene
+    jede Einsparung als Mehrausgabe, sobald rechts eine aeltere Version
+    steht -- und das ist der Normalfall."""
+    block = _funktionsblock("renderVersionsDetail")
+    assert "wirkungZwischen(SCHEMA, vergleich.values, aktuell.values)" in block
+
+
+def test_die_wahl_steht_nicht_in_der_datei():
+    """Sie ist eine Blickrichtung, kein Inhalt -- v5 bleibt unveraendert."""
+    text = _seite_text()
+    block = text[text.index("function serialize"):][:1200]
+    assert "vergleich" not in block.lower()
+
+
+def test_unterschiede_bekommen_das_paar_als_argument():
+    """Frueher rief die Funktion getBaselineVersion und getActiveVersion
+    selbst; die Herkunft der zwei Seiten ist das Einzige, was sich aendert."""
+    text = _seite_text()
+    assert "function renderVersionsDetail(a, b)" in text
+    assert "renderVersionsDetail(paar.a, paar.b)" in text
+
+
+def test_jede_zahl_steht_nur_an_einer_stelle():
+    """«Der Weg» und die Saeulen zeigen beide, was je Version bleibt -- ein
+    drittes Balkendiagramm derselben Zahl ist keine Uebersicht. Und das Paar
+    A/B wird einmal dargestellt, nicht als Wasserfall UND als Tabelle."""
+    text = _seite_text()
+    assert "grafikVersionen" not in text, "Diagramm 3 ist in den Saeulen aufgegangen"
+    assert "auswertungWasserfall" not in text, "der Wasserfall steckt in der Paar-Tabelle"
+    assert "zeichneWasserfall" not in text
+    # Die Paar-Tabelle traegt den Balken jetzt selbst.
+    block = _funktionsblock("renderVersionsDetail")
+    assert "wf-balken" in block and "wirkungZwischen(SCHEMA" in block
+
+
+# --- Die Auswertung: Waermekarte und Wirkung zwischen zwei Versionen ---------
+
+
+def test_kartezeilen_zeigt_nur_was_sich_bewegt():
+    """Von sechzig Zeilen eines Budgets aendern sich ueber die Versionen
+    meist acht. Die uebrigen gehoeren nicht in die Karte -- sonst sucht man
+    die Bewegung zwischen lauter Strichen."""
+    versionen = [
+        {"values": {"lohn.monatlich": 5000, "miete.monatlich": 1500, "strom.monatlich": 100}},
+        {"values": {"lohn.monatlich": 5000, "miete.monatlich": 1400, "strom.monatlich": 100}},
+        {"values": {"lohn.monatlich": 5200, "miete.monatlich": 1400, "strom.monatlich": 100}},
+    ]
+    r = kern("karteZeilen", SCHEMA_MINI, versionen)
+    assert [z["rowId"] for z in r["zeilen"]] == ["lohn", "miete"], "strom steht still"
+    lohn = r["zeilen"][0]
+    assert lohn["istEinnahme"] is True
+    assert lohn["werte"] == [5000, 5000, 5200]
+    assert lohn["abweichungen"] == [0, 0, 200]
+    miete = r["zeilen"][1]
+    assert miete["abweichungen"] == [0, -100, -100]
+    # Die staerkste Abweichung gibt die Farbskala vor: sonst saehe eine
+    # Aenderung von 20 Franken aus wie eine von 400.
+    assert r["staerkste"] == 200
+
+
+def test_kartezeilen_rechnet_jahresbetraege_auf_den_monat():
+    versionen = [
+        {"values": {"miete.jaehrlich": 18000}},
+        {"values": {"miete.monatlich": 1400}},
+    ]
+    r = kern("karteZeilen", SCHEMA_MINI, versionen)
+    assert r["zeilen"][0]["werte"] == [1500, 1400]
+
+
+def test_wirkung_zwischen_zwei_versionen():
+    """Positiv heisst «es bleibt mehr»: bei einer Ausgabe zaehlt die Senkung,
+    bei einer Einnahme die Erhoehung. Wer hier nur subtrahiert, zeigt eine
+    gestiegene Einnahme als Verschlechterung."""
+    a = {"lohn.monatlich": 5000, "miete.monatlich": 1500, "strom.monatlich": 100}
+    b = {"lohn.monatlich": 5200, "miete.monatlich": 1250, "strom.monatlich": 100}
+    r = kern("wirkungZwischen", SCHEMA_MINI, a, b)
+    assert [e["rowId"] for e in r["eintraege"]] == ["miete", "lohn"]
+    assert [e["wirkung"] for e in r["eintraege"]] == [250, 200]
+    assert r["summe"] == 450
+    assert kern("wirkungZwischen", SCHEMA_MINI, a, a)["eintraege"] == []
+
+
+def test_auswertung_zeigt_alle_vier_darstellungen():
+    """Ein Ort fuer alles Grafische: der Weg, die Waermekarte, die Saeulen und
+    der Wasserfall."""
+    text = _seite_text()
+    abschnitt = text[text.index('id="auswertungSection"'):text.index('id="grafikSection"')]
+    for teil in ('auswertungWeg', 'auswertungKarte', 'auswertungGruppen', 'versionsDetailBlock'):
+        assert teil in abschnitt, teil
+    # Die Auswahl des Paares steht hier, nicht zweimal auf der Seite.
+    assert text.count('id="vergleichA"') == 1
+    assert 'id="vergleichA"' in abschnitt
+
+
+def test_was_versionen_vergleicht_braucht_zwei():
+    """Mit einer einzigen Version haben drei der vier Darstellungen nichts zu
+    sagen; uebrig bleibt, was auch zu einer Version gehoert."""
+    block = _funktionsblock("renderAuswertung")
+    assert "versionen.length > 1" in block
+    assert "zeichneGruppen" in block.split("if (!vergleichbar) return;")[0], \
+        "«Wohin das Geld geht» sagt auch mit einer einzigen Version etwas"
+
+
+def test_der_weg_zeichnet_einnahmen_und_ausgaben():
+    """Eine dritte Linie fuer den Ueberschuss klebte neben Betraegen von
+    5'000 am Boden -- darum ist er die Flaeche zwischen den beiden Linien."""
+    block = _funktionsblock("zeichneWeg")
+    assert "linie-ein" in block and "linie-aus" in block
+    assert "polygon class=\"band" in block or 'class="band' in block
+    assert "einnahmenM" in block and "ausgabenM" in block
+
+
+def test_waermekarte_faerbt_nach_wirkung_nicht_nach_vorzeichen():
+    block = _funktionsblock("zeichneKarte")
+    assert "istEinnahme" in block
+    assert "staerkste" in block, "ohne Bezugsgroesse saehe 20 Franken aus wie 400"
+
+
+def test_auswertung_und_vorschau_schliessen_sich_aus():
+    """Ein Klick auf einen Stand zeigt das ganze Budget -- das Formular ist im
+    Modus aber nicht da."""
+    text = _seite_text()
+    assert "verlasseAuswertung(); enterPreview(" in text
+    assert "verlasseAuswertung();" in _funktionsblock("springeZuZeile")
+
+
+def test_auswertung_hat_zwei_blaetter():
+    """Was alle Versionen zeigt, und was zwei miteinander vergleicht -- das
+    sind zwei Fragen und darum zwei Reiter."""
+    text = _seite_text()
+    assert 'id="reiterUebersicht"' in text and 'id="reiterVergleich"' in text
+    block = _funktionsblock("zeigeReiter")
+    # Die beiden Abschnitte ausserhalb des <section> folgen den Reitern mit.
+    assert "grafikSection" in block and "versionsOverviewSection" in block
+    assert "im-anderen-reiter" in block
+
+
+def test_keine_ueberschrift_ueber_den_reitern():
+    """Hierher kommt man ueber den Knopf, der «Auswertung» heisst und
+    gedrueckt dasteht. Die Ueberschrift sagte nur noch einmal, wo man ist --
+    und schob die Reiter nach rechts, weg vom Rand, an dem alles darunter
+    beginnt."""
+    text = _seite_text()
+    kopf = text[text.index('class="auswertung-kopf"'):text.index('id="auswertungUebersicht"')]
+    assert "section-title" not in kopf
+    assert "<h2" not in kopf
+    assert 'id="reiterUebersicht"' in kopf
+    assert not re.search(r"\.auswertung-kopf \{[^}]*justify-content: space-between", text),         "ohne Ueberschrift gibt es nichts mehr auseinanderzuziehen"
+    assert re.search(r"\.auswertung-kopf \{[^}]*justify-content: center", text),         "zwei Knoepfe am Rand saehen ueber der ganzen Breite verloren aus"
+
+
+def test_kein_eigener_zurueck_knopf():
+    """Der Knopf in der Versionsleiste schaltet um und ist als gedrueckt
+    markiert, Escape fuehrt ebenfalls hinaus. Ein dritter Weg waere ein
+    dritter Ort zum Suchen."""
+    text = _seite_text()
+    assert "auswertungZurueckBtn" not in text
+    assert re.search(r'\.version-compare-btn\[aria-pressed="true"\]', text), \
+        "ohne sichtbaren Zustand waere nicht zu sehen, dass die Auswertung offen ist"
+
+
+def test_der_weg_nimmt_die_gemessene_flaeche():
+    """Die viewBox muss genau auf den Kasten passen. Weicht sie ab, skaliert
+    der Browser das Bild aufs kleinere Mass und stellt es mittig hinein --
+    die Punkte stehen dann neben ihren Spalten, obwohl die Rechnung stimmt
+    (gemessen: 30, 18, 6, -6, -18, -30 Bildpunkte bei sechs Versionen)."""
+    block = _funktionsblock("zeichneWeg")
+    assert "svg.getBoundingClientRect()" in block
+    assert "Math.round(kasten.width)" in block and "Math.round(kasten.height)" in block
+    assert "setAttribute('viewBox'" in block
+
+
+def test_der_weg_zeichnet_nicht_in_eine_unsichtbare_flaeche():
+    """Genau das passierte, wenn die Auswertung auf dem Reiter «Vergleich»
+    geoeffnet wurde: die Uebersicht war versteckt, die gemessene Breite also
+    null, und gezeichnet wurde in eine Ersatzbreite, die spaeter nicht mehr
+    stimmte. Lieber nichts zeichnen -- der Beobachter meldet sich, sobald die
+    Flaeche eine Groesse hat."""
+    block = _funktionsblock("zeichneWeg")
+    assert "if (B < 2 || H < 2) return;" in block
+    text = _seite_text()
+    assert "new ResizeObserver(" in text
+    assert "gezeichneteFlaeche" in text, "sonst zeichnete jede Meldung neu, auch die eigene"
+    assert "window.addEventListener('resize', () => { if (auswertungOffen())" not in text,         "der Beobachter sieht mehr als das Fensterereignis und ersetzt es"
+
+
+def test_beide_teile_tragen_titel_und_beschreibung():
+    """Rechts stand nur ein Titel, links las sich die Beschreibung des
+    ganzen Abschnitts wie seine. Beide beginnen oben in ihrer Spalte, darum
+    stehen die Titel ohne weiteres Zutun auf derselben Hoehe -- und beide
+    tragen denselben Titelstil."""
+    text = _seite_text()
+    kopf = text[text.index('<div class="uebersicht-kopf"'):text.index('<table class="karte"')]
+    links = kopf[kopf.index('class="kopf-links"'):kopf.index('class="kopf-rechts"')]
+    rechts = kopf[kopf.index('class="kopf-rechts"'):]
+    for teil, name in ((links, "links"), (rechts, "rechts")):
+        assert 'class="grafik-titel"' in teil, name
+        assert 'class="grafik-untertitel-klein"' in teil, name
+
+
+def test_keine_gemeinsame_ueberschrift_mehr():
+    """«Wo sich etwas bewegt» sagte nichts, was die beiden Titel nicht schon
+    sagen, und schob den Block eine Zeile tiefer."""
+    text = _seite_text()
+    assert "Wo sich etwas bewegt" not in text
+    teil = text[text.index('id="auswertungTeilKarte"'):text.index('<table class="karte"')]
+    assert 'class="grafik-untertitel"' not in teil, "die Beschreibung dazu ebenfalls"
+    # Der Abstand des Titelstils haette im Gitter nichts zu trennen.
+    assert re.search(r"\.uebersicht-kopf \.grafik-titel \{[^}]*margin-top: 0", text)
+
+
+def test_der_weg_fuellt_seine_spalte():
+    """Neben sechs Balken war das Diagramm ein Streifen in der unteren
+    Haelfte, darueber eine leere Flaeche."""
+    text = _seite_text()
+    assert re.search(r"\.weg \{[^}]*flex: 1 1 auto", text)
+    assert not re.search(r"\.weg \{[^}]*height: 240px", text)
+    # Links bleiben die Balken unten, direkt ueber der Tabelle.
+    assert re.search(r"\.kopf-links \.gruppen-balken \{ margin-top: auto", text)
+    assert not re.search(r"\.kopf-rechts \.weg \{ margin-top: auto", text)
+
+
+def test_die_anleitung_reicht_bis_zum_unteren_rand():
+    """Mit 60vh blieb darunter Platz frei, waehrend im Panel gescrollt
+    werden musste. Gemessen statt gerechnet: wie tief die Kopfleiste reicht,
+    haengt an der Zahl der Versionen und daran, ob schon gescrollt ist."""
+    text = _seite_text()
+    block = _funktionsblock("hilfePanelHoeheSetzen")
+    assert "getBoundingClientRect().top" in block
+    assert "window.innerHeight" in block
+    assert "maxHeight" in block
+    assert "if (oeffnen) hilfePanelHoeheSetzen();" in _funktionsblock("toggleHilfePanel")
+    # Die Leiste klebt oben, steht vor dem ersten Scrollen aber tiefer.
+    assert "['resize', 'scroll'].forEach" in text
+
+
+def test_die_betraege_im_weg_sind_lesbar():
+    """Sie liegen zwangslaeufig auf Linien und Flaechen."""
+    text = _seite_text()
+    assert re.search(r"paint-order:\s*stroke", text), "heller Rand hinter der Schrift"
+    assert "bandHoehe < 20" in text, "bei schmalem Band rueckt der Betrag hinaus"
+
+
+def test_die_gruppenspalte_bleibt():
+    """Der Einwand war, dass die Raender schmaler werden -- nicht, dass eine
+    Spalte verschwindet. Erst auf dem Telefon faellt sie weg."""
+    text = _seite_text()
+    assert not re.search(r"\.karte\.viele th\.gruppe[^}]*display:\s*none", text)
+    assert re.search(r"@media \(max-width: 560px\) \{\s*\.karte td\.gruppe", text)
+
+
+def test_die_spur_in_der_tabelle_ist_ein_block():
+    """Als inline-Element haette sie weder Hoehe noch Breite -- im alten
+    Wasserfall war sie ein Gitterkind und damit von selbst blockartig."""
+    assert re.search(r"\.wf-spur \{[^}]*display:\s*block", _seite_text())
+
+
+def test_gruppensummen_je_gruppe():
+    """«Wohin das Geld geht»: die Ausgaben nach Gruppen. Der Entwurf vom
+    23.10. hatte diese Funktion als Rueckweg vorgesehen, falls die
+    Kategorien doch gebraucht werden -- jetzt werden sie."""
+    values = {"lohn.monatlich": 5000, "miete.monatlich": 1500,
+              "strom.jaehrlich": 1200}
+    r = kern("gruppenSummen", SCHEMA_MINI, values)
+    assert r["einnahmen"]["monatlich"] == 5000
+    assert r["einnahmen"]["jaehrlich"] == 60000
+    assert r["wohnen"]["monatlich"] == 1600          # 1500 + 1200/12
+    assert r["wohnen"]["jaehrlich"] == 19200
+    # Jede Gruppe des Schemas kommt vor, auch eine leere.
+    leer = kern("gruppenSummen", {"einnahmen": [], "wohnen": [{"id": "miete"}]}, {})
+    assert leer["einnahmen"] == {"jaehrlich": 0, "monatlich": 0}
+    assert leer["wohnen"] == {"jaehrlich": 0, "monatlich": 0}
+
+
+def test_rasterschritt_passt_sich_den_zahlen_an():
+    """Ein fester Abstand von 1'000 zeigt bei einem Haushalt mit 800 Franken
+    Einnahmen eine einzige Linie und bei 90'000 deren neunzig."""
+    assert kern("rasterSchritt", 900, 5) == 200
+    assert kern("rasterSchritt", 8000, 5) == 2000
+    assert kern("rasterSchritt", 90000, 5) == 20000
+    assert kern("rasterSchritt", 450, 5) == 100
+    assert kern("rasterSchritt", 60, 5) == 20     # lieber drei Linien als sechs
+    # Eine leere Seite darf nicht durch null teilen.
+    assert kern("rasterSchritt", 0, 5) == 1
+    assert kern("rasterSchritt", None, 5) == 1
+
+
+def test_der_abstand_zwischen_den_diagrammen_ist_die_gruppenspalte():
+    """Dieselbe Groesse an beiden Stellen: dann endet «Wohin das Geld geht»
+    genau dort, wo die Spalte Position endet, und «Der Weg» beginnt ueber
+    der ersten Zahlenspalte. Zwei getrennte Werte liefen auseinander."""
+    text = _seite_text()
+    assert re.search(r"#auswertungUebersicht \{[^}]*--gruppe-breite:", text)
+    assert re.search(r"\.karte th\.gruppe, \.karte td\.gruppe \{[^}]*"
+                     r"width: var\(--gruppe-breite", text)
+    kopf = text[text.index(".uebersicht-kopf {"):]
+    kopf = kopf[:kopf.index("}")]
+    assert "gap: 0 var(--gruppe-breite" in kopf
+    assert "2.5rem" not in kopf
+
+
+def test_kopf_und_tabelle_scrollen_in_einer_huelle():
+    """Beide zeigen dieselben Spalten. Scrollte die Tabelle allein, stuende
+    «Der Weg» danach ueber den falschen Spalten."""
+    text = _seite_text()
+    assert ".karte-huelle" not in text, "die alte Huelle um die Tabelle allein"
+    assert re.search(r"\.uebersicht-huelle \{[^}]*overflow-x:\s*auto", text)
+    assert re.search(r"\.uebersicht-inhalt \{[^}]*min-width:\s*min-content", text),         "ohne min-content waere der Kopf so breit wie die Huelle und die Tabelle breiter"
+    huelle = text[text.index('<div class="uebersicht-huelle">'):]
+    huelle = huelle[:huelle.index("<!-- /Hülle")]
+    assert 'id="uebersichtKopf"' in huelle and 'id="auswertungKarte"' in huelle
+
+
+def test_die_textspalte_hat_eine_untergrenze():
+    """Bei sieben Versionen fiel die linke Spalte auf null -- «Wohin das
+    Geld geht» war schlicht weg. Die Leiste erscheint dafuer nur, wenn der
+    Platz wirklich nicht reicht; untereinander gilt die alte Grenze."""
+    text = _seite_text()
+    assert re.search(r"#auswertungUebersicht \{[^}]*--links-min:", text)
+    assert re.search(r"minmax\(var\(--links-min", text), "die Untergrenze im Gitter"
+    assert re.search(r"\.karte td\.name, \.karte th:first-child \{[^}]*"
+                     r"min-width: var\(--links-min", text), "dieselbe Grenze in der Tabelle"
+    schmal = text[text.index("@media (max-width: 900px) {"):]
+    assert "--links-min: 11rem" in schmal[:schmal.index("}")+200]
+
+
+def test_die_spalten_sind_im_diagramm_sichtbar():
+    """Ohne Trennlinien war nicht zu sehen, welcher Teil von «Der Weg» zu
+    welcher Version gehoert. Im Kopf der Tabelle laufen sie weiter, durch
+    die Zeilen aber nicht -- dort zerschnitten sie die Waermekarte."""
+    block = _funktionsblock("zeichneWeg")
+    assert 'line class="spalte"' in block
+    text = _seite_text()
+    assert re.search(r"\.weg line\.spalte \{[^}]*stroke-dasharray", text)
+    assert re.search(r"\.karte thead th\.zahl \+ th\.zahl \{[^}]*border-left:\s*1px dashed", text)
+    # In --color-border waren sie vom waagrechten Raster nicht zu
+    # unterscheiden und auf dem Schirm kaum zu sehen. Eine Farbe fuer beide
+    # Haelften, sonst liefen Diagramm und Tabellenkopf auseinander.
+    assert re.search(r"#auswertungUebersicht \{[^}]*--spalten-linie:", text)
+    assert text.count("var(--spalten-linie") == 2
+    assert not re.search(r"\.weg line\.spalte \{[^}]*var\(--color-border\)", text)
+
+
+def test_achsenbereich_umschliesst_die_werte_mit_puffer():
+    """Von null an gezeichnet lagen Einnahmen von 7'600 und Ausgaben von
+    7'500 in einer Haarlinie uebereinander, waehrend die untere Haelfte des
+    Diagramms leer blieb."""
+    r = kern("achsenBereich", [7500, 7600, 7550], 4)
+    assert r["basis"] > 0, "die Achse beginnt nicht mehr zwangslaeufig bei null"
+    assert r["basis"] <= 7500 and r["dach"] >= 7600, "alle Werte liegen drin"
+    # Unten eine runde Zahl: dort liegt die Grundlinie, und ein Diagramm,
+    # das bei 3'143.76 aufhoert, sagt nicht, worauf es steht. Oben rundet
+    # nichts auf -- das verschenkte einen ganzen Schritt an leere Flaeche.
+    assert r["basis"] % r["schritt"] == 0
+    assert r["ersteLinie"] == r["basis"], "die unterste Linie IST die Grundlinie"
+    assert r["dach"] % r["schritt"] != 0 or r["dach"] - 7600 < r["schritt"]
+
+
+def test_die_grundlinie_ist_die_unterste_runde_zahl():
+    """Sie liegt hoechstens einen Schritt unter dem kleinsten Wert -- sonst
+    stuende das Diagramm auf einem leeren Streifen."""
+    r = kern("achsenBereich", [5200, 7600], 4)
+    assert r["basis"] <= 5200 < r["basis"] + r["schritt"] * 2
+    block = _funktionsblock("zeichneWeg")
+    assert "w === bereich.basis ? 'achse' : 'raster'" in block,         "durchgezogen statt gestrichelt: sie sagt, worauf das Diagramm steht"
+
+
+def test_achsenbereich_geht_nie_unter_null():
+    """Einnahmen und Ausgaben sind nie negativ; eine Achse, die unter null
+    begaenne, behauptete einen Bereich, den es nicht gibt."""
+    assert kern("achsenBereich", [20, 400], 4)["basis"] == 0
+
+
+def test_achsenbereich_ohne_spanne_hat_trotzdem_hoehe():
+    """Eine einzige Version, oder in allen dieselben Zahlen: ohne Spanne
+    waere der Puffer null und das Diagramm ohne Hoehe."""
+    for werte in ([5000], [5000, 5000], []):
+        r = kern("achsenBereich", werte, 4)
+        assert r["dach"] > r["basis"], werte
+
+
+def test_der_weg_zeichnet_den_ausschnitt_nicht_die_ganze_hoehe():
+    """Der Wert null kommt in der Schleife nicht mehr vor -- sie beginnt am
+    unteren Rand des Ausschnitts."""
+    block = _funktionsblock("zeichneWeg")
+    assert "achsenBereich(" in block
+    assert "for (let w = bereich.ersteLinie;" in block
+    assert "bereich.dach - bereich.basis" in block, "die Skala misst den Ausschnitt"

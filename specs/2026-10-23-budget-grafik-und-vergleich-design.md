@@ -143,6 +143,83 @@ wo der Benutzer ihn sucht. Eine zweite Vergleichsansicht entsteht nicht — sieh
 
 ---
 
+## Nachtrag 2026-10-24: alles Grafische wird ein eigener Ort
+
+Der Entwurf unten legt die Diagramme als Abschnitt unter die Zusammenfassung
+und lässt «⇄ Vergleichen» an den bestehenden Vergleichsabschnitt springen.
+Beides ist überholt. Der Benutzer wollte **einen zentralen Punkt**, über den
+die Diagramme aufgerufen werden, und eine Darstellung, die **alle** Versionen
+nimmt statt zwei ausgewählter.
+
+Gebaut ist darum ein **Vollbild-Modus «Auswertung»** (`body.mode-auswertung`),
+erreichbar über einen Knopf in der Versionsleiste, der «Vergleichen» ersetzt.
+Im Modus zeigt die Seite genau drei Abschnitte — die Auswertung, die
+Anpassungs-Diagramme und den Versionsvergleich —, ausserhalb keinen davon. Das
+Formular bleibt, was es ist: eine Erfassung.
+
+Neu darin, aus einer Skizze, die bewusst **nicht** im Repo liegt
+(`skizzen/` steht in der `.gitignore`): ein Entwurf mit erfundenen Zahlen,
+der seinen Zweck mit dem Umbau erfüllt hat.
+
+- **«Der Weg»** — Einnahmen und Ausgaben als zwei Linien über alle Versionen,
+  der Überschuss als Fläche dazwischen. Eine dritte Linie dafür klebte neben
+  Beträgen von 5'000 am Boden.
+- **«Wo sich etwas bewegt»** — eine Wärmekarte: Zeile = Position, Spalte =
+  Version, nur die Positionen, die sich überhaupt je ändern. Die Farbe zeigt
+  den Unterschied zur ersten Version, bei Einnahmen umgekehrt gelesen. Die
+  Versionsnamen stehen senkrecht, damit die Spalten gleich breit bleiben.
+- **Säulen je Version** — der einzige Teil, der auch mit einer einzigen
+  Version etwas sagt.
+- **Ein Wasserfall** für den Wechsel zwischen zwei Versionen; er nimmt
+  dasselbe Paar wie «Unterschiede pro Position».
+
+**Nachtrag 2026-10-24, zweiter Teil: ein Block statt dreier.** Die Übersicht
+zeigt «Wohin das Geld geht», «Der Weg» und die Wärmekarte unter **einer**
+Überschrift. Der Weg steht dabei genau über den Versionsspalten der Tabelle —
+seine Zeitachse und die Spalten sind dieselbe Achse, darum trägt er selbst
+keine Beschriftung mehr, und die senkrechten Spaltennamen gelten für beides.
+Links daneben, wo die Tabelle ihre Textspalten hat, steht «Wohin das Geld
+geht»; sonst bliebe dort eine leere Fläche. Die Breite einer Versionsspalte
+ist dafür eine gemeinsame Grösse (`--zahl-breite`, `--zahl-anzahl`), die vor
+dem Zeichnen gesetzt wird: das Diagramm misst seine eigene Breite, und wer sie
+erst mit der Tabelle setzt, zeichnet in eine zu schmale Fläche und lässt den
+Browser strecken.
+
+**Nachtrag 2026-10-25: eine Hülle, eine Untergrenze, sichtbare Spalten.**
+Der Block aus Kopf und Tabelle hat drei Grössen, die an je zwei Stellen
+dieselben sein müssen, und darum als CSS-Variable an einer Stelle stehen:
+
+- `--zahl-breite` × `--zahl-anzahl` — die Breite der Versionsspalten
+  (schon vorher).
+- `--gruppe-breite` — die Spalte Gruppe **und** der Abstand zwischen den
+  beiden Diagrammen. So endet «Wohin das Geld geht» genau dort, wo die
+  Spalte Position endet, und «Der Weg» beginnt über der ersten Zahlenspalte.
+- `--links-min` — die Untergrenze der Textspalte und damit die Breite, die
+  dem linken Diagramm bleibt. Ohne sie fiel die Spalte bei sieben Versionen
+  auf null, und das Diagramm war schlicht weg.
+
+Passt der Block nicht mehr, scrollt **eine gemeinsame Hülle** waagrecht
+(`.uebersicht-huelle` / `.uebersicht-inhalt`, `min-width: min-content`) —
+nicht mehr die Tabelle allein, denn nach einem Scroll stünde «Der Weg» sonst
+über den falschen Spalten. Die Leiste erscheint nur, wenn der Platz nicht
+reicht; untereinander (unter 900 px) gilt wieder die alte Untergrenze.
+
+Dass das Diagramm und die Spalte zusammengehören, zeigen **gestrichelte
+Trennlinien** an den Spaltengrenzen: im SVG über die ganze Höhe, im Kopf der
+Tabelle als Zellgrenze weiter — durch die Zeilen nicht, dort zerschnitten sie
+die Wärmekarte.
+
+Zwei Regeln, die der Modus mitbringt: Ein Klick auf einen Stand-Balken und ein
+Sprung zu einer Zeile **verlassen die Auswertung** — beide Ziele liegen im
+Formular, das im Modus nicht da ist. Und was Versionen miteinander vergleicht,
+bleibt mit einer einzigen Version weg, statt leer dazustehen.
+
+Was aus dem Entwurf unten gilt weiter: die Werkzeugwahl (Balken aus CSS, kein
+SVG-Framework, keine Bibliothek), die Rechnung im Kern, die Farblogik über
+`anpassungWirkung`, und dass die Vorschau bleibt.
+
+---
+
 ## Entscheidungen auf einen Blick
 
 1. **Werkzeug: Balken aus HTML und CSS**, kein SVG — und keine Bibliothek,
