@@ -2160,13 +2160,20 @@ def test_die_spalten_sind_im_diagramm_sichtbar():
     assert 'line class="spalte"' in block
     text = _seite_text()
     assert re.search(r"\.weg line\.spalte \{[^}]*stroke-dasharray", text)
+    # Gestrichelt an beiden Orten (Benutzer, 2026-10-26, nach einem Versuch
+    # mit durchgezogener Linie im Kopf): der Strich trennt Spalten, keine
+    # Zeilen. Verschieden ist nur die Farbe.
     assert re.search(r"\.karte thead th\.zahl \+ th\.zahl \{[^}]*border-left:\s*1px dashed", text)
-    # In --color-border waren sie vom waagrechten Raster nicht zu
-    # unterscheiden und auf dem Schirm kaum zu sehen. Eine Farbe fuer beide
-    # Haelften, sonst liefen Diagramm und Tabellenkopf auseinander.
+    # Im Diagramm steht die Linie zwischen den Rasterlinien und muss sich
+    # von ihnen abheben: in --color-border war sie von ihnen nicht zu
+    # unterscheiden und auf dem Schirm kaum zu sehen.
     assert re.search(r"#auswertungUebersicht \{[^}]*--spalten-linie:", text)
-    assert text.count("var(--spalten-linie") == 2
     assert not re.search(r"\.weg line\.spalte \{[^}]*var\(--color-border\)", text)
+    # Im Tabellenkopf umgekehrt: dort steht sie zwischen den Zeilenlinien
+    # und soll zu ihnen passen (Benutzer, 2026-10-26). Die beiden Haelften
+    # teilen sich darum bewusst KEINEN Wert.
+    assert re.search(r"\.karte thead th\.zahl \+ th\.zahl \{[^}]*var\(--color-border\)", text)
+    assert text.count("var(--spalten-linie") == 1
 
 
 def test_achsenbereich_umschliesst_die_werte_mit_puffer():

@@ -194,6 +194,24 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
      Graustufen stehen seit dem Umbau neben warmen Nachbarn —
      `--color-border-strong` ist die kräftigere Linie neben dem jetzt warmen
      `--color-border`; ob sie mitziehen, ist ein eigener Entscheid.
+   - **`--spalten-linie` (`#9ca3af`) behält ihre Farbe** (Benutzer,
+     2026-10-26). Das ist die senkrechte Trennlinie zwischen den
+     Versionsspalten **im Diagramm «Der Weg»** (`line.spalte`). Sie stand
+     ursprünglich in `--color-border`, also in derselben Farbe und Breite
+     wie die waagrechten Rasterlinien daneben — und war auf dem Schirm kaum
+     zu sehen. Wer sie beim Aufräumen in ein Token zurückführt, nimmt genau
+     das zurück.
+   - **Ihre Fortsetzung im Tabellenkopf nimmt dagegen `--color-border`**
+     (`.karte thead th.zahl + th.zahl`, Benutzer, 2026-10-26) und zieht mit
+     dem Token-Satz mit. Dass die beiden Hälften derselben Linie **nicht**
+     dieselbe Farbe haben, ist Absicht und hängt an der Nachbarschaft: im
+     Diagramm steht sie zwischen den Rasterlinien und muss sich von ihnen
+     abheben, in der Tabelle zwischen den Zeilenlinien und soll zu ihnen
+     passen. **Gestrichelt bleibt sie an beiden Orten** — der Strich sagt
+     dort dasselbe (sie trennt Spalten, keine Zeilen), verschieden ist nur
+     die Farbe. Eine durchgezogene Linie im Kopf war am 2026-10-26 gebaut
+     und wieder verworfen. `test_die_spalten_sind_im_diagramm_sichtbar`
+     hält beide Seiten fest.
 
    **Ausnahme: `docs/skillsliste.html` muss ohne Netz funktionieren.** Auch sie
    lädt wohl niemand herunter, aber sie soll es aushalten — und dort fällt die

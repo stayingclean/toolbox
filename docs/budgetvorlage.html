@@ -1405,8 +1405,20 @@
         }
         /* Die Fortsetzung der Trennlinien aus «Der Weg»: nur im Kopf, wo
            die Namen stehen. Durch die Zeilen gezogen zerschnitten sie die
-           Waermekarte, deren Farbflaechen ohnehin Spalten bilden. */
-        .karte thead th.zahl + th.zahl { border-left: 1px dashed var(--spalten-linie, #9ca3af); }
+           Waermekarte, deren Farbflaechen ohnehin Spalten bilden.
+
+           Hier gilt NICHT --spalten-linie, sondern die Farbe der uebrigen
+           Linien der Tabelle (Benutzer, 2026-10-26): in der Tabelle steht
+           die Linie zwischen den Zeilenlinien und soll zu ihnen passen.
+           Im Diagramm steht sie zwischen den Rasterlinien und muss sich
+           von ihnen abheben — darum dort der kraeftigere eigene Wert.
+
+           Gestrichelt bleibt sie an beiden Orten (Benutzer, 2026-10-26,
+           nach einem Versuch mit durchgezogener Linie im Kopf): sie trennt
+           Spalten, keine Zeilen, und der Strich sagt an beiden Orten
+           dasselbe. Unterschiedlich ist nur die Farbe — die Nachbarschaft
+           ist eine andere. */
+        .karte thead th.zahl + th.zahl { border-left: 1px dashed var(--color-border); }
         .karte th.zahl span {
             display: inline-block;
             writing-mode: vertical-rl;
