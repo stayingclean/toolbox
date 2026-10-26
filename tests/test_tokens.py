@@ -47,6 +47,11 @@ TOKEN_FARBEN: frozenset[str] = frozenset(
 # Repo-relativer POSIX-Pfad -> Token, die diese Datei selbst setzen darf.
 # Leer heisst: keine. Jede umgestellte Seite trägt sich hier selbst ein.
 MIGRIERT: dict[str, set[str]] = {
+    # Die zehn eigenen --color-*-Namen der Seite hängen als Aliase an den
+    # Token (--color-primary: var(--accent) und so fort), damit die über 300
+    # var(--color-…) in ihren 2900 Zeilen CSS unberührt bleiben. Einen der
+    # elf Namen setzt sie damit selbst nicht mehr.
+    "docs/budgetvorlage.html": set(),
     "docs/index.html": set(),
     "docs/skill-vorschlagen.html": set(),
     "docs/claude-anleitung/stil.css": set(),
@@ -270,12 +275,6 @@ def test_wachposten_build_liefert_die_uebrigen_eingecheckten_generate(
 AUSGENOMMEN: dict[str, str] = {
     "docs/skillsliste.html": "muss in sich geschlossen bleiben (ohne Netz benutzbar)",
     "docs/flyer-editor.html": "exportiert sich selbst als Datei, alles muss im Dokument stehen",
-    "docs/budgetvorlage.html": (
-        "eigene --color-*-Namen und Werte, Werkzeug mit eigener Logik; der "
-        "Umbau auf die warmen Farben ist entschieden (2026-10-23), offen ist "
-        "nur der Zeitpunkt -- siehe specs/2026-10-23-stil-bibliothek-design.md, "
-        "Abschnitt «4. Budgetvorlage: warme Farben»"
-    ),
     "docs/neutral_flyer.html": "blosse Weiterleitung",
 }
 

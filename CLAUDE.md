@@ -18,7 +18,8 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
 - `docs/skill-vorschlagen.html` = Formular zum Einreichen neuer Skills (generiert).
 - `docs/skills-daten.json` = Datenstand für Formular und Worker (generiert).
 - `docs/tokens.css` = die gemeinsamen Farben und Schriften der Seiten, die
-  sie einbinden (Übersicht, Vorschlagsformular, Anleitung, Plakat). Eigener
+  sie einbinden (Übersicht, Budgetvorlage, Vorschlagsformular, Anleitung,
+  Plakat). Eigener
   Absatz in Punkt 3 unten — **vor einer Änderung dort lesen.**
 - `docs/claude-anleitung/` = Mehrseiten-Anleitung „Mit Claude arbeiten",
   Seitenleiste als Navigation. Die Seiten teilen sich `stil.css` und
@@ -161,25 +162,38 @@ Wenn eine neue (oft digitalisierte) HTML-Seite dazukommt:
      Aussehen der halben Website und soll nicht nebenbei geschehen.
    - **Ausnahmen, in `AUSGENOMMEN` mit Grund eingetragen:** `skillsliste.html`
      und `flyer-editor.html` bleiben in sich geschlossen (Gründe: siehe die
-     beiden folgenden Ausnahmen); sie setzen ihre Farben weiter selbst. Die
-     Budgetvorlage ist draussen, weil sie eigene Namen (`--color-*`) und
-     eigene Werte trägt — ihre Grautöne weichen von denen der übrigen Seiten
-     ab — und als Werkzeug mit eigener Logik `.json` speichert (siehe unten).
-     **Das Ob ist entschieden** (Benutzer, 2026-10-23, nach einer
-     Vorher-Nachher-Vorschau: «Budgetvorlage mit den warmen Farben»): sie
-     bekommt die Werte der übrigen Seiten, sichtbar ist das bei drei Farben —
-     `--color-text` `#1a1a1a` → `#1C1C1C`, `--color-text-muted` `#6b7280`
-     (kühl, Tailwind `gray-500`) → `#7A7268`, `--color-border` `#e5e7eb`
-     (kühl, Tailwind `gray-200`) → `#E8E4DF`. **Offen ist nur das Wann:**
-     der Umbau ist ein eigener Schritt, getrennt wegen Umfang und Risiko der
-     Seite (2181 Zeilen CSS, ein Druck-Layout, 171 eigene Tests in `tests/test_budget.py`). Begründung
-     in `specs/2026-10-23-stil-bibliothek-design.md`, Abschnitt «4.
-     Budgetvorlage: warme Farben». **Nicht gedeckt** ist ihr Signalfarben-Trio
-     (`--color-success`, `--color-warning`, `--color-danger`), das aus
-     demselben fremden System stammt; das bleibt eine eigene Frage. Wird die
-     Seite umgebaut, kommt sie aus `AUSGENOMMEN` nach `MIGRIERT`.
+     beiden folgenden Ausnahmen); sie setzen ihre Farben weiter selbst.
      `neutral_flyer.html` ist eine blosse Weiterleitung, `docs/altbau/` ein
      fremder Viewer mit eigenem `vendor/` und ganz ausserhalb.
+   - **Die Budgetvorlage hängt über eine Alias-Schicht daran** (umgebaut am
+     2026-10-25; damit ist der Entscheid vom 2026-10-23 «Budgetvorlage mit
+     den warmen Farben» eingelöst). Sie behält ihre eigenen Namen
+     `--color-*`, weil sonst über 300 `var(--color-…)` in ihren 2900 Zeilen
+     CSS hätten angefasst werden müssen; zehn davon stehen in ihrem `:root`
+     als `--color-primary: var(--accent);` und so fort. Die beiden
+     Schrift-Token hiessen bei ihr schon immer gleich wie im Satz und
+     standen damit doppelt — sie sind ersatzlos weg. Sichtbar geändert hat
+     der Umbau drei Farben: `--color-text` `#1a1a1a` → `#1C1C1C`,
+     `--color-text-muted` `#6b7280` (kühl, Tailwind `gray-500`) → `#7A7268`,
+     `--color-border` `#e5e7eb` (kühl, Tailwind `gray-200`) → `#E8E4DF`.
+   - **Die Alias-Schicht trägt bewusst KEINE Ersatzwerte** — `var(--accent)`,
+     nicht `var(--accent, #008080)` (Benutzer, 2026-10-25). Ein Ersatzwert
+     machte die heruntergeladene Datei ohne `tokens.css` benutzbar
+     (nachgemessen: ohne ihn werden die Ränder schwarz, weil `border-color`
+     auf `currentColor` zurückfällt, und die Schrift wird Times), wäre aber
+     eine zweite Kopie der neun Farben, die still veraltet: **kein Test
+     sieht in `var()`-Ersatzwerte hinein.** Die Seiten sind für den
+     Online-Gebrauch gerechnet (Punkt 3 oben), und dabei bleibt es. Wer das
+     je ändert, braucht zuerst einen Test, der jeden Ersatzwert gegen
+     `TOKENS` prüft.
+   - **Nicht gedeckt** sind das Signalfarben-Trio der Budgetvorlage
+     (`--color-success`, `--color-warning`, `--color-danger`) und ihre zwei
+     kühlen Graustufen `--color-text-light` (`#9ca3af`) und
+     `--color-border-strong` (`#d1d5db`). Sie bleiben in der Seite, bis
+     projektweit entschieden ist, wie die Signalfarben heissen. Die beiden
+     Graustufen stehen seit dem Umbau neben warmen Nachbarn —
+     `--color-border-strong` ist die kräftigere Linie neben dem jetzt warmen
+     `--color-border`; ob sie mitziehen, ist ein eigener Entscheid.
 
    **Ausnahme: `docs/skillsliste.html` muss ohne Netz funktionieren.** Auch sie
    lädt wohl niemand herunter, aber sie soll es aushalten — und dort fällt die

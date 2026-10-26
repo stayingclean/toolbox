@@ -7,25 +7,46 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="tokens.css">
     <style>
         /* ============================================================
            Design Tokens
+
+           Die gemeinsamen Farben und Schriften stehen in docs/tokens.css,
+           eingebunden im <head> vor diesem Block. Die zehn eigenen
+           --color-*-Namen hängen hier als Aliase daran; die über 300
+           var(--color-…) im CSS darunter bleiben dadurch unberührt.
+           Die Schrift-Token heissen hier gleich wie dort und standen
+           deshalb doppelt — sie stehen jetzt nur noch in tokens.css.
+
+           Bewusst OHNE Ersatzwert, also var(--accent) und nicht
+           var(--accent, <Wert>): die Seite ist für den Online-Gebrauch
+           gerechnet (CLAUDE.md Punkt 3), und ein Ersatzwert wäre eine
+           zweite Kopie der neun Farben, die still veralten kann — kein
+           Test sieht in var()-Ersatzwerte hinein. Der Preis ist bekannt:
+           ohne tokens.css ist die Seite unbrauchbar, Ränder werden
+           schwarz (currentColor) und die Schrift wird Times.
+
+           Eigen bleibt, was keine andere Seite teilt: die Signalfarben
+           (wie sie projektweit heissen, ist offen), die beiden kühlen
+           Graustufen --color-text-light und --color-border-strong, dazu
+           Radien, Schatten und Übergänge.
            ============================================================ */
         :root {
-            --color-primary: #008080;
-            --color-primary-dark: #006666;
+            --color-primary: var(--accent);
+            --color-primary-dark: var(--accent-dark);
             --color-primary-light: #4da6a6;
-            --color-primary-tint: #e6f2f2;
-            --color-primary-faint: #f5fafa;
+            --color-primary-tint: var(--accent-tint);
+            --color-primary-faint: var(--card-hover);
 
-            --color-text: #1a1a1a;
-            --color-text-muted: #6b7280;
+            --color-text: var(--text);
+            --color-text-muted: var(--muted);
             --color-text-light: #9ca3af;
 
-            --color-bg: #ffffff;
-            --color-surface: #ffffff;   /* Versionsleiste und Abzeichen — war undefiniert, also durchsichtig */
-            --color-bg-alt: #FAF8F5;
-            --color-border: #e5e7eb;
+            --color-bg: var(--card);
+            --color-surface: var(--card);   /* Versionsleiste und Abzeichen — war undefiniert, also durchsichtig */
+            --color-bg-alt: var(--bg);
+            --color-border: var(--border);
             --color-border-strong: #d1d5db;
 
             --color-success: #059669;
@@ -34,9 +55,6 @@
             --color-warning-bg: #fffbeb;
             --color-danger: #dc2626;
             --color-danger-bg: #fef2f2;
-
-            --font-display: 'Playfair Display', Georgia, serif;
-            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
             --radius-sm: 4px;
             --radius-md: 8px;
