@@ -38,6 +38,8 @@ ANPASSUNGEN = {
     "kasse":   {"jaehrlich": None, "monatlich": 340, "ab": None},
 }
 
+HEUTE = "2026-10-26"
+
 
 def kern(funktion, *args):
     """Ruft eine Funktion des Rechenkerns in Node auf und gibt das Ergebnis zurück."""
@@ -2266,3 +2268,39 @@ def test_sollwert_deckt_jede_beispieldatei():
     assert "gibt_es_nicht" in v5                       # unbekannte Zeile bleibt
     assert all(e.get("jaehrlich") is not None or e.get("monatlich") is not None
                for k, e in v5.items() if k != "gibt_es_nicht")   # nur-Datum fiel weg
+
+
+# --- Welle 1: Zahl am Reiter ---
+
+def test_uebersicht_zaehlt_wie_der_knopf():
+    u = kern("anpassungsUebersicht", ANPASSUNGEN, HEUTE)
+    assert u == {"anzahl": 4, "naechste": "2027-01-01", "verstrichen": 0, "ohneDatum": 1}
+    staende = kern("stichtagListe", ANPASSUNGEN, HEUTE)
+    gruppen = kern("anpassungsGruppen", ANPASSUNGEN, staende, WERTE)
+    assert u["anzahl"] == sum(len(g["eintraege"]) for g in gruppen)
+
+
+def test_uebersicht_ohne_betrag_zaehlt_nicht():
+    u = kern("anpassungsUebersicht",
+             {"handy": {"jaehrlich": None, "monatlich": None, "ab": "2027-01-01"}}, HEUTE)
+    assert u["anzahl"] == 0 and u["naechste"] is None
+
+
+def test_uebersicht_heute_ist_verstrichen():
+    a = {"handy": {"jaehrlich": None, "monatlich": 0, "ab": HEUTE},
+         "kasse": {"jaehrlich": None, "monatlich": 340, "ab": "2026-10-27"}}
+    u = kern("anpassungsUebersicht", a, HEUTE)
+    assert u["verstrichen"] == 1 and u["naechste"] == "2026-10-27"
+
+
+@pytest.mark.parametrize("u, text", [
+    ({"anzahl": 3, "naechste": "2026-12-01", "verstrichen": 0, "ohneDatum": 1},
+     "3 Anpassungen, nächste ab 01.12.2026, 1 ohne Datum"),
+    ({"anzahl": 2, "naechste": None, "verstrichen": 2, "ohneDatum": 0},
+     "2 Anpassungen, alle Daten verstrichen"),
+    ({"anzahl": 1, "naechste": None, "verstrichen": 0, "ohneDatum": 1},
+     "1 Anpassung, ohne Datum"),
+    ({"anzahl": 0, "naechste": None, "verstrichen": 0, "ohneDatum": 0}, ""),
+])
+def test_reiter_hinweis(u, text):
+    assert kern("reiterHinweis", u) == text

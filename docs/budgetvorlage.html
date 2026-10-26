@@ -4046,6 +4046,47 @@
         return liste;
     }
 
+    // Was eine Version an Anpassungen trägt, in vier Zahlen für den Reiter.
+    // `adjustments` ist schon auf bekannte Zeilen gefiltert. Gezählt wird mit
+    // derselben Regel wie beim Knopf «Anpassungen» (anpassungHatBetrag), damit
+    // die Zahl am Reiter nie etwas anderes sagt als das, was der Dialog zeigt.
+    // Ein Datum, das heute ist, gilt als eingetreten — wie in stichtagListe.
+    function anpassungsUebersicht(adjustments, heuteIso) {
+        const u = { anzahl: 0, naechste: null, verstrichen: 0, ohneDatum: 0 };
+        Object.keys(adjustments || {}).forEach((id) => {
+            const a = adjustments[id];
+            if (!anpassungHatBetrag(a)) return;
+            u.anzahl += 1;
+            if (!istIsoDatum(a.ab)) {
+                u.ohneDatum += 1;
+            } else if (a.ab <= heuteIso) {
+                u.verstrichen += 1;
+            } else if (u.naechste === null || a.ab < u.naechste) {
+                u.naechste = a.ab;
+            }
+        });
+        return u;
+    }
+
+    // Der Satz zur Zahl am Reiter, für Tooltip und Screenreader. Leer, wenn es
+    // nichts zu sagen gibt: dann steht auch keine Zahl am Reiter. «Nur
+    // Vorschläge» heisst «ohne Datum» ohne Zahl, weil «1 ohne Datum» bei
+    // einer einzigen Anpassung dasselbe zweimal sagte.
+    function reiterHinweis(uebersicht) {
+        const n = uebersicht.anzahl;
+        if (!n) return '';
+        let text = n + (n === 1 ? ' Anpassung' : ' Anpassungen');
+        if (uebersicht.naechste) {
+            text += ', nächste ab ' + datumAnzeige(uebersicht.naechste);
+        } else if (uebersicht.verstrichen > 0) {
+            text += ', alle Daten verstrichen';
+        }
+        if (uebersicht.ohneDatum > 0) {
+            text += uebersicht.ohneDatum === n ? ', ohne Datum' : ', ' + uebersicht.ohneDatum + ' ohne Datum';
+        }
+        return text;
+    }
+
     // Welchen Stand die Vorschau beim Öffnen zeigt: den ersten nach «heute»,
     // denn «heute» ist nur das gesperrte Abbild der Version und zeigte nichts
     // Neues. Gibt es keinen weiteren Stand, bleibt «heute» (dann steht der
