@@ -1,0 +1,333 @@
+{
+  "v1": {
+    "gespeichert": {
+      "activeVersionId": "#0",
+      "versions": [
+        {
+          "adjustments": {},
+          "basedOn": null,
+          "comments": {},
+          "id": "#0",
+          "name": "Hauptversion",
+          "privateNote": "",
+          "values": {
+            "bundessteuer.jaehrlich": 2300,
+            "elektrizitaet.jaehrlich": 1020,
+            "elektrizitaet.monatlich": 85,
+            "heiz_nebenkosten.monatlich": 180,
+            "kvg.jaehrlich": 5040,
+            "kvg.monatlich": 420,
+            "miete.jaehrlich": 19800,
+            "miete.monatlich": 1650,
+            "netto_einkommen_p1.jaehrlich": 62400,
+            "netto_einkommen_p1.monatlich": 5200,
+            "serafe.jaehrlich": 335
+          }
+        }
+      ]
+    },
+    "versionen": [
+      {
+        "ausgabenY": 30655,
+        "diffM": 2645.42,
+        "diffY": 31745,
+        "einnahmenY": 62400,
+        "name": "Hauptversion"
+      }
+    ]
+  },
+  "v2": {
+    "gespeichert": {
+      "activeVersionId": "#0",
+      "versions": [
+        {
+          "adjustments": {},
+          "basedOn": null,
+          "comments": {},
+          "id": "#0",
+          "name": "Original",
+          "privateNote": "",
+          "values": {
+            "bundessteuer.jaehrlich": 2300,
+            "elektrizitaet.jaehrlich": 1020,
+            "elektrizitaet.monatlich": 85,
+            "heiz_nebenkosten.monatlich": 180,
+            "kvg.jaehrlich": 5040,
+            "kvg.monatlich": 420,
+            "miete.jaehrlich": 19800,
+            "miete.monatlich": 1650,
+            "netto_einkommen_p1.jaehrlich": 62400,
+            "netto_einkommen_p1.monatlich": 5200,
+            "serafe.jaehrlich": 335
+          }
+        },
+        {
+          "adjustments": {},
+          "basedOn": "#0",
+          "comments": {},
+          "id": "#1",
+          "name": "Nach Reduktion",
+          "privateNote": "",
+          "values": {
+            "bundessteuer.jaehrlich": 2300,
+            "elektrizitaet.jaehrlich": 820,
+            "elektrizitaet.monatlich": 85,
+            "heiz_nebenkosten.monatlich": 180,
+            "kvg.jaehrlich": 4440,
+            "kvg.monatlich": 420,
+            "miete.jaehrlich": 19800,
+            "miete.monatlich": 1650,
+            "netto_einkommen_p1.jaehrlich": 62400,
+            "netto_einkommen_p1.monatlich": 5200,
+            "serafe.jaehrlich": 335
+          }
+        }
+      ]
+    },
+    "versionen": [
+      {
+        "ausgabenY": 30655,
+        "diffM": 2645.42,
+        "diffY": 31745,
+        "einnahmenY": 62400,
+        "name": "Original"
+      },
+      {
+        "ausgabenY": 29855,
+        "diffM": 2645.42,
+        "diffY": 32545,
+        "einnahmenY": 62400,
+        "name": "Nach Reduktion"
+      }
+    ]
+  },
+  "v3": {
+    "gespeichert": {
+      "activeVersionId": "#0",
+      "versions": [
+        {
+          "adjustments": {},
+          "basedOn": null,
+          "comments": {},
+          "id": "#0",
+          "name": "Original",
+          "privateNote": "",
+          "values": {
+            "bundessteuer.jaehrlich": 2300,
+            "elektrizitaet.jaehrlich": 1020,
+            "elektrizitaet.monatlich": 85,
+            "heiz_nebenkosten.monatlich": 180,
+            "kvg.jaehrlich": 5040,
+            "kvg.monatlich": 420,
+            "miete.jaehrlich": 19800,
+            "miete.monatlich": 1650,
+            "netto_einkommen_p1.jaehrlich": 62400,
+            "netto_einkommen_p1.monatlich": 5200,
+            "serafe.jaehrlich": 335
+          }
+        },
+        {
+          "adjustments": {},
+          "basedOn": "#0",
+          "comments": {
+            "elektrizitaet": "Anderen Stromtarif gewählt.",
+            "kvg": "Franchise von 300 auf 2500 erhöht."
+          },
+          "id": "#1",
+          "name": "Nach Reduktion",
+          "privateNote": "",
+          "values": {
+            "bundessteuer.jaehrlich": 2300,
+            "elektrizitaet.jaehrlich": 780,
+            "elektrizitaet.monatlich": 65,
+            "heiz_nebenkosten.monatlich": 180,
+            "kvg.jaehrlich": 4440,
+            "kvg.monatlich": 370,
+            "miete.jaehrlich": 19800,
+            "miete.monatlich": 1650,
+            "netto_einkommen_p1.jaehrlich": 62400,
+            "netto_einkommen_p1.monatlich": 5200,
+            "serafe.jaehrlich": 335
+          }
+        }
+      ]
+    },
+    "versionen": [
+      {
+        "ausgabenY": 30655,
+        "diffM": 2645.42,
+        "diffY": 31745,
+        "einnahmenY": 62400,
+        "name": "Original"
+      },
+      {
+        "ausgabenY": 29815,
+        "diffM": 2715.42,
+        "diffY": 32585,
+        "einnahmenY": 62400,
+        "name": "Nach Reduktion"
+      }
+    ]
+  },
+  "v4": {
+    "gespeichert": {
+      "activeVersionId": "#1",
+      "versions": [
+        {
+          "adjustments": {},
+          "basedOn": null,
+          "comments": {
+            "miete": "Mietzins laut Vertrag."
+          },
+          "id": "#0",
+          "name": "Ausgangslage",
+          "privateNote": "",
+          "values": {
+            "bundessteuer.jaehrlich": 2300,
+            "elektrizitaet.jaehrlich": 1020,
+            "elektrizitaet.monatlich": 85,
+            "heiz_nebenkosten.monatlich": 180,
+            "kvg.jaehrlich": 5040,
+            "kvg.monatlich": 420,
+            "miete.jaehrlich": 19800,
+            "miete.monatlich": 1650,
+            "netto_einkommen_p1.jaehrlich": 62400,
+            "netto_einkommen_p1.monatlich": 5200,
+            "serafe.jaehrlich": 335
+          }
+        },
+        {
+          "adjustments": {},
+          "basedOn": "#0",
+          "comments": {
+            "elektrizitaet": "Neuer Tarif.",
+            "kvg": "Franchise erhöht."
+          },
+          "id": "#1",
+          "name": "Sparplan",
+          "privateNote": "",
+          "values": {
+            "bundessteuer.jaehrlich": 2300,
+            "elektrizitaet.jaehrlich": 780,
+            "elektrizitaet.monatlich": 65,
+            "heiz_nebenkosten.monatlich": 180,
+            "kvg.jaehrlich": 4440,
+            "kvg.monatlich": 370,
+            "miete.jaehrlich": 19800,
+            "miete.monatlich": 1650,
+            "netto_einkommen_p1.jaehrlich": 62400,
+            "netto_einkommen_p1.monatlich": 5200,
+            "serafe.jaehrlich": 335
+          }
+        }
+      ]
+    },
+    "versionen": [
+      {
+        "ausgabenY": 30655,
+        "diffM": 2645.42,
+        "diffY": 31745,
+        "einnahmenY": 62400,
+        "name": "Ausgangslage"
+      },
+      {
+        "ausgabenY": 29815,
+        "diffM": 2715.42,
+        "diffY": 32585,
+        "einnahmenY": 62400,
+        "name": "Sparplan"
+      }
+    ]
+  },
+  "v5": {
+    "gespeichert": {
+      "activeVersionId": "#1",
+      "versions": [
+        {
+          "adjustments": {},
+          "basedOn": null,
+          "comments": {
+            "miete": "Mietzins laut Vertrag."
+          },
+          "id": "#0",
+          "name": "Ausgangslage",
+          "privateNote": "",
+          "values": {
+            "bundessteuer.jaehrlich": 2300,
+            "elektrizitaet.jaehrlich": 1020,
+            "elektrizitaet.monatlich": 85,
+            "heiz_nebenkosten.monatlich": 180,
+            "kvg.jaehrlich": 5040,
+            "kvg.monatlich": 420,
+            "miete.jaehrlich": 19800,
+            "miete.monatlich": 1650,
+            "netto_einkommen_p1.jaehrlich": 62400,
+            "netto_einkommen_p1.monatlich": 5200,
+            "serafe.jaehrlich": 335
+          }
+        },
+        {
+          "adjustments": {
+            "elektrizitaet": {
+              "ab": "2026-01-01",
+              "jaehrlich": null,
+              "monatlich": 70
+            },
+            "gibt_es_nicht": {
+              "ab": "2027-01-01",
+              "jaehrlich": 1200,
+              "monatlich": 100
+            },
+            "heiz_nebenkosten": {
+              "ab": "2027-04-01",
+              "jaehrlich": 2400,
+              "monatlich": 200
+            },
+            "netto_einkommen_p1": {
+              "ab": null,
+              "jaehrlich": 64000,
+              "monatlich": null
+            }
+          },
+          "basedOn": "#0",
+          "comments": {
+            "elektrizitaet": "Neuer Tarif.",
+            "kvg": "Franchise erhöht."
+          },
+          "id": "#1",
+          "name": "Sparplan",
+          "privateNote": "Beispiel: Nebenkosten-Nachzahlung im Frühling vormerken.",
+          "values": {
+            "bundessteuer.jaehrlich": 2300,
+            "elektrizitaet.jaehrlich": 780,
+            "elektrizitaet.monatlich": 65,
+            "heiz_nebenkosten.monatlich": 180,
+            "kvg.jaehrlich": 4440,
+            "kvg.monatlich": 370,
+            "miete.jaehrlich": 19800,
+            "miete.monatlich": 1650,
+            "netto_einkommen_p1.jaehrlich": 62400,
+            "netto_einkommen_p1.monatlich": 5200,
+            "serafe.jaehrlich": 335
+          }
+        }
+      ]
+    },
+    "versionen": [
+      {
+        "ausgabenY": 30655,
+        "diffM": 2645.42,
+        "diffY": 31745,
+        "einnahmenY": 62400,
+        "name": "Ausgangslage"
+      },
+      {
+        "ausgabenY": 29815,
+        "diffM": 2715.42,
+        "diffY": 32585,
+        "einnahmenY": 62400,
+        "name": "Sparplan"
+      }
+    ]
+  }
+}

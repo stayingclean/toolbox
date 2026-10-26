@@ -2251,3 +2251,18 @@ def test_v5_beispiel_deckt_die_sonderfaelle():
     assert "gibt_es_nicht" in a
     assert any(e.get("ab") is None for e in a.values())
     assert any(e.get("jaehrlich") is None and e.get("monatlich") is None and e.get("ab") for e in a.values())
+
+
+def test_sollwert_deckt_jede_beispieldatei():
+    """erwartet.json ist die Ausgabe von tests/budget_ladepruefung.js auf dem
+    Stand vor dem Umbau. Fehlt eine Version darin oder ist der Sonderfall aus
+    v5 verloren, prueft eine spaetere Welle gegen einen Sollwert, der weniger
+    abdeckt, als die Beispieldateien hergeben -- und niemand merkte es."""
+    soll = json.loads((FIXTURES / "erwartet.json").read_text(encoding="utf-8"))
+    assert sorted(soll) == ["v1", "v2", "v3", "v4", "v5"]
+    assert [v["name"] for v in soll["v2"]["versionen"]] == ["Original", "Nach Reduktion"]
+    assert [v["name"] for v in soll["v1"]["versionen"]] == ["Hauptversion"]
+    v5 = soll["v5"]["gespeichert"]["versions"][1]["adjustments"]
+    assert "gibt_es_nicht" in v5                       # unbekannte Zeile bleibt
+    assert all(e.get("jaehrlich") is not None or e.get("monatlich") is not None
+               for k, e in v5.items() if k != "gibt_es_nicht")   # nur-Datum fiel weg
