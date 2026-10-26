@@ -4420,19 +4420,22 @@
     // um Überschuss oder Fehlbetrag, und die Linie bei null ist die Grenze
     // dazwischen. Ein Ausschnitt, der sie weglässt, zeigte einen Fehlbetrag
     // als Überschuss. Beide Ränder rasten auf dem Linienabstand ein, damit
-    // die Achse runde Zahlen trägt; die 1.12 lassen oben etwas Luft für die
-    // Beschriftung der höchsten Stufe.
+    // die Achse runde Zahlen trägt. Die 1.12 wirken nur auf den Linienabstand:
+    // sie machen ihn eher grösser als kleiner, so dass nicht mehr als etwa
+    // vier Linien entstehen.
+    // Das Dach liegt immer über der Basis: sind alle Werte 0 (ein frisches
+    // Budget mit einer Anpassung auf 0), fielen beide auf 0, und wer die Höhe
+    // als (wert - basis) / (dach - basis) rechnet, bekäme NaN.
     function treppenBereich(werte) {
         const zahlen = (werte || []).filter((w) => istZahl(w));
         const kleinster = Math.min.apply(null, [0].concat(zahlen));
         const groesster = Math.max.apply(null, [0].concat(zahlen));
         const spanne = Math.max(groesster - kleinster, 1);
         const schritt = rasterSchritt(spanne * 1.12, 4);
-        return {
-            basis: Math.floor(kleinster / schritt) * schritt,
-            dach: Math.ceil(groesster / schritt) * schritt,
-            schritt: schritt,
-        };
+        const basis = Math.floor(kleinster / schritt) * schritt;
+        let dach = Math.ceil(groesster / schritt) * schritt;
+        if (dach <= basis) dach = basis + schritt;
+        return { basis: basis, dach: dach, schritt: schritt };
     }
 
     // Aus dem Verlauf die Treppe: Ausgangswert («heute»), je datiertem Stand

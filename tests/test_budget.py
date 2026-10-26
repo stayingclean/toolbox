@@ -2516,6 +2516,7 @@ def test_ticks_monatlich_mit_jahr_im_januar():
 
 def test_ticks_bei_langer_spanne_nur_quartale():
     ticks = kern("treppenTicks", "2026-10-01", "2029-01-01")
+    assert ticks, "bei langer Spanne darf die Achse nicht leer sein"
     assert all(t["iso"][5:7] in ("01", "04", "07", "10") for t in ticks)
 
 
@@ -2524,6 +2525,14 @@ def test_bereich_schliesst_null_ein():
     assert b["basis"] == 0 and b["dach"] >= 246
     b = kern("treppenBereich", [80, -40])
     assert b["basis"] <= -40 and b["dach"] >= 80 and b["basis"] % b["schritt"] == 0
+
+
+@pytest.mark.parametrize("werte", [[0, 0], [], [0]])
+def test_bereich_hat_immer_hoehe(werte):
+    # Ein frisches Budget mit einer Anpassung auf 0: Basis und Dach dürften nicht
+    # zusammenfallen, sonst teilt die Zeichnung durch null.
+    b = kern("treppenBereich", werte)
+    assert b["basis"] == 0 and b["dach"] > b["basis"]
 
 
 def test_stufen_aus_dem_verlauf():
@@ -2542,3 +2551,24 @@ def test_treppe_hat_keine_schraegen():
     assert punkte[0] == ["2026-10-01", treppe["anfang"]] and punkte[-1][0] == "2027-07-01"
     for (t1, w1), (t2, w2) in zip(punkte, punkte[1:]):
         assert (t1 == t2) != (w1 == w2)
+
+
+def _stufe(ab, wert, delta):
+    return {"key": ab, "ab": ab, "wert": wert, "delta": delta, "faellig": False}
+
+
+@pytest.mark.parametrize("treppe", [
+    # erste Stufe genau auf `von`
+    {"anfang": 100, "stufen": [_stufe("2026-10-01", 150, 50)], "offen": None},
+    # zwei Stufen am selben Tag
+    {"anfang": 100, "stufen": [_stufe("2027-01-01", 150, 50), _stufe("2027-01-01", 90, -60)], "offen": None},
+    # Stufe ohne Unterschied
+    {"anfang": 100, "stufen": [_stufe("2027-01-01", 100, 0), _stufe("2027-04-01", 130, 30)], "offen": None},
+    # nichts als Anfangswert
+    {"anfang": 100, "stufen": [], "offen": None},
+])
+def test_punkte_ohne_schraegen_und_ohne_doppelte_in_den_randfaellen(treppe):
+    punkte = kern("treppenPunkte", treppe, "2026-10-01", "2027-07-01")
+    assert punkte[0] == ["2026-10-01", 100] and punkte[-1][0] == "2027-07-01"
+    for (t1, w1), (t2, w2) in zip(punkte, punkte[1:]):
+        assert (t1 == t2) != (w1 == w2), (punkte, (t1, w1), (t2, w2))
