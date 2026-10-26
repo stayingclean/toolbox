@@ -2088,6 +2088,21 @@
             .balken.ist-gut     { background: #0f5132 !important; border-color: #0f5132; }
             .balken.ist-schlecht { background: #842029 !important; border-color: #842029; }
             .balken-null { background: #999; }
+            /* Der Ausblick: ohne Häkchen «Ausblick drucken» gar nicht auf dem
+               Blatt, mit Häkchen im selben Block wie die Stände darüber und
+               in Farbe — Linie, Punkte und Streifen tragen die Aussage. Die
+               Klickziele sind im Druck reine Grafik: kein Fokusring, keine
+               Vorschau-Tönung. */
+            body:not(.print-ausblick) #ausblickBlock {
+                display: none !important;
+            }
+            #ausblickBlock {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .treppe-ziel .treffer { fill: transparent !important; stroke: none !important; }
             /* Gedruckt wird in der Vorschau eine gerechnete Tabelle. Die
                Stand-Leiste steckt in .sticky-head und ist hier weg – die
                Kennzeichnung steht im Blattkopf an ihrer Stelle. Leer (Stand
@@ -3048,6 +3063,10 @@
             <label class="print-toggle" title="Steuert nur den Ausdruck (Strg+P): die private Notiz zur Version mitdrucken. Vorgewählt ist das nie.">
                 <input type="checkbox" id="chkPrintPrivateNote">
                 <span>Private Notiz drucken</span>
+            </label>
+            <label class="print-toggle" title="Steuert nur den Ausdruck (Strg+P): den Ausblick unter der Zusammenfassung mitdrucken. Vorgewählt ist das nie.">
+                <input type="checkbox" id="chkPrintAusblick">
+                <span>Ausblick drucken</span>
             </label>
             <button type="button" class="btn btn-secondary" id="btnOpen" title="Bestehende Budget-Datei öffnen">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -7861,6 +7880,13 @@
         }
         chkPrintPrivateNote.addEventListener('change', applyPrintPrivateNote);
         applyPrintPrivateNote();
+        // Der Ausblick druckt ebenso nur mit eigenem Häkchen, nie vorgewählt.
+        const chkPrintAusblick = $('#chkPrintAusblick');
+        function applyPrintAusblick() {
+            document.body.classList.toggle('print-ausblick', chkPrintAusblick.checked);
+        }
+        chkPrintAusblick.addEventListener('change', applyPrintAusblick);
+        applyPrintAusblick();
         $('#privateNote').addEventListener('input', () => markDirty());
         // Vor dem Drucken Zeilen mit echtem Kommentartext markieren – unabhängig
         // davon, ob sie am Bildschirm auf- oder zugeklappt sind.

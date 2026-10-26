@@ -2632,3 +2632,18 @@ def test_treppe_ist_eine_gruppe_und_kein_bild():
 
 def test_treppe_wird_bei_breitenaenderung_neu_gezeichnet():
     assert "observe($('#ausblickTreppe'))" in _seite_text()
+
+
+def test_haekchen_ausblick_ist_nicht_vorgewaehlt():
+    text = _seite_text()
+    m = re.search(r'<input type="checkbox" id="chkPrintAusblick"[^>]*>', text)
+    assert m and "checked" not in m.group(0)
+    assert "Ausblick drucken" in text
+    assert "classList.toggle('print-ausblick'" in text
+
+
+def test_ausblick_druckt_nur_mit_haekchen():
+    text = _seite_text()
+    druck = text[text.index("@media print"):]
+    assert re.search(r"body:not\(\.print-ausblick\)\s+#ausblickBlock\s*\{[^}]*display:\s*none", druck)
+    assert re.search(r"#ausblickBlock\s*\{[^}]*print-color-adjust:\s*exact", druck)

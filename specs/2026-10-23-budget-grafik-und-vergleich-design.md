@@ -804,3 +804,18 @@ Wurzelversion festnageln.
   wird:** statt nach Betrag nach der Reihenfolge in `SCHEMA` sortieren. Dann
   springt nichts, und das Diagramm liest sich wie das Formular — der grösste
   Balken fällt auch ohne Sortierung auf.
+
+---
+
+## Nachtrag 2026-10-26: Zeitachse
+
+Der Ausschluss «Keine Zeitachse mit Monatsraster» (Abschnitt «Ausdrücklich nicht
+Teil davon») ist mit dem Entscheid des Benutzers vom 2026-10-26 überholt: der
+Ausblick zeichnet die Stände als Treppe auf einer Zeitachse. **Die Begründung
+dahinter gilt weiter und bindet die Treppe:** die Stände sind Sprünge, keine
+kontinuierliche Entwicklung. Die Treppe springt darum an jedem Stichtag
+senkrecht; es gibt keine schräge Linie zwischen zwei Ständen und keine
+Zwischenwerte, die eine anteilige Jahresrechnung behaupteten.
+
+Entwurf und Entscheide: `specs/2026-10-26-budget-ausblick-reiter-spalte-design.md`,
+Abschnitt 1 «Ausblick», dort «Verhältnis zu einem früheren Entscheid».
