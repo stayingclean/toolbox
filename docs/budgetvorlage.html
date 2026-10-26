@@ -4332,6 +4332,159 @@
         return faktor * groesse;
     }
 
+    // ----------------------------------------------------------------
+    // Die Treppe: der Monatsüberschuss über die Zeit
+    // ----------------------------------------------------------------
+    // Alles hier ist Geometrie ohne DOM: wohin auf der Zeitachse, auf welche
+    // Höhe. Gezeichnet wird anderswo. Daten werden nie als `new Date('JJJJ-MM-TT')`
+    // gelesen — das wäre UTC, `getMonth()` aber lokal, und in Zeitzonen westlich
+    // von Greenwich rutschte jeder Monatserste auf den Vormonat. Darum nur
+    // `Date.UTC` oder das Zerlegen der Zeichenkette.
+
+    // Erster Tag des Monats, `n` Monate nach dem Monat von `iso`. Mit n = 0 der
+    // Monatserste selbst. Gerechnet wird in ganzen Monaten (Jahr mal zwölf plus
+    // Monat), nicht über Tage: ein 31. Januar plus ein Monat wäre sonst der
+    // 3. März.
+    function monateDazu(iso, n) {
+        const j = parseInt(iso.slice(0, 4), 10);
+        const m = parseInt(iso.slice(5, 7), 10);
+        const gesamt = j * 12 + (m - 1) + n;
+        const jahr = Math.floor(gesamt / 12);
+        const monat = (gesamt % 12) + 1;
+        return String(jahr).padStart(4, '0') + '-' + String(monat).padStart(2, '0') + '-01';
+    }
+
+    // Die Tage seit 1970 für ein ISO-Datum, über UTC: Sommerzeit macht aus
+    // einem Tag sonst 23 oder 25 Stunden und verschöbe die Anteile.
+    function tageSeitEpoche(iso) {
+        const t = Date.UTC(parseInt(iso.slice(0, 4), 10), parseInt(iso.slice(5, 7), 10) - 1,
+            parseInt(iso.slice(8, 10), 10));
+        return t / 86400000;
+    }
+
+    // Der sichtbare Zeitraum: vom Monatsersten des ersten Datums bis drei
+    // Monate hinter das letzte. «Heute» zählt immer mit — auch wenn alle
+    // Stände schon verstrichen sind, soll man sehen, wo man jetzt steht.
+    // Ein verstrichenes Datum zieht den Anfang nach links, sonst fehlte die
+    // Stufe, die schon gilt. Die drei Monate Auslauf lassen die letzte Stufe
+    // als Fläche stehen, statt am Rand abzubrechen. Mindestens ein halbes
+    // Jahr: mit nur offenen Vorschlägen (ohne Datum) bliebe sonst ein
+    // Zeitraum von wenigen Wochen, in dem nichts passiert.
+    function treppenSpanne(verlauf, heuteIso) {
+        const daten = (verlauf || []).filter((s) => istIsoDatum(s.ab)).map((s) => s.ab);
+        const alle = daten.concat([heuteIso]).sort();
+        const von = monateDazu(alle[0], 0);
+        let bis = monateDazu(alle[alle.length - 1], 3);
+        const mindestens = monateDazu(von, 6);
+        if (bis < mindestens) bis = mindestens;
+        return { von: von, bis: bis };
+    }
+
+    // Wo ein Datum auf der Zeitachse liegt, 0 (links) bis 1 (rechts), nach
+    // Tagen. Nach Tagen und nicht nach Monaten, weil Monate verschieden lang
+    // sind und der 1. Februar sonst genauso weit vom 1. Januar läge wie der
+    // 1. März vom 1. Februar. Ausserhalb der Spanne wird begrenzt: ein Datum
+    // darf nie ausserhalb der Zeichenfläche landen.
+    function zeitAnteil(iso, von, bis) {
+        const gesamt = tageSeitEpoche(bis) - tageSeitEpoche(von);
+        if (gesamt <= 0) return 0;
+        const a = (tageSeitEpoche(iso) - tageSeitEpoche(von)) / gesamt;
+        return Math.min(1, Math.max(0, a));
+    }
+
+    // Die Beschriftungen der Zeitachse: Monatserste strikt zwischen `von` und
+    // `bis` (die Ränder tragen keine Marke, dort endet die Fläche). Je länger
+    // der Zeitraum, desto seltener: bis 18 Monate jeder Monat, bis 48 nur die
+    // Quartale, darüber nur der Januar — sonst stünden die Namen
+    // aufeinander. Im Januar steht das Jahr dabei, damit man sich in einer
+    // langen Spanne zurechtfindet, ohne jede Marke mit einer Jahreszahl zu
+    // belasten.
+    function treppenTicks(von, bis) {
+        const namen = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+        const monate = (parseInt(bis.slice(0, 4), 10) * 12 + parseInt(bis.slice(5, 7), 10))
+            - (parseInt(von.slice(0, 4), 10) * 12 + parseInt(von.slice(5, 7), 10));
+        const ticks = [];
+        for (let i = 1; ; i += 1) {
+            const iso = monateDazu(von, i);
+            if (iso >= bis) break;
+            const m = parseInt(iso.slice(5, 7), 10);
+            if (monate > 48 && m !== 1) continue;
+            if (monate > 18 && monate <= 48 && m % 3 !== 1) continue;
+            ticks.push({ iso: iso, text: m === 1 ? 'Jan ' + iso.slice(0, 4) : namen[m - 1] });
+        }
+        return ticks;
+    }
+
+    // Der Ausschnitt der senkrechten Achse. Anders als `achsenBereich`
+    // (das auf den Unterschied hineinzoomt) immer mit der Null: hier geht es
+    // um Überschuss oder Fehlbetrag, und die Linie bei null ist die Grenze
+    // dazwischen. Ein Ausschnitt, der sie weglässt, zeigte einen Fehlbetrag
+    // als Überschuss. Beide Ränder rasten auf dem Linienabstand ein, damit
+    // die Achse runde Zahlen trägt; die 1.12 lassen oben etwas Luft für die
+    // Beschriftung der höchsten Stufe.
+    function treppenBereich(werte) {
+        const zahlen = (werte || []).filter((w) => istZahl(w));
+        const kleinster = Math.min.apply(null, [0].concat(zahlen));
+        const groesster = Math.max.apply(null, [0].concat(zahlen));
+        const spanne = Math.max(groesster - kleinster, 1);
+        const schritt = rasterSchritt(spanne * 1.12, 4);
+        return {
+            basis: Math.floor(kleinster / schritt) * schritt,
+            dach: Math.ceil(groesster / schritt) * schritt,
+            schritt: schritt,
+        };
+    }
+
+    // Aus dem Verlauf die Treppe: Ausgangswert («heute»), je datiertem Stand
+    // eine Stufe und der Wert der offenen Vorschläge. Eine Stufe trägt ihren
+    // Wert und den Unterschied zur Stufe davor — der Unterschied ist es, was
+    // am Sprung steht («+149»), nicht der Gesamtwert. Der Unterschied ist
+    // auch dann da, wenn er 0 ist: die Stufe bleibt eine Stufe (Datum,
+    // «±0»), sie fällt nur nicht als Sprung auf. Stände ohne Datum
+    // (`offen`) sind keine Stufen, weil sie nirgends auf der Zeitachse
+    // liegen; sie stehen gesondert da.
+    function treppenStufen(verlauf, heuteIso) {
+        const liste = verlauf || [];
+        const heute = liste.find((s) => s.key === 'heute');
+        const offen = liste.find((s) => s.key === 'offen');
+        const anfang = heute ? heute.diffM : 0;
+        let davor = anfang;
+        const stufen = [];
+        liste.forEach((s) => {
+            if (!istIsoDatum(s.ab)) return;
+            stufen.push({ key: s.key, ab: s.ab, wert: s.diffM, delta: s.diffM - davor, faellig: s.ab <= heuteIso });
+            davor = s.diffM;
+        });
+        return { anfang: anfang, stufen: stufen, offen: offen ? offen.diffM : null };
+    }
+
+    // Die Eckpunkte des Pfads, von links nach rechts: der Anfangswert bei
+    // `von`, je Stufe erst ein Punkt senkrecht darunter bzw. darüber (alter
+    // Wert zum Datum der Stufe) und dann der neue Wert, zuletzt der letzte
+    // Wert bis `bis`. Dadurch ändert sich zwischen zwei Punkten genau
+    // eine Koordinate — Zeit oder Wert —, und es gibt keine Schrägen. Ein
+    // Punkt, der dem vorigen gleicht, wird weggelassen (eine Stufe mit
+    // Unterschied 0, oder ein Datum auf dem Monatsersten von `von`): zwei
+    // gleiche Punkte hintereinander wären ein Schritt, der sich in keiner
+    // Koordinate ändert.
+    function treppenPunkte(treppe, von, bis) {
+        const punkte = [];
+        const dazu = (iso, wert) => {
+            const letzter = punkte[punkte.length - 1];
+            if (letzter && letzter[0] === iso && letzter[1] === wert) return;
+            punkte.push([iso, wert]);
+        };
+        let wert = treppe.anfang;
+        dazu(von, wert);
+        treppe.stufen.forEach((s) => {
+            dazu(s.ab, wert);
+            dazu(s.ab, s.wert);
+            wert = s.wert;
+        });
+        dazu(bis, wert);
+        return punkte;
+    }
+
     // Die Summen je Gruppe — für «Wohin das Geld geht». Jede Gruppe des
     // Schemas kommt vor, auch eine leere: sonst fehlte sie im Bild, sobald
     // jemand eine Kategorie nicht ausfüllt, und die Farben verschöben sich

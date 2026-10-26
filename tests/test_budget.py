@@ -2473,3 +2473,72 @@ def test_beschreibende_texte_nennen_die_neue_reihenfolge():
     assert "Jahres- oder in die <strong>Monatsspalte" not in text
     assert "neue Jahres- oder Monatsbetrag" not in text
     assert "'Jährlich oder monatlich eintragen" not in text
+
+
+# --- Welle 3: Treppe ---
+# Geometrie des Ausblicks: wie die Stände über die Zeit zu einer Treppe werden.
+# Der Verlauf wird bewusst erst im Test gerechnet, nicht auf Modulebene — dort
+# liefe Node schon beim Sammeln, auch wo der skipif greifen soll.
+
+def _verlauf(anpassungen=ANPASSUNGEN):
+    return kern("standVerlauf", SCHEMA, WERTE, anpassungen, HEUTE)
+
+
+def test_monate_dazu():
+    assert kern("monateDazu", "2026-11-15", 3) == "2027-02-01"
+    assert kern("monateDazu", "2026-12-31", 1) == "2027-01-01"
+
+
+def test_spanne_ab_heute_und_drei_monate_nach_dem_letzten_datum():
+    assert kern("treppenSpanne", _verlauf(), HEUTE) == {"von": "2026-10-01", "bis": "2027-07-01"}
+
+
+def test_spanne_beginnt_beim_verstrichenen_datum():
+    a = dict(ANPASSUNGEN, handy={"jaehrlich": None, "monatlich": 0, "ab": "2026-08-01"})
+    assert kern("treppenSpanne", _verlauf(a), HEUTE)["von"] == "2026-08-01"
+
+
+def test_spanne_nur_vorschlaege_ist_ein_halbes_jahr():
+    a = {"kasse": {"jaehrlich": None, "monatlich": 340, "ab": None}}
+    assert kern("treppenSpanne", _verlauf(a), HEUTE) == {"von": "2026-10-01", "bis": "2027-04-01"}
+
+
+def test_zeitanteil():
+    assert kern("zeitAnteil", "2026-10-01", "2026-10-01", "2027-10-01") == 0
+    assert kern("zeitAnteil", "2027-10-01", "2026-10-01", "2027-10-01") == 1
+    assert abs(kern("zeitAnteil", "2027-04-01", "2026-10-01", "2027-10-01") - 182 / 365) < 1e-9
+
+
+def test_ticks_monatlich_mit_jahr_im_januar():
+    ticks = kern("treppenTicks", "2026-10-01", "2027-03-01")
+    assert [t["text"] for t in ticks] == ["Nov", "Dez", "Jan 2027", "Feb"]
+
+
+def test_ticks_bei_langer_spanne_nur_quartale():
+    ticks = kern("treppenTicks", "2026-10-01", "2029-01-01")
+    assert all(t["iso"][5:7] in ("01", "04", "07", "10") for t in ticks)
+
+
+def test_bereich_schliesst_null_ein():
+    b = kern("treppenBereich", [120, 138, 96, 246])
+    assert b["basis"] == 0 and b["dach"] >= 246
+    b = kern("treppenBereich", [80, -40])
+    assert b["basis"] <= -40 and b["dach"] >= 80 and b["basis"] % b["schritt"] == 0
+
+
+def test_stufen_aus_dem_verlauf():
+    s = kern("treppenStufen", _verlauf(), HEUTE)
+    assert [x["ab"] for x in s["stufen"]] == ["2027-01-01", "2027-04-01"]
+    assert s["stufen"][0]["delta"] == pytest.approx(149)      # handy 60 + fitness 89 fallen weg
+    assert s["stufen"][1]["delta"] == pytest.approx(14)       # hausrat 42 → 28
+    assert s["offen"] == pytest.approx(s["stufen"][-1]["wert"] + 70)   # kasse 410 → 340
+    assert s["anfang"] == pytest.approx(3800 - (60 + 89 + 42 + 410 + 3319))   # −120: Fehlbetrag
+
+
+def test_treppe_hat_keine_schraegen():
+    # Stände sind Sprünge (Entwurf vom 2026-10-23): je Schritt ändert sich Zeit ODER Wert.
+    treppe = kern("treppenStufen", _verlauf(), HEUTE)
+    punkte = kern("treppenPunkte", treppe, "2026-10-01", "2027-07-01")
+    assert punkte[0] == ["2026-10-01", treppe["anfang"]] and punkte[-1][0] == "2027-07-01"
+    for (t1, w1), (t2, w2) in zip(punkte, punkte[1:]):
+        assert (t1 == t2) != (w1 == w2)
