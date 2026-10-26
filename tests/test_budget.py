@@ -2327,3 +2327,24 @@ def test_marke_ist_fuer_screenreader_verborgen():
     block = _funktionsblock("reiterMarkeSetzen")
     assert "version-tab-anzahl" in block and "aria-hidden" in block
     assert "aria-label" in block
+
+
+# ---------------------------------------------------------------------
+# Punkt 10: Die Spalte «Total / Jahr» faellt weg
+# ---------------------------------------------------------------------
+
+def test_keine_spalte_total_jahr_mehr():
+    text = _seite_text()
+    assert "Total / Jahr" not in text
+    assert 'data-period="total"' not in text
+    assert "data-row-total" not in text and "dataset.rowTotal" not in text
+
+
+def test_kommentarzeile_spannt_drei_spalten():
+    text = _seite_text()
+    assert "td.colSpan = 3;" in text and "td.colSpan = 4;" not in text
+
+
+def test_rowtotal_rechnet_weiter_den_unterschied():
+    # Die Anzeige ist weg, die Rechnung nicht: der Unterschied braucht den Jahreswert.
+    assert "anpassungUnterschied(" in _funktionsblock("recomputeAll")
