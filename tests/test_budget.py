@@ -2216,3 +2216,38 @@ def test_der_weg_zeichnet_den_ausschnitt_nicht_die_ganze_hoehe():
     assert "achsenBereich(" in block
     assert "for (let w = bereich.ersteLinie;" in block
     assert "bereich.dach - bereich.basis" in block, "die Skala misst den Ausschnitt"
+
+
+# --- Alte Dateien --------------------------------------------------------------
+# Beispieldateien aller fuenf Dateiformate (alle Zahlen und Texte erfunden).
+# Sie sind die Grundlage der Ladepruefung: Wer eine Datei aus einer aelteren
+# Fassung oeffnet, darf nichts verlieren. Die Dateien unter tests/fixtures/budget
+# sind darum Teil des Repos und werden nicht "aufgeraeumt".
+
+FIXTURES = ROOT / "tests" / "fixtures" / "budget"
+
+
+@pytest.mark.parametrize("v", [1, 2, 3, 4, 5])
+def test_beispieldatei_ist_gueltig(v):
+    d = json.loads((FIXTURES / f"v{v}.json").read_text(encoding="utf-8"))
+    assert d["format"] == "budgetvorlage" and d["version"] == v
+    if v >= 4:
+        assert isinstance(d["data"]["versions"], list) and len(d["data"]["versions"]) == 2
+    else:
+        assert isinstance(d["data"]["values"], dict)
+
+
+def test_format_und_unterstuetzte_versionen_bleiben():
+    """Faellt eine Version aus der Menge, kann die Seite deren Dateien nicht mehr
+    oeffnen -- ohne dass sonst ein Test es merkte."""
+    text = _seite_text()
+    assert "const FILE_FORMAT_VERSION = 5;" in text
+    assert "SUPPORTED_VERSIONS = new Set([1, 2, 3, 4, 5])" in text
+
+
+def test_v5_beispiel_deckt_die_sonderfaelle():
+    d = json.loads((FIXTURES / "v5.json").read_text(encoding="utf-8"))
+    a = d["data"]["versions"][1]["adjustments"]
+    assert "gibt_es_nicht" in a
+    assert any(e.get("ab") is None for e in a.values())
+    assert any(e.get("jaehrlich") is None and e.get("monatlich") is None and e.get("ab") for e in a.values())

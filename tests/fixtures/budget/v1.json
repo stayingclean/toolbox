@@ -1,0 +1,20 @@
+{
+  "format": "budgetvorlage",
+  "version": 1,
+  "savedAt": "2024-03-02T09:15:00.000Z",
+  "data": {
+    "values": {
+      "netto_einkommen_p1.jaehrlich": 62400,
+      "netto_einkommen_p1.monatlich": 5200,
+      "miete.jaehrlich": 19800,
+      "miete.monatlich": 1650,
+      "heiz_nebenkosten.monatlich": 180,
+      "elektrizitaet.jaehrlich": 1020,
+      "elektrizitaet.monatlich": 85,
+      "kvg.jaehrlich": 5040,
+      "kvg.monatlich": 420,
+      "bundessteuer.jaehrlich": 2300,
+      "serafe.jaehrlich": 335
+    }
+  }
+}

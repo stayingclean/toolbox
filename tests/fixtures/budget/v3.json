@@ -1,0 +1,28 @@
+{
+  "format": "budgetvorlage",
+  "version": 3,
+  "savedAt": "2025-02-20T07:05:00.000Z",
+  "data": {
+    "values": {
+      "netto_einkommen_p1.jaehrlich": 62400,
+      "netto_einkommen_p1.monatlich": 5200,
+      "miete.jaehrlich": 19800,
+      "miete.monatlich": 1650,
+      "heiz_nebenkosten.monatlich": 180,
+      "elektrizitaet.jaehrlich": 1020,
+      "elektrizitaet.monatlich": 85,
+      "kvg.jaehrlich": 5040,
+      "kvg.monatlich": 420,
+      "bundessteuer.jaehrlich": 2300,
+      "serafe.jaehrlich": 335,
+      "elektrizitaet.reduktion_jaehrlich": 240,
+      "elektrizitaet.reduktion_monatlich": 20,
+      "kvg.reduktion_jaehrlich": 600,
+      "kvg.reduktion_monatlich": 50
+    },
+    "comments": {
+      "elektrizitaet": "Anderen Stromtarif gewählt.",
+      "kvg": "Franchise von 300 auf 2500 erhöht."
+    }
+  }
+}
