@@ -2362,6 +2362,14 @@ def test_keine_alten_texte_ueber_rechts():
     assert "Rechts steht der Unterschied" not in text
     assert "rechts der Unterschied zum erfassten Wert" not in text
     assert "die vierte Spalte der Anpassungszeile" not in text
+    assert "der Unterschied in der vierten Spalte" not in text
+    # Die Anpassungszeile samt dem Kommentar über ihr: dort darf keine
+    # vierte Spalte mehr vorkommen. Seitenweit geht das nicht — andere
+    # Kommentare nennen «die frühere vierte Spalte» zu Recht.
+    kopf = text.rindex("\n\n", 0, text.index("function makeAdjustmentRow"))
+    zeile = text[kopf:text.index("function makeAdjustmentRow")] \
+        + _funktionsblock("makeAdjustmentRow")
+    assert not re.search(r"vierte[n]?\s+(//\s*)?Spalte", zeile)
 
 
 _PERIODEN_SCHLEIFE = "['jaehrlich', 'monatlich'].forEach"
