@@ -2494,8 +2494,28 @@ def test_spanne_ab_heute_und_drei_monate_nach_dem_letzten_datum():
 
 
 def test_spanne_beginnt_beim_verstrichenen_datum():
+    # Einen Monat VOR dem verstrichenen Datum: sonst begänne die Achse genau
+    # auf dem Sprung, und der erfasste Wert davor hätte keine Breite.
     a = dict(ANPASSUNGEN, handy={"jaehrlich": None, "monatlich": 0, "ab": "2026-08-01"})
-    assert kern("treppenSpanne", _verlauf(a), HEUTE)["von"] == "2026-08-01"
+    assert kern("treppenSpanne", _verlauf(a), HEUTE)["von"] == "2026-07-01"
+
+
+def test_erstes_stueck_hat_breite_auch_wenn_das_datum_ein_monatserster_ist():
+    a = dict(ANPASSUNGEN, handy={"jaehrlich": None, "monatlich": 0, "ab": "2026-08-01"})
+    verlauf = _verlauf(a)
+    spanne = kern("treppenSpanne", verlauf, HEUTE)
+    treppe = kern("treppenStufen", verlauf, HEUTE)
+    punkte = kern("treppenPunkte", treppe, spanne["von"], spanne["bis"])
+    assert punkte[0] == [spanne["von"], treppe["anfang"]]
+    assert punkte[1][0] > punkte[0][0], "das erste Stück muss in der Zeit Länge haben"
+
+
+def test_erster_tick_traegt_das_jahr():
+    # Sonst zeigte eine Spanne Feb–Aug 2027 nirgends ein Jahr.
+    ticks = kern("treppenTicks", "2027-02-01", "2027-08-01")
+    assert [t["text"] for t in ticks] == ["Mär 2027", "Apr", "Mai", "Jun", "Jul"]
+    ticks = kern("treppenTicks", "2026-10-01", "2027-03-01")
+    assert ticks[0]["text"] == "Nov 2026"
 
 
 def test_spanne_nur_vorschlaege_ist_ein_halbes_jahr():
@@ -2511,7 +2531,7 @@ def test_zeitanteil():
 
 def test_ticks_monatlich_mit_jahr_im_januar():
     ticks = kern("treppenTicks", "2026-10-01", "2027-03-01")
-    assert [t["text"] for t in ticks] == ["Nov", "Dez", "Jan 2027", "Feb"]
+    assert [t["text"] for t in ticks] == ["Nov 2026", "Dez", "Jan 2027", "Feb"]
 
 
 def test_ticks_bei_langer_spanne_nur_quartale():
@@ -2600,6 +2620,14 @@ def test_treppe_zeichnet_aus_den_eckpunkten_des_kerns():
 def test_klickziele_sind_bedienbar():
     block = _funktionsblock("zeichneTreppe")
     assert "enterPreview(" in block and "tabindex" in block and "keydown" in block
+
+
+def test_treppe_ist_eine_gruppe_und_kein_bild():
+    # Unter role="img" gälten die Klickziele für Hilfstechnik als blosse
+    # Darstellung; role="group" lässt die Knöpfe darin bestehen.
+    text = _seite_text()
+    svg = text[text.index('id="ausblickTreppe"') - 40:text.index('id="ausblickTreppe"') + 60]
+    assert 'role="group"' in svg and 'role="img"' not in svg
 
 
 def test_treppe_wird_bei_breitenaenderung_neu_gezeichnet():

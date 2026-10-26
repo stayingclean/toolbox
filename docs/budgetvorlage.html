@@ -3441,7 +3441,9 @@
         <div class="ausblick" id="ausblickBlock" hidden>
             <h3 class="grafik-titel">Ausblick</h3>
             <p class="grafik-untertitel">Was am Monatsende bleibt – vor heute grau, ab heute der Ausblick. Ein Klick zeigt das ganze Budget zu diesem Stand.</p>
-            <svg class="treppe" id="ausblickTreppe" role="img"></svg>
+            <!-- role="group", nicht "img": unter einem Bild gälten die
+                 Klickziele darin für Hilfstechnik als blosse Darstellung. -->
+            <svg class="treppe" id="ausblickTreppe" role="group"></svg>
         </div>
     </section>
 
@@ -4436,18 +4438,25 @@
         return t / 86400000;
     }
 
-    // Der sichtbare Zeitraum: vom Monatsersten des ersten Datums bis drei
-    // Monate hinter das letzte. «Heute» zählt immer mit — auch wenn alle
+    // Der sichtbare Zeitraum: vom Monatsersten von heute bis drei Monate
+    // hinter das letzte Datum. «Heute» zählt immer mit — auch wenn alle
     // Stände schon verstrichen sind, soll man sehen, wo man jetzt steht.
     // Ein verstrichenes Datum zieht den Anfang nach links, sonst fehlte die
-    // Stufe, die schon gilt. Die drei Monate Auslauf lassen die letzte Stufe
-    // als Fläche stehen, statt am Rand abzubrechen. Mindestens ein halbes
-    // Jahr: mit nur offenen Vorschlägen (ohne Datum) bliebe sonst ein
-    // Zeitraum von wenigen Wochen, in dem nichts passiert.
+    // Stufe, die schon gilt — und zwar bis einen Monat VOR sein Datum: fiele
+    // es auf einen Monatsersten und begänne die Achse dort, stünde der Sprung
+    // am linken Rand, und der erfasste Wert davor hätte keine Breite. Die drei
+    // Monate Auslauf lassen die letzte Stufe als Fläche stehen, statt am Rand
+    // abzubrechen. Mindestens ein halbes Jahr: mit nur offenen Vorschlägen
+    // (ohne Datum) bliebe sonst ein Zeitraum von wenigen Wochen, in dem
+    // nichts passiert.
     function treppenSpanne(verlauf, heuteIso) {
-        const daten = (verlauf || []).filter((s) => istIsoDatum(s.ab)).map((s) => s.ab);
+        const daten = (verlauf || []).filter((s) => istIsoDatum(s.ab)).map((s) => s.ab).sort();
         const alle = daten.concat([heuteIso]).sort();
-        const von = monateDazu(alle[0], 0);
+        // Ein Datum, das heute ist, zählt wie ein verstrichenes (stichtagListe):
+        // auch sein Sprung braucht links davon Platz.
+        const von = daten.length && daten[0] <= heuteIso
+            ? monateDazu(daten[0], -1)
+            : monateDazu(heuteIso, 0);
         let bis = monateDazu(alle[alle.length - 1], 3);
         const mindestens = monateDazu(von, 6);
         if (bis < mindestens) bis = mindestens;
@@ -4472,7 +4481,9 @@
     // Quartale, darüber nur der Januar — sonst stünden die Namen
     // aufeinander. Im Januar steht das Jahr dabei, damit man sich in einer
     // langen Spanne zurechtfindet, ohne jede Marke mit einer Jahreszahl zu
-    // belasten.
+    // belasten. Die erste Marke trägt es ebenfalls: eine Spanne ohne
+    // Jahreswechsel (Feb bis Aug) zeigte sonst nirgends, welches Jahr gemeint
+    // ist, und vor dem ersten Januar stünde man im Ungewissen.
     function treppenTicks(von, bis) {
         const namen = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
         const monate = (parseInt(bis.slice(0, 4), 10) * 12 + parseInt(bis.slice(5, 7), 10))
@@ -4484,7 +4495,8 @@
             const m = parseInt(iso.slice(5, 7), 10);
             if (monate > 48 && m !== 1) continue;
             if (monate > 18 && monate <= 48 && m % 3 !== 1) continue;
-            ticks.push({ iso: iso, text: m === 1 ? 'Jan ' + iso.slice(0, 4) : namen[m - 1] });
+            const mitJahr = m === 1 || ticks.length === 0;
+            ticks.push({ iso: iso, text: namen[m - 1] + (mitJahr ? ' ' + iso.slice(0, 4) : '') });
         }
         return ticks;
     }
@@ -5808,13 +5820,14 @@
         }
 
         // ---- Zeitachse ----
-        // Die Januare zuerst: an ihnen hängt die Jahreszahl, und der
-        // Jahreswechsel muss auch dann erkennbar bleiben, wenn auf einem
-        // schmalen Schirm nur jede zweite oder dritte Marke Platz hat.
+        // Die Marken mit Jahreszahl zuerst (die erste und die Januare): das
+        // Jahr und der Jahreswechsel müssen auch dann erkennbar bleiben, wenn
+        // auf einem schmalen Schirm nur jede zweite oder dritte Marke Platz hat.
         const ticks = treppenTicks(spanne.von, spanne.bis);
+        const mitJahr = (t) => /\d{4}/.test(t.text);
         const gesetzt = [];
-        ticks.filter((t) => t.text.indexOf('Jan') === 0)
-            .concat(ticks.filter((t) => t.text.indexOf('Jan') !== 0))
+        ticks.filter(mitJahr)
+            .concat(ticks.filter((t) => !mitJahr(t)))
             .forEach((t) => {
                 const tx = x(t.iso);
                 const halb = breite(t.text, 10) / 2;
