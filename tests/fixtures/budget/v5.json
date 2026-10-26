@@ -1,0 +1,85 @@
+{
+  "format": "budgetvorlage",
+  "version": 5,
+  "savedAt": "2026-10-01T12:00:00.000Z",
+  "data": {
+    "versions": [
+      {
+        "id": "v-a1b2c3",
+        "name": "Ausgangslage",
+        "basedOn": null,
+        "createdAt": "2025-06-01T10:00:00.000Z",
+        "values": {
+          "netto_einkommen_p1.jaehrlich": 62400,
+          "netto_einkommen_p1.monatlich": 5200,
+          "miete.jaehrlich": 19800,
+          "miete.monatlich": 1650,
+          "heiz_nebenkosten.monatlich": 180,
+          "elektrizitaet.jaehrlich": 1020,
+          "elektrizitaet.monatlich": 85,
+          "kvg.jaehrlich": 5040,
+          "kvg.monatlich": 420,
+          "bundessteuer.jaehrlich": 2300,
+          "serafe.jaehrlich": 335
+        },
+        "comments": {
+          "miete": "Mietzins laut Vertrag."
+        },
+        "adjustments": {},
+        "privateNote": ""
+      },
+      {
+        "id": "v-d4e5f6",
+        "name": "Sparplan",
+        "basedOn": "v-a1b2c3",
+        "createdAt": "2025-06-15T16:30:00.000Z",
+        "values": {
+          "netto_einkommen_p1.jaehrlich": 62400,
+          "netto_einkommen_p1.monatlich": 5200,
+          "miete.jaehrlich": 19800,
+          "miete.monatlich": 1650,
+          "heiz_nebenkosten.monatlich": 180,
+          "elektrizitaet.jaehrlich": 780,
+          "elektrizitaet.monatlich": 65,
+          "kvg.jaehrlich": 4440,
+          "kvg.monatlich": 370,
+          "bundessteuer.jaehrlich": 2300,
+          "serafe.jaehrlich": 335
+        },
+        "comments": {
+          "kvg": "Franchise erhöht.",
+          "elektrizitaet": "Neuer Tarif."
+        },
+        "adjustments": {
+          "heiz_nebenkosten": {
+            "jaehrlich": 2400,
+            "monatlich": 200,
+            "ab": "2027-04-01"
+          },
+          "elektrizitaet": {
+            "jaehrlich": null,
+            "monatlich": 70,
+            "ab": "2026-01-01"
+          },
+          "netto_einkommen_p1": {
+            "jaehrlich": 64000,
+            "monatlich": null,
+            "ab": null
+          },
+          "kvg": {
+            "jaehrlich": null,
+            "monatlich": null,
+            "ab": "2027-01-01"
+          },
+          "gibt_es_nicht": {
+            "jaehrlich": 1200,
+            "monatlich": 100,
+            "ab": "2027-01-01"
+          }
+        },
+        "privateNote": "Beispiel: Nebenkosten-Nachzahlung im Frühling vormerken."
+      }
+    ],
+    "activeVersionId": "v-d4e5f6"
+  }
+}

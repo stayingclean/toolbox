@@ -180,6 +180,8 @@ Web zuerst»; `CLAUDE.md` Punkt 3 ist nachgezogen.
 
 ### 10. Die vierte Spalte «Total / Jahr» wiederholt in jeder Position die zweite
 
+✔ erledigt am 2026-10-26, siehe `specs/2026-10-26-budget-ausblick-reiter-spalte-design.md`, Teil 3 (Spalte gestrichen, «Monatlich» vor «Jährlich»)
+
 Aus einer Rückfrage des Benutzers am 2026-10-22 entstanden: «Warum gibt es
 eigentlich jetzt schon drei Spalten? Die Zahl jährlich steht ja immer in der
 ersten und letzten Spalte.» Das stimmt — «Jährlich» und «Monatlich» füllen sich

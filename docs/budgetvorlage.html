@@ -547,8 +547,8 @@
         }
 
         /* Die Anpassung als eigene Zeile unter dem Kommentar, spaltenbündig
-           zur Position: Datum links, die Beträge unter den erfassten, der
-           Unterschied rechts. */
+           zur Position: Datum links und dahinter der Unterschied pro Jahr,
+           die Beträge unter den erfassten. */
         /* Der Selektor nennt die Tabelle mit: `.budget-table tbody td` weiter
            oben ist spezifischer als ein blosses `.adj-row > td` und hat dessen
            Polsterung und die mittige Ausrichtung sonst überstimmt. Die
@@ -587,13 +587,9 @@
                unten keine: die trägt der Inhalt, damit der Balken durchläuft. */
             padding: 0 0.5rem;
         }
-        /* Der Unterschied ist blosser Text, die Beträge daneben stehen in
-           Feldern mit Rahmen und Polsterung. Oben ausgerichtet sässe er darum
-           vier Pixel zu hoch; diese vier gibt die Polsterung zurück, damit die
-           Zahlen auf einer Linie liegen. */
-        .budget-table tbody tr.adj-row > td.total-cell {
-            padding-top: 0.6rem;
-        }
+        /* Marke, Datum und Unterschied stehen in einer Flex-Zeile und sind
+           dort mittig zueinander ausgerichtet — der Unterschied braucht darum
+           keine eigene Polsterung, um auf der Höhe des Datumsfelds zu sitzen. */
         .adj-label-cell .adj-label-content {
             display: flex;
             align-items: center;
@@ -621,8 +617,11 @@
             color: var(--color-text-muted);
         }
         /* Der Unterschied zum erfassten Wert. Weniger ist gut, mehr nicht –
-           dieselbe Lesart wie in der Differenz-Zeile der Zusammenfassung. */
+           dieselbe Lesart wie in der Differenz-Zeile der Zusammenfassung.
+           Wird es neben dem Datum eng, rutscht «(… / Jahr)» als Ganzes auf
+           die nächste Zeile, statt zwischen Zahl und Einheit zu brechen. */
         .adj-delta {
+            white-space: nowrap;
             font-variant-numeric: tabular-nums;
             font-size: 0.92rem;
             font-weight: 600;
@@ -772,13 +771,11 @@
         /* ============================================================
            Inputs
            ============================================================ */
+        /* Zwei Betragsspalten zu je 24 %: die 14 % der früheren vierten
+           Spalte gehen an die Beträge, die Beschriftung behält ihre 50 %
+           (thead th:first-child); den kleinen Rest verteilt der Browser. */
         .input-cell {
-            width: 18%;
-            text-align: right;
-        }
-
-        .total-cell {
-            width: 14%;
+            width: 24%;
             text-align: right;
         }
 
@@ -816,19 +813,6 @@
             font-weight: 400;
         }
 
-        .total-display {
-            display: inline-block;
-            width: 100%;
-            padding: 0.4rem 0.625rem;
-            font-variant-numeric: tabular-nums;
-            font-weight: 600;
-            color: var(--color-primary-dark);
-            text-align: right;
-            background: var(--color-primary-tint);
-            border-radius: var(--radius-sm);
-            border: 1.5px solid transparent;
-        }
-
         /* Subtotal row */
         .subtotal-row td {
             background: var(--color-primary-faint) !important;
@@ -841,11 +825,9 @@
             font-weight: 600;
         }
 
-        .subtotal-row .total-display {
-            background: var(--color-primary);
-            color: white;
-        }
-
+        /* Beide Zahlen der Zwischensumme gleich: gerechnet, fett, ohne
+           Marke. Die farbige Pille trug nur das Total der früheren vierten
+           Spalte. */
         .subtotal-row .computed {
             display: inline-block;
             width: 100%;
@@ -985,6 +967,71 @@
             margin: 0 0 0.6rem;
             font-size: 0.85rem;
             color: var(--color-text-muted);
+        }
+
+        /* --- Der Ausblick: die Treppe unter den Stand-Zeilen ---
+           Handgeschriebenes SVG wie «Der Weg». Die Breite misst
+           zeichneTreppe, die Höhe ist fest (TREPPE_HOEHE); mit width:100% und
+           height:auto folgt die Höhe der viewBox, und der Druck skaliert das
+           Bild als Ganzes, statt es abzuschneiden. Weisser Grund, weil der
+           Abschnitt einen getönten Verlauf trägt, auf dem die hellen Ränder
+           hinter der Schrift als Flecken stünden. */
+        .ausblick { margin-top: 1.4rem; }
+        .ausblick[hidden] { display: none; }
+        .treppe {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: var(--color-bg);
+            border-radius: var(--radius-md);
+        }
+        .treppe text { font-family: var(--font-body); font-size: 11px; fill: var(--color-text-muted); }
+        .treppe .raster { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 2 4; }
+        /* Die Nulllinie ist die Grenze zwischen Überschuss und Fehlbetrag,
+           darum kräftiger als das übrige Raster. */
+        .treppe .nulllinie { stroke: var(--color-text-muted); stroke-width: 1.5; }
+        .treppe text.achsenwert { font-size: 10px; }
+        .treppe .tick { stroke: var(--color-border-strong); stroke-width: 1; }
+        .treppe text.zeit { font-size: 10px; }
+        .treppe .streifen { fill: var(--color-bg-alt); }
+        .treppe .heute-linie { stroke: var(--color-text-muted); stroke-width: 1; stroke-dasharray: 4 3; }
+        .treppe text.heute-text { font-size: 10px; font-weight: 600; }
+        .treppe .linie { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+        .treppe .linie.vorbei { stroke: var(--color-text-light); }
+        .treppe .linie.kommend { stroke: var(--color-primary); }
+        .treppe .offen-linie { stroke: var(--color-text-light); stroke-width: 2.5; stroke-dasharray: 6 4; }
+        .treppe .stufe { fill: var(--color-bg); stroke: var(--color-text-muted); stroke-width: 2.5; }
+        .treppe .stufe.ist-gut { stroke: var(--color-success); }
+        .treppe .stufe.ist-schlecht { stroke: var(--color-danger); }
+        /* Vor heute gedämpft wie die Linie dort — auch der Punkt. Was die
+           Stufe ausgemacht hat, steht weiterhin daneben. */
+        .treppe .stufe.ist-vorbei { stroke: var(--color-text-light); }
+        .treppe tspan.delta { font-weight: 700; fill: var(--color-text); }
+        .treppe .ist-gut tspan.delta { fill: var(--color-success); }
+        .treppe .ist-schlecht tspan.delta { fill: var(--color-danger); }
+        .treppe .ist-vorbei tspan.delta, .treppe .ist-vorbei tspan.name { fill: var(--color-text-light); }
+        .treppe text.wert { font-size: 12px; font-weight: 700; fill: var(--color-text); }
+        /* Heller Rand hinter der Schrift wie bei «Der Weg»: die Zahlen liegen
+           auf Linien und Raster. */
+        .treppe text.wert, .treppe text.marke, .treppe text.offen-text {
+            paint-order: stroke;
+            stroke: var(--color-bg);
+            stroke-width: 3px;
+            stroke-linejoin: round;
+        }
+        /* Die Klickziele: eine unsichtbare Fläche um Punkt und Beschriftung,
+           die erst beim Zeigen, beim Fokus und in der Vorschau Kontur
+           bekommt. Die Vorschau-Markierung in denselben Farben wie bei
+           .balken-zeile.is-preview, damit beide Diagramme gleich sprechen. */
+        .treppe-ziel { cursor: pointer; outline: none; }
+        .treppe-ziel .treffer { fill: transparent; stroke: none; }
+        .treppe-ziel:hover .treffer { stroke: var(--color-primary-light); stroke-width: 1; }
+        .treppe-ziel:focus-visible .treffer { stroke: var(--color-primary); stroke-width: 2; }
+        .treppe-ziel.is-preview .treffer {
+            fill: var(--color-warning-bg);
+            fill-opacity: 0.6;
+            stroke: var(--color-warning);
+            stroke-width: 2;
         }
         .balken-satz {
             display: flex;
@@ -1959,10 +2006,12 @@
             }
             .budget-table thead th:first-child,
             .budget-table tbody td.label-cell {
-                width: 40%;
+                width: 46%;
             }
-            .input-cell, .total-cell {
-                width: 20%;
+            /* Ohne vierte Spalte teilen sich die Beträge den Rest zu
+               gleichen Teilen (46 + 2 × 27). */
+            .input-cell {
+                width: 27%;
             }
             .amount-input {
                 font-size: 0.85rem;
@@ -2039,6 +2088,23 @@
             .balken.ist-gut     { background: #0f5132 !important; border-color: #0f5132; }
             .balken.ist-schlecht { background: #842029 !important; border-color: #842029; }
             .balken-null { background: #999; }
+            /* Der Ausblick: ohne Häkchen «Ausblick drucken» gar nicht auf dem
+               Blatt, mit Häkchen im selben Block wie die Stände darüber und
+               in Farbe — Linie, Punkte und Streifen tragen die Aussage. Die
+               Klickziele sind im Druck reine Grafik: kein Fokusring, keine
+               Vorschau-Tönung. */
+            body:not(.print-ausblick) #ausblickBlock {
+                display: none !important;
+            }
+            #ausblickBlock {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .treppe-ziel .treffer { fill: transparent !important; stroke: none !important; }
+            /* Auf Papier lässt sich nichts anklicken. */
+            .treppe-klickhinweis { display: none; }
             /* Gedruckt wird in der Vorschau eine gerechnete Tabelle. Die
                Stand-Leiste steckt in .sticky-head und ist hier weg – die
                Kennzeichnung steht im Blattkopf an ihrer Stelle. Leer (Stand
@@ -2126,12 +2192,6 @@
                 border: 1px solid #999 !important;
                 background: white !important;
                 box-shadow: none !important;
-            }
-            .total-display, .subtotal-row .total-display {
-                background: #f0f0f0 !important;
-                color: black !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
             }
             .versions-overview-section {
                 page-break-inside: avoid;
@@ -2285,6 +2345,28 @@
         .version-tab:focus-visible {
             outline: none;
             box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.25);
+        }
+        /* Zahl der Anpassungen der Version. Weisse Schrift auf der Hauptfarbe
+           im inaktiven Reiter; im aktiven Reiter (selbst Hauptfarbe) kehrt sich
+           das um, sonst verschwände die Marke im Grund. */
+        .version-tab-anzahl {
+            display: inline-block;
+            min-width: 1.15rem;
+            margin-left: 0.4rem;
+            padding: 0 0.3rem;
+            border-radius: 999px;
+            background: var(--color-primary);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            line-height: 1.15rem;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            vertical-align: 0.05em;
+        }
+        .version-tab[aria-selected="true"] .version-tab-anzahl {
+            background: white;
+            color: var(--color-primary-dark);
         }
         .version-tab-close {
             position: absolute;
@@ -2984,6 +3066,10 @@
                 <input type="checkbox" id="chkPrintPrivateNote">
                 <span>Private Notiz drucken</span>
             </label>
+            <label class="print-toggle" title="Steuert nur den Ausdruck (Strg+P): den Ausblick unter der Zusammenfassung mitdrucken. Vorgewählt ist das nie.">
+                <input type="checkbox" id="chkPrintAusblick">
+                <span>Ausblick drucken</span>
+            </label>
             <button type="button" class="btn btn-secondary" id="btnOpen" title="Bestehende Budget-Datei öffnen">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -3074,7 +3160,7 @@
                 <h2>So füllen Sie die Vorlage aus</h2>
 
                 <h3>Beträge</h3>
-                <p>Tragen Sie jeden Betrag entweder in die <strong>Jahres-</strong> oder in die <strong>Monatsspalte</strong> ein – die andere Spalte rechnet sich daraus (Jahresbetrag ÷ 12 bzw. Monatsbetrag × 12). Subtotale und Gesamtsummen folgen automatisch. Beträge in <strong>CHF</strong>, Dezimalstellen mit Komma oder Punkt.</p>
+                <p>Tragen Sie jeden Betrag entweder in die <strong>Monats-</strong> oder in die <strong>Jahresspalte</strong> ein – die andere Spalte rechnet sich daraus (Monatsbetrag × 12 bzw. Jahresbetrag ÷ 12). Subtotale und Gesamtsummen folgen automatisch. Beträge in <strong>CHF</strong>, Dezimalstellen mit Komma oder Punkt.</p>
 
                 <h3>Anpassungen – was dort hineingehört</h3>
                 <p>Eine Anpassung ist der Betrag, den eine Position <strong>künftig</strong> haben soll, nicht der, den sie heute hat. Die erfassten Zahlen bleiben darum stehen; daneben steht, was möglich wäre. So sieht man im Gespräch, was ein Vorschlag bringt, ohne dass die Aufnahme des heutigen Haushalts überschrieben wird.</p>
@@ -3083,7 +3169,7 @@
                 <ol class="hilfe-schritte">
                     <li>Zeile mit dem <strong>Pfeil</strong> am Anfang aufklappen. Darunter erscheint das Feld für den Kommentar.</li>
                     <li>Dort auf <strong>„+ Anpassung erfassen"</strong> klicken.</li>
-                    <li>Die Anpassung steht nun als eigene Zeile direkt unter dem Kommentar, spaltengleich zu den Beträgen: links das Datum, daneben der neue Jahres- oder Monatsbetrag, rechts der Unterschied zum erfassten Wert.</li>
+                    <li>Die Anpassung steht nun als eigene Zeile direkt unter dem Kommentar, spaltengleich zu den Beträgen: links das Datum und dahinter der Unterschied pro Jahr, daneben der neue Monats- oder Jahresbetrag.</li>
                     <li>Ohne Betrag gibt es keine Anpassung. Das Datum lässt sich erst setzen, wenn ein neuer Betrag dasteht, und eine Zeile ohne Betrag verschwindet wieder, sobald Sie sie verlassen.</li>
                 </ol>
 
@@ -3145,9 +3231,8 @@
             <thead>
                 <tr>
                     <th scope="col">Position</th>
-                    <th scope="col">Jährlich</th>
                     <th scope="col">Monatlich</th>
-                    <th scope="col">Total / Jahr</th>
+                    <th scope="col">Jährlich</th>
                 </tr>
             </thead>
             <tbody data-subtotal-group="einnahmen">
@@ -3168,9 +3253,8 @@
                 <thead>
                     <tr>
                         <th>Position</th>
-                        <th>Jährlich</th>
                         <th>Monatlich</th>
-                        <th>Total / Jahr</th>
+                        <th>Jährlich</th>
                     </tr>
                 </thead>
                 <tbody data-subtotal-group="wohnen_miete"></tbody>
@@ -3183,9 +3267,8 @@
                 <thead>
                     <tr>
                         <th>Position</th>
-                        <th>Jährlich</th>
                         <th>Monatlich</th>
-                        <th>Total / Jahr</th>
+                        <th>Jährlich</th>
                     </tr>
                 </thead>
                 <tbody data-subtotal-group="wohnen_eigentum"></tbody>
@@ -3198,9 +3281,8 @@
                 <thead>
                     <tr>
                         <th>Position</th>
-                        <th>Jährlich</th>
                         <th>Monatlich</th>
-                        <th>Total / Jahr</th>
+                        <th>Jährlich</th>
                     </tr>
                 </thead>
                 <tbody data-subtotal-group="energie"></tbody>
@@ -3213,9 +3295,8 @@
                 <thead>
                     <tr>
                         <th>Position</th>
-                        <th>Jährlich</th>
                         <th>Monatlich</th>
-                        <th>Total / Jahr</th>
+                        <th>Jährlich</th>
                     </tr>
                 </thead>
                 <tbody data-subtotal-group="steuern"></tbody>
@@ -3228,9 +3309,8 @@
                 <thead>
                     <tr>
                         <th>Position</th>
-                        <th>Jährlich</th>
                         <th>Monatlich</th>
-                        <th>Total / Jahr</th>
+                        <th>Jährlich</th>
                     </tr>
                 </thead>
                 <tbody data-subtotal-group="versicherung"></tbody>
@@ -3243,9 +3323,8 @@
                 <thead>
                     <tr>
                         <th>Position</th>
-                        <th>Jährlich</th>
                         <th>Monatlich</th>
-                        <th>Total / Jahr</th>
+                        <th>Jährlich</th>
                     </tr>
                 </thead>
                 <tbody data-subtotal-group="oev"></tbody>
@@ -3258,9 +3337,8 @@
                 <thead>
                     <tr>
                         <th>Position</th>
-                        <th>Jährlich</th>
                         <th>Monatlich</th>
-                        <th>Total / Jahr</th>
+                        <th>Jährlich</th>
                     </tr>
                 </thead>
                 <tbody data-subtotal-group="auto"></tbody>
@@ -3273,9 +3351,8 @@
                 <thead>
                     <tr>
                         <th>Position</th>
-                        <th>Jährlich</th>
                         <th>Monatlich</th>
-                        <th>Total / Jahr</th>
+                        <th>Jährlich</th>
                     </tr>
                 </thead>
                 <tbody data-subtotal-group="verschiedenes"></tbody>
@@ -3286,9 +3363,8 @@
             <tbody>
                 <tr class="subtotal-row">
                     <td class="label-cell">Total Fixkosten</td>
-                    <td class="input-cell"><span class="computed" data-grand-total="fixkosten" data-period="jaehrlich">0.00</span></td>
                     <td class="input-cell"><span class="computed" data-grand-total="fixkosten" data-period="monatlich">0.00</span></td>
-                    <td class="total-cell"><span class="total-display" data-grand-total="fixkosten" data-period="total">0.00</span></td>
+                    <td class="input-cell"><span class="computed" data-grand-total="fixkosten" data-period="jaehrlich">0.00</span></td>
                 </tr>
             </tbody>
         </table>
@@ -3303,9 +3379,8 @@
             <thead>
                 <tr>
                     <th>Position</th>
-                    <th>Jährlich</th>
                     <th>Monatlich</th>
-                    <th>Total / Jahr</th>
+                    <th>Jährlich</th>
                 </tr>
             </thead>
             <tbody data-subtotal-group="haushalt"></tbody>
@@ -3322,9 +3397,8 @@
             <thead>
                 <tr>
                     <th>Position</th>
-                    <th>Jährlich</th>
                     <th>Monatlich</th>
-                    <th>Total / Jahr</th>
+                    <th>Jährlich</th>
                 </tr>
             </thead>
             <tbody data-subtotal-group="persoenlich"></tbody>
@@ -3340,9 +3414,8 @@
             <thead>
                 <tr>
                     <th>Position</th>
-                    <th>Jährlich</th>
                     <th>Monatlich</th>
-                    <th>Total / Jahr</th>
+                    <th>Jährlich</th>
                 </tr>
             </thead>
             <tbody data-subtotal-group="rueckstellungen"></tbody>
@@ -3358,30 +3431,41 @@
             <thead>
                 <tr>
                     <th></th>
-                    <th style="text-align: right; font-weight: 600; color: var(--color-primary-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;">Jährlich</th>
                     <th style="text-align: right; font-weight: 600; color: var(--color-primary-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;">Monatlich</th>
+                    <th style="text-align: right; font-weight: 600; color: var(--color-primary-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;">Jährlich</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td class="label-cell">Total Einnahmen</td>
-                    <td><span class="computed" data-summary="einnahmen" data-period="jaehrlich">0.00</span></td>
                     <td><span class="computed" data-summary="einnahmen" data-period="monatlich">0.00</span></td>
+                    <td><span class="computed" data-summary="einnahmen" data-period="jaehrlich">0.00</span></td>
                 </tr>
                 <tr>
                     <td class="label-cell">Total Ausgaben</td>
-                    <td><span class="computed" data-summary="ausgaben" data-period="jaehrlich">0.00</span></td>
                     <td><span class="computed" data-summary="ausgaben" data-period="monatlich">0.00</span></td>
+                    <td><span class="computed" data-summary="ausgaben" data-period="jaehrlich">0.00</span></td>
                 </tr>
                 <tr class="difference-row" id="differenceRow">
                     <td class="label-cell">Differenz: Einnahmen − Ausgaben</td>
-                    <td><span class="computed" data-summary="differenz" data-period="jaehrlich">0.00</span></td>
                     <td><span class="computed" data-summary="differenz" data-period="monatlich">0.00</span></td>
+                    <td><span class="computed" data-summary="differenz" data-period="jaehrlich">0.00</span></td>
                 </tr>
             </tbody>
             <!-- Je Stichtag eine Zeile (recomputeAll). Leer, solange es keine Anpassung gibt. -->
             <tbody id="summaryStands"></tbody>
         </table>
+        <!-- Der Ausblick: dieselben Stände wie die Zeilen darüber, aber auf
+             der Zeitachse (renderAusblick). Im selben Abschnitt und nicht als
+             eigener, weil im Druck jeder .section auf einem neuen Blatt
+             beginnt — Zusammenfassung und Treppe sollen ein Block bleiben. -->
+        <div class="ausblick" id="ausblickBlock" hidden>
+            <h3 class="grafik-titel">Ausblick</h3>
+            <p class="grafik-untertitel">Was am Monatsende bleibt – vor heute grau, ab heute der Ausblick.<span class="treppe-klickhinweis"> Ein Klick zeigt das ganze Budget zu diesem Stand.</span></p>
+            <!-- role="group", nicht "img": unter einem Bild gälten die
+                 Klickziele darin für Hilfstechnik als blosse Darstellung. -->
+            <svg class="treppe" id="ausblickTreppe" role="group"></svg>
+        </div>
     </section>
 
     <!-- ============================================================
@@ -3838,9 +3922,9 @@
         return null;
     }
 
-    // Was die Anpassung gegenüber dem erfassten Jahreswert ausmacht — die
-    // vierte Spalte der Anpassungszeile. Negativ heisst «kostet weniger».
-    // null: keine Anpassung, dann steht in der Spalte nichts.
+    // Was die Anpassung gegenüber dem erfassten Jahreswert ausmacht — steht
+    // hinter dem Datum der Anpassungszeile. Negativ heisst «kostet weniger».
+    // null: keine Anpassung, dann steht dort nichts.
     function anpassungUnterschied(a, erfasstJaehrlich) {
         const ziel = anpassungBetrag(a);
         if (ziel === null) return null;
@@ -4044,6 +4128,47 @@
         daten.forEach((d) => liste.push({ key: d, ab: d, faellig: d <= heuteIso }));
         if (hatOffene) liste.push({ key: 'offen', ab: null, faellig: false });
         return liste;
+    }
+
+    // Was eine Version an Anpassungen trägt, in vier Zahlen für den Reiter.
+    // `adjustments` ist schon auf bekannte Zeilen gefiltert. Gezählt wird mit
+    // derselben Regel wie beim Knopf «Anpassungen» (anpassungHatBetrag), damit
+    // die Zahl am Reiter nie etwas anderes sagt als das, was der Dialog zeigt.
+    // Ein Datum, das heute ist, gilt als eingetreten — wie in stichtagListe.
+    function anpassungsUebersicht(adjustments, heuteIso) {
+        const u = { anzahl: 0, naechste: null, verstrichen: 0, ohneDatum: 0 };
+        Object.keys(adjustments || {}).forEach((id) => {
+            const a = adjustments[id];
+            if (!anpassungHatBetrag(a)) return;
+            u.anzahl += 1;
+            if (!istIsoDatum(a.ab)) {
+                u.ohneDatum += 1;
+            } else if (a.ab <= heuteIso) {
+                u.verstrichen += 1;
+            } else if (u.naechste === null || a.ab < u.naechste) {
+                u.naechste = a.ab;
+            }
+        });
+        return u;
+    }
+
+    // Der Satz zur Zahl am Reiter, für Tooltip und Screenreader. Leer, wenn es
+    // nichts zu sagen gibt: dann steht auch keine Zahl am Reiter. «Nur
+    // Vorschläge» heisst «ohne Datum» ohne Zahl, weil «1 ohne Datum» bei
+    // einer einzigen Anpassung dasselbe zweimal sagte.
+    function reiterHinweis(uebersicht) {
+        const n = uebersicht.anzahl;
+        if (!n) return '';
+        let text = n + (n === 1 ? ' Anpassung' : ' Anpassungen');
+        if (uebersicht.naechste) {
+            text += ', nächste ab ' + datumAnzeige(uebersicht.naechste);
+        } else if (uebersicht.verstrichen > 0) {
+            text += ', alle Daten verstrichen';
+        }
+        if (uebersicht.ohneDatum > 0) {
+            text += uebersicht.ohneDatum === n ? ', ohne Datum' : ', ' + uebersicht.ohneDatum + ' ohne Datum';
+        }
+        return text;
     }
 
     // Welchen Stand die Vorschau beim Öffnen zeigt: den ersten nach «heute»,
@@ -4302,6 +4427,172 @@
         // 100 und damit neun Linien.
         const faktor = [1, 2, 2.5, 5, 10].find((k) => rest <= k) || 10;
         return faktor * groesse;
+    }
+
+    // ----------------------------------------------------------------
+    // Die Treppe: der Monatsüberschuss über die Zeit
+    // ----------------------------------------------------------------
+    // Alles hier ist Geometrie ohne DOM: wohin auf der Zeitachse, auf welche
+    // Höhe. Gezeichnet wird anderswo. Daten werden nie als `new Date('JJJJ-MM-TT')`
+    // gelesen — das wäre UTC, `getMonth()` aber lokal, und in Zeitzonen westlich
+    // von Greenwich rutschte jeder Monatserste auf den Vormonat. Darum nur
+    // `Date.UTC` oder das Zerlegen der Zeichenkette.
+
+    // Erster Tag des Monats, `n` Monate nach dem Monat von `iso`. Mit n = 0 der
+    // Monatserste selbst. Gerechnet wird in ganzen Monaten (Jahr mal zwölf plus
+    // Monat), nicht über Tage: ein 31. Januar plus ein Monat wäre sonst der
+    // 3. März.
+    function monateDazu(iso, n) {
+        const j = parseInt(iso.slice(0, 4), 10);
+        const m = parseInt(iso.slice(5, 7), 10);
+        const gesamt = j * 12 + (m - 1) + n;
+        const jahr = Math.floor(gesamt / 12);
+        const monat = (gesamt % 12) + 1;
+        return String(jahr).padStart(4, '0') + '-' + String(monat).padStart(2, '0') + '-01';
+    }
+
+    // Die Tage seit 1970 für ein ISO-Datum, über UTC: Sommerzeit macht aus
+    // einem Tag sonst 23 oder 25 Stunden und verschöbe die Anteile.
+    function tageSeitEpoche(iso) {
+        const t = Date.UTC(parseInt(iso.slice(0, 4), 10), parseInt(iso.slice(5, 7), 10) - 1,
+            parseInt(iso.slice(8, 10), 10));
+        return t / 86400000;
+    }
+
+    // Der sichtbare Zeitraum: vom Monatsersten von heute bis drei Monate
+    // hinter das letzte Datum. «Heute» zählt immer mit — auch wenn alle
+    // Stände schon verstrichen sind, soll man sehen, wo man jetzt steht.
+    // Ein verstrichenes Datum zieht den Anfang nach links, sonst fehlte die
+    // Stufe, die schon gilt — und zwar bis einen Monat VOR sein Datum: fiele
+    // es auf einen Monatsersten und begänne die Achse dort, stünde der Sprung
+    // am linken Rand, und der erfasste Wert davor hätte keine Breite. Die drei
+    // Monate Auslauf lassen die letzte Stufe als Fläche stehen, statt am Rand
+    // abzubrechen. Mindestens ein halbes Jahr: mit nur offenen Vorschlägen
+    // (ohne Datum) bliebe sonst ein Zeitraum von wenigen Wochen, in dem
+    // nichts passiert.
+    function treppenSpanne(verlauf, heuteIso) {
+        const daten = (verlauf || []).filter((s) => istIsoDatum(s.ab)).map((s) => s.ab).sort();
+        const alle = daten.concat([heuteIso]).sort();
+        // Ein Datum, das heute ist, zählt wie ein verstrichenes (stichtagListe):
+        // auch sein Sprung braucht links davon Platz.
+        const von = daten.length && daten[0] <= heuteIso
+            ? monateDazu(daten[0], -1)
+            : monateDazu(heuteIso, 0);
+        let bis = monateDazu(alle[alle.length - 1], 3);
+        const mindestens = monateDazu(von, 6);
+        if (bis < mindestens) bis = mindestens;
+        return { von: von, bis: bis };
+    }
+
+    // Wo ein Datum auf der Zeitachse liegt, 0 (links) bis 1 (rechts), nach
+    // Tagen. Nach Tagen und nicht nach Monaten, weil Monate verschieden lang
+    // sind und der 1. Februar sonst genauso weit vom 1. Januar läge wie der
+    // 1. März vom 1. Februar. Ausserhalb der Spanne wird begrenzt: ein Datum
+    // darf nie ausserhalb der Zeichenfläche landen.
+    function zeitAnteil(iso, von, bis) {
+        const gesamt = tageSeitEpoche(bis) - tageSeitEpoche(von);
+        if (gesamt <= 0) return 0;
+        const a = (tageSeitEpoche(iso) - tageSeitEpoche(von)) / gesamt;
+        return Math.min(1, Math.max(0, a));
+    }
+
+    // Die Beschriftungen der Zeitachse: Monatserste strikt zwischen `von` und
+    // `bis` (die Ränder tragen keine Marke, dort endet die Fläche). Je länger
+    // der Zeitraum, desto seltener: bis 18 Monate jeder Monat, bis 48 nur die
+    // Quartale, darüber nur der Januar — sonst stünden die Namen
+    // aufeinander. Im Januar steht das Jahr dabei, damit man sich in einer
+    // langen Spanne zurechtfindet, ohne jede Marke mit einer Jahreszahl zu
+    // belasten. Die erste Marke trägt es ebenfalls: eine Spanne ohne
+    // Jahreswechsel (Feb bis Aug) zeigte sonst nirgends, welches Jahr gemeint
+    // ist, und vor dem ersten Januar stünde man im Ungewissen.
+    function treppenTicks(von, bis) {
+        const namen = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+        const monate = (parseInt(bis.slice(0, 4), 10) * 12 + parseInt(bis.slice(5, 7), 10))
+            - (parseInt(von.slice(0, 4), 10) * 12 + parseInt(von.slice(5, 7), 10));
+        const ticks = [];
+        for (let i = 1; ; i += 1) {
+            const iso = monateDazu(von, i);
+            if (iso >= bis) break;
+            const m = parseInt(iso.slice(5, 7), 10);
+            if (monate > 48 && m !== 1) continue;
+            if (monate > 18 && monate <= 48 && m % 3 !== 1) continue;
+            const mitJahr = m === 1 || ticks.length === 0;
+            ticks.push({ iso: iso, text: namen[m - 1] + (mitJahr ? ' ' + iso.slice(0, 4) : '') });
+        }
+        return ticks;
+    }
+
+    // Der Ausschnitt der senkrechten Achse. Anders als `achsenBereich`
+    // (das auf den Unterschied hineinzoomt) immer mit der Null: hier geht es
+    // um Überschuss oder Fehlbetrag, und die Linie bei null ist die Grenze
+    // dazwischen. Ein Ausschnitt, der sie weglässt, zeigte einen Fehlbetrag
+    // als Überschuss. Beide Ränder rasten auf dem Linienabstand ein, damit
+    // die Achse runde Zahlen trägt. Die 1.12 wirken nur auf den Linienabstand:
+    // sie machen ihn eher grösser als kleiner, so dass nicht mehr als etwa
+    // vier Linien entstehen.
+    // Das Dach liegt immer über der Basis: sind alle Werte 0 (ein frisches
+    // Budget mit einer Anpassung auf 0), fielen beide auf 0, und wer die Höhe
+    // als (wert - basis) / (dach - basis) rechnet, bekäme NaN.
+    function treppenBereich(werte) {
+        const zahlen = (werte || []).filter((w) => istZahl(w));
+        const kleinster = Math.min.apply(null, [0].concat(zahlen));
+        const groesster = Math.max.apply(null, [0].concat(zahlen));
+        const spanne = Math.max(groesster - kleinster, 1);
+        const schritt = rasterSchritt(spanne * 1.12, 4);
+        const basis = Math.floor(kleinster / schritt) * schritt;
+        let dach = Math.ceil(groesster / schritt) * schritt;
+        if (dach <= basis) dach = basis + schritt;
+        return { basis: basis, dach: dach, schritt: schritt };
+    }
+
+    // Aus dem Verlauf die Treppe: Ausgangswert («heute»), je datiertem Stand
+    // eine Stufe und der Wert der offenen Vorschläge. Eine Stufe trägt ihren
+    // Wert und den Unterschied zur Stufe davor — der Unterschied ist es, was
+    // am Sprung steht («+149»), nicht der Gesamtwert. Der Unterschied ist
+    // auch dann da, wenn er 0 ist: die Stufe bleibt eine Stufe (Datum,
+    // «±0»), sie fällt nur nicht als Sprung auf. Stände ohne Datum
+    // (`offen`) sind keine Stufen, weil sie nirgends auf der Zeitachse
+    // liegen; sie stehen gesondert da.
+    function treppenStufen(verlauf, heuteIso) {
+        const liste = verlauf || [];
+        const heute = liste.find((s) => s.key === 'heute');
+        const offen = liste.find((s) => s.key === 'offen');
+        const anfang = heute ? heute.diffM : 0;
+        let davor = anfang;
+        const stufen = [];
+        liste.forEach((s) => {
+            if (!istIsoDatum(s.ab)) return;
+            stufen.push({ key: s.key, ab: s.ab, wert: s.diffM, delta: s.diffM - davor, faellig: s.ab <= heuteIso });
+            davor = s.diffM;
+        });
+        return { anfang: anfang, stufen: stufen, offen: offen ? offen.diffM : null };
+    }
+
+    // Die Eckpunkte des Pfads, von links nach rechts: der Anfangswert bei
+    // `von`, je Stufe erst ein Punkt senkrecht darunter bzw. darüber (alter
+    // Wert zum Datum der Stufe) und dann der neue Wert, zuletzt der letzte
+    // Wert bis `bis`. Dadurch ändert sich zwischen zwei Punkten genau
+    // eine Koordinate — Zeit oder Wert —, und es gibt keine Schrägen. Ein
+    // Punkt, der dem vorigen gleicht, wird weggelassen (eine Stufe mit
+    // Unterschied 0, oder ein Datum auf dem Monatsersten von `von`): zwei
+    // gleiche Punkte hintereinander wären ein Schritt, der sich in keiner
+    // Koordinate ändert.
+    function treppenPunkte(treppe, von, bis) {
+        const punkte = [];
+        const dazu = (iso, wert) => {
+            const letzter = punkte[punkte.length - 1];
+            if (letzter && letzter[0] === iso && letzter[1] === wert) return;
+            punkte.push([iso, wert]);
+        };
+        let wert = treppe.anfang;
+        dazu(von, wert);
+        treppe.stufen.forEach((s) => {
+            dazu(s.ab, wert);
+            dazu(s.ab, s.wert);
+            wert = s.wert;
+        });
+        dazu(bis, wert);
+        return punkte;
     }
 
     // Die Summen je Gruppe — für «Wohin das Geld geht». Jede Gruppe des
@@ -4817,7 +5108,7 @@
         tr.hidden = true;
 
         const td = document.createElement('td');
-        td.colSpan = 4;
+        td.colSpan = 3;
         td.className = 'expander-cell-host';
 
         const panel = document.createElement('div');
@@ -4874,8 +5165,8 @@
     }
 
     // Die Anpassung als eigene Tabellenzeile, direkt unter dem Kommentar und
-    // spaltenbündig zur Position: Datum in der Beschriftungsspalte, die beiden
-    // Beträge unter den erfassten, der Unterschied in der vierten Spalte.
+    // spaltenbündig zur Position: Datum und dahinter der Unterschied pro Jahr
+    // in der Beschriftungsspalte, die beiden Beträge unter den erfassten.
     //
     // Das <tr> trägt bewusst KEIN data-row-id: `$('tr[data-row-id="…"]')` steht
     // an mehreren Stellen und nähme sonst je nach Reihenfolge die falsche
@@ -4902,7 +5193,7 @@
             '</div>';
         tr.appendChild(labelTd);
 
-        ['jaehrlich', 'monatlich'].forEach((period) => {
+        ['monatlich', 'jaehrlich'].forEach((period) => {
             const td = document.createElement('td');
             td.className = 'input-cell';
             const input = document.createElement('input');
@@ -4911,20 +5202,22 @@
             input.className = `adj-input adj-${period}`;
             input.placeholder = 'neu';
             input.title = 'Betrag, den diese Position künftig haben soll – die erfasste Zahl oben bleibt stehen. '
-                + 'Rechts steht der Unterschied. Druckt nie mit.';
+                + 'Der Unterschied pro Jahr steht hinter dem Datum. Druckt nie mit.';
             input.setAttribute('aria-label',
                 `${name} – Anpassung, neuer Betrag ${period === 'jaehrlich' ? 'jährlich' : 'monatlich'}`);
             td.appendChild(input);
             tr.appendChild(td);
         });
 
-        const deltaTd = document.createElement('td');
-        deltaTd.className = 'total-cell';
+        // Der Unterschied steht hinter dem Datum, in der ersten Zelle: eine
+        // eigene Spalte dafür gibt es nicht mehr (Punkt 10), und eine vierte
+        // Zelle nur in dieser Zeile schöbe die Tabelle über ihre Kopfzeile
+        // hinaus. Ohne Spaltenkopf trägt der Text die Einheit selbst
+        // («/ Jahr», gefüllt in recomputeAll).
         const delta = document.createElement('span');
         delta.className = 'adj-delta';
         delta.dataset.adjDelta = row.id;
-        deltaTd.appendChild(delta);
-        tr.appendChild(deltaTd);
+        labelTd.querySelector('.adj-ab-feld').after(delta);
 
         tr.querySelectorAll('.adj-input').forEach((input) => {
             input.dataset.rowId = row.id;
@@ -5205,7 +5498,7 @@
                 labelTd.appendChild(inner);
                 tr.appendChild(labelTd);
 
-                ['jaehrlich', 'monatlich'].forEach((period) => {
+                ['monatlich', 'jaehrlich'].forEach((period) => {
                     const td = document.createElement('td');
                     td.className = 'input-cell';
                     const input = document.createElement('input');
@@ -5218,22 +5511,12 @@
                     input.placeholder = '0.00';
                     // Der Satz, der vorher als Streifen in der Kopfleiste
                     // stand: hier steht er an jedem Feld, für das er gilt.
-                    input.title = 'Jährlich oder monatlich eintragen – die andere Spalte rechnet sich.';
+                    input.title = 'Monatlich oder jährlich eintragen – die andere Spalte rechnet sich.';
                     input.setAttribute('aria-label',
                         `${row.prefix ? row.prefix + ' – ' : ''}${row.label} – ${period === 'jaehrlich' ? 'jährlich' : 'monatlich'}`);
                     td.appendChild(input);
                     tr.appendChild(td);
                 });
-
-                const totalTd = document.createElement('td');
-                totalTd.className = 'total-cell';
-                const totalSpan = document.createElement('span');
-                totalSpan.className = 'computed';
-                totalSpan.dataset.rowTotal = row.id;
-                totalSpan.dataset.group = groupId;
-                totalSpan.textContent = '0.00';
-                totalTd.appendChild(totalSpan);
-                tr.appendChild(totalTd);
 
                 tbody.appendChild(tr);
 
@@ -5252,9 +5535,8 @@
             subtotalRow.className = 'subtotal-row';
             subtotalRow.innerHTML = `
                 <td class="label-cell">Subtotal</td>
-                <td class="input-cell"><span class="computed" data-subtotal="${groupId}" data-period="jaehrlich">0.00</span></td>
                 <td class="input-cell"><span class="computed" data-subtotal="${groupId}" data-period="monatlich">0.00</span></td>
-                <td class="total-cell"><span class="total-display" data-subtotal="${groupId}" data-period="total">0.00</span></td>
+                <td class="input-cell"><span class="computed" data-subtotal="${groupId}" data-period="jaehrlich">0.00</span></td>
             `;
             tbody.appendChild(subtotalRow);
         });
@@ -5290,7 +5572,7 @@
         }
         tr.appendChild(label);
 
-        [['jaehrlich', summe.diffY], ['monatlich', summe.diffM]].forEach(([period, wert]) => {
+        [['monatlich', summe.diffM], ['jaehrlich', summe.diffY]].forEach(([period, wert]) => {
             const td = document.createElement('td');
             const span = document.createElement('span');
             span.className = 'computed';
@@ -5445,6 +5727,334 @@
             rest.appendChild(zahl);
             posBox.appendChild(rest);
         }
+    }
+
+    // ----------------------------------------------------------------
+    // Der Ausblick: die Treppe unter der Zusammenfassung
+    // ----------------------------------------------------------------
+    // Gerechnet wird im Kern (treppenSpanne, treppenStufen, treppenPunkte,
+    // treppenBereich, treppenTicks), hier steht nur das Zeichnen. Die Daten
+    // werden gemerkt, weil der Beobachter bei einer neuen Breite zeichnen
+    // muss, ohne dass recomputeAll läuft.
+    let ausblickDaten = null;
+    // Die Breite, in die zuletzt gezeichnet wurde; '' heisst «nichts
+    // Gültiges». Der Beobachter vergleicht damit, wie bei «Der Weg».
+    let gezeichneteTreppe = '';
+    // Fest, damit die Treppe auf jedem Schirm gleich hoch ist und die
+    // Beschriftungen ihren Platz haben; nur die Breite wird gemessen.
+    const TREPPE_HOEHE = 220;
+    // Die Breite fürs Blatt. Gemessen wird am Schirm, und auf einem breiten
+    // Fenster sind das gegen 1000 px; auf A4 stehen gut 680 zur Verfügung,
+    // der Browser verkleinerte die Treppe also auf zwei Drittel, und die
+    // Schrift käme mit 5 bis 6 pt aufs Papier. Der Beobachter hilft nicht:
+    // das Drucklayout meldet ihm keine neue Breite. Darum zeichnet
+    // beforeprint fest in dieser Breite und afterprint wieder gemessen.
+    const TREPPE_DRUCKBREITE = 680;
+    // Solange gedruckt wird, gilt die feste Breite — auch für ein Zeichnen
+    // dazwischen, und der Beobachter hält still: die Höhe am Schirm ändert
+    // sich mit der viewBox, und er zeichnete sonst sofort wieder gemessen.
+    let treppeImDruck = false;
+
+    function renderAusblick(verlauf, anpassungen, werte) {
+        const block = $('#ausblickBlock');
+        if (!block) return;
+        // Dasselbe Tor wie bei renderGrafik, #adjustmentsBtn und #previewBtn:
+        // ohne Anpassung gibt es nur den Stand «heute», und eine Treppe ohne
+        // Stufe wiederholte bloss die Differenz-Zeile darüber.
+        const hatAnpassung = Object.keys(anpassungen || {})
+            .some((id) => anpassungHatBetrag(anpassungen[id]));
+        block.hidden = !hatAnpassung;
+        if (!hatAnpassung) { ausblickDaten = null; return; }
+        ausblickDaten = { verlauf: verlauf, anpassungen: anpassungen, werte: werte || {}, heute: heuteIso() };
+        zeichneTreppe(treppeImDruck ? TREPPE_DRUCKBREITE : 0);
+    }
+
+    // `festeBreite`: zeichnen in dieser Breite statt der gemessenen — nur
+    // für den Druck (beforeprint). Ohne Angabe wird gemessen.
+    function zeichneTreppe(festeBreite) {
+        const svg = $('#ausblickTreppe');
+        if (!svg || !ausblickDaten) return;
+        // Gemessen wie bei «Der Weg», und die viewBox genau darauf: nur dann
+        // zeichnet der Browser 1:1, und die Schrift hat am Schirm die Grösse,
+        // für die sie gesetzt ist. Verborgen (in der Auswertung, Tor zu) ist
+        // die Breite 0: dann nicht zeichnen und die gemerkte Breite
+        // vergessen — sonst hielte der Beobachter das alte Bild für aktuell,
+        // wenn die Fläche in derselben Breite zurückkommt.
+        // Mit fester Breite wird auch gezeichnet, wenn die Fläche am Schirm
+        // gerade verborgen ist: das Blatt hat sein eigenes Layout.
+        const B = festeBreite || Math.round(svg.getBoundingClientRect().width);
+        if (B < 2) { gezeichneteTreppe = ''; return; }
+        gezeichneteTreppe = String(B);
+        const H = TREPPE_HOEHE;
+        svg.setAttribute('viewBox', `0 0 ${B} ${H}`);
+
+        const daten = ausblickDaten;
+        const treppe = treppenStufen(daten.verlauf, daten.heute);
+        const spanne = treppenSpanne(daten.verlauf, daten.heute);
+        // Vorschläge ohne Datum haben keinen Zeitpunkt. Stünden sie auf der
+        // Zeitskala, behauptete die Grafik einen — darum ein eigener Streifen
+        // rechts daneben, durch eine Lücke abgesetzt.
+        const streifen = treppe.offen !== null ? 90 : 0;
+        const luecke = streifen ? 12 : 0;
+        const links = 46, oben = 30, unten = 24;
+        const xEnde = B - (streifen ? streifen + luecke : 4);
+        const r = (n) => Math.round(n * 10) / 10;
+        const x = (iso) => r(links + zeitAnteil(iso, spanne.von, spanne.bis) * (xEnde - links));
+        const alleWerte = [treppe.anfang].concat(treppe.stufen.map((s) => s.wert));
+        if (treppe.offen !== null) alleWerte.push(treppe.offen);
+        const bereich = treppenBereich(alleWerte);
+        const y = (w) => r(oben + (H - oben - unten) * (1 - (w - bereich.basis) / (bereich.dach - bereich.basis)));
+        const unterkante = H - unten;
+        const xHeute = x(daten.heute);
+
+        // Geschätzte Breite einer Beschriftung. Gemessen würde erst nach dem
+        // Einsetzen; geschätzt genügt, um Überlappungen zu vermeiden. Der
+        // Faktor ist am Schirm nachgemessen (Ziffern fett gut 0.57 der
+        // Schriftgrösse, Text darunter) und liegt knapp über dem Breitesten.
+        const breite = (text, px) => text.length * px * 0.58;
+        // Bis wohin eine Beschriftung rechts reichen darf: in die Lücke vor dem
+        // Streifen hinein, denn dort steht nichts — auf einem schmalen Schirm
+        // fand die letzte Stufe sonst keinen Platz.
+        const rechtsBis = streifen ? B - streifen - 2 : B;
+        // Kästen, auf denen schon etwas steht. Eine Beschriftung sucht sich
+        // eine Lage, die keinen davon trifft.
+        const belegt = [];
+        // `ausser`: der eigene Kasten, wenn eine Beschriftung sich verbreitert.
+        const frei = (k, ausser) => belegt.every((b) => b === ausser
+            || k.x2 < b.x1 || k.x1 > b.x2 || k.y2 < b.y1 || k.y1 > b.y2);
+
+        const teile = [];
+        // Ein Rahmen pro Ziel: Fokus und Vorschau-Markierung brauchen eine
+        // Fläche, und die Fläche macht das Ziel grösser als den Punkt.
+        // Mindestens 24 × 24 (WCAG 2.5.8), um die Mitte des Kastens gelegt:
+        // ein Punkt ohne Beschriftung käme sonst nur auf 22 × 20. Sichtbar
+        // wird die Fläche erst beim Zeigen, der Punkt bleibt, wie er ist.
+        const ZIEL_MIN = 24;
+        const treffer = (k) => {
+            const w = Math.max(k.x2 - k.x1 + 8, ZIEL_MIN);
+            const h = Math.max(k.y2 - k.y1 + 6, ZIEL_MIN);
+            return `<rect class="treffer" x="${r((k.x1 + k.x2 - w) / 2)}" y="${r((k.y1 + k.y2 - h) / 2)}" `
+                + `width="${r(w)}" height="${r(h)}" rx="4"/>`;
+        };
+        const ziel = (key, name, titel, inhalt) => `<g class="treppe-ziel${key === state.previewStand ? ' is-preview' : ''}" `
+            + `tabindex="0" role="button" data-stand="${escapeHtml(key)}" aria-label="Vorschau: ${escapeHtml(name)}">`
+            + `<title>${escapeHtml(titel)}</title>${inhalt}</g>`;
+
+        // ---- Streifen-Grund, Raster, Werte an der Achse ----
+        if (streifen) {
+            teile.push(`<rect class="streifen" x="${B - streifen}" y="${oben - 12}" `
+                + `width="${streifen}" height="${unterkante - oben + 12}"/>`);
+        }
+        const anzahl = Math.round((bereich.dach - bereich.basis) / bereich.schritt);
+        let nullY = null;
+        for (let i = 0; i <= anzahl; i++) {
+            const w = Math.round((bereich.basis + i * bereich.schritt) * 100) / 100;
+            const yy = y(w);
+            // Die Nulllinie kommt zuletzt, damit kein Raster über ihr liegt.
+            if (w === 0) nullY = yy;
+            else {
+                teile.push(`<line class="raster" x1="${links}" y1="${yy}" x2="${xEnde}" y2="${yy}"/>`);
+                if (streifen) teile.push(`<line class="raster" x1="${B - streifen}" y1="${yy}" x2="${B}" y2="${yy}"/>`);
+            }
+            teile.push(`<text class="achsenwert" x="${links - 6}" y="${yy + 3}" text-anchor="end">${w.toLocaleString('de-CH')}</text>`);
+        }
+        if (nullY !== null) {
+            teile.push(`<line class="nulllinie" x1="${links}" y1="${nullY}" x2="${xEnde}" y2="${nullY}"/>`);
+            if (streifen) teile.push(`<line class="nulllinie" x1="${B - streifen}" y1="${nullY}" x2="${B}" y2="${nullY}"/>`);
+        }
+
+        // ---- Zeitachse ----
+        // Die Marken mit Jahreszahl zuerst (die erste und die Januare): das
+        // Jahr und der Jahreswechsel müssen auch dann erkennbar bleiben, wenn
+        // auf einem schmalen Schirm nur jede zweite oder dritte Marke Platz hat.
+        const ticks = treppenTicks(spanne.von, spanne.bis);
+        const mitJahr = (t) => /\d{4}/.test(t.text);
+        const gesetzt = [];
+        ticks.filter(mitJahr)
+            .concat(ticks.filter((t) => !mitJahr(t)))
+            .forEach((t) => {
+                const tx = x(t.iso);
+                const halb = breite(t.text, 10) / 2;
+                if (gesetzt.some((g) => Math.abs(g.x - tx) < g.halb + halb + 6)) return;
+                gesetzt.push({ x: tx, halb: halb });
+                teile.push(`<line class="tick" x1="${tx}" y1="${unterkante}" x2="${tx}" y2="${unterkante + 4}"/>`);
+                teile.push(`<text class="zeit" x="${tx}" y="${H - 6}" text-anchor="middle">${t.text}</text>`);
+            });
+        if (streifen) {
+            teile.push(`<text class="zeit" x="${B - streifen / 2}" y="${H - 6}" text-anchor="middle">ohne Datum</text>`);
+        }
+
+        // ---- Heute-Linie ----
+        teile.push(`<line class="heute-linie" x1="${xHeute}" y1="${oben - 16}" x2="${xHeute}" y2="${unterkante}"/>`);
+        const heuteBreite = breite('heute', 10);
+        const heuteRechts = xHeute + 4 + heuteBreite <= xEnde;
+        const heuteX = heuteRechts ? xHeute + 4 : xHeute - 4 - heuteBreite;
+        teile.push(`<text class="heute-text" x="${r(heuteX)}" y="11">heute</text>`);
+        belegt.push({ x1: heuteX, x2: heuteX + heuteBreite, y1: 0, y2: 13 });
+
+        // ---- Der Pfad: nur waagrecht und senkrecht ----
+        // Stände sind Sprünge, keine Entwicklung (Entwurf vom 2026-10-23):
+        // eine Schräge behauptete Zwischenwerte, die niemand gerechnet hat.
+        // Darum nur H und V, nie L, aus den Eckpunkten des Kerns, in denen
+        // sich von Punkt zu Punkt genau eine Koordinate ändert.
+        const punkte = treppenPunkte(treppe, spanne.von, spanne.bis);
+        let d = `M${x(punkte[0][0])},${y(punkte[0][1])}`;
+        for (let i = 1; i < punkte.length; i++) {
+            d += punkte[i][0] !== punkte[i - 1][0] ? ` H${x(punkte[i][0])}` : ` V${y(punkte[i][1])}`;
+        }
+        // Dieselben Punkte zweimal, an der Heute-Linie geteilt. Die Grenze
+        // liegt eine halbe Strichbreite rechts davon: ein Datum, das heute
+        // ist, gilt als eingetreten, und sein Sprung soll ganz grau sein.
+        const grenze = r(xHeute + 1.5);
+        teile.push(`<defs><clipPath id="treppeVorHeute"><rect x="0" y="0" width="${grenze}" height="${H}"/></clipPath>`
+            + `<clipPath id="treppeAbHeute"><rect x="${grenze}" y="0" width="${Math.max(0, B - grenze)}" height="${H}"/></clipPath></defs>`);
+        teile.push(`<path class="linie vorbei" clip-path="url(#treppeVorHeute)" d="${d}"/>`);
+        teile.push(`<path class="linie kommend" clip-path="url(#treppeAbHeute)" d="${d}"/>`);
+
+        // Die Punkte belegen ihren Platz, bevor irgendeine Beschriftung
+        // gesetzt wird — sonst deckte die Beschriftung einer Stufe den Punkt
+        // der nächsten zu.
+        treppe.stufen.forEach((s) => {
+            belegt.push({ x1: x(s.ab) - 7, x2: x(s.ab) + 7, y1: y(s.wert) - 7, y2: y(s.wert) + 7 });
+        });
+
+        // ---- Anfangswert links: der Stand «heute» ----
+        // Die erfassten Werte, wie in der Differenz-Zeile — es wird nichts
+        // eingerechnet, auch kein Datum, das schon verstrichen ist.
+        const anfangText = formatComputed(treppe.anfang);
+        const anfangKasten = { x1: links + 4, x2: links + 4 + breite(anfangText, 12), y1: y(treppe.anfang) - 18, y2: y(treppe.anfang) - 5 };
+        belegt.push(anfangKasten);
+        teile.push(ziel('heute', 'heute', `heute: die erfassten Werte, bleibt ${anfangText} pro Monat`,
+            treffer(anfangKasten)
+            + `<text class="wert" x="${anfangKasten.x1}" y="${y(treppe.anfang) - 8}">${anfangText}</text>`));
+
+        // ---- Endwert rechts am Ende der Zeitskala ----
+        // Ohne Stufe wäre er derselbe wie der Anfangswert und sagte nichts.
+        const letzte = treppe.stufen[treppe.stufen.length - 1];
+        if (letzte) {
+            const endText = formatComputed(letzte.wert);
+            const yEnde = y(letzte.wert);
+            belegt.push({ x1: xEnde - 4 - breite(endText, 12), x2: xEnde - 4, y1: yEnde - 18, y2: yEnde - 5 });
+            teile.push(`<text class="wert" x="${xEnde - 4}" y="${yEnde - 8}" text-anchor="end">${endText}</text>`);
+        }
+
+        // ---- Die Stufen ----
+        const einnahmen = {};
+        (SCHEMA.einnahmen || []).forEach((row) => { einnahmen[row.id] = true; });
+        const gruppen = {};
+        anpassungsGruppen(daten.anpassungen, daten.verlauf, daten.werte).forEach((g) => { gruppen[g.key] = g; });
+        // Was eine Position am Überschuss ausmacht: eine Ausgabe, die steigt,
+        // senkt ihn. So stimmen die Vorzeichen im title mit dem am Punkt
+        // überein, und ihre Summe ist der Sprung.
+        const wirkungsListe = (key) => ((gruppen[key] || {}).eintraege || []).map((e) =>
+            `${rowAnzeigename(e.rowId)}: ${deltaAnzeige(einnahmen[e.rowId] ? e.deltaM : -e.deltaM)} pro Monat`);
+        const positionen = (key) => {
+            const liste = (gruppen[key] || {}).eintraege || [];
+            if (liste.length === 1) return rowAnzeigename(liste[0].rowId);
+            return liste.length > 1 ? `${liste.length} Positionen` : '';
+        };
+
+        // Wohin die Beschriftung einer Stufe kommt. Nahe Lagen: über der
+        // Linie, darunter, dasselbe links vom Punkt; ferne: je eine Zeile
+        // weiter weg. Abwechselnd oben und unten ergibt sich daraus von
+        // selbst: liegt die vorige Beschriftung oben im Weg, nimmt diese den
+        // Platz darunter.
+        const lagen = (px, py, text, fern) => {
+            const w = breite(text, 11) + 2;
+            const richtungen = fern ? [[1, -2], [1, 2], [-1, -2], [-1, 2]] : [[1, -1], [1, 1], [-1, -1], [-1, 1]];
+            return richtungen.map(([seite, hoehe]) => {
+                const x1 = seite > 0 ? px + 8 : px - 8 - w;
+                const grund = hoehe < 0 ? py - 8 + (hoehe + 1) * 14 : py + 17 + (hoehe - 1) * 14;
+                return { x1: x1, x2: x1 + w, y1: grund - 11, y2: grund + 2, grund: grund, seite: seite };
+            }).filter((k) => k.x1 >= links && k.x2 <= rechtsBis && k.y1 >= 0 && k.y2 <= unterkante);
+        };
+
+        treppe.stufen.forEach((s) => {
+            const px = x(s.ab), py = y(s.wert);
+            const deltaText = deltaAnzeige(s.delta);
+            const voll = positionen(s.key);
+            const kurz = voll.length > 20 ? voll.slice(0, 19) + '…' : voll;
+            // Der Reihe nach: mit Namen nahe am Punkt, ohne Namen nahe am
+            // Punkt, ohne Namen weiter weg. Die Zahl ist die Aussage der
+            // Stufe, der Name eine Zugabe: in umgekehrter Folge nahm auf
+            // einem schmalen Schirm der lange Name der ersten Stufe der
+            // nächsten jeden Platz, und deren Zahl fehlte. Mit Namen weiter
+            // weg gehörte die Beschriftung nicht mehr sichtbar zu ihrem Punkt.
+            // Mit Namen nur rechts vom Punkt: links läge die lange Zeile auf
+            // der Linie der vorigen Stufe und läse sich, als gehöre sie dorthin.
+            // Passt nirgends etwas, bleibt die Stufe ohne Beschriftung:
+            // übereinander gedruckt wäre unlesbar, und der title trägt alles.
+            let mitName = !!kurz;
+            let kasten = mitName
+                ? lagen(px, py, deltaText + ' ' + kurz).find((k) => k.seite > 0 && frei(k)) : null;
+            if (!kasten) {
+                mitName = false;
+                kasten = lagen(px, py, deltaText).find((k) => frei(k))
+                    || lagen(px, py, deltaText, true).find((k) => frei(k)) || null;
+            }
+            if (kasten) belegt.push(kasten);
+            const wirkung = s.delta > 0 ? ' ist-gut' : s.delta < 0 ? ' ist-schlecht' : '';
+            const vorbei = s.faellig ? ' ist-vorbei' : '';
+            const titel = [`${standName(s)}: bleibt ${formatComputed(s.wert)} pro Monat (${deltaText})`
+                + (s.faellig ? ' · Datum schon verstrichen' : '')].concat(wirkungsListe(s.key)).join('\n');
+            const punktKasten = { x1: px - 7, x2: px + 7, y1: py - 7, y2: py + 7 };
+            let marke = '';
+            if (kasten) {
+                const anker = kasten.seite > 0 ? `x="${r(kasten.x1)}"` : `x="${r(kasten.x2)}" text-anchor="end"`;
+                marke = `<text class="marke${wirkung}${vorbei}" ${anker} y="${r(kasten.grund)}">`
+                    + `<tspan class="delta">${deltaText}</tspan>`
+                    + (mitName ? `<tspan class="name"> ${escapeHtml(kurz)}</tspan>` : '')
+                    + `</text>`;
+                punktKasten.x1 = Math.min(punktKasten.x1, kasten.x1);
+                punktKasten.x2 = Math.max(punktKasten.x2, kasten.x2);
+                punktKasten.y1 = Math.min(punktKasten.y1, kasten.y1);
+                punktKasten.y2 = Math.max(punktKasten.y2, kasten.y2);
+            }
+            teile.push(ziel(s.key, standName(s), titel,
+                treffer(punktKasten)
+                + `<circle class="stufe${wirkung}${vorbei}" cx="${px}" cy="${py}" r="5"/>`
+                + marke));
+        });
+
+        // ---- Streifen «ohne Datum» ----
+        if (streifen) {
+            const yo = y(treppe.offen);
+            const mitte = B - streifen / 2;
+            const vorher = letzte ? letzte.wert : treppe.anfang;
+            const offenText = formatComputed(treppe.offen);
+            const titel = [`mit allen Vorschlägen: bleibt ${offenText} pro Monat (${deltaAnzeige(treppe.offen - vorher)})`]
+                .concat(wirkungsListe('offen')).join('\n');
+            teile.push(ziel('offen', 'mit allen Vorschlägen', titel,
+                treffer({ x1: B - streifen + 4, x2: B - 4, y1: yo - 31, y2: yo + 4 })
+                + `<line class="offen-linie" x1="${B - streifen + 8}" y1="${yo}" x2="${B - 8}" y2="${yo}"/>`
+                + `<text class="offen-text" x="${mitte}" y="${yo - 20}" text-anchor="middle">mit Vorschlägen</text>`
+                + `<text class="wert" x="${mitte}" y="${yo - 7}" text-anchor="middle">${offenText}</text>`));
+        }
+
+        svg.innerHTML = teile.join('');
+        // Für alle, die das Bild nicht sehen: der Satz, den es zeigt.
+        svg.setAttribute('aria-label', `Ausblick: heute ${anfangText} pro Monat`
+            + (letzte ? `, ab ${datumAnzeige(letzte.ab)} ${formatComputed(letzte.wert)}` : '')
+            + (treppe.offen !== null ? `, mit Vorschlägen ${formatComputed(treppe.offen)}` : ''));
+
+        // Klick und Tastatur führen in die Vorschau, wie ein Balken in «Stand
+        // für Stand». enterPreview zeichnet über recomputeAll alles neu, das
+        // eben bediente Ziel gibt es danach nicht mehr — der Fokus geht darum
+        // an sein Nachfolgerbild, sonst landete er nach Enter im Nirgendwo.
+        svg.querySelectorAll('.treppe-ziel').forEach((el) => {
+            const oeffne = () => {
+                const key = el.getAttribute('data-stand');
+                enterPreview(key);
+                const neu = svg.querySelector(`.treppe-ziel[data-stand="${key}"]`);
+                if (neu) neu.focus();
+            };
+            el.addEventListener('click', oeffne);
+            el.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                oeffne();
+            });
+        });
     }
 
     // ----------------------------------------------------------------
@@ -5684,7 +6294,8 @@
         const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
         const staende = stichtagListe(anpassungen, heuteIso());
         const gruppen = anpassungsGruppen(anpassungen, staende, formWerte || {});
-        const anzahl = gruppen.reduce((n, g) => n + g.eintraege.length, 0);
+        // Dieselbe Quelle wie die Marke am Reiter, nicht die Summe der Gruppen.
+        const anzahl = anpassungsUebersicht(anpassungen, heuteIso()).anzahl;
 
         panel.textContent = '';
         btn.hidden = anzahl === 0;
@@ -5788,20 +6399,26 @@
                 formWerte[`${row.id}.jaehrlich`] = y;
                 formWerte[`${row.id}.monatlich`] = m;
 
-                // Per-row total/year: prefer yearly if present, otherwise monthly*12
+                // Jahreswert der Zeile: der eingetragene, sonst Monat × 12.
+                // Eine eigene Totalspalte gibt es nicht mehr (sie zeigte
+                // immer dieselbe Zahl wie «Jährlich»); der Wert bleibt als
+                // Grundlage für den Unterschied der Anpassung.
                 const rowTotal = y || (m * 12);
-                const rowTotalEl = $(`span[data-row-total="${row.id}"]`);
-                if (rowTotalEl) rowTotalEl.textContent = formatComputed(rowTotal);
 
-                // Vierte Spalte der Anpassungszeile: was sie gegenüber dem
+                // Hinter dem Datum der Anpassungszeile: was sie gegenüber dem
                 // erfassten Jahreswert ausmacht. Genau das Kopfrechnen, das
-                // die eigene Zeile loswerden soll.
+                // die eigene Zeile loswerden soll. Die Zahl steht in keiner
+                // Spalte mit Kopf mehr, darum trägt sie die Einheit selbst —
+                // sonst bliebe offen, ob sie für ein Jahr oder einen Monat
+                // gilt, denn daneben stehen beide Beträge. Ohne Anpassung
+                // bleibt der Platz leer, keine leeren Klammern.
                 const deltaEl = $(`span[data-adj-delta="${row.id}"]`);
                 if (deltaEl) {
                     const unterschied = anpassungUnterschied(
                         getActiveVersion()?.adjustments?.[row.id], rowTotal);
                     const wirkung = anpassungWirkung(unterschied, groupId === 'einnahmen');
-                    deltaEl.textContent = unterschied === null ? '' : deltaAnzeige(unterschied);
+                    deltaEl.textContent = unterschied === null ? ''
+                        : `(${deltaAnzeige(unterschied)} / Jahr)`;
                     deltaEl.classList.toggle('ist-gut', wirkung === 'gut');
                     deltaEl.classList.toggle('ist-schlecht', wirkung === 'schlecht');
                 }
@@ -5818,7 +6435,6 @@
             // Update subtotal display
             $$(`[data-subtotal="${groupId}"][data-period="jaehrlich"]`).forEach(el => el.textContent = formatComputed(yearly));
             $$(`[data-subtotal="${groupId}"][data-period="monatlich"]`).forEach(el => el.textContent = formatComputed(monthly));
-            $$(`[data-subtotal="${groupId}"][data-period="total"]`).forEach(el => el.textContent = formatComputed(yearly));
         });
 
         // Total Fixkosten
@@ -5826,7 +6442,6 @@
         const fixkostenM = FIXKOSTEN_GROUPS.reduce((s, g) => s + groupTotals[g].monatlich, 0);
         $$(`[data-grand-total="fixkosten"][data-period="jaehrlich"]`).forEach(el => el.textContent = formatComputed(fixkostenY));
         $$(`[data-grand-total="fixkosten"][data-period="monatlich"]`).forEach(el => el.textContent = formatComputed(fixkostenM));
-        $$(`[data-grand-total="fixkosten"][data-period="total"]`).forEach(el => el.textContent = formatComputed(fixkostenY));
 
         // Summary — Einnahmen, Ausgaben, Differenz (no Reduktion derivatives).
         const einnahmenY = groupTotals.einnahmen.jaehrlich;
@@ -5871,8 +6486,12 @@
         });
 
         renderGrafik(verlauf, anpassungen, basisWerte);
+        renderAusblick(verlauf, anpassungen, basisWerte);
         renderAuswertung();     // tut nichts, solange der Modus zu ist
         renderAdjustmentList(basisWerte);
+        // handleAdjInputEvent schreibt active.adjustments vor dieser Rechnung,
+        // darum genügt der Aufruf hier, um die Marken beim Tippen mitzuführen.
+        reiterMarkenAktualisieren();
     }
 
     // ----------------------------------------------------------------
@@ -6096,6 +6715,46 @@
         return 'Version ' + (state.versions.length + 1);
     }
 
+    // Die Zahl am Reiter und die Zahl am Knopf «Anpassungen» kommen aus
+    // derselben Übersicht (anpassungsUebersicht): zählten sie getrennt, liefen
+    // sie bei der ersten neuen Art von Anpassung auseinander. Nur Zeilen, die
+    // es noch gibt, zählen — dafür bekannteAnpassungen.
+    function reiterMarkeSetzen(tab, version) {
+        const uebersicht = anpassungsUebersicht(
+            bekannteAnpassungen(version.adjustments), heuteIso());
+        const alt = tab.querySelector('.version-tab-anzahl');
+        const grundtitel = `Zu „${version.name}" wechseln`;
+        const umbenennen = '(Doppelklick zum Umbenennen)';
+        if (uebersicht.anzahl === 0) {
+            if (alt) alt.remove();
+            tab.title = `${grundtitel} ${umbenennen}`;
+            tab.removeAttribute('aria-label');
+            return;
+        }
+        const hinweis = reiterHinweis(uebersicht);
+        let marke = alt;
+        if (!marke) {
+            marke = document.createElement('span');
+            marke.className = 'version-tab-anzahl';
+            // Für Screenreader steht der volle Hinweis im aria-label des
+            // Reiters; die nackte Zahl daneben läse ihn doppelt vor.
+            marke.setAttribute('aria-hidden', 'true');
+            tab.appendChild(marke);
+        }
+        marke.textContent = String(uebersicht.anzahl);
+        tab.title = `${grundtitel} · ${hinweis} ${umbenennen}`;
+        tab.setAttribute('aria-label', `${version.name}, ${hinweis}`);
+    }
+
+    // Nach jeder Rechnung nachgeführt, ohne die Reiter neu zu bauen: ein
+    // Neubau mitten im Tippen würfe den Fokus aus dem Eingabefeld.
+    function reiterMarkenAktualisieren() {
+        $$('.version-tab').forEach((tab) => {
+            const v = getVersionById(tab.dataset.versionId);
+            if (v) reiterMarkeSetzen(tab, v);
+        });
+    }
+
     function renderVersionTabs() {
         const container = $('#versionTabs');
         if (!container) return;
@@ -6113,7 +6772,7 @@
             tab.setAttribute('aria-selected', v.id === state.activeVersionId ? 'true' : 'false');
             tab.dataset.versionId = v.id;
             tab.textContent = v.name;
-            tab.title = `Zu „${v.name}" wechseln (Doppelklick zum Umbenennen)`;
+            reiterMarkeSetzen(tab, v);
             tab.addEventListener('click', () => {
                 if (v.id !== state.activeVersionId) switchVersion(v.id);
             });
@@ -7246,6 +7905,13 @@
         }
         chkPrintPrivateNote.addEventListener('change', applyPrintPrivateNote);
         applyPrintPrivateNote();
+        // Der Ausblick druckt ebenso nur mit eigenem Häkchen, nie vorgewählt.
+        const chkPrintAusblick = $('#chkPrintAusblick');
+        function applyPrintAusblick() {
+            document.body.classList.toggle('print-ausblick', chkPrintAusblick.checked);
+        }
+        chkPrintAusblick.addEventListener('change', applyPrintAusblick);
+        applyPrintAusblick();
         $('#privateNote').addEventListener('input', () => markDirty());
         // Vor dem Drucken Zeilen mit echtem Kommentartext markieren – unabhängig
         // davon, ob sie am Bildschirm auf- oder zugeklappt sind.
@@ -7264,6 +7930,16 @@
             const notiz = $('#privateNote').value;
             $('#privateNotePrint').textContent = notiz;
             $('#privateNoteBox').classList.toggle('has-text', notiz.trim() !== '');
+            // Die Treppe in der Breite des Blatts (siehe TREPPE_DRUCKBREITE).
+            treppeImDruck = true;
+            zeichneTreppe(TREPPE_DRUCKBREITE);
+        });
+        // Nach dem Druck wieder in der gemessenen Breite. Die gemerkte Breite
+        // wird vergessen, damit sicher neu gezeichnet wird.
+        window.addEventListener('afterprint', () => {
+            treppeImDruck = false;
+            gezeichneteTreppe = '';
+            zeichneTreppe();
         });
         $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
 
@@ -7294,6 +7970,19 @@
                 if (k.width < 2 || k.height < 2 || jetzt === gezeichneteFlaeche) return;
                 renderAuswertung();
             }).observe($('#auswertungWeg'));
+            // Dasselbe für die Treppe. Die Höhe folgt der viewBox und meldet
+            // sich nach jedem Zeichnen; verglichen wird darum nur die Breite.
+            // Verborgen (Breite 0) wird die gemerkte Breite vergessen: zurück
+            // aus der Auswertung kommt die Fläche oft in derselben Breite, und
+            // was davor dastand, ist dann nicht sicher noch aktuell.
+            new ResizeObserver(() => {
+                const svg = $('#ausblickTreppe');
+                if (!svg || treppeImDruck) return;
+                const breite = Math.round(svg.getBoundingClientRect().width);
+                if (breite < 2) { gezeichneteTreppe = ''; return; }
+                if (String(breite) === gezeichneteTreppe) return;
+                zeichneTreppe();
+            }).observe($('#ausblickTreppe'));
         }
         $('#reiterUebersicht').addEventListener('click', () => zeigeReiter('uebersicht'));
         $('#reiterVergleich').addEventListener('click', () => zeigeReiter('vergleich'));

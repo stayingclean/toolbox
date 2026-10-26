@@ -38,6 +38,8 @@ ANPASSUNGEN = {
     "kasse":   {"jaehrlich": None, "monatlich": 340, "ab": None},
 }
 
+HEUTE = "2026-10-26"
+
 
 def kern(funktion, *args):
     """Ruft eine Funktion des Rechenkerns in Node auf und gibt das Ergebnis zurück."""
@@ -176,13 +178,13 @@ def test_kommentarbereich_traegt_keine_anpassungsfelder_mehr():
 
 def test_anpassung_ist_eine_eigene_tabellenzeile():
     """Spaltenbuendig zur Position: Datum in der Beschriftungsspalte, die
-    Betraege unter den erfassten Betraegen, der Unterschied in Spalte vier."""
+    Betraege unter den erfassten Betraegen, der Unterschied hinter dem Datum."""
     block = _funktionsblock("makeAdjustmentRow")
     for feld in ("adj-jaehrlich", "adj-monatlich", "adj-ab"):
         assert feld in block, feld
     assert 'type="date"' in block or "'date'" in block
     assert "adj-row" in block and "adjFor" in block
-    assert "adj-delta" in block, "die vierte Spalte zeigt den Unterschied"
+    assert "adj-delta" in block, "der Unterschied fehlt in der Anpassungszeile"
 
 
 def test_anpassungszeile_traegt_kein_data_row_id():
@@ -495,10 +497,6 @@ def test_anpassungsfelder_stehen_neben_dem_datum():
     regel = re.search(r"\.budget-table tbody tr\.adj-row > td \{[^}]*\}", text)
     assert regel, "die Zeilenregel nennt die Tabelle mit"
     assert "vertical-align: top" in regel.group(0)
-    # Der Unterschied rechts ist blosser Text und braucht die Polsterung, die
-    # beim Betragsfeld der Rahmen gibt — sonst steht er vier Pixel zu hoch.
-    assert re.search(
-        r"\.budget-table tbody tr\.adj-row > td\.total-cell \{[^}]*padding-top:\s*0\.6rem", text)
 
 
 def test_kopfleiste_fuehrt_denselben_ablauf():
@@ -970,7 +968,7 @@ def test_was_dauernd_sichtbar_sein_muss_steht_im_tooltip():
     """Mit dem Streifen fiel der immer sichtbare Satz weg. Was man beim Tippen
     braucht, haengt jetzt am Feld selbst — sichtbar genau dort, wo es gilt."""
     text = _seite_text()
-    assert "input.title = 'Jährlich oder monatlich eintragen" in text, \
+    assert "input.title = 'Monatlich oder jährlich eintragen" in text, \
         "die Spaltenregel am Betragsfeld"
     assert re.search(r"ta\.title = '[^']*Budget-Version", text), \
         "der Kommentar sagt, dass er nur fuer diese Version gilt"
@@ -2216,3 +2214,470 @@ def test_der_weg_zeichnet_den_ausschnitt_nicht_die_ganze_hoehe():
     assert "achsenBereich(" in block
     assert "for (let w = bereich.ersteLinie;" in block
     assert "bereich.dach - bereich.basis" in block, "die Skala misst den Ausschnitt"
+
+
+# --- Alte Dateien --------------------------------------------------------------
+# Beispieldateien aller fuenf Dateiformate (alle Zahlen und Texte erfunden).
+# Sie sind die Grundlage der Ladepruefung: Wer eine Datei aus einer aelteren
+# Fassung oeffnet, darf nichts verlieren. Die Dateien unter tests/fixtures/budget
+# sind darum Teil des Repos und werden nicht "aufgeraeumt".
+
+FIXTURES = ROOT / "tests" / "fixtures" / "budget"
+
+
+@pytest.mark.parametrize("v", [1, 2, 3, 4, 5])
+def test_beispieldatei_ist_gueltig(v):
+    d = json.loads((FIXTURES / f"v{v}.json").read_text(encoding="utf-8"))
+    assert d["format"] == "budgetvorlage" and d["version"] == v
+    if v >= 4:
+        assert isinstance(d["data"]["versions"], list) and len(d["data"]["versions"]) == 2
+    else:
+        assert isinstance(d["data"]["values"], dict)
+
+
+def test_format_und_unterstuetzte_versionen_bleiben():
+    """Faellt eine Version aus der Menge, kann die Seite deren Dateien nicht mehr
+    oeffnen -- ohne dass sonst ein Test es merkte."""
+    text = _seite_text()
+    assert "const FILE_FORMAT_VERSION = 5;" in text
+    assert "SUPPORTED_VERSIONS = new Set([1, 2, 3, 4, 5])" in text
+
+
+def test_v5_beispiel_deckt_die_sonderfaelle():
+    d = json.loads((FIXTURES / "v5.json").read_text(encoding="utf-8"))
+    a = d["data"]["versions"][1]["adjustments"]
+    assert "gibt_es_nicht" in a
+    assert any(e.get("ab") is None for e in a.values())
+    assert any(e.get("jaehrlich") is None and e.get("monatlich") is None and e.get("ab") for e in a.values())
+
+
+def test_sollwert_deckt_jede_beispieldatei():
+    """erwartet.json ist die Ausgabe von tests/budget_ladepruefung.js auf dem
+    Stand vor dem Umbau. Fehlt eine Version darin oder ist der Sonderfall aus
+    v5 verloren, prueft eine spaetere Welle gegen einen Sollwert, der weniger
+    abdeckt, als die Beispieldateien hergeben -- und niemand merkte es."""
+    soll = json.loads((FIXTURES / "erwartet.json").read_text(encoding="utf-8"))
+    assert sorted(soll) == ["v1", "v2", "v3", "v4", "v5"]
+    assert [v["name"] for v in soll["v2"]["versionen"]] == ["Original", "Nach Reduktion"]
+    assert [v["name"] for v in soll["v1"]["versionen"]] == ["Hauptversion"]
+    v5 = soll["v5"]["gespeichert"]["versions"][1]["adjustments"]
+    assert "gibt_es_nicht" in v5                       # unbekannte Zeile bleibt
+    assert all(e.get("jaehrlich") is not None or e.get("monatlich") is not None
+               for k, e in v5.items() if k != "gibt_es_nicht")   # nur-Datum fiel weg
+
+
+# --- Welle 1: Zahl am Reiter ---
+
+def test_uebersicht_zaehlt_wie_der_knopf():
+    u = kern("anpassungsUebersicht", ANPASSUNGEN, HEUTE)
+    assert u == {"anzahl": 4, "naechste": "2027-01-01", "verstrichen": 0, "ohneDatum": 1}
+    staende = kern("stichtagListe", ANPASSUNGEN, HEUTE)
+    gruppen = kern("anpassungsGruppen", ANPASSUNGEN, staende, WERTE)
+    assert u["anzahl"] == sum(len(g["eintraege"]) for g in gruppen)
+
+
+def test_uebersicht_ohne_betrag_zaehlt_nicht():
+    u = kern("anpassungsUebersicht",
+             {"handy": {"jaehrlich": None, "monatlich": None, "ab": "2027-01-01"}}, HEUTE)
+    assert u["anzahl"] == 0 and u["naechste"] is None
+
+
+def test_uebersicht_heute_ist_verstrichen():
+    a = {"handy": {"jaehrlich": None, "monatlich": 0, "ab": HEUTE},
+         "kasse": {"jaehrlich": None, "monatlich": 340, "ab": "2026-10-27"}}
+    u = kern("anpassungsUebersicht", a, HEUTE)
+    assert u["verstrichen"] == 1 and u["naechste"] == "2026-10-27"
+
+
+@pytest.mark.parametrize("u, text", [
+    ({"anzahl": 3, "naechste": "2026-12-01", "verstrichen": 0, "ohneDatum": 1},
+     "3 Anpassungen, nächste ab 01.12.2026, 1 ohne Datum"),
+    ({"anzahl": 2, "naechste": None, "verstrichen": 2, "ohneDatum": 0},
+     "2 Anpassungen, alle Daten verstrichen"),
+    ({"anzahl": 1, "naechste": None, "verstrichen": 0, "ohneDatum": 1},
+     "1 Anpassung, ohne Datum"),
+    ({"anzahl": 0, "naechste": None, "verstrichen": 0, "ohneDatum": 0}, ""),
+])
+def test_reiter_hinweis(u, text):
+    assert kern("reiterHinweis", u) == text
+
+
+def test_reiter_bekommt_die_marke():
+    block = _funktionsblock("renderVersionTabs")
+    assert "reiterMarkeSetzen(tab, v)" in block
+
+
+def test_knopf_und_reiter_zaehlen_aus_einer_quelle():
+    assert "anpassungsUebersicht(" in _funktionsblock("renderAdjustmentList")
+    assert "anpassungsUebersicht(" in _funktionsblock("reiterMarkeSetzen")
+
+
+def test_marke_lebt_ohne_neubau_der_reiter():
+    # Nach jeder Rechnung nachgeführt; ein Neubau würfe den Fokus weg.
+    rechnen = _funktionsblock("recomputeAll")
+    assert "reiterMarkenAktualisieren()" in rechnen
+    assert "renderVersionTabs()" not in rechnen
+
+
+def test_marke_ist_fuer_screenreader_verborgen():
+    block = _funktionsblock("reiterMarkeSetzen")
+    assert "version-tab-anzahl" in block and "aria-hidden" in block
+    assert "aria-label" in block
+
+
+# ---------------------------------------------------------------------
+# Punkt 10: Die Spalte «Total / Jahr» faellt weg
+# ---------------------------------------------------------------------
+
+def test_keine_spalte_total_jahr_mehr():
+    text = _seite_text()
+    assert "Total / Jahr" not in text
+    assert 'data-period="total"' not in text
+    assert "data-row-total" not in text and "dataset.rowTotal" not in text
+
+
+def test_kommentarzeile_spannt_drei_spalten():
+    text = _seite_text()
+    assert "td.colSpan = 3;" in text and "td.colSpan = 4;" not in text
+
+
+def test_rowtotal_rechnet_weiter_den_unterschied():
+    # Die Anzeige ist weg, die Rechnung nicht: der Unterschied braucht den Jahreswert.
+    assert "anpassungUnterschied(" in _funktionsblock("recomputeAll")
+
+
+def test_anpassungszeile_hat_drei_zellen():
+    block = _funktionsblock("makeAdjustmentRow")
+    assert "deltaTd" not in block
+    assert "adj-delta" in block   # lebt jetzt in der ersten Zelle
+
+
+def test_unterschied_traegt_die_einheit():
+    # Gefüllt wird in recomputeAll; ohne Spaltenkopf muss die Zahl die Einheit selbst tragen.
+    assert "/ Jahr)" in _funktionsblock("recomputeAll")
+
+
+def test_keine_alten_texte_ueber_rechts():
+    text = _seite_text()
+    assert "Rechts steht der Unterschied" not in text
+    assert "rechts der Unterschied zum erfassten Wert" not in text
+    assert "die vierte Spalte der Anpassungszeile" not in text
+    assert "der Unterschied in der vierten Spalte" not in text
+    # Die Anpassungszeile samt dem Kommentar über ihr: dort darf keine
+    # vierte Spalte mehr vorkommen. Seitenweit geht das nicht — andere
+    # Kommentare nennen «die frühere vierte Spalte» zu Recht.
+    kopf = text.rindex("\n\n", 0, text.index("function makeAdjustmentRow"))
+    zeile = text[kopf:text.index("function makeAdjustmentRow")] \
+        + _funktionsblock("makeAdjustmentRow")
+    assert not re.search(r"vierte[n]?\s+(//\s*)?Spalte", zeile)
+
+
+_PERIODEN_SCHLEIFE = "['monatlich', 'jaehrlich'].forEach"
+
+
+def _zellen_im_code(code):
+    """Zaehlt die <td>, die ein Stueck Code anlegt. Eine Zelle in der
+    Schleife ueber Monatlich und Jaehrlich zaehlt doppelt — so legen
+    Positions- und Anpassungszeile ihre Betragszellen an."""
+    zellen = 0
+    rest = code
+    while _PERIODEN_SCHLEIFE in rest:
+        vor, nach = rest.split(_PERIODEN_SCHLEIFE, 1)
+        # Die Schleife endet mit «});» auf der Einrückung ihres Kopfes.
+        einzug = vor[vor.rindex("\n") + 1:]
+        schleife, rest = nach.split("\n" + einzug + "});", 1)
+        zellen += vor.count("createElement('td')") + 2 * schleife.count("createElement('td')")
+    return zellen + rest.count("createElement('td')")
+
+
+def test_jede_zeile_der_budgettabellen_hat_drei_zellen():
+    """Punkt 10: Position, Jährlich, Monatlich — mehr Spalten gibt es nicht.
+    Eine Zeile mit einer vierten Zelle schoebe die Tabelle nach rechts über
+    ihre Kopfzeile hinaus, ohne dass ein anderer Test es merkte."""
+    # Die Anpassungszeile: Beschriftung mit Datum und Unterschied, zwei Beträge.
+    assert _zellen_im_code(_funktionsblock("makeAdjustmentRow")) == 3
+
+    # Die Positionszeile in renderRows, bis sie in die Tabelle kommt.
+    render = _funktionsblock("renderRows")
+    hauptzeile = render[render.index("// ---- Main row"):render.index("tbody.appendChild(tr);")]
+    assert _zellen_im_code(hauptzeile) == 3
+
+    # Die Zwischensumme als Vorlage: drei <td>, beide Zahlen gerechnet und
+    # ohne Marke (.computed, nicht .total-display).
+    subtotal = render[render.index("subtotalRow.innerHTML"):render.index("tbody.appendChild(subtotalRow)")]
+    assert subtotal.count("<td") == 3
+    assert subtotal.count('class="computed"') == 2 and "total-display" not in subtotal
+
+    # Die festen Tabellen im HTML: Kopf und jede Zeile mit drei Zellen.
+    text = _seite_text()
+    tabellen = re.findall(r'<table class="budget-table"[^>]*>(.*?)</table>', text, re.S)
+    assert len(tabellen) >= 10
+    for tabelle in tabellen:
+        for zeile in re.findall(r"<tr[^>]*>(.*?)</tr>", tabelle, re.S):
+            assert len(re.findall(r"<t[hd][\s>]", zeile)) == 3, zeile
+
+
+# ---------------------------------------------------------------------------
+# Punkt 10, Schritt 3: «Monatlich» steht vor «Jährlich» — die Jahressumme
+# rechts, dort wo früher «Total / Jahr» stand.
+# ---------------------------------------------------------------------------
+
+def test_monatlich_steht_vor_jaehrlich_in_jeder_kopfzeile():
+    text = _seite_text()
+    koepfe = re.findall(r"<thead>.*?</thead>", text, re.S)
+    paare = [k for k in koepfe if "Jährlich" in k and "Monatlich" in k]
+    # 12 Budget-Tabellen und die Zusammenfassung; die Auswertung hat andere Köpfe.
+    assert len(paare) == 13
+    assert all(k.index("Monatlich") < k.index("Jährlich") for k in paare)
+
+
+def test_anpassungszeile_erst_monatlich():
+    assert "['monatlich', 'jaehrlich'].forEach" in _funktionsblock("makeAdjustmentRow")
+
+
+def test_positionszeile_erst_monatlich():
+    render = _funktionsblock("renderRows")
+    hauptzeile = render[render.index("// ---- Main row"):render.index("tbody.appendChild(tr);")]
+    assert "['monatlich', 'jaehrlich'].forEach" in hauptzeile
+    assert "['jaehrlich', 'monatlich']" not in hauptzeile
+
+
+def test_zwischensumme_erst_monatlich():
+    render = _funktionsblock("renderRows")
+    zeile = render[render.index("subtotalRow.innerHTML"):render.index("tbody.appendChild(subtotalRow)")]
+    assert re.findall(r'data-period="(\w+)"', zeile) == ["monatlich", "jaehrlich"]
+
+
+def test_total_fixkosten_erst_monatlich():
+    text = _seite_text()
+    perioden = re.findall(r'data-grand-total="fixkosten" data-period="(\w+)"', text)
+    assert perioden == ["monatlich", "jaehrlich"]
+
+
+def test_zusammenfassung_erst_monatlich():
+    text = _seite_text()
+    for art in ("einnahmen", "ausgaben", "differenz"):
+        perioden = re.findall(rf'data-summary="{art}" data-period="(\w+)"', text)
+        # Zwei Treffer im HTML (die Zeile), die Zuweisungen in recomputeAll
+        # stehen mit Anführungszeichen im JS und passen auf dieses Muster nicht.
+        assert perioden[:2] == ["monatlich", "jaehrlich"], art
+
+
+def test_standzeilen_erst_monatlich():
+    block = _funktionsblock("standZeile")
+    assert block.index("['monatlich', summe.diffM]") < block.index("['jaehrlich', summe.diffY]")
+
+
+def test_beschreibende_texte_nennen_die_neue_reihenfolge():
+    text = _seite_text()
+    assert "Jahres- oder in die <strong>Monatsspalte" not in text
+    assert "neue Jahres- oder Monatsbetrag" not in text
+    assert "'Jährlich oder monatlich eintragen" not in text
+
+
+# --- Welle 3: Treppe ---
+# Geometrie des Ausblicks: wie die Stände über die Zeit zu einer Treppe werden.
+# Der Verlauf wird bewusst erst im Test gerechnet, nicht auf Modulebene — dort
+# liefe Node schon beim Sammeln, auch wo der skipif greifen soll.
+
+def _verlauf(anpassungen=ANPASSUNGEN):
+    return kern("standVerlauf", SCHEMA, WERTE, anpassungen, HEUTE)
+
+
+def test_monate_dazu():
+    assert kern("monateDazu", "2026-11-15", 3) == "2027-02-01"
+    assert kern("monateDazu", "2026-12-31", 1) == "2027-01-01"
+
+
+def test_spanne_ab_heute_und_drei_monate_nach_dem_letzten_datum():
+    assert kern("treppenSpanne", _verlauf(), HEUTE) == {"von": "2026-10-01", "bis": "2027-07-01"}
+
+
+def test_spanne_beginnt_beim_verstrichenen_datum():
+    # Einen Monat VOR dem verstrichenen Datum: sonst begänne die Achse genau
+    # auf dem Sprung, und der erfasste Wert davor hätte keine Breite.
+    a = dict(ANPASSUNGEN, handy={"jaehrlich": None, "monatlich": 0, "ab": "2026-08-01"})
+    assert kern("treppenSpanne", _verlauf(a), HEUTE)["von"] == "2026-07-01"
+
+
+def test_erstes_stueck_hat_breite_auch_wenn_das_datum_ein_monatserster_ist():
+    a = dict(ANPASSUNGEN, handy={"jaehrlich": None, "monatlich": 0, "ab": "2026-08-01"})
+    verlauf = _verlauf(a)
+    spanne = kern("treppenSpanne", verlauf, HEUTE)
+    treppe = kern("treppenStufen", verlauf, HEUTE)
+    punkte = kern("treppenPunkte", treppe, spanne["von"], spanne["bis"])
+    assert punkte[0] == [spanne["von"], treppe["anfang"]]
+    assert punkte[1][0] > punkte[0][0], "das erste Stück muss in der Zeit Länge haben"
+
+
+def test_erster_tick_traegt_das_jahr():
+    # Sonst zeigte eine Spanne Feb–Aug 2027 nirgends ein Jahr.
+    ticks = kern("treppenTicks", "2027-02-01", "2027-08-01")
+    assert [t["text"] for t in ticks] == ["Mär 2027", "Apr", "Mai", "Jun", "Jul"]
+    ticks = kern("treppenTicks", "2026-10-01", "2027-03-01")
+    assert ticks[0]["text"] == "Nov 2026"
+
+
+def test_spanne_nur_vorschlaege_ist_ein_halbes_jahr():
+    a = {"kasse": {"jaehrlich": None, "monatlich": 340, "ab": None}}
+    assert kern("treppenSpanne", _verlauf(a), HEUTE) == {"von": "2026-10-01", "bis": "2027-04-01"}
+
+
+def test_zeitanteil():
+    assert kern("zeitAnteil", "2026-10-01", "2026-10-01", "2027-10-01") == 0
+    assert kern("zeitAnteil", "2027-10-01", "2026-10-01", "2027-10-01") == 1
+    assert abs(kern("zeitAnteil", "2027-04-01", "2026-10-01", "2027-10-01") - 182 / 365) < 1e-9
+
+
+def test_ticks_monatlich_mit_jahr_im_januar():
+    ticks = kern("treppenTicks", "2026-10-01", "2027-03-01")
+    assert [t["text"] for t in ticks] == ["Nov 2026", "Dez", "Jan 2027", "Feb"]
+
+
+def test_ticks_bei_langer_spanne_nur_quartale():
+    ticks = kern("treppenTicks", "2026-10-01", "2029-01-01")
+    assert ticks, "bei langer Spanne darf die Achse nicht leer sein"
+    assert all(t["iso"][5:7] in ("01", "04", "07", "10") for t in ticks)
+
+
+def test_bereich_schliesst_null_ein():
+    b = kern("treppenBereich", [120, 138, 96, 246])
+    assert b["basis"] == 0 and b["dach"] >= 246
+    b = kern("treppenBereich", [80, -40])
+    assert b["basis"] <= -40 and b["dach"] >= 80 and b["basis"] % b["schritt"] == 0
+
+
+@pytest.mark.parametrize("werte", [[0, 0], [], [0]])
+def test_bereich_hat_immer_hoehe(werte):
+    # Ein frisches Budget mit einer Anpassung auf 0: Basis und Dach dürften nicht
+    # zusammenfallen, sonst teilt die Zeichnung durch null.
+    b = kern("treppenBereich", werte)
+    assert b["basis"] == 0 and b["dach"] > b["basis"]
+
+
+def test_stufen_aus_dem_verlauf():
+    s = kern("treppenStufen", _verlauf(), HEUTE)
+    assert [x["ab"] for x in s["stufen"]] == ["2027-01-01", "2027-04-01"]
+    assert s["stufen"][0]["delta"] == pytest.approx(149)      # handy 60 + fitness 89 fallen weg
+    assert s["stufen"][1]["delta"] == pytest.approx(14)       # hausrat 42 → 28
+    assert s["offen"] == pytest.approx(s["stufen"][-1]["wert"] + 70)   # kasse 410 → 340
+    assert s["anfang"] == pytest.approx(3800 - (60 + 89 + 42 + 410 + 3319))   # −120: Fehlbetrag
+
+
+def test_treppe_hat_keine_schraegen():
+    # Stände sind Sprünge (Entwurf vom 2026-10-23): je Schritt ändert sich Zeit ODER Wert.
+    treppe = kern("treppenStufen", _verlauf(), HEUTE)
+    punkte = kern("treppenPunkte", treppe, "2026-10-01", "2027-07-01")
+    assert punkte[0] == ["2026-10-01", treppe["anfang"]] and punkte[-1][0] == "2027-07-01"
+    for (t1, w1), (t2, w2) in zip(punkte, punkte[1:]):
+        assert (t1 == t2) != (w1 == w2)
+
+
+def _stufe(ab, wert, delta):
+    return {"key": ab, "ab": ab, "wert": wert, "delta": delta, "faellig": False}
+
+
+@pytest.mark.parametrize("treppe", [
+    # erste Stufe genau auf `von`
+    {"anfang": 100, "stufen": [_stufe("2026-10-01", 150, 50)], "offen": None},
+    # zwei Stufen am selben Tag
+    {"anfang": 100, "stufen": [_stufe("2027-01-01", 150, 50), _stufe("2027-01-01", 90, -60)], "offen": None},
+    # Stufe ohne Unterschied
+    {"anfang": 100, "stufen": [_stufe("2027-01-01", 100, 0), _stufe("2027-04-01", 130, 30)], "offen": None},
+    # nichts als Anfangswert
+    {"anfang": 100, "stufen": [], "offen": None},
+])
+def test_punkte_ohne_schraegen_und_ohne_doppelte_in_den_randfaellen(treppe):
+    punkte = kern("treppenPunkte", treppe, "2026-10-01", "2027-07-01")
+    assert punkte[0] == ["2026-10-01", 100] and punkte[-1][0] == "2027-07-01"
+    for (t1, w1), (t2, w2) in zip(punkte, punkte[1:]):
+        assert (t1 == t2) != (w1 == w2), (punkte, (t1, w1), (t2, w2))
+
+
+# --- Welle 3: Treppe im DOM ---
+# Gezeichnet wird im DOM und darum nicht im Treiber; geprüft wird die Stelle
+# im Code, wie bei der Sperre der Vorschau.
+
+def test_ausblick_steht_in_der_zusammenfassung():
+    # Im selben Abschnitt, nicht als eigener: im Druck beginnt jeder .section
+    # auf einem neuen Blatt.
+    text = _seite_text()
+    abschnitt = text[text.index('class="section summary-section"'):]
+    abschnitt = abschnitt[:abschnitt.index("</section>")]
+    assert 'id="ausblickBlock"' in abschnitt and 'id="ausblickTreppe"' in abschnitt
+
+
+def test_ausblick_hat_dasselbe_tor_wie_die_grafik():
+    assert "anpassungHatBetrag" in _funktionsblock("renderAusblick")
+    assert "renderAusblick(" in _funktionsblock("recomputeAll")
+
+
+def test_treppe_zeichnet_aus_den_eckpunkten_des_kerns():
+    block = _funktionsblock("zeichneTreppe")
+    assert "treppenPunkte(" in block
+
+
+def test_klickziele_sind_bedienbar():
+    block = _funktionsblock("zeichneTreppe")
+    assert "enterPreview(" in block and "tabindex" in block and "keydown" in block
+
+
+def test_klickziele_sind_mindestens_24_px_gross():
+    # WCAG 2.5.8: ein Punkt ohne Beschriftung kam vorher auf 22 × 20.
+    block = _funktionsblock("zeichneTreppe")
+    assert "const ZIEL_MIN = 24;" in block
+    assert "Math.max(k.x2 - k.x1 + 8, ZIEL_MIN)" in block
+    assert "Math.max(k.y2 - k.y1 + 6, ZIEL_MIN)" in block
+
+
+def test_klickhinweis_des_ausblicks_druckt_nicht():
+    text = _seite_text()
+    block = text[text.index('id="ausblickBlock"'):]
+    block = block[:block.index("</div>")]
+    assert re.search(r'<span class="treppe-klickhinweis">[^<]*Ein Klick', block)
+    druck = text[text.index("@media print"):]
+    assert re.search(r"\.treppe-klickhinweis\s*\{\s*display:\s*none", druck)
+
+
+def test_treppe_ist_eine_gruppe_und_kein_bild():
+    # Unter role="img" gälten die Klickziele für Hilfstechnik als blosse
+    # Darstellung; role="group" lässt die Knöpfe darin bestehen.
+    text = _seite_text()
+    svg = text[text.index('id="ausblickTreppe"') - 40:text.index('id="ausblickTreppe"') + 60]
+    assert 'role="group"' in svg and 'role="img"' not in svg
+
+
+def test_treppe_wird_bei_breitenaenderung_neu_gezeichnet():
+    assert "observe($('#ausblickTreppe'))" in _seite_text()
+
+
+def test_treppe_wird_fuer_den_druck_in_blattbreite_gezeichnet():
+    # Gemessen am breiten Schirm (~984 px) verkleinerte der Druck die Treppe
+    # auf A4 (~684 px) auf zwei Drittel, die Schrift käme mit 5–6 pt aufs
+    # Papier; der Beobachter meldet das Drucklayout nicht. beforeprint
+    # zeichnet darum fest, afterprint wieder gemessen.
+    text = _seite_text()
+    assert re.search(r"const TREPPE_DRUCKBREITE = 680;", text)
+    vorher = re.search(r"addEventListener\('beforeprint'.*?\n        \}\);", text, re.S).group(0)
+    assert "zeichneTreppe(TREPPE_DRUCKBREITE)" in vorher
+    nachher = re.search(r"addEventListener\('afterprint'.*?\n        \}\);", text, re.S)
+    assert nachher, "afterprint fehlt: die Treppe bliebe in der Blattbreite stehen"
+    nachher = nachher.group(0)
+    assert "gezeichneteTreppe = ''" in nachher and "zeichneTreppe()" in nachher
+    # Die feste Breite gilt nur, wenn sie übergeben wird.
+    assert "festeBreite || Math.round(" in _funktionsblock("zeichneTreppe")
+
+
+def test_haekchen_ausblick_ist_nicht_vorgewaehlt():
+    text = _seite_text()
+    m = re.search(r'<input type="checkbox" id="chkPrintAusblick"[^>]*>', text)
+    assert m and "checked" not in m.group(0)
+    assert "Ausblick drucken" in text
+    assert "classList.toggle('print-ausblick'" in text
+
+
+def test_ausblick_druckt_nur_mit_haekchen():
+    text = _seite_text()
+    druck = text[text.index("@media print"):]
+    assert re.search(r"body:not\(\.print-ausblick\)\s+#ausblickBlock\s*\{[^}]*display:\s*none", druck)
+    assert re.search(r"#ausblickBlock\s*\{[^}]*print-color-adjust:\s*exact", druck)
