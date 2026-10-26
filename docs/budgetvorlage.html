@@ -2286,6 +2286,28 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.25);
         }
+        /* Zahl der Anpassungen der Version. Weisse Schrift auf der Hauptfarbe
+           im inaktiven Reiter; im aktiven Reiter (selbst Hauptfarbe) kehrt sich
+           das um, sonst verschwände die Marke im Grund. */
+        .version-tab-anzahl {
+            display: inline-block;
+            min-width: 1.15rem;
+            margin-left: 0.4rem;
+            padding: 0 0.3rem;
+            border-radius: 999px;
+            background: var(--color-primary);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            line-height: 1.15rem;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            vertical-align: 0.05em;
+        }
+        .version-tab[aria-selected="true"] .version-tab-anzahl {
+            background: white;
+            color: var(--color-primary-dark);
+        }
         .version-tab-close {
             position: absolute;
             top: -7px;
@@ -5725,7 +5747,8 @@
         const anpassungen = bekannteAnpassungen(active ? active.adjustments : {});
         const staende = stichtagListe(anpassungen, heuteIso());
         const gruppen = anpassungsGruppen(anpassungen, staende, formWerte || {});
-        const anzahl = gruppen.reduce((n, g) => n + g.eintraege.length, 0);
+        // Dieselbe Quelle wie die Marke am Reiter, nicht die Summe der Gruppen.
+        const anzahl = anpassungsUebersicht(anpassungen, heuteIso()).anzahl;
 
         panel.textContent = '';
         btn.hidden = anzahl === 0;
@@ -5914,6 +5937,9 @@
         renderGrafik(verlauf, anpassungen, basisWerte);
         renderAuswertung();     // tut nichts, solange der Modus zu ist
         renderAdjustmentList(basisWerte);
+        // handleAdjInputEvent schreibt active.adjustments vor dieser Rechnung,
+        // darum genügt der Aufruf hier, um die Marken beim Tippen mitzuführen.
+        reiterMarkenAktualisieren();
     }
 
     // ----------------------------------------------------------------
@@ -6137,6 +6163,46 @@
         return 'Version ' + (state.versions.length + 1);
     }
 
+    // Die Zahl am Reiter und die Zahl am Knopf «Anpassungen» kommen aus
+    // derselben Übersicht (anpassungsUebersicht): zählten sie getrennt, liefen
+    // sie bei der ersten neuen Art von Anpassung auseinander. Nur Zeilen, die
+    // es noch gibt, zählen — dafür bekannteAnpassungen.
+    function reiterMarkeSetzen(tab, version) {
+        const uebersicht = anpassungsUebersicht(
+            bekannteAnpassungen(version.adjustments), heuteIso());
+        const alt = tab.querySelector('.version-tab-anzahl');
+        const grundtitel = `Zu „${version.name}" wechseln`;
+        const umbenennen = '(Doppelklick zum Umbenennen)';
+        if (uebersicht.anzahl === 0) {
+            if (alt) alt.remove();
+            tab.title = `${grundtitel} ${umbenennen}`;
+            tab.removeAttribute('aria-label');
+            return;
+        }
+        const hinweis = reiterHinweis(uebersicht);
+        let marke = alt;
+        if (!marke) {
+            marke = document.createElement('span');
+            marke.className = 'version-tab-anzahl';
+            // Für Screenreader steht der volle Hinweis im aria-label des
+            // Reiters; die nackte Zahl daneben läse ihn doppelt vor.
+            marke.setAttribute('aria-hidden', 'true');
+            tab.appendChild(marke);
+        }
+        marke.textContent = String(uebersicht.anzahl);
+        tab.title = `${grundtitel} · ${hinweis} ${umbenennen}`;
+        tab.setAttribute('aria-label', `${version.name}, ${hinweis}`);
+    }
+
+    // Nach jeder Rechnung nachgeführt, ohne die Reiter neu zu bauen: ein
+    // Neubau mitten im Tippen würfe den Fokus aus dem Eingabefeld.
+    function reiterMarkenAktualisieren() {
+        $$('.version-tab').forEach((tab) => {
+            const v = getVersionById(tab.dataset.versionId);
+            if (v) reiterMarkeSetzen(tab, v);
+        });
+    }
+
     function renderVersionTabs() {
         const container = $('#versionTabs');
         if (!container) return;
@@ -6154,7 +6220,7 @@
             tab.setAttribute('aria-selected', v.id === state.activeVersionId ? 'true' : 'false');
             tab.dataset.versionId = v.id;
             tab.textContent = v.name;
-            tab.title = `Zu „${v.name}" wechseln (Doppelklick zum Umbenennen)`;
+            reiterMarkeSetzen(tab, v);
             tab.addEventListener('click', () => {
                 if (v.id !== state.activeVersionId) switchVersion(v.id);
             });

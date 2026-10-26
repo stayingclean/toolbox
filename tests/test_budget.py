@@ -2304,3 +2304,26 @@ def test_uebersicht_heute_ist_verstrichen():
 ])
 def test_reiter_hinweis(u, text):
     assert kern("reiterHinweis", u) == text
+
+
+def test_reiter_bekommt_die_marke():
+    block = _funktionsblock("renderVersionTabs")
+    assert "reiterMarkeSetzen(tab, v)" in block
+
+
+def test_knopf_und_reiter_zaehlen_aus_einer_quelle():
+    assert "anpassungsUebersicht(" in _funktionsblock("renderAdjustmentList")
+    assert "anpassungsUebersicht(" in _funktionsblock("reiterMarkeSetzen")
+
+
+def test_marke_lebt_ohne_neubau_der_reiter():
+    # Nach jeder Rechnung nachgeführt; ein Neubau würfe den Fokus weg.
+    rechnen = _funktionsblock("recomputeAll")
+    assert "reiterMarkenAktualisieren()" in rechnen
+    assert "renderVersionTabs()" not in rechnen
+
+
+def test_marke_ist_fuer_screenreader_verborgen():
+    block = _funktionsblock("reiterMarkeSetzen")
+    assert "version-tab-anzahl" in block and "aria-hidden" in block
+    assert "aria-label" in block

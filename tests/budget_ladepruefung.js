@@ -133,7 +133,12 @@ await (async () => {
         for (let i = 0; i < soll; i++) {
             const tab = reiter()[i];      // jeder Wechsel baut die Reiter neu
             tab.click();
-            versionen.push({ name: tab.textContent, ...summen() });
+            // Der Name ohne die Zahl der Anpassungen: die Marke am Reiter ist
+            // ein Kind-Element und gehoert nicht zum Namen der Version.
+            const marke = tab.querySelector('.version-tab-anzahl');
+            const nameOhneMarke = [...tab.childNodes]
+                .filter((n) => n !== marke).map((n) => n.textContent).join('');
+            versionen.push({ name: nameOhneMarke, ...summen() });
         }
         reiter()[aktiv].click();
 
