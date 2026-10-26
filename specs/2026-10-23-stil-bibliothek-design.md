@@ -8,7 +8,8 @@ nachgeprüft, die Randbedingungen stehen, und die vier Entscheide des Benutzers
 sind am 2026-10-23 gefallen — Abschnitt «Entscheide des Benutzers, 2026-10-23».
 Damit ist dies die verbindliche Vorlage des Umbaus, nicht mehr ein Entwurf im
 Werden. Was danach offen blieb, steht unter «Offen geblieben» und blockiert
-nichts; der Umbau der Budgetvorlage ist bewusst ein eigener Schritt.
+nichts; der Umbau der Budgetvorlage war bewusst ein eigener Schritt und
+ist am 2026-10-25 erfolgt (Abschnitt «4. Budgetvorlage: warme Farben»).
 **Mitlesen:** `CLAUDE.md`, Abschnitt «Neue HTML-Seite veröffentlichen» Punkt 3
 (der Entscheid, der das hier erst erlaubt) und Abschnitt «Konvention: Fusszeile
 mit Urheber-Credit und Kaffee-Link»
@@ -390,6 +391,17 @@ nebeneinander:
 Es bleibt dabei, dass die Budgetvorlage **getrennt** umgebaut wird (Entscheid
 2). Diese drei Zeilen gehören in jenen Schritt — sie sind zwar unabhängig vom
 Rest, aber die Seite soll nur in einem Vorgang angefasst werden.
+
+**Umgesetzt am 2026-10-25.** Die Seite bindet `tokens.css` ein; ihre zehn
+gemeinsamen `--color-*`-Namen sind Aliase darauf (`--color-primary:
+var(--accent);`), die beiden doppelt geführten Schrift-Token sind weg. Damit
+kamen die drei warmen Werte von selbst. Die Namen blieben, weil über 300
+`var(--color-…)` sonst hätten angefasst werden müssen — ein grosser Diff ohne
+zusätzliches Ergebnis. **Ohne Ersatzwerte** (`var(--accent)`, nicht
+`var(--accent, #008080)`): der Benutzer hat das am 2026-10-25 so entschieden,
+weil die Seiten für den Online-Gebrauch gerechnet sind und ein Ersatzwert eine
+zweite, still veraltende Kopie der neun Farben wäre, die kein Test sieht.
+Die Seite steht seither in `MIGRIERT`.
 
 **Ehrlich dazu:** auf der echten Seite ist der Unterschied klein. Was den
 Charakter trägt — das Teal `#008080`, die Playfair-Überschriften, die
