@@ -547,8 +547,8 @@
         }
 
         /* Die Anpassung als eigene Zeile unter dem Kommentar, spaltenbündig
-           zur Position: Datum links, die Beträge unter den erfassten, der
-           Unterschied rechts. */
+           zur Position: Datum links und dahinter der Unterschied pro Jahr,
+           die Beträge unter den erfassten. */
         /* Der Selektor nennt die Tabelle mit: `.budget-table tbody td` weiter
            oben ist spezifischer als ein blosses `.adj-row > td` und hat dessen
            Polsterung und die mittige Ausrichtung sonst überstimmt. Die
@@ -587,13 +587,9 @@
                unten keine: die trägt der Inhalt, damit der Balken durchläuft. */
             padding: 0 0.5rem;
         }
-        /* Der Unterschied ist blosser Text, die Beträge daneben stehen in
-           Feldern mit Rahmen und Polsterung. Oben ausgerichtet sässe er darum
-           vier Pixel zu hoch; diese vier gibt die Polsterung zurück, damit die
-           Zahlen auf einer Linie liegen. */
-        .budget-table tbody tr.adj-row > td.total-cell {
-            padding-top: 0.6rem;
-        }
+        /* Marke, Datum und Unterschied stehen in einer Flex-Zeile und sind
+           dort mittig zueinander ausgerichtet — der Unterschied braucht darum
+           keine eigene Polsterung, um auf der Höhe des Datumsfelds zu sitzen. */
         .adj-label-cell .adj-label-content {
             display: flex;
             align-items: center;
@@ -621,8 +617,11 @@
             color: var(--color-text-muted);
         }
         /* Der Unterschied zum erfassten Wert. Weniger ist gut, mehr nicht –
-           dieselbe Lesart wie in der Differenz-Zeile der Zusammenfassung. */
+           dieselbe Lesart wie in der Differenz-Zeile der Zusammenfassung.
+           Wird es neben dem Datum eng, rutscht «(… / Jahr)» als Ganzes auf
+           die nächste Zeile, statt zwischen Zahl und Einheit zu brechen. */
         .adj-delta {
+            white-space: nowrap;
             font-variant-numeric: tabular-nums;
             font-size: 0.92rem;
             font-weight: 600;
@@ -772,13 +771,11 @@
         /* ============================================================
            Inputs
            ============================================================ */
+        /* Zwei Betragsspalten zu je 24 %: die 14 % der früheren vierten
+           Spalte gehen an die Beträge, die Beschriftung behält ihre 50 %
+           (thead th:first-child); den kleinen Rest verteilt der Browser. */
         .input-cell {
-            width: 18%;
-            text-align: right;
-        }
-
-        .total-cell {
-            width: 14%;
+            width: 24%;
             text-align: right;
         }
 
@@ -816,19 +813,6 @@
             font-weight: 400;
         }
 
-        .total-display {
-            display: inline-block;
-            width: 100%;
-            padding: 0.4rem 0.625rem;
-            font-variant-numeric: tabular-nums;
-            font-weight: 600;
-            color: var(--color-primary-dark);
-            text-align: right;
-            background: var(--color-primary-tint);
-            border-radius: var(--radius-sm);
-            border: 1.5px solid transparent;
-        }
-
         /* Subtotal row */
         .subtotal-row td {
             background: var(--color-primary-faint) !important;
@@ -841,11 +825,9 @@
             font-weight: 600;
         }
 
-        .subtotal-row .total-display {
-            background: var(--color-primary);
-            color: white;
-        }
-
+        /* Beide Zahlen der Zwischensumme gleich: gerechnet, fett, ohne
+           Marke. Die farbige Pille trug nur das Total der früheren vierten
+           Spalte. */
         .subtotal-row .computed {
             display: inline-block;
             width: 100%;
@@ -1959,10 +1941,12 @@
             }
             .budget-table thead th:first-child,
             .budget-table tbody td.label-cell {
-                width: 40%;
+                width: 46%;
             }
-            .input-cell, .total-cell {
-                width: 20%;
+            /* Ohne vierte Spalte teilen sich die Beträge den Rest zu
+               gleichen Teilen (46 + 2 × 27). */
+            .input-cell {
+                width: 27%;
             }
             .amount-input {
                 font-size: 0.85rem;
@@ -2126,12 +2110,6 @@
                 border: 1px solid #999 !important;
                 background: white !important;
                 box-shadow: none !important;
-            }
-            .total-display, .subtotal-row .total-display {
-                background: #f0f0f0 !important;
-                color: black !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
             }
             .versions-overview-section {
                 page-break-inside: avoid;
@@ -3105,7 +3083,7 @@
                 <ol class="hilfe-schritte">
                     <li>Zeile mit dem <strong>Pfeil</strong> am Anfang aufklappen. Darunter erscheint das Feld für den Kommentar.</li>
                     <li>Dort auf <strong>„+ Anpassung erfassen"</strong> klicken.</li>
-                    <li>Die Anpassung steht nun als eigene Zeile direkt unter dem Kommentar, spaltengleich zu den Beträgen: links das Datum, daneben der neue Jahres- oder Monatsbetrag, rechts der Unterschied zum erfassten Wert.</li>
+                    <li>Die Anpassung steht nun als eigene Zeile direkt unter dem Kommentar, spaltengleich zu den Beträgen: links das Datum, daneben der neue Jahres- oder Monatsbetrag, hinter dem Datum der Unterschied pro Jahr.</li>
                     <li>Ohne Betrag gibt es keine Anpassung. Das Datum lässt sich erst setzen, wenn ein neuer Betrag dasteht, und eine Zeile ohne Betrag verschwindet wieder, sobald Sie sie verlassen.</li>
                 </ol>
 
@@ -3300,7 +3278,8 @@
                 <tr class="subtotal-row">
                     <td class="label-cell">Total Fixkosten</td>
                     <td class="input-cell"><span class="computed" data-grand-total="fixkosten" data-period="jaehrlich">0.00</span></td>
-                    <td class="input-cell"><span class="computed" data-grand-total="fixkosten" data-period="monatlich">0.00</span></td>                </tr>
+                    <td class="input-cell"><span class="computed" data-grand-total="fixkosten" data-period="monatlich">0.00</span></td>
+                </tr>
             </tbody>
         </table>
     </section>
@@ -3846,9 +3825,9 @@
         return null;
     }
 
-    // Was die Anpassung gegenüber dem erfassten Jahreswert ausmacht — die
-    // vierte Spalte der Anpassungszeile. Negativ heisst «kostet weniger».
-    // null: keine Anpassung, dann steht in der Spalte nichts.
+    // Was die Anpassung gegenüber dem erfassten Jahreswert ausmacht — steht
+    // hinter dem Datum der Anpassungszeile. Negativ heisst «kostet weniger».
+    // null: keine Anpassung, dann steht dort nichts.
     function anpassungUnterschied(a, erfasstJaehrlich) {
         const ziel = anpassungBetrag(a);
         if (ziel === null) return null;
@@ -4960,20 +4939,22 @@
             input.className = `adj-input adj-${period}`;
             input.placeholder = 'neu';
             input.title = 'Betrag, den diese Position künftig haben soll – die erfasste Zahl oben bleibt stehen. '
-                + 'Rechts steht der Unterschied. Druckt nie mit.';
+                + 'Der Unterschied pro Jahr steht hinter dem Datum. Druckt nie mit.';
             input.setAttribute('aria-label',
                 `${name} – Anpassung, neuer Betrag ${period === 'jaehrlich' ? 'jährlich' : 'monatlich'}`);
             td.appendChild(input);
             tr.appendChild(td);
         });
 
-        const deltaTd = document.createElement('td');
-        deltaTd.className = 'total-cell';
+        // Der Unterschied steht hinter dem Datum, in der ersten Zelle: eine
+        // eigene Spalte dafür gibt es nicht mehr (Punkt 10), und eine vierte
+        // Zelle nur in dieser Zeile schöbe die Tabelle über ihre Kopfzeile
+        // hinaus. Ohne Spaltenkopf trägt der Text die Einheit selbst
+        // («/ Jahr», gefüllt in recomputeAll).
         const delta = document.createElement('span');
         delta.className = 'adj-delta';
         delta.dataset.adjDelta = row.id;
-        deltaTd.appendChild(delta);
-        tr.appendChild(deltaTd);
+        labelTd.querySelector('.adj-ab-feld').after(delta);
 
         tr.querySelectorAll('.adj-input').forEach((input) => {
             input.dataset.rowId = row.id;
@@ -5833,15 +5814,20 @@
                 // Grundlage für den Unterschied der Anpassung.
                 const rowTotal = y || (m * 12);
 
-                // Vierte Spalte der Anpassungszeile: was sie gegenüber dem
+                // Hinter dem Datum der Anpassungszeile: was sie gegenüber dem
                 // erfassten Jahreswert ausmacht. Genau das Kopfrechnen, das
-                // die eigene Zeile loswerden soll.
+                // die eigene Zeile loswerden soll. Die Zahl steht in keiner
+                // Spalte mit Kopf mehr, darum trägt sie die Einheit selbst —
+                // sonst bliebe offen, ob sie für ein Jahr oder einen Monat
+                // gilt, denn daneben stehen beide Beträge. Ohne Anpassung
+                // bleibt der Platz leer, keine leeren Klammern.
                 const deltaEl = $(`span[data-adj-delta="${row.id}"]`);
                 if (deltaEl) {
                     const unterschied = anpassungUnterschied(
                         getActiveVersion()?.adjustments?.[row.id], rowTotal);
                     const wirkung = anpassungWirkung(unterschied, groupId === 'einnahmen');
-                    deltaEl.textContent = unterschied === null ? '' : deltaAnzeige(unterschied);
+                    deltaEl.textContent = unterschied === null ? ''
+                        : `(${deltaAnzeige(unterschied)} / Jahr)`;
                     deltaEl.classList.toggle('ist-gut', wirkung === 'gut');
                     deltaEl.classList.toggle('ist-schlecht', wirkung === 'schlecht');
                 }

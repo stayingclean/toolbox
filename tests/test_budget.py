@@ -178,13 +178,13 @@ def test_kommentarbereich_traegt_keine_anpassungsfelder_mehr():
 
 def test_anpassung_ist_eine_eigene_tabellenzeile():
     """Spaltenbuendig zur Position: Datum in der Beschriftungsspalte, die
-    Betraege unter den erfassten Betraegen, der Unterschied in Spalte vier."""
+    Betraege unter den erfassten Betraegen, der Unterschied hinter dem Datum."""
     block = _funktionsblock("makeAdjustmentRow")
     for feld in ("adj-jaehrlich", "adj-monatlich", "adj-ab"):
         assert feld in block, feld
     assert 'type="date"' in block or "'date'" in block
     assert "adj-row" in block and "adjFor" in block
-    assert "adj-delta" in block, "die vierte Spalte zeigt den Unterschied"
+    assert "adj-delta" in block, "der Unterschied fehlt in der Anpassungszeile"
 
 
 def test_anpassungszeile_traegt_kein_data_row_id():
@@ -497,10 +497,6 @@ def test_anpassungsfelder_stehen_neben_dem_datum():
     regel = re.search(r"\.budget-table tbody tr\.adj-row > td \{[^}]*\}", text)
     assert regel, "die Zeilenregel nennt die Tabelle mit"
     assert "vertical-align: top" in regel.group(0)
-    # Der Unterschied rechts ist blosser Text und braucht die Polsterung, die
-    # beim Betragsfeld der Rahmen gibt — sonst steht er vier Pixel zu hoch.
-    assert re.search(
-        r"\.budget-table tbody tr\.adj-row > td\.total-cell \{[^}]*padding-top:\s*0\.6rem", text)
 
 
 def test_kopfleiste_fuehrt_denselben_ablauf():
@@ -2348,3 +2344,66 @@ def test_kommentarzeile_spannt_drei_spalten():
 def test_rowtotal_rechnet_weiter_den_unterschied():
     # Die Anzeige ist weg, die Rechnung nicht: der Unterschied braucht den Jahreswert.
     assert "anpassungUnterschied(" in _funktionsblock("recomputeAll")
+
+
+def test_anpassungszeile_hat_drei_zellen():
+    block = _funktionsblock("makeAdjustmentRow")
+    assert "deltaTd" not in block
+    assert "adj-delta" in block   # lebt jetzt in der ersten Zelle
+
+
+def test_unterschied_traegt_die_einheit():
+    # Gefüllt wird in recomputeAll; ohne Spaltenkopf muss die Zahl die Einheit selbst tragen.
+    assert "/ Jahr)" in _funktionsblock("recomputeAll")
+
+
+def test_keine_alten_texte_ueber_rechts():
+    text = _seite_text()
+    assert "Rechts steht der Unterschied" not in text
+    assert "rechts der Unterschied zum erfassten Wert" not in text
+    assert "die vierte Spalte der Anpassungszeile" not in text
+
+
+_PERIODEN_SCHLEIFE = "['jaehrlich', 'monatlich'].forEach"
+
+
+def _zellen_im_code(code):
+    """Zaehlt die <td>, die ein Stueck Code anlegt. Eine Zelle in der
+    Schleife ueber Jaehrlich und Monatlich zaehlt doppelt — so legen
+    Positions- und Anpassungszeile ihre Betragszellen an."""
+    zellen = 0
+    rest = code
+    while _PERIODEN_SCHLEIFE in rest:
+        vor, nach = rest.split(_PERIODEN_SCHLEIFE, 1)
+        # Die Schleife endet mit «});» auf der Einrückung ihres Kopfes.
+        einzug = vor[vor.rindex("\n") + 1:]
+        schleife, rest = nach.split("\n" + einzug + "});", 1)
+        zellen += vor.count("createElement('td')") + 2 * schleife.count("createElement('td')")
+    return zellen + rest.count("createElement('td')")
+
+
+def test_jede_zeile_der_budgettabellen_hat_drei_zellen():
+    """Punkt 10: Position, Jährlich, Monatlich — mehr Spalten gibt es nicht.
+    Eine Zeile mit einer vierten Zelle schoebe die Tabelle nach rechts über
+    ihre Kopfzeile hinaus, ohne dass ein anderer Test es merkte."""
+    # Die Anpassungszeile: Beschriftung mit Datum und Unterschied, zwei Beträge.
+    assert _zellen_im_code(_funktionsblock("makeAdjustmentRow")) == 3
+
+    # Die Positionszeile in renderRows, bis sie in die Tabelle kommt.
+    render = _funktionsblock("renderRows")
+    hauptzeile = render[render.index("// ---- Main row"):render.index("tbody.appendChild(tr);")]
+    assert _zellen_im_code(hauptzeile) == 3
+
+    # Die Zwischensumme als Vorlage: drei <td>, beide Zahlen gerechnet und
+    # ohne Marke (.computed, nicht .total-display).
+    subtotal = render[render.index("subtotalRow.innerHTML"):render.index("tbody.appendChild(subtotalRow)")]
+    assert subtotal.count("<td") == 3
+    assert subtotal.count('class="computed"') == 2 and "total-display" not in subtotal
+
+    # Die festen Tabellen im HTML: Kopf und jede Zeile mit drei Zellen.
+    text = _seite_text()
+    tabellen = re.findall(r'<table class="budget-table"[^>]*>(.*?)</table>', text, re.S)
+    assert len(tabellen) >= 10
+    for tabelle in tabellen:
+        for zeile in re.findall(r"<tr[^>]*>(.*?)</tr>", tabelle, re.S):
+            assert len(re.findall(r"<t[hd][\s>]", zeile)) == 3, zeile
