@@ -337,8 +337,7 @@ und prüfbar.
   markieren, mit Verweis hierher.
 - `specs/2026-10-23-budget-grafik-und-vergleich-design.md`: Nachtrag zur
   Zeitachse (siehe oben).
-- `CLAUDE.md`, Abschnitt zu `tokens.css`: zwei Angaben zur Budgetvorlage sind
-  schon heute überholt und werden beim Abschluss richtiggestellt — sie steht
-  nicht mehr in `AUSGENOMMEN`, sondern in `MIGRIERT` (Commit `57de428`), und
-  `tests/test_budget.py` hat nicht 171, sondern (Stand 2026-10-26) 226
-  Testfunktionen; einzutragen ist die dann gültige Zahl.
+- `CLAUDE.md`, Abschnitt zu `tokens.css`: am 2026-10-26 nachgeprüft, nichts
+  nachzuziehen. Der Stand, auf dem dieser Zweig aufsetzt (`ed9e2ed`),
+  beschreibt die Budgetvorlage schon mit ihrer Alias-Schicht (seit `57de428`
+  in `MIGRIERT`) und nennt keine Zahl von Tests mehr.

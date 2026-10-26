@@ -2622,6 +2622,23 @@ def test_klickziele_sind_bedienbar():
     assert "enterPreview(" in block and "tabindex" in block and "keydown" in block
 
 
+def test_klickziele_sind_mindestens_24_px_gross():
+    # WCAG 2.5.8: ein Punkt ohne Beschriftung kam vorher auf 22 × 20.
+    block = _funktionsblock("zeichneTreppe")
+    assert "const ZIEL_MIN = 24;" in block
+    assert "Math.max(k.x2 - k.x1 + 8, ZIEL_MIN)" in block
+    assert "Math.max(k.y2 - k.y1 + 6, ZIEL_MIN)" in block
+
+
+def test_klickhinweis_des_ausblicks_druckt_nicht():
+    text = _seite_text()
+    block = text[text.index('id="ausblickBlock"'):]
+    block = block[:block.index("</div>")]
+    assert re.search(r'<span class="treppe-klickhinweis">[^<]*Ein Klick', block)
+    druck = text[text.index("@media print"):]
+    assert re.search(r"\.treppe-klickhinweis\s*\{\s*display:\s*none", druck)
+
+
 def test_treppe_ist_eine_gruppe_und_kein_bild():
     # Unter role="img" gälten die Klickziele für Hilfstechnik als blosse
     # Darstellung; role="group" lässt die Knöpfe darin bestehen.
@@ -2632,6 +2649,23 @@ def test_treppe_ist_eine_gruppe_und_kein_bild():
 
 def test_treppe_wird_bei_breitenaenderung_neu_gezeichnet():
     assert "observe($('#ausblickTreppe'))" in _seite_text()
+
+
+def test_treppe_wird_fuer_den_druck_in_blattbreite_gezeichnet():
+    # Gemessen am breiten Schirm (~984 px) verkleinerte der Druck die Treppe
+    # auf A4 (~684 px) auf zwei Drittel, die Schrift käme mit 5–6 pt aufs
+    # Papier; der Beobachter meldet das Drucklayout nicht. beforeprint
+    # zeichnet darum fest, afterprint wieder gemessen.
+    text = _seite_text()
+    assert re.search(r"const TREPPE_DRUCKBREITE = 680;", text)
+    vorher = re.search(r"addEventListener\('beforeprint'.*?\n        \}\);", text, re.S).group(0)
+    assert "zeichneTreppe(TREPPE_DRUCKBREITE)" in vorher
+    nachher = re.search(r"addEventListener\('afterprint'.*?\n        \}\);", text, re.S)
+    assert nachher, "afterprint fehlt: die Treppe bliebe in der Blattbreite stehen"
+    nachher = nachher.group(0)
+    assert "gezeichneteTreppe = ''" in nachher and "zeichneTreppe()" in nachher
+    # Die feste Breite gilt nur, wenn sie übergeben wird.
+    assert "festeBreite || Math.round(" in _funktionsblock("zeichneTreppe")
 
 
 def test_haekchen_ausblick_ist_nicht_vorgewaehlt():

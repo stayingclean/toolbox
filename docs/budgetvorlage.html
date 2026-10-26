@@ -2103,6 +2103,8 @@
                 print-color-adjust: exact;
             }
             .treppe-ziel .treffer { fill: transparent !important; stroke: none !important; }
+            /* Auf Papier lässt sich nichts anklicken. */
+            .treppe-klickhinweis { display: none; }
             /* Gedruckt wird in der Vorschau eine gerechnete Tabelle. Die
                Stand-Leiste steckt in .sticky-head und ist hier weg – die
                Kennzeichnung steht im Blattkopf an ihrer Stelle. Leer (Stand
@@ -3167,7 +3169,7 @@
                 <ol class="hilfe-schritte">
                     <li>Zeile mit dem <strong>Pfeil</strong> am Anfang aufklappen. Darunter erscheint das Feld für den Kommentar.</li>
                     <li>Dort auf <strong>„+ Anpassung erfassen"</strong> klicken.</li>
-                    <li>Die Anpassung steht nun als eigene Zeile direkt unter dem Kommentar, spaltengleich zu den Beträgen: links das Datum, daneben der neue Monats- oder Jahresbetrag, hinter dem Datum der Unterschied pro Jahr.</li>
+                    <li>Die Anpassung steht nun als eigene Zeile direkt unter dem Kommentar, spaltengleich zu den Beträgen: links das Datum und dahinter der Unterschied pro Jahr, daneben der neue Monats- oder Jahresbetrag.</li>
                     <li>Ohne Betrag gibt es keine Anpassung. Das Datum lässt sich erst setzen, wenn ein neuer Betrag dasteht, und eine Zeile ohne Betrag verschwindet wieder, sobald Sie sie verlassen.</li>
                 </ol>
 
@@ -3459,7 +3461,7 @@
              beginnt — Zusammenfassung und Treppe sollen ein Block bleiben. -->
         <div class="ausblick" id="ausblickBlock" hidden>
             <h3 class="grafik-titel">Ausblick</h3>
-            <p class="grafik-untertitel">Was am Monatsende bleibt – vor heute grau, ab heute der Ausblick. Ein Klick zeigt das ganze Budget zu diesem Stand.</p>
+            <p class="grafik-untertitel">Was am Monatsende bleibt – vor heute grau, ab heute der Ausblick.<span class="treppe-klickhinweis"> Ein Klick zeigt das ganze Budget zu diesem Stand.</span></p>
             <!-- role="group", nicht "img": unter einem Bild gälten die
                  Klickziele darin für Hilfstechnik als blosse Darstellung. -->
             <svg class="treppe" id="ausblickTreppe" role="group"></svg>
@@ -5741,6 +5743,17 @@
     // Fest, damit die Treppe auf jedem Schirm gleich hoch ist und die
     // Beschriftungen ihren Platz haben; nur die Breite wird gemessen.
     const TREPPE_HOEHE = 220;
+    // Die Breite fürs Blatt. Gemessen wird am Schirm, und auf einem breiten
+    // Fenster sind das gegen 1000 px; auf A4 stehen gut 680 zur Verfügung,
+    // der Browser verkleinerte die Treppe also auf zwei Drittel, und die
+    // Schrift käme mit 5 bis 6 pt aufs Papier. Der Beobachter hilft nicht:
+    // das Drucklayout meldet ihm keine neue Breite. Darum zeichnet
+    // beforeprint fest in dieser Breite und afterprint wieder gemessen.
+    const TREPPE_DRUCKBREITE = 680;
+    // Solange gedruckt wird, gilt die feste Breite — auch für ein Zeichnen
+    // dazwischen, und der Beobachter hält still: die Höhe am Schirm ändert
+    // sich mit der viewBox, und er zeichnete sonst sofort wieder gemessen.
+    let treppeImDruck = false;
 
     function renderAusblick(verlauf, anpassungen, werte) {
         const block = $('#ausblickBlock');
@@ -5753,10 +5766,12 @@
         block.hidden = !hatAnpassung;
         if (!hatAnpassung) { ausblickDaten = null; return; }
         ausblickDaten = { verlauf: verlauf, anpassungen: anpassungen, werte: werte || {}, heute: heuteIso() };
-        zeichneTreppe();
+        zeichneTreppe(treppeImDruck ? TREPPE_DRUCKBREITE : 0);
     }
 
-    function zeichneTreppe() {
+    // `festeBreite`: zeichnen in dieser Breite statt der gemessenen — nur
+    // für den Druck (beforeprint). Ohne Angabe wird gemessen.
+    function zeichneTreppe(festeBreite) {
         const svg = $('#ausblickTreppe');
         if (!svg || !ausblickDaten) return;
         // Gemessen wie bei «Der Weg», und die viewBox genau darauf: nur dann
@@ -5765,7 +5780,9 @@
         // die Breite 0: dann nicht zeichnen und die gemerkte Breite
         // vergessen — sonst hielte der Beobachter das alte Bild für aktuell,
         // wenn die Fläche in derselben Breite zurückkommt.
-        const B = Math.round(svg.getBoundingClientRect().width);
+        // Mit fester Breite wird auch gezeichnet, wenn die Fläche am Schirm
+        // gerade verborgen ist: das Blatt hat sein eigenes Layout.
+        const B = festeBreite || Math.round(svg.getBoundingClientRect().width);
         if (B < 2) { gezeichneteTreppe = ''; return; }
         gezeichneteTreppe = String(B);
         const H = TREPPE_HOEHE;
@@ -5809,8 +5826,16 @@
         const teile = [];
         // Ein Rahmen pro Ziel: Fokus und Vorschau-Markierung brauchen eine
         // Fläche, und die Fläche macht das Ziel grösser als den Punkt.
-        const treffer = (k) => `<rect class="treffer" x="${r(k.x1 - 4)}" y="${r(k.y1 - 3)}" `
-            + `width="${r(k.x2 - k.x1 + 8)}" height="${r(k.y2 - k.y1 + 6)}" rx="4"/>`;
+        // Mindestens 24 × 24 (WCAG 2.5.8), um die Mitte des Kastens gelegt:
+        // ein Punkt ohne Beschriftung käme sonst nur auf 22 × 20. Sichtbar
+        // wird die Fläche erst beim Zeigen, der Punkt bleibt, wie er ist.
+        const ZIEL_MIN = 24;
+        const treffer = (k) => {
+            const w = Math.max(k.x2 - k.x1 + 8, ZIEL_MIN);
+            const h = Math.max(k.y2 - k.y1 + 6, ZIEL_MIN);
+            return `<rect class="treffer" x="${r((k.x1 + k.x2 - w) / 2)}" y="${r((k.y1 + k.y2 - h) / 2)}" `
+                + `width="${r(w)}" height="${r(h)}" rx="4"/>`;
+        };
         const ziel = (key, name, titel, inhalt) => `<g class="treppe-ziel${key === state.previewStand ? ' is-preview' : ''}" `
             + `tabindex="0" role="button" data-stand="${escapeHtml(key)}" aria-label="Vorschau: ${escapeHtml(name)}">`
             + `<title>${escapeHtml(titel)}</title>${inhalt}</g>`;
@@ -7905,6 +7930,16 @@
             const notiz = $('#privateNote').value;
             $('#privateNotePrint').textContent = notiz;
             $('#privateNoteBox').classList.toggle('has-text', notiz.trim() !== '');
+            // Die Treppe in der Breite des Blatts (siehe TREPPE_DRUCKBREITE).
+            treppeImDruck = true;
+            zeichneTreppe(TREPPE_DRUCKBREITE);
+        });
+        // Nach dem Druck wieder in der gemessenen Breite. Die gemerkte Breite
+        // wird vergessen, damit sicher neu gezeichnet wird.
+        window.addEventListener('afterprint', () => {
+            treppeImDruck = false;
+            gezeichneteTreppe = '';
+            zeichneTreppe();
         });
         $('#addVersionBtn').addEventListener('click', handleAddVersionClick);
 
@@ -7942,7 +7977,7 @@
             // was davor dastand, ist dann nicht sicher noch aktuell.
             new ResizeObserver(() => {
                 const svg = $('#ausblickTreppe');
-                if (!svg) return;
+                if (!svg || treppeImDruck) return;
                 const breite = Math.round(svg.getBoundingClientRect().width);
                 if (breite < 2) { gezeichneteTreppe = ''; return; }
                 if (String(breite) === gezeichneteTreppe) return;
