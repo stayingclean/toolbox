@@ -968,7 +968,7 @@ def test_was_dauernd_sichtbar_sein_muss_steht_im_tooltip():
     """Mit dem Streifen fiel der immer sichtbare Satz weg. Was man beim Tippen
     braucht, haengt jetzt am Feld selbst — sichtbar genau dort, wo es gilt."""
     text = _seite_text()
-    assert "input.title = 'Jährlich oder monatlich eintragen" in text, \
+    assert "input.title = 'Monatlich oder jährlich eintragen" in text, \
         "die Spaltenregel am Betragsfeld"
     assert re.search(r"ta\.title = '[^']*Budget-Version", text), \
         "der Kommentar sagt, dass er nur fuer diese Version gilt"
@@ -2372,12 +2372,12 @@ def test_keine_alten_texte_ueber_rechts():
     assert not re.search(r"vierte[n]?\s+(//\s*)?Spalte", zeile)
 
 
-_PERIODEN_SCHLEIFE = "['jaehrlich', 'monatlich'].forEach"
+_PERIODEN_SCHLEIFE = "['monatlich', 'jaehrlich'].forEach"
 
 
 def _zellen_im_code(code):
     """Zaehlt die <td>, die ein Stueck Code anlegt. Eine Zelle in der
-    Schleife ueber Jaehrlich und Monatlich zaehlt doppelt — so legen
+    Schleife ueber Monatlich und Jaehrlich zaehlt doppelt — so legen
     Positions- und Anpassungszeile ihre Betragszellen an."""
     zellen = 0
     rest = code
@@ -2415,3 +2415,61 @@ def test_jede_zeile_der_budgettabellen_hat_drei_zellen():
     for tabelle in tabellen:
         for zeile in re.findall(r"<tr[^>]*>(.*?)</tr>", tabelle, re.S):
             assert len(re.findall(r"<t[hd][\s>]", zeile)) == 3, zeile
+
+
+# ---------------------------------------------------------------------------
+# Punkt 10, Schritt 3: «Monatlich» steht vor «Jährlich» — die Jahressumme
+# rechts, dort wo früher «Total / Jahr» stand.
+# ---------------------------------------------------------------------------
+
+def test_monatlich_steht_vor_jaehrlich_in_jeder_kopfzeile():
+    text = _seite_text()
+    koepfe = re.findall(r"<thead>.*?</thead>", text, re.S)
+    paare = [k for k in koepfe if "Jährlich" in k and "Monatlich" in k]
+    # 12 Budget-Tabellen und die Zusammenfassung; die Auswertung hat andere Köpfe.
+    assert len(paare) == 13
+    assert all(k.index("Monatlich") < k.index("Jährlich") for k in paare)
+
+
+def test_anpassungszeile_erst_monatlich():
+    assert "['monatlich', 'jaehrlich'].forEach" in _funktionsblock("makeAdjustmentRow")
+
+
+def test_positionszeile_erst_monatlich():
+    render = _funktionsblock("renderRows")
+    hauptzeile = render[render.index("// ---- Main row"):render.index("tbody.appendChild(tr);")]
+    assert "['monatlich', 'jaehrlich'].forEach" in hauptzeile
+    assert "['jaehrlich', 'monatlich']" not in hauptzeile
+
+
+def test_zwischensumme_erst_monatlich():
+    render = _funktionsblock("renderRows")
+    zeile = render[render.index("subtotalRow.innerHTML"):render.index("tbody.appendChild(subtotalRow)")]
+    assert re.findall(r'data-period="(\w+)"', zeile) == ["monatlich", "jaehrlich"]
+
+
+def test_total_fixkosten_erst_monatlich():
+    text = _seite_text()
+    perioden = re.findall(r'data-grand-total="fixkosten" data-period="(\w+)"', text)
+    assert perioden == ["monatlich", "jaehrlich"]
+
+
+def test_zusammenfassung_erst_monatlich():
+    text = _seite_text()
+    for art in ("einnahmen", "ausgaben", "differenz"):
+        perioden = re.findall(rf'data-summary="{art}" data-period="(\w+)"', text)
+        # Zwei Treffer im HTML (die Zeile), die Zuweisungen in recomputeAll
+        # stehen mit Anführungszeichen im JS und passen auf dieses Muster nicht.
+        assert perioden[:2] == ["monatlich", "jaehrlich"], art
+
+
+def test_standzeilen_erst_monatlich():
+    block = _funktionsblock("standZeile")
+    assert block.index("['monatlich', summe.diffM]") < block.index("['jaehrlich', summe.diffY]")
+
+
+def test_beschreibende_texte_nennen_die_neue_reihenfolge():
+    text = _seite_text()
+    assert "Jahres- oder in die <strong>Monatsspalte" not in text
+    assert "neue Jahres- oder Monatsbetrag" not in text
+    assert "'Jährlich oder monatlich eintragen" not in text
