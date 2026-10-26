@@ -968,6 +968,71 @@
             font-size: 0.85rem;
             color: var(--color-text-muted);
         }
+
+        /* --- Der Ausblick: die Treppe unter den Stand-Zeilen ---
+           Handgeschriebenes SVG wie «Der Weg». Die Breite misst
+           zeichneTreppe, die Höhe ist fest (TREPPE_HOEHE); mit width:100% und
+           height:auto folgt die Höhe der viewBox, und der Druck skaliert das
+           Bild als Ganzes, statt es abzuschneiden. Weisser Grund, weil der
+           Abschnitt einen getönten Verlauf trägt, auf dem die hellen Ränder
+           hinter der Schrift als Flecken stünden. */
+        .ausblick { margin-top: 1.4rem; }
+        .ausblick[hidden] { display: none; }
+        .treppe {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: var(--color-bg);
+            border-radius: var(--radius-md);
+        }
+        .treppe text { font-family: var(--font-body); font-size: 11px; fill: var(--color-text-muted); }
+        .treppe .raster { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 2 4; }
+        /* Die Nulllinie ist die Grenze zwischen Überschuss und Fehlbetrag,
+           darum kräftiger als das übrige Raster. */
+        .treppe .nulllinie { stroke: var(--color-text-muted); stroke-width: 1.5; }
+        .treppe text.achsenwert { font-size: 10px; }
+        .treppe .tick { stroke: var(--color-border-strong); stroke-width: 1; }
+        .treppe text.zeit { font-size: 10px; }
+        .treppe .streifen { fill: var(--color-bg-alt); }
+        .treppe .heute-linie { stroke: var(--color-text-muted); stroke-width: 1; stroke-dasharray: 4 3; }
+        .treppe text.heute-text { font-size: 10px; font-weight: 600; }
+        .treppe .linie { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+        .treppe .linie.vorbei { stroke: var(--color-text-light); }
+        .treppe .linie.kommend { stroke: var(--color-primary); }
+        .treppe .offen-linie { stroke: var(--color-text-light); stroke-width: 2.5; stroke-dasharray: 6 4; }
+        .treppe .stufe { fill: var(--color-bg); stroke: var(--color-text-muted); stroke-width: 2.5; }
+        .treppe .stufe.ist-gut { stroke: var(--color-success); }
+        .treppe .stufe.ist-schlecht { stroke: var(--color-danger); }
+        /* Vor heute gedämpft wie die Linie dort — auch der Punkt. Was die
+           Stufe ausgemacht hat, steht weiterhin daneben. */
+        .treppe .stufe.ist-vorbei { stroke: var(--color-text-light); }
+        .treppe tspan.delta { font-weight: 700; fill: var(--color-text); }
+        .treppe .ist-gut tspan.delta { fill: var(--color-success); }
+        .treppe .ist-schlecht tspan.delta { fill: var(--color-danger); }
+        .treppe .ist-vorbei tspan.delta, .treppe .ist-vorbei tspan.name { fill: var(--color-text-light); }
+        .treppe text.wert { font-size: 12px; font-weight: 700; fill: var(--color-text); }
+        /* Heller Rand hinter der Schrift wie bei «Der Weg»: die Zahlen liegen
+           auf Linien und Raster. */
+        .treppe text.wert, .treppe text.marke, .treppe text.offen-text {
+            paint-order: stroke;
+            stroke: var(--color-bg);
+            stroke-width: 3px;
+            stroke-linejoin: round;
+        }
+        /* Die Klickziele: eine unsichtbare Fläche um Punkt und Beschriftung,
+           die erst beim Zeigen, beim Fokus und in der Vorschau Kontur
+           bekommt. Die Vorschau-Markierung in denselben Farben wie bei
+           .balken-zeile.is-preview, damit beide Diagramme gleich sprechen. */
+        .treppe-ziel { cursor: pointer; outline: none; }
+        .treppe-ziel .treffer { fill: transparent; stroke: none; }
+        .treppe-ziel:hover .treffer { stroke: var(--color-primary-light); stroke-width: 1; }
+        .treppe-ziel:focus-visible .treffer { stroke: var(--color-primary); stroke-width: 2; }
+        .treppe-ziel.is-preview .treffer {
+            fill: var(--color-warning-bg);
+            fill-opacity: 0.6;
+            stroke: var(--color-warning);
+            stroke-width: 2;
+        }
         .balken-satz {
             display: flex;
             flex-direction: column;
@@ -3369,6 +3434,15 @@
             <!-- Je Stichtag eine Zeile (recomputeAll). Leer, solange es keine Anpassung gibt. -->
             <tbody id="summaryStands"></tbody>
         </table>
+        <!-- Der Ausblick: dieselben Stände wie die Zeilen darüber, aber auf
+             der Zeitachse (renderAusblick). Im selben Abschnitt und nicht als
+             eigener, weil im Druck jeder .section auf einem neuen Blatt
+             beginnt — Zusammenfassung und Treppe sollen ein Block bleiben. -->
+        <div class="ausblick" id="ausblickBlock" hidden>
+            <h3 class="grafik-titel">Ausblick</h3>
+            <p class="grafik-untertitel">Was am Monatsende bleibt – vor heute grau, ab heute der Ausblick. Ein Klick zeigt das ganze Budget zu diesem Stand.</p>
+            <svg class="treppe" id="ausblickTreppe" role="img"></svg>
+        </div>
     </section>
 
     <!-- ============================================================
@@ -5623,6 +5697,310 @@
     }
 
     // ----------------------------------------------------------------
+    // Der Ausblick: die Treppe unter der Zusammenfassung
+    // ----------------------------------------------------------------
+    // Gerechnet wird im Kern (treppenSpanne, treppenStufen, treppenPunkte,
+    // treppenBereich, treppenTicks), hier steht nur das Zeichnen. Die Daten
+    // werden gemerkt, weil der Beobachter bei einer neuen Breite zeichnen
+    // muss, ohne dass recomputeAll läuft.
+    let ausblickDaten = null;
+    // Die Breite, in die zuletzt gezeichnet wurde; '' heisst «nichts
+    // Gültiges». Der Beobachter vergleicht damit, wie bei «Der Weg».
+    let gezeichneteTreppe = '';
+    // Fest, damit die Treppe auf jedem Schirm gleich hoch ist und die
+    // Beschriftungen ihren Platz haben; nur die Breite wird gemessen.
+    const TREPPE_HOEHE = 220;
+
+    function renderAusblick(verlauf, anpassungen, werte) {
+        const block = $('#ausblickBlock');
+        if (!block) return;
+        // Dasselbe Tor wie bei renderGrafik, #adjustmentsBtn und #previewBtn:
+        // ohne Anpassung gibt es nur den Stand «heute», und eine Treppe ohne
+        // Stufe wiederholte bloss die Differenz-Zeile darüber.
+        const hatAnpassung = Object.keys(anpassungen || {})
+            .some((id) => anpassungHatBetrag(anpassungen[id]));
+        block.hidden = !hatAnpassung;
+        if (!hatAnpassung) { ausblickDaten = null; return; }
+        ausblickDaten = { verlauf: verlauf, anpassungen: anpassungen, werte: werte || {}, heute: heuteIso() };
+        zeichneTreppe();
+    }
+
+    function zeichneTreppe() {
+        const svg = $('#ausblickTreppe');
+        if (!svg || !ausblickDaten) return;
+        // Gemessen wie bei «Der Weg», und die viewBox genau darauf: nur dann
+        // zeichnet der Browser 1:1, und die Schrift hat am Schirm die Grösse,
+        // für die sie gesetzt ist. Verborgen (in der Auswertung, Tor zu) ist
+        // die Breite 0: dann nicht zeichnen und die gemerkte Breite
+        // vergessen — sonst hielte der Beobachter das alte Bild für aktuell,
+        // wenn die Fläche in derselben Breite zurückkommt.
+        const B = Math.round(svg.getBoundingClientRect().width);
+        if (B < 2) { gezeichneteTreppe = ''; return; }
+        gezeichneteTreppe = String(B);
+        const H = TREPPE_HOEHE;
+        svg.setAttribute('viewBox', `0 0 ${B} ${H}`);
+
+        const daten = ausblickDaten;
+        const treppe = treppenStufen(daten.verlauf, daten.heute);
+        const spanne = treppenSpanne(daten.verlauf, daten.heute);
+        // Vorschläge ohne Datum haben keinen Zeitpunkt. Stünden sie auf der
+        // Zeitskala, behauptete die Grafik einen — darum ein eigener Streifen
+        // rechts daneben, durch eine Lücke abgesetzt.
+        const streifen = treppe.offen !== null ? 90 : 0;
+        const luecke = streifen ? 12 : 0;
+        const links = 46, oben = 30, unten = 24;
+        const xEnde = B - (streifen ? streifen + luecke : 4);
+        const r = (n) => Math.round(n * 10) / 10;
+        const x = (iso) => r(links + zeitAnteil(iso, spanne.von, spanne.bis) * (xEnde - links));
+        const alleWerte = [treppe.anfang].concat(treppe.stufen.map((s) => s.wert));
+        if (treppe.offen !== null) alleWerte.push(treppe.offen);
+        const bereich = treppenBereich(alleWerte);
+        const y = (w) => r(oben + (H - oben - unten) * (1 - (w - bereich.basis) / (bereich.dach - bereich.basis)));
+        const unterkante = H - unten;
+        const xHeute = x(daten.heute);
+
+        // Geschätzte Breite einer Beschriftung. Gemessen würde erst nach dem
+        // Einsetzen; geschätzt genügt, um Überlappungen zu vermeiden. Der
+        // Faktor ist am Schirm nachgemessen (Ziffern fett gut 0.57 der
+        // Schriftgrösse, Text darunter) und liegt knapp über dem Breitesten.
+        const breite = (text, px) => text.length * px * 0.58;
+        // Bis wohin eine Beschriftung rechts reichen darf: in die Lücke vor dem
+        // Streifen hinein, denn dort steht nichts — auf einem schmalen Schirm
+        // fand die letzte Stufe sonst keinen Platz.
+        const rechtsBis = streifen ? B - streifen - 2 : B;
+        // Kästen, auf denen schon etwas steht. Eine Beschriftung sucht sich
+        // eine Lage, die keinen davon trifft.
+        const belegt = [];
+        // `ausser`: der eigene Kasten, wenn eine Beschriftung sich verbreitert.
+        const frei = (k, ausser) => belegt.every((b) => b === ausser
+            || k.x2 < b.x1 || k.x1 > b.x2 || k.y2 < b.y1 || k.y1 > b.y2);
+
+        const teile = [];
+        // Ein Rahmen pro Ziel: Fokus und Vorschau-Markierung brauchen eine
+        // Fläche, und die Fläche macht das Ziel grösser als den Punkt.
+        const treffer = (k) => `<rect class="treffer" x="${r(k.x1 - 4)}" y="${r(k.y1 - 3)}" `
+            + `width="${r(k.x2 - k.x1 + 8)}" height="${r(k.y2 - k.y1 + 6)}" rx="4"/>`;
+        const ziel = (key, name, titel, inhalt) => `<g class="treppe-ziel${key === state.previewStand ? ' is-preview' : ''}" `
+            + `tabindex="0" role="button" data-stand="${escapeHtml(key)}" aria-label="Vorschau: ${escapeHtml(name)}">`
+            + `<title>${escapeHtml(titel)}</title>${inhalt}</g>`;
+
+        // ---- Streifen-Grund, Raster, Werte an der Achse ----
+        if (streifen) {
+            teile.push(`<rect class="streifen" x="${B - streifen}" y="${oben - 12}" `
+                + `width="${streifen}" height="${unterkante - oben + 12}"/>`);
+        }
+        const anzahl = Math.round((bereich.dach - bereich.basis) / bereich.schritt);
+        let nullY = null;
+        for (let i = 0; i <= anzahl; i++) {
+            const w = Math.round((bereich.basis + i * bereich.schritt) * 100) / 100;
+            const yy = y(w);
+            // Die Nulllinie kommt zuletzt, damit kein Raster über ihr liegt.
+            if (w === 0) nullY = yy;
+            else {
+                teile.push(`<line class="raster" x1="${links}" y1="${yy}" x2="${xEnde}" y2="${yy}"/>`);
+                if (streifen) teile.push(`<line class="raster" x1="${B - streifen}" y1="${yy}" x2="${B}" y2="${yy}"/>`);
+            }
+            teile.push(`<text class="achsenwert" x="${links - 6}" y="${yy + 3}" text-anchor="end">${w.toLocaleString('de-CH')}</text>`);
+        }
+        if (nullY !== null) {
+            teile.push(`<line class="nulllinie" x1="${links}" y1="${nullY}" x2="${xEnde}" y2="${nullY}"/>`);
+            if (streifen) teile.push(`<line class="nulllinie" x1="${B - streifen}" y1="${nullY}" x2="${B}" y2="${nullY}"/>`);
+        }
+
+        // ---- Zeitachse ----
+        // Die Januare zuerst: an ihnen hängt die Jahreszahl, und der
+        // Jahreswechsel muss auch dann erkennbar bleiben, wenn auf einem
+        // schmalen Schirm nur jede zweite oder dritte Marke Platz hat.
+        const ticks = treppenTicks(spanne.von, spanne.bis);
+        const gesetzt = [];
+        ticks.filter((t) => t.text.indexOf('Jan') === 0)
+            .concat(ticks.filter((t) => t.text.indexOf('Jan') !== 0))
+            .forEach((t) => {
+                const tx = x(t.iso);
+                const halb = breite(t.text, 10) / 2;
+                if (gesetzt.some((g) => Math.abs(g.x - tx) < g.halb + halb + 6)) return;
+                gesetzt.push({ x: tx, halb: halb });
+                teile.push(`<line class="tick" x1="${tx}" y1="${unterkante}" x2="${tx}" y2="${unterkante + 4}"/>`);
+                teile.push(`<text class="zeit" x="${tx}" y="${H - 6}" text-anchor="middle">${t.text}</text>`);
+            });
+        if (streifen) {
+            teile.push(`<text class="zeit" x="${B - streifen / 2}" y="${H - 6}" text-anchor="middle">ohne Datum</text>`);
+        }
+
+        // ---- Heute-Linie ----
+        teile.push(`<line class="heute-linie" x1="${xHeute}" y1="${oben - 16}" x2="${xHeute}" y2="${unterkante}"/>`);
+        const heuteBreite = breite('heute', 10);
+        const heuteRechts = xHeute + 4 + heuteBreite <= xEnde;
+        const heuteX = heuteRechts ? xHeute + 4 : xHeute - 4 - heuteBreite;
+        teile.push(`<text class="heute-text" x="${r(heuteX)}" y="11">heute</text>`);
+        belegt.push({ x1: heuteX, x2: heuteX + heuteBreite, y1: 0, y2: 13 });
+
+        // ---- Der Pfad: nur waagrecht und senkrecht ----
+        // Stände sind Sprünge, keine Entwicklung (Entwurf vom 2026-10-23):
+        // eine Schräge behauptete Zwischenwerte, die niemand gerechnet hat.
+        // Darum nur H und V, nie L, aus den Eckpunkten des Kerns, in denen
+        // sich von Punkt zu Punkt genau eine Koordinate ändert.
+        const punkte = treppenPunkte(treppe, spanne.von, spanne.bis);
+        let d = `M${x(punkte[0][0])},${y(punkte[0][1])}`;
+        for (let i = 1; i < punkte.length; i++) {
+            d += punkte[i][0] !== punkte[i - 1][0] ? ` H${x(punkte[i][0])}` : ` V${y(punkte[i][1])}`;
+        }
+        // Dieselben Punkte zweimal, an der Heute-Linie geteilt. Die Grenze
+        // liegt eine halbe Strichbreite rechts davon: ein Datum, das heute
+        // ist, gilt als eingetreten, und sein Sprung soll ganz grau sein.
+        const grenze = r(xHeute + 1.5);
+        teile.push(`<defs><clipPath id="treppeVorHeute"><rect x="0" y="0" width="${grenze}" height="${H}"/></clipPath>`
+            + `<clipPath id="treppeAbHeute"><rect x="${grenze}" y="0" width="${Math.max(0, B - grenze)}" height="${H}"/></clipPath></defs>`);
+        teile.push(`<path class="linie vorbei" clip-path="url(#treppeVorHeute)" d="${d}"/>`);
+        teile.push(`<path class="linie kommend" clip-path="url(#treppeAbHeute)" d="${d}"/>`);
+
+        // Die Punkte belegen ihren Platz, bevor irgendeine Beschriftung
+        // gesetzt wird — sonst deckte die Beschriftung einer Stufe den Punkt
+        // der nächsten zu.
+        treppe.stufen.forEach((s) => {
+            belegt.push({ x1: x(s.ab) - 7, x2: x(s.ab) + 7, y1: y(s.wert) - 7, y2: y(s.wert) + 7 });
+        });
+
+        // ---- Anfangswert links: der Stand «heute» ----
+        // Die erfassten Werte, wie in der Differenz-Zeile — es wird nichts
+        // eingerechnet, auch kein Datum, das schon verstrichen ist.
+        const anfangText = formatComputed(treppe.anfang);
+        const anfangKasten = { x1: links + 4, x2: links + 4 + breite(anfangText, 12), y1: y(treppe.anfang) - 18, y2: y(treppe.anfang) - 5 };
+        belegt.push(anfangKasten);
+        teile.push(ziel('heute', 'heute', `heute: die erfassten Werte, bleibt ${anfangText} pro Monat`,
+            treffer(anfangKasten)
+            + `<text class="wert" x="${anfangKasten.x1}" y="${y(treppe.anfang) - 8}">${anfangText}</text>`));
+
+        // ---- Endwert rechts am Ende der Zeitskala ----
+        // Ohne Stufe wäre er derselbe wie der Anfangswert und sagte nichts.
+        const letzte = treppe.stufen[treppe.stufen.length - 1];
+        if (letzte) {
+            const endText = formatComputed(letzte.wert);
+            const yEnde = y(letzte.wert);
+            belegt.push({ x1: xEnde - 4 - breite(endText, 12), x2: xEnde - 4, y1: yEnde - 18, y2: yEnde - 5 });
+            teile.push(`<text class="wert" x="${xEnde - 4}" y="${yEnde - 8}" text-anchor="end">${endText}</text>`);
+        }
+
+        // ---- Die Stufen ----
+        const einnahmen = {};
+        (SCHEMA.einnahmen || []).forEach((row) => { einnahmen[row.id] = true; });
+        const gruppen = {};
+        anpassungsGruppen(daten.anpassungen, daten.verlauf, daten.werte).forEach((g) => { gruppen[g.key] = g; });
+        // Was eine Position am Überschuss ausmacht: eine Ausgabe, die steigt,
+        // senkt ihn. So stimmen die Vorzeichen im title mit dem am Punkt
+        // überein, und ihre Summe ist der Sprung.
+        const wirkungsListe = (key) => ((gruppen[key] || {}).eintraege || []).map((e) =>
+            `${rowAnzeigename(e.rowId)}: ${deltaAnzeige(einnahmen[e.rowId] ? e.deltaM : -e.deltaM)} pro Monat`);
+        const positionen = (key) => {
+            const liste = (gruppen[key] || {}).eintraege || [];
+            if (liste.length === 1) return rowAnzeigename(liste[0].rowId);
+            return liste.length > 1 ? `${liste.length} Positionen` : '';
+        };
+
+        // Wohin die Beschriftung einer Stufe kommt. Nahe Lagen: über der
+        // Linie, darunter, dasselbe links vom Punkt; ferne: je eine Zeile
+        // weiter weg. Abwechselnd oben und unten ergibt sich daraus von
+        // selbst: liegt die vorige Beschriftung oben im Weg, nimmt diese den
+        // Platz darunter.
+        const lagen = (px, py, text, fern) => {
+            const w = breite(text, 11) + 2;
+            const richtungen = fern ? [[1, -2], [1, 2], [-1, -2], [-1, 2]] : [[1, -1], [1, 1], [-1, -1], [-1, 1]];
+            return richtungen.map(([seite, hoehe]) => {
+                const x1 = seite > 0 ? px + 8 : px - 8 - w;
+                const grund = hoehe < 0 ? py - 8 + (hoehe + 1) * 14 : py + 17 + (hoehe - 1) * 14;
+                return { x1: x1, x2: x1 + w, y1: grund - 11, y2: grund + 2, grund: grund, seite: seite };
+            }).filter((k) => k.x1 >= links && k.x2 <= rechtsBis && k.y1 >= 0 && k.y2 <= unterkante);
+        };
+
+        treppe.stufen.forEach((s) => {
+            const px = x(s.ab), py = y(s.wert);
+            const deltaText = deltaAnzeige(s.delta);
+            const voll = positionen(s.key);
+            const kurz = voll.length > 20 ? voll.slice(0, 19) + '…' : voll;
+            // Der Reihe nach: mit Namen nahe am Punkt, ohne Namen nahe am
+            // Punkt, ohne Namen weiter weg. Die Zahl ist die Aussage der
+            // Stufe, der Name eine Zugabe: in umgekehrter Folge nahm auf
+            // einem schmalen Schirm der lange Name der ersten Stufe der
+            // nächsten jeden Platz, und deren Zahl fehlte. Mit Namen weiter
+            // weg gehörte die Beschriftung nicht mehr sichtbar zu ihrem Punkt.
+            // Mit Namen nur rechts vom Punkt: links läge die lange Zeile auf
+            // der Linie der vorigen Stufe und läse sich, als gehöre sie dorthin.
+            // Passt nirgends etwas, bleibt die Stufe ohne Beschriftung:
+            // übereinander gedruckt wäre unlesbar, und der title trägt alles.
+            let mitName = !!kurz;
+            let kasten = mitName
+                ? lagen(px, py, deltaText + ' ' + kurz).find((k) => k.seite > 0 && frei(k)) : null;
+            if (!kasten) {
+                mitName = false;
+                kasten = lagen(px, py, deltaText).find((k) => frei(k))
+                    || lagen(px, py, deltaText, true).find((k) => frei(k)) || null;
+            }
+            if (kasten) belegt.push(kasten);
+            const wirkung = s.delta > 0 ? ' ist-gut' : s.delta < 0 ? ' ist-schlecht' : '';
+            const vorbei = s.faellig ? ' ist-vorbei' : '';
+            const titel = [`${standName(s)}: bleibt ${formatComputed(s.wert)} pro Monat (${deltaText})`
+                + (s.faellig ? ' · Datum schon verstrichen' : '')].concat(wirkungsListe(s.key)).join('\n');
+            const punktKasten = { x1: px - 7, x2: px + 7, y1: py - 7, y2: py + 7 };
+            let marke = '';
+            if (kasten) {
+                const anker = kasten.seite > 0 ? `x="${r(kasten.x1)}"` : `x="${r(kasten.x2)}" text-anchor="end"`;
+                marke = `<text class="marke${wirkung}${vorbei}" ${anker} y="${r(kasten.grund)}">`
+                    + `<tspan class="delta">${deltaText}</tspan>`
+                    + (mitName ? `<tspan class="name"> ${escapeHtml(kurz)}</tspan>` : '')
+                    + `</text>`;
+                punktKasten.x1 = Math.min(punktKasten.x1, kasten.x1);
+                punktKasten.x2 = Math.max(punktKasten.x2, kasten.x2);
+                punktKasten.y1 = Math.min(punktKasten.y1, kasten.y1);
+                punktKasten.y2 = Math.max(punktKasten.y2, kasten.y2);
+            }
+            teile.push(ziel(s.key, standName(s), titel,
+                treffer(punktKasten)
+                + `<circle class="stufe${wirkung}${vorbei}" cx="${px}" cy="${py}" r="5"/>`
+                + marke));
+        });
+
+        // ---- Streifen «ohne Datum» ----
+        if (streifen) {
+            const yo = y(treppe.offen);
+            const mitte = B - streifen / 2;
+            const vorher = letzte ? letzte.wert : treppe.anfang;
+            const offenText = formatComputed(treppe.offen);
+            const titel = [`mit allen Vorschlägen: bleibt ${offenText} pro Monat (${deltaAnzeige(treppe.offen - vorher)})`]
+                .concat(wirkungsListe('offen')).join('\n');
+            teile.push(ziel('offen', 'mit allen Vorschlägen', titel,
+                treffer({ x1: B - streifen + 4, x2: B - 4, y1: yo - 31, y2: yo + 4 })
+                + `<line class="offen-linie" x1="${B - streifen + 8}" y1="${yo}" x2="${B - 8}" y2="${yo}"/>`
+                + `<text class="offen-text" x="${mitte}" y="${yo - 20}" text-anchor="middle">mit Vorschlägen</text>`
+                + `<text class="wert" x="${mitte}" y="${yo - 7}" text-anchor="middle">${offenText}</text>`));
+        }
+
+        svg.innerHTML = teile.join('');
+        // Für alle, die das Bild nicht sehen: der Satz, den es zeigt.
+        svg.setAttribute('aria-label', `Ausblick: heute ${anfangText} pro Monat`
+            + (letzte ? `, ab ${datumAnzeige(letzte.ab)} ${formatComputed(letzte.wert)}` : '')
+            + (treppe.offen !== null ? `, mit Vorschlägen ${formatComputed(treppe.offen)}` : ''));
+
+        // Klick und Tastatur führen in die Vorschau, wie ein Balken in «Stand
+        // für Stand». enterPreview zeichnet über recomputeAll alles neu, das
+        // eben bediente Ziel gibt es danach nicht mehr — der Fokus geht darum
+        // an sein Nachfolgerbild, sonst landete er nach Enter im Nirgendwo.
+        svg.querySelectorAll('.treppe-ziel').forEach((el) => {
+            const oeffne = () => {
+                const key = el.getAttribute('data-stand');
+                enterPreview(key);
+                const neu = svg.querySelector(`.treppe-ziel[data-stand="${key}"]`);
+                if (neu) neu.focus();
+            };
+            el.addEventListener('click', oeffne);
+            el.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                oeffne();
+            });
+        });
+    }
+
+    // ----------------------------------------------------------------
     // Anpassungsliste in der Kopfleiste
     // ----------------------------------------------------------------
     // Das Datum ist nur die Überschrift einer Gruppe: mehrere Positionen können
@@ -6051,6 +6429,7 @@
         });
 
         renderGrafik(verlauf, anpassungen, basisWerte);
+        renderAusblick(verlauf, anpassungen, basisWerte);
         renderAuswertung();     // tut nichts, solange der Modus zu ist
         renderAdjustmentList(basisWerte);
         // handleAdjInputEvent schreibt active.adjustments vor dieser Rechnung,
@@ -7517,6 +7896,19 @@
                 if (k.width < 2 || k.height < 2 || jetzt === gezeichneteFlaeche) return;
                 renderAuswertung();
             }).observe($('#auswertungWeg'));
+            // Dasselbe für die Treppe. Die Höhe folgt der viewBox und meldet
+            // sich nach jedem Zeichnen; verglichen wird darum nur die Breite.
+            // Verborgen (Breite 0) wird die gemerkte Breite vergessen: zurück
+            // aus der Auswertung kommt die Fläche oft in derselben Breite, und
+            // was davor dastand, ist dann nicht sicher noch aktuell.
+            new ResizeObserver(() => {
+                const svg = $('#ausblickTreppe');
+                if (!svg) return;
+                const breite = Math.round(svg.getBoundingClientRect().width);
+                if (breite < 2) { gezeichneteTreppe = ''; return; }
+                if (String(breite) === gezeichneteTreppe) return;
+                zeichneTreppe();
+            }).observe($('#ausblickTreppe'));
         }
         $('#reiterUebersicht').addEventListener('click', () => zeigeReiter('uebersicht'));
         $('#reiterVergleich').addEventListener('click', () => zeigeReiter('vergleich'));

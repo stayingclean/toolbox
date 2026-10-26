@@ -2572,3 +2572,35 @@ def test_punkte_ohne_schraegen_und_ohne_doppelte_in_den_randfaellen(treppe):
     assert punkte[0] == ["2026-10-01", 100] and punkte[-1][0] == "2027-07-01"
     for (t1, w1), (t2, w2) in zip(punkte, punkte[1:]):
         assert (t1 == t2) != (w1 == w2), (punkte, (t1, w1), (t2, w2))
+
+
+# --- Welle 3: Treppe im DOM ---
+# Gezeichnet wird im DOM und darum nicht im Treiber; geprüft wird die Stelle
+# im Code, wie bei der Sperre der Vorschau.
+
+def test_ausblick_steht_in_der_zusammenfassung():
+    # Im selben Abschnitt, nicht als eigener: im Druck beginnt jeder .section
+    # auf einem neuen Blatt.
+    text = _seite_text()
+    abschnitt = text[text.index('class="section summary-section"'):]
+    abschnitt = abschnitt[:abschnitt.index("</section>")]
+    assert 'id="ausblickBlock"' in abschnitt and 'id="ausblickTreppe"' in abschnitt
+
+
+def test_ausblick_hat_dasselbe_tor_wie_die_grafik():
+    assert "anpassungHatBetrag" in _funktionsblock("renderAusblick")
+    assert "renderAusblick(" in _funktionsblock("recomputeAll")
+
+
+def test_treppe_zeichnet_aus_den_eckpunkten_des_kerns():
+    block = _funktionsblock("zeichneTreppe")
+    assert "treppenPunkte(" in block
+
+
+def test_klickziele_sind_bedienbar():
+    block = _funktionsblock("zeichneTreppe")
+    assert "enterPreview(" in block and "tabindex" in block and "keydown" in block
+
+
+def test_treppe_wird_bei_breitenaenderung_neu_gezeichnet():
+    assert "observe($('#ausblickTreppe'))" in _seite_text()
