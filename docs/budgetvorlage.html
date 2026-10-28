@@ -174,6 +174,20 @@
             top: 0;
             z-index: 90;
             margin-bottom: 1.5rem;
+            transition: top 0.2s ease;
+        }
+        /* Auf kleinen Schirmen schiebt sich die Werkzeugleiste beim
+           Hinunterscrollen nach oben weg; die Versionsleiste bleibt stehen.
+           Auf dem Telefon war der Kopf sonst 263 px hoch, davon 213 px
+           Werkzeuge. Weggeschoben wird der ganze Kopf um die Höhe der
+           Werkzeugleiste (--toolbar-hoehe, gesetzt von kopfBeimScrollen) —
+           einzeln sticky dürfen die beiden Leisten nicht sein, siehe oben.
+           Wer mit der Tastatur in die Leiste kommt, holt sie zurück. */
+        .sticky-head.ist-eingeklappt:not(:focus-within) {
+            top: calc(-1 * var(--toolbar-hoehe, 0px));
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .sticky-head { transition: none; }
         }
 
         .toolbar {
@@ -437,6 +451,12 @@
         .label-cell .label-text {
             min-width: 0;        /* allow shrink/wrap on narrow viewports */
             line-height: 1.4;
+            /* «Privathaftpflichtversicherung» ist ein Wort von 235 px. Ohne
+               Umbruch darin hielt es die Spalte breit, und auf dem Telefon
+               lag «Jährlich» rechts ausserhalb des Bildschirms. Getrennt wird
+               nach lang="de-CH", wo der Browser es kann, sonst irgendwo. */
+            overflow-wrap: anywhere;
+            hyphens: auto;
         }
 
         .label-cell .hint {
@@ -2036,6 +2056,18 @@
             }
         }
 
+        /* Die Köpfe «MONATLICH» und «JÄHRLICH» bestimmten auf dem Telefon die
+           Breite der Betragsspalten (111 px statt der 27 %), und der
+           Position blieben auf 360 px noch 94 px — «Ein-kom-men» auf drei
+           Zeilen. Enger gesetzt sind es 130 px. */
+        @media (max-width: 480px) {
+            .budget-table thead th {
+                padding: 0.5rem 0.4rem;
+                letter-spacing: 0.02em;
+                font-size: 0.72rem;
+            }
+        }
+
         /* Wie bei der Anpassungsliste: schmal kann der Knopf links in der
            Leiste stehen, dann liefe das Panel am Rand heraus. */
         @media (max-width: 640px) {
@@ -2057,6 +2089,27 @@
             /* Das Wort «Versionen:» ebenfalls – die Reiter sagen es selbst,
                und die Liste trägt ihren Namen in aria-label. */
             .version-bar-label { display: none; }
+            /* Reiter und «Neue Version» rollen waagrecht, statt umzubrechen:
+               jede Version mehr kostete sonst eine Zeile Kopf. Die Knöpfe
+               rechts davon bleiben stehen. Das Polster oben und rechts gibt
+               dem × am Reiter (top/right: -7px) Platz, das der Rollbereich
+               sonst abschnitte. Mit .version-bar davor, weil die Grundregeln
+               weiter unten im Stil stehen und sonst gewännen. 8rem bleiben
+               den Reitern mindestens, bevor die Knöpfe umbrechen. */
+            .version-bar .version-zeile {
+                flex: 1 1 8rem;
+                flex-wrap: nowrap;
+                min-width: 0;
+                overflow-x: auto;
+                overscroll-behavior-x: contain;
+                scrollbar-width: none;
+                padding: 8px 8px 2px 0;
+                margin: -8px 0 -2px;
+            }
+            .version-bar .version-zeile::-webkit-scrollbar { display: none; }
+            .version-bar .version-tabs { flex-wrap: nowrap; }
+            .version-bar .version-zeile > *,
+            .version-bar .version-tab-wrapper { flex-shrink: 0; }
             #hilfePanel {
                 left: 0.75rem;
                 right: 0.75rem;
@@ -7891,6 +7944,47 @@
     // ----------------------------------------------------------------
     // Init
     // ----------------------------------------------------------------
+    // Schiebt auf kleinen Schirmen die Werkzeugleiste beim Hinunterscrollen
+    // weg und holt sie beim Hinaufscrollen zurück (CSS: .ist-eingeklappt).
+    // «Klein» heisst schmal ODER niedrig — quer gehaltene Telefone haben
+    // Breite genug, aber kaum Höhe.
+    function kopfBeimScrollen() {
+        const kopf = $('.sticky-head');
+        const leiste = $('.toolbar');
+        if (!kopf || !leiste) return;
+        const klein = window.matchMedia('(max-width: 640px), (max-height: 500px)');
+        const SCHWELLE = 8;     // px: Zittern des Fingers ist keine Richtung
+        let zuletzt = window.scrollY;
+        let geplant = false;
+
+        const hoeheMerken = () => {
+            kopf.style.setProperty('--toolbar-hoehe', leiste.offsetHeight + 'px');
+        };
+        const pruefen = () => {
+            geplant = false;
+            const y = window.scrollY;
+            // Erst einklappen, wenn die Leiste ohnehin schon oben anstösst;
+            // ganz oben (auch beim Überziehen auf iOS) ist sie immer da.
+            // (offsetTop taugt dafür nicht: am klebenden Kopf wandert er mit.)
+            const anschlag = kopf.previousElementSibling
+                ? kopf.previousElementSibling.getBoundingClientRect().bottom + y
+                : 0;
+            if (!klein.matches || y <= anschlag) {
+                kopf.classList.remove('ist-eingeklappt');
+                zuletzt = y;
+                return;
+            }
+            if (Math.abs(y - zuletzt) < SCHWELLE) return;
+            if (y > zuletzt) hoeheMerken();
+            kopf.classList.toggle('ist-eingeklappt', y > zuletzt);
+            zuletzt = y;
+        };
+        window.addEventListener('scroll', () => {
+            if (!geplant) { geplant = true; requestAnimationFrame(pruefen); }
+        }, { passive: true });
+        window.addEventListener('resize', pruefen);
+    }
+
     function init() {
         renderRows();
         attachMainInputListeners();
@@ -8103,6 +8197,8 @@
                 saveFile();
             }
         });
+
+        kopfBeimScrollen();
 
         // Beforeunload — warn on unsaved changes
         window.addEventListener('beforeunload', (e) => {
