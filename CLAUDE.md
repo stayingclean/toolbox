@@ -34,8 +34,20 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
   Der Ablauf selbst wird **nur noch dort** beschrieben (`grundgeruest/CLAUDE.md`
   und `START-HIER.txt`), damit er nicht an zwei Orten auseinanderläuft.
 - `docs/plakat.html` = Plakat zur Skillsliste zum Herunterladen (PNG und PDF in
-  A5/A4/A3). Das PDF baut die Seite selbst; die Bildpunkte des PNG wandern dabei
-  unverändert ins PDF. Das Plakat liegt in **zwei** Dateien daneben:
+  A5/A4/A3). Das PDF baut die Seite selbst. **Eine** Checkbox «Kleine Datei
+  für Email» gilt für alle vier Knöpfe und ist **ab Werk angehakt**. Mit
+  Haken liefert der Bild-Knopf ein JPG in voller Grösse (2,6 MB; ein
+  verkleinertes PNG bliebe beim gemalten Plakat über 9 MB, darum kein PNG),
+  und die PDFs betten ein JPEG ein: A5 und A4 auf 300 dpi verkleinert, A3 hat
+  diese schon (im Browser gemessen 1,0 / 1,6 / 2,6 MB statt je 15,5 MB).
+  Ohne Haken gibt es das PNG, und seine Bildpunkte wandern unverändert ins
+  PDF. Die Beschriftung bleibt bewusst ohne Technik (Benutzer, 2026-11-03):
+  wer herunterlädt, will wissen, wozu die Datei taugt, nicht wie sie
+  entsteht. Den
+  QR-Codes schadet das Verkleinern nicht: beide lasen sich aus allen drei
+  kleinen PDFs, und noch bei 150 dpi (die
+  gedruckte Modulgrösse bleibt ja dieselbe, nur die Pixel je Modul sinken —
+  bei 300 dpi auf A5 rund 10). Das Plakat liegt in **zwei** Dateien daneben:
   `docs/plakat-skillsliste.png` in voller Auflösung (3508 × 4961 px, 300 dpi auf
   A3) für Download und PDF, und `docs/plakat-vorschau.jpg` (~360 KB) nur für die
   Anzeige — sonst lüde jeder Seitenaufruf 14,9 MB. Diese drei Zahlen gelten fürs

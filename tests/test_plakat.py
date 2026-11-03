@@ -337,6 +337,76 @@ def test_alle_drei_pdf_knoepfe_stehen_auf_der_seite():
         assert f'data-format="{format_name}"' in text
 
 
+def test_eine_angehakte_checkbox_gilt_fuer_alle_downloads():
+    """Eine Checkbox fuer Bild und alle drei PDFs, voreingestellt angehakt --
+    die grosse Datei sprengt mit 15 MB jede E-Mail. Die Beschriftung sagt nur,
+    wozu sie dient; wie die Datei klein wird (300 dpi, JPEG), interessiert
+    beim Herunterladen niemanden."""
+    text = SEITE.read_text(encoding="utf-8")
+    boxen = re.findall(r'<input type="checkbox"[^>]*>', text)
+    assert len(boxen) == 1, f"erwartet genau eine Checkbox, gefunden: {boxen}"
+    assert re.search(r'\bid="klein"', boxen[0])
+    assert re.search(r'\bchecked\b', boxen[0]), "nicht voreingestellt angehakt"
+    label = re.search(r'<label class="klein-wahl">.*?</label>', text, re.S)
+    assert label, "Checkbox steht in keinem <label class=\"klein-wahl\">"
+    beschriftung = re.sub(r"<[^>]+>", "", label.group(0)).strip()
+    assert beschriftung == "Kleine Datei für Email"
+
+
+def test_bild_knopf_bleibt_ohne_skript_ein_png_link():
+    """Die kleine Bilddatei entsteht per Skript. Als Datei geoeffnet (file:)
+    laeuft das nicht; dort muss der Knopf wie bisher das PNG liefern."""
+    text = SEITE.read_text(encoding="utf-8")
+    assert re.search(
+        r'<a class="knopf"[^>]*href="plakat-skillsliste.png"[^>]*download=', text
+    )
+
+
+def kern_aufrufen(tmp_path, ausdruck: str):
+    """Fuehrt einen Ausdruck gegen den PDF-Kern aus und liefert das JSON-Ergebnis."""
+    import json
+
+    skript = tmp_path / "kern.mjs"
+    skript.write_text(
+        "import { readFileSync } from 'node:fs';\n"
+        "const html = readFileSync(process.argv[2], 'utf8');\n"
+        "const ab = html.indexOf('/* == pdf-kern:anfang == */');\n"
+        "const bis = html.indexOf('/* == pdf-kern:ende == */');\n"
+        "const kern = new Function(html.slice(ab, bis) + '\\nreturn { zielPixel };')();\n"
+        f"console.log(JSON.stringify({ausdruck}));\n",
+        encoding="utf-8",
+    )
+    lauf = subprocess.run(
+        ["node", str(skript), str(SEITE)], capture_output=True, text=True,
+    )
+    assert lauf.returncode == 0, lauf.stderr
+    return json.loads(lauf.stdout)
+
+
+@pytest.mark.parametrize("name", sorted(FORMATE))
+def test_zielpixel_ergeben_300_dpi_und_nie_mehr_als_das_original(tmp_path, name):
+    breite, hoehe = png_masse(BILD.read_bytes())
+    breite_mm, hoehe_mm = FORMATE[name]
+    ziel = kern_aufrufen(
+        tmp_path,
+        f"kern.zielPixel({breite}, {hoehe}, {breite_mm}, {hoehe_mm}, 300)",
+    )
+    assert ziel["breite"] <= breite and ziel["hoehe"] <= hoehe
+    assert ziel["breite"] / ziel["hoehe"] == pytest.approx(breite / hoehe, rel=1e-3)
+    # Massgebend ist die Kante, an der das Bild anstoesst: dort fuellt es das
+    # Blatt. An der anderen bleibt ein schmaler Rand (A5: 0,35 mm), ueber die
+    # ganze Blattlaenge gerechnet kaemen dort einige dpi zu wenig heraus.
+    dpi = max(ziel["breite"] / (breite_mm / 25.4), ziel["hoehe"] / (hoehe_mm / 25.4))
+    original_dpi = max(breite / (breite_mm / 25.4), hoehe / (hoehe_mm / 25.4))
+    assert dpi == pytest.approx(min(300, original_dpi), abs=1)
+
+
+def test_zielpixel_vergroessern_nie(tmp_path):
+    """Ein kleines Bild bleibt, wie es ist -- hochrechnen braechte nur Unschaerfe."""
+    ziel = kern_aufrufen(tmp_path, "kern.zielPixel(800, 1131, 297, 420, 300)")
+    assert ziel == {"breite": 800, "hoehe": 1131}
+
+
 def test_lokaler_aufruf_wird_erklaert():
     """Als Datei geöffnet kann die Seite die Bilddatei nicht lesen. Das muss
     dastehen, statt still zu scheitern."""
