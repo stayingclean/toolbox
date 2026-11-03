@@ -73,7 +73,17 @@
       background: var(--card); color: var(--muted);
     }
     .downloads { margin-top: 32px; }
-    .knoepfe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .knoepfe {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      align-items: start;
+    }
+    .pdf-wahl { display: flex; flex-direction: column; gap: 8px; }
+    .klein-wahl {
+      display: flex; align-items: flex-start; gap: 6px;
+      padding: 0 4px; color: var(--muted); font-size: 0.8rem; line-height: 1.35;
+      cursor: pointer;
+    }
+    .klein-wahl input { margin: 2px 0 0; accent-color: var(--accent); cursor: pointer; }
     @media (max-width: 620px) { .knoepfe { grid-template-columns: repeat(2, 1fr); } }
     .knopf {
       display: flex; flex-direction: column; gap: 4px;
@@ -150,18 +160,36 @@
           <span class="knopf-name">PNG</span>
           <span class="knopf-meta" id="pngMeta">Bilddatei</span>
         </a>
-        <button class="knopf" type="button" data-format="A5">
-          <span class="knopf-name">PDF A5</span>
-          <span class="knopf-meta">148 × 210 mm</span>
-        </button>
-        <button class="knopf" type="button" data-format="A4">
-          <span class="knopf-name">PDF A4</span>
-          <span class="knopf-meta">210 × 297 mm</span>
-        </button>
-        <button class="knopf" type="button" data-format="A3">
-          <span class="knopf-name">PDF A3</span>
-          <span class="knopf-meta">297 × 420 mm</span>
-        </button>
+        <div class="pdf-wahl">
+          <button class="knopf" type="button" data-format="A5">
+            <span class="knopf-name">PDF A5</span>
+            <span class="knopf-meta">148 × 210 mm</span>
+          </button>
+          <label class="klein-wahl">
+            <input type="checkbox" data-klein-fuer="A5" checked>
+            <span>Kleine Datei für Email (PDF)</span>
+          </label>
+        </div>
+        <div class="pdf-wahl">
+          <button class="knopf" type="button" data-format="A4">
+            <span class="knopf-name">PDF A4</span>
+            <span class="knopf-meta">210 × 297 mm</span>
+          </button>
+          <label class="klein-wahl">
+            <input type="checkbox" data-klein-fuer="A4" checked>
+            <span>Kleine Datei für Email (PDF)</span>
+          </label>
+        </div>
+        <div class="pdf-wahl">
+          <button class="knopf" type="button" data-format="A3">
+            <span class="knopf-name">PDF A3</span>
+            <span class="knopf-meta">297 × 420 mm</span>
+          </button>
+          <label class="klein-wahl">
+            <input type="checkbox" data-klein-fuer="A3" checked>
+            <span>Kleine Datei für Email (PDF)</span>
+          </label>
+        </div>
       </div>
       <p class="status" id="status" role="status"></p>
     </section>
@@ -197,8 +225,13 @@
    Neukodieren, kein Qualitaetsverlust -- das zaehlt vor allem fuer die beiden
    QR-Codes, deren harte Schwarz-Weiss-Kanten unter JPEG sichtbar leiden.
 
-   Weg B (pdfAusJpeg) ist die Rueckfallebene fuer PNG-Typen, die Weg A nicht
-   abdeckt; die JPEG-Bytes erzeugt dann die Seite per Canvas. */
+   Weg B (pdfAusJpeg) bettet JPEG-Bytes ein, die die Seite per Canvas erzeugt.
+   Er dient zwei Zwecken: als Rueckfallebene fuer PNG-Typen, die Weg A nicht
+   abdeckt, und fuer die kleine Datei (Checkbox unter jedem PDF-Knopf, ab Werk
+   angehakt), die auf hoechstens 300 dpi verkleinert. Das volle PDF sprengt mit
+   rund 15 MB jede E-Mail. Den QR-Codes schadet das nicht: nachgemessen am
+   Plakat vom 2026-10-22 hat ein Modul bei 300 dpi auf A5 noch rund 10 Pixel,
+   und beide Codes wurden in JPEG auf A5 und A4 noch bei 150 dpi gelesen. */
 
   var MM_ZU_PT = 72 / 25.4;
 
@@ -368,6 +401,20 @@
       farben: 3
     }, breiteMm, hoeheMm);
   }
+
+  /* Pixelmasse, mit denen das Bild das Papierformat in `dpi` fuellt. Nie
+     groesser als das Original -- hochrechnen braechte nur Unschaerfe und
+     eine groessere Datei. Das Seitenverhaeltnis bleibt; massgebend ist die
+     Kante, an der das Bild beim Einpassen anstoesst (wie in pdfBauen). */
+  function zielPixel(breitePx, hoehePx, breiteMm, hoeheMm, dpi) {
+    var faktor = Math.min(1,
+      (breiteMm / 25.4 * dpi) / breitePx,
+      (hoeheMm / 25.4 * dpi) / hoehePx);
+    return {
+      breite: Math.max(1, Math.round(breitePx * faktor)),
+      hoehe: Math.max(1, Math.round(hoehePx * faktor))
+    };
+  }
 /* == pdf-kern:ende == */
 
   /* ---------- Bedienung ---------- */
@@ -375,11 +422,18 @@
   var BILD = 'plakat-skillsliste.png';   // die grosse Datei: Download und PDF
   var FORMATE = { A5: [148, 210], A4: [210, 297], A3: [297, 420] };
   var GUT_DPI = 150;                 // darunter wird der Druck sichtbar weich
+  var KLEIN_DPI = 300;               // die kleine Datei: genug fuer jeden Druck
 
   var plakat = document.getElementById('plakat');
   var status = document.getElementById('status');
   var knoepfe = [].slice.call(document.querySelectorAll('.knopf[data-format]'));
   var rohdaten = null;               // einmal geholt, dann behalten
+  var masse = null;                  // { breite, hoehe } der grossen Datei
+
+  function wahl(format) {
+    return document.querySelector('[data-klein-fuer="' + format + '"]');
+  }
+  function klein(format) { return wahl(format).checked; }
 
   function melde(text) {
     status.textContent = text;
@@ -436,24 +490,38 @@
      Datei von selbst neu -- keine Zahl von Hand nachpflegen. */
   function aufloesungZeigen(breite, hoehe) {
     if (!breite || !hoehe) return;
+    masse = { breite: breite, hoehe: hoehe };
     document.getElementById('masse').textContent =
       breite + ' × ' + hoehe + ' Pixel';
     document.getElementById('pngMeta').textContent =
       'Bilddatei, ' + breite + ' × ' + hoehe + ' px';
-    knoepfe.forEach(function (knopf) {
-      var mm = FORMATE[knopf.getAttribute('data-format')];
-      var dpi = Math.round(Math.min(breite / (mm[0] / 25.4), hoehe / (mm[1] / 25.4)));
-      var knapp = dpi < GUT_DPI;
-      knopf.querySelector('.knopf-meta').textContent =
-        mm[0] + ' × ' + mm[1] + ' mm · ' + dpi + ' dpi' + (knapp ? ' · knapp' : '');
-      knopf.classList.toggle('knapp', knapp);
-      if (dpi < GUT_DPI) {
-        knopf.title = 'Mit ' + dpi + ' dpi wird der Ausdruck in diesem Format '
-                    + 'sichtbar weich. Gedruckt werden kann er trotzdem.';
-      } else {
-        knopf.removeAttribute('title');
-      }
-    });
+    knoepfe.forEach(knopfMetaZeigen);
+  }
+
+  /* Die dpi-Angabe folgt der Checkbox: angehakt gilt, was im PDF ankommt,
+     nicht, was die grosse Datei hergaebe. */
+  function knopfMetaZeigen(knopf) {
+    if (!masse) return;
+    var format = knopf.getAttribute('data-format');
+    var mm = FORMATE[format];
+    var px = klein(format)
+      ? zielPixel(masse.breite, masse.hoehe, mm[0], mm[1], KLEIN_DPI)
+      : masse;
+    /* max, nicht min: gezaehlt wird an der Kante, an der das Bild beim
+       Einpassen anstoesst. An der anderen bleibt ein schmaler Rand, und ueber
+       die ganze Blattlaenge gerechnet stuende bei A5 «299 dpi», obwohl auf
+       300 dpi verkleinert wird. */
+    var dpi = Math.round(Math.max(px.breite / (mm[0] / 25.4), px.hoehe / (mm[1] / 25.4)));
+    var knapp = dpi < GUT_DPI;
+    knopf.querySelector('.knopf-meta').textContent =
+      mm[0] + ' × ' + mm[1] + ' mm · ' + dpi + ' dpi' + (knapp ? ' · knapp' : '');
+    knopf.classList.toggle('knapp', knapp);
+    if (knapp) {
+      knopf.title = 'Mit ' + dpi + ' dpi wird der Ausdruck in diesem Format '
+                  + 'sichtbar weich. Gedruckt werden kann er trotzdem.';
+    } else {
+      knopf.removeAttribute('title');
+    }
   }
 
   function speichere(bytes, name) {
@@ -489,10 +557,11 @@
     return abrufLaeuft;
   }
 
-  /* Rueckfallebene, nur noetig wenn die Datei kein 8-Bit-PNG ohne Interlace
-     ist: das Bild aus den bereits geholten Bytes aufbauen und ueber ein Canvas
-     als JPEG ausgeben. Ausdruecklich NICHT das angezeigte Vorschaubild -- das
-     ergaebe ein PDF aus einer 1200-px-Vorlage. */
+  /* Fuer die kleine Datei und fuer die Rueckfallebene (Datei kein 8-Bit-PNG
+     ohne Interlace): das Bild aus den bereits geholten Bytes aufbauen, damit
+     es ueber ein Canvas als JPEG ausgegeben werden kann. Ausdruecklich NICHT
+     das angezeigte Vorschaubild -- das ergaebe ein PDF aus einer
+     1200-px-Vorlage. */
   function bildAusBytes(bytes) {
     return new Promise(function (erfuellen, ablehnen) {
       var url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
@@ -506,14 +575,16 @@
     });
   }
 
-  function jpegBytes(bild) {
+  function jpegBytes(bild, breite, hoehe) {
     var flaeche = document.createElement('canvas');
-    flaeche.width = bild.naturalWidth;
-    flaeche.height = bild.naturalHeight;
+    flaeche.width = breite;
+    flaeche.height = hoehe;
     var stift = flaeche.getContext('2d');
     stift.fillStyle = '#ffffff';                 // JPEG kennt keine Transparenz
-    stift.fillRect(0, 0, flaeche.width, flaeche.height);
-    stift.drawImage(bild, 0, 0);
+    stift.fillRect(0, 0, breite, hoehe);
+    stift.imageSmoothingEnabled = true;          // beim Verkleinern sauber mitteln
+    stift.imageSmoothingQuality = 'high';
+    stift.drawImage(bild, 0, 0, breite, hoehe);
     var uri = flaeche.toDataURL('image/jpeg', 0.92);   // hohe Guete, weil gedruckt wird
     var roh = atob(uri.slice(uri.indexOf(',') + 1));
     var bytes = new Uint8Array(roh.length);
@@ -521,14 +592,38 @@
     return bytes;
   }
 
+  /* Bild aus den Bytes aufbauen, per Canvas in die gewuenschte Groesse
+     bringen und als JPEG ins PDF -- fuer die kleine Datei wie fuer die
+     Rueckfallebene. Bei A3 hat das Plakat schon 300 dpi; dort wird nichts
+     verkleinert, klein wird die Datei allein durch das JPEG. */
+  function pdfUeberJpeg(png, mm, name, verkleinern) {
+    return bildAusBytes(png).then(function (geladen) {
+      try {
+        var b = geladen.bild.naturalWidth, h = geladen.bild.naturalHeight;
+        var px = verkleinern ? zielPixel(b, h, mm[0], mm[1], KLEIN_DPI)
+                             : { breite: b, hoehe: h };
+        speichere(pdfAusJpeg(jpegBytes(geladen.bild, px.breite, px.hoehe),
+                             px.breite, px.hoehe, mm[0], mm[1]), name);
+        status.classList.remove('sichtbar');
+      } finally {
+        URL.revokeObjectURL(geladen.url);
+      }
+    });
+  }
+
   function erzeuge(format) {
     var mm = FORMATE[format];
-    var name = 'plakat-skillsliste-' + format.toLowerCase() + '.pdf';
+    var verkleinern = klein(format);
+    /* Eigener Name, damit beide Fassungen nebeneinander im Download-Ordner
+       liegen koennen und man sieht, welche man anhaengt. */
+    var name = 'plakat-skillsliste-' + format.toLowerCase()
+             + (verkleinern ? '-klein' : '') + '.pdf';
     /* Der Abruf dauert auf Mobilfunk zehn Sekunden und mehr; ohne Rueckmeldung
        sieht der Benutzer in der Zwischenzeit nichts und klickt womoeglich
        nochmals -- bytesHolen() faengt das zwar ab, aber die Wartezeit bleibt. */
     melde('Das PDF wird erzeugt — das Plakat ist 14,9 MB gross, das dauert einen Moment.');
     bytesHolen().then(function (png) {
+      if (verkleinern) return pdfUeberJpeg(png, mm, name, true);
       try {
         speichere(pdfAusPng(png, mm[0], mm[1]), name);
         status.classList.remove('sichtbar');
@@ -536,15 +631,7 @@
       } catch (fehler) {
         if (fehler.name !== 'PngNichtTauglich') throw fehler;
       }
-      return bildAusBytes(png).then(function (geladen) {
-        try {
-          speichere(pdfAusJpeg(jpegBytes(geladen.bild), geladen.bild.naturalWidth,
-                               geladen.bild.naturalHeight, mm[0], mm[1]), name);
-          status.classList.remove('sichtbar');
-        } finally {
-          URL.revokeObjectURL(geladen.url);
-        }
-      });
+      return pdfUeberJpeg(png, mm, name, false);
     }).catch(function (fehler) {
       melde('Das PDF konnte nicht erzeugt werden ('
           + (fehler && (fehler.message || fehler.name) || 'unbekannter Fehler')
@@ -553,9 +640,9 @@
   }
 
   knoepfe.forEach(function (knopf) {
-    knopf.addEventListener('click', function () {
-      erzeuge(knopf.getAttribute('data-format'));
-    });
+    var format = knopf.getAttribute('data-format');
+    knopf.addEventListener('click', function () { erzeuge(format); });
+    wahl(format).addEventListener('change', function () { knopfMetaZeigen(knopf); });
   });
 
   plakat.addEventListener('error', function () {
