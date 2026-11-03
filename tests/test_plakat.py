@@ -337,33 +337,29 @@ def test_alle_drei_pdf_knoepfe_stehen_auf_der_seite():
         assert f'data-format="{format_name}"' in text
 
 
-def checkbox_von(text: str, format_name: str) -> str:
-    """Das <label> mit der Checkbox unter dem Knopf eines Formats."""
-    treffer = re.search(
-        r'<label class="klein-wahl">(?:(?!</label>).)*?data-klein-fuer="'
-        + format_name + r'"(?:(?!</label>).)*</label>',
-        text, re.S,
+def test_eine_angehakte_checkbox_gilt_fuer_alle_downloads():
+    """Eine Checkbox fuer Bild und alle drei PDFs, voreingestellt angehakt --
+    die grosse Datei sprengt mit 15 MB jede E-Mail. Die Beschriftung sagt nur,
+    wozu sie dient; wie die Datei klein wird (300 dpi, JPEG), interessiert
+    beim Herunterladen niemanden."""
+    text = SEITE.read_text(encoding="utf-8")
+    boxen = re.findall(r'<input type="checkbox"[^>]*>', text)
+    assert len(boxen) == 1, f"erwartet genau eine Checkbox, gefunden: {boxen}"
+    assert re.search(r'\bid="klein"', boxen[0])
+    assert re.search(r'\bchecked\b', boxen[0]), "nicht voreingestellt angehakt"
+    label = re.search(r'<label class="klein-wahl">.*?</label>', text, re.S)
+    assert label, "Checkbox steht in keinem <label class=\"klein-wahl\">"
+    beschriftung = re.sub(r"<[^>]+>", "", label.group(0)).strip()
+    assert beschriftung == "Kleine Datei für Email"
+
+
+def test_bild_knopf_bleibt_ohne_skript_ein_png_link():
+    """Die kleine Bilddatei entsteht per Skript. Als Datei geoeffnet (file:)
+    laeuft das nicht; dort muss der Knopf wie bisher das PNG liefern."""
+    text = SEITE.read_text(encoding="utf-8")
+    assert re.search(
+        r'<a class="knopf"[^>]*href="plakat-skillsliste.png"[^>]*download=', text
     )
-    assert treffer, f"keine Checkbox fuer {format_name}"
-    return treffer.group(0)
-
-
-@pytest.mark.parametrize("format_name", ["A5", "A4", "A3"])
-def test_jedes_pdf_hat_eine_angehakte_checkbox_fuer_die_kleine_datei(format_name):
-    """Voreingestellt ist die kleine Datei -- die grosse sprengt jede E-Mail."""
-    label = checkbox_von(SEITE.read_text(encoding="utf-8"), format_name)
-    assert re.search(r'<input type="checkbox"[^>]*\bchecked\b', label), (
-        f"Checkbox fuer {format_name} ist nicht voreingestellt angehakt"
-    )
-
-
-@pytest.mark.parametrize("format_name", ["A5", "A4", "A3"])
-def test_beschriftung_nennt_nur_das_dateiformat(format_name):
-    """Wer herunterlaedt, will wissen, was er bekommt -- nicht, wie es entsteht
-    (300 dpi, JPEG im PDF). Die kleine Datei ist bei allen drei Formaten ein PDF."""
-    label = checkbox_von(SEITE.read_text(encoding="utf-8"), format_name)
-    assert "Kleine Datei für Email (PDF)" in label
-    assert "dpi" not in label, "Technisches gehoert nicht in die Beschriftung"
 
 
 def kern_aufrufen(tmp_path, ausdruck: str):

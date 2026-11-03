@@ -34,11 +34,16 @@ Deploy über GitHub Actions (`.github/workflows/deploy.yml`) — veröffentlicht
   Der Ablauf selbst wird **nur noch dort** beschrieben (`grundgeruest/CLAUDE.md`
   und `START-HIER.txt`), damit er nicht an zwei Orten auseinanderläuft.
 - `docs/plakat.html` = Plakat zur Skillsliste zum Herunterladen (PNG und PDF in
-  A5/A4/A3). Das PDF baut die Seite selbst. Unter jedem PDF-Knopf steht eine
-  Checkbox, **ab Werk angehakt**: Sie ergibt eine kleine Datei für E-Mail
-  (A5 und A4 auf 300 dpi verkleinert, A3 hat diese schon und wird nur als JPG
-  eingebettet — im Browser gemessen 1,0 / 1,6 / 2,6 MB statt je 15,5 MB).
-  Ohne Haken wandern die Bildpunkte des PNG unverändert ins PDF. Den
+  A5/A4/A3). Das PDF baut die Seite selbst. **Eine** Checkbox «Kleine Datei
+  für Email» gilt für alle vier Knöpfe und ist **ab Werk angehakt**. Mit
+  Haken liefert der Bild-Knopf ein JPG in voller Grösse (2,6 MB; ein
+  verkleinertes PNG bliebe beim gemalten Plakat über 9 MB, darum kein PNG),
+  und die PDFs betten ein JPEG ein: A5 und A4 auf 300 dpi verkleinert, A3 hat
+  diese schon (im Browser gemessen 1,0 / 1,6 / 2,6 MB statt je 15,5 MB).
+  Ohne Haken gibt es das PNG, und seine Bildpunkte wandern unverändert ins
+  PDF. Die Beschriftung bleibt bewusst ohne Technik (Benutzer, 2026-11-03):
+  wer herunterlädt, will wissen, wozu die Datei taugt, nicht wie sie
+  entsteht. Den
   QR-Codes schadet das Verkleinern nicht: beide lasen sich aus allen drei
   kleinen PDFs, und noch bei 150 dpi (die
   gedruckte Modulgrösse bleibt ja dieselbe, nur die Pixel je Modul sinken —

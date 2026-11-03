@@ -77,13 +77,14 @@
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
       align-items: start;
     }
-    .pdf-wahl { display: flex; flex-direction: column; gap: 8px; }
     .klein-wahl {
-      display: flex; align-items: flex-start; gap: 6px;
-      padding: 0 4px; color: var(--muted); font-size: 0.8rem; line-height: 1.35;
-      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+      color: var(--text); font-size: 0.92rem; cursor: pointer;
     }
-    .klein-wahl input { margin: 2px 0 0; accent-color: var(--accent); cursor: pointer; }
+    .klein-wahl input {
+      width: 18px; height: 18px; margin: 0;
+      accent-color: var(--accent); cursor: pointer;
+    }
     @media (max-width: 620px) { .knoepfe { grid-template-columns: repeat(2, 1fr); } }
     .knopf {
       display: flex; flex-direction: column; gap: 4px;
@@ -155,42 +156,28 @@
     <section class="downloads">
       <h2>Herunterladen</h2>
       <div class="knoepfe">
-        <a class="knopf" href="plakat-skillsliste.png"
+        <a class="knopf" id="bildKnopf" href="plakat-skillsliste.png"
            download="plakat-skillsliste.png">
-          <span class="knopf-name">PNG</span>
+          <span class="knopf-name" id="bildName">PNG</span>
           <span class="knopf-meta" id="pngMeta">Bilddatei</span>
         </a>
-        <div class="pdf-wahl">
-          <button class="knopf" type="button" data-format="A5">
-            <span class="knopf-name">PDF A5</span>
-            <span class="knopf-meta">148 × 210 mm</span>
-          </button>
-          <label class="klein-wahl">
-            <input type="checkbox" data-klein-fuer="A5" checked>
-            <span>Kleine Datei für Email (PDF)</span>
-          </label>
-        </div>
-        <div class="pdf-wahl">
-          <button class="knopf" type="button" data-format="A4">
-            <span class="knopf-name">PDF A4</span>
-            <span class="knopf-meta">210 × 297 mm</span>
-          </button>
-          <label class="klein-wahl">
-            <input type="checkbox" data-klein-fuer="A4" checked>
-            <span>Kleine Datei für Email (PDF)</span>
-          </label>
-        </div>
-        <div class="pdf-wahl">
-          <button class="knopf" type="button" data-format="A3">
-            <span class="knopf-name">PDF A3</span>
-            <span class="knopf-meta">297 × 420 mm</span>
-          </button>
-          <label class="klein-wahl">
-            <input type="checkbox" data-klein-fuer="A3" checked>
-            <span>Kleine Datei für Email (PDF)</span>
-          </label>
-        </div>
+        <button class="knopf" type="button" data-format="A5">
+          <span class="knopf-name">PDF A5</span>
+          <span class="knopf-meta">148 × 210 mm</span>
+        </button>
+        <button class="knopf" type="button" data-format="A4">
+          <span class="knopf-name">PDF A4</span>
+          <span class="knopf-meta">210 × 297 mm</span>
+        </button>
+        <button class="knopf" type="button" data-format="A3">
+          <span class="knopf-name">PDF A3</span>
+          <span class="knopf-meta">297 × 420 mm</span>
+        </button>
       </div>
+      <label class="klein-wahl">
+        <input type="checkbox" id="klein" checked>
+        <span>Kleine Datei für Email</span>
+      </label>
       <p class="status" id="status" role="status"></p>
     </section>
 
@@ -227,8 +214,8 @@
 
    Weg B (pdfAusJpeg) bettet JPEG-Bytes ein, die die Seite per Canvas erzeugt.
    Er dient zwei Zwecken: als Rueckfallebene fuer PNG-Typen, die Weg A nicht
-   abdeckt, und fuer die kleine Datei (Checkbox unter jedem PDF-Knopf, ab Werk
-   angehakt), die auf hoechstens 300 dpi verkleinert. Das volle PDF sprengt mit
+   abdeckt, und fuer die kleine Datei (Checkbox "Kleine Datei fuer Email",
+   ab Werk angehakt), die auf hoechstens 300 dpi verkleinert. Das volle PDF sprengt mit
    rund 15 MB jede E-Mail. Den QR-Codes schadet das nicht: nachgemessen am
    Plakat vom 2026-10-22 hat ein Modul bei 300 dpi auf A5 noch rund 10 Pixel,
    und beide Codes wurden in JPEG auf A5 und A4 noch bei 150 dpi gelesen. */
@@ -429,11 +416,28 @@
   var knoepfe = [].slice.call(document.querySelectorAll('.knopf[data-format]'));
   var rohdaten = null;               // einmal geholt, dann behalten
   var masse = null;                  // { breite, hoehe } der grossen Datei
+  var kleinBox = document.getElementById('klein');
+  var bildKnopf = document.getElementById('bildKnopf');
 
-  function wahl(format) {
-    return document.querySelector('[data-klein-fuer="' + format + '"]');
+  /* Eine Checkbox fuer alle vier Downloads, ab Werk angehakt: die volle Datei
+     sprengt mit 15 MB jede E-Mail. Angehakt liefert der Bild-Knopf ein JPG in
+     voller Groesse (ein verkleinertes PNG bliebe beim gemalten Plakat ueber
+     9 MB), die PDF-Knoepfe ein JPEG mit hoechstens 300 dpi im PDF. */
+  function klein() { return kleinBox.checked; }
+
+  /* Der Bild-Knopf nennt das Format, das er wirklich liefert. */
+  function bildNameZeigen() {
+    document.getElementById('bildName').textContent = klein() ? 'JPG' : 'PNG';
   }
-  function klein(format) { return wahl(format).checked; }
+
+  /* Ohne lesbare Bilddatei laesst sich keine kleine Datei erzeugen, der
+     PNG-Link aber funktioniert. Dann den Haken weg, damit der Knopf wieder
+     ehrlich «PNG» sagt und ein Klick nicht ins Leere laeuft. */
+  function nurPng() {
+    kleinBox.checked = false;
+    kleinBox.disabled = true;
+    bildNameZeigen();
+  }
 
   function melde(text) {
     status.textContent = text;
@@ -504,7 +508,7 @@
     if (!masse) return;
     var format = knopf.getAttribute('data-format');
     var mm = FORMATE[format];
-    var px = klein(format)
+    var px = klein()
       ? zielPixel(masse.breite, masse.hoehe, mm[0], mm[1], KLEIN_DPI)
       : masse;
     /* max, nicht min: gezaehlt wird an der Kante, an der das Bild beim
@@ -524,8 +528,8 @@
     }
   }
 
-  function speichere(bytes, name) {
-    var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+  function speichere(bytes, name, typ) {
+    var url = URL.createObjectURL(new Blob([bytes], { type: typ || 'application/pdf' }));
     var verweis = document.createElement('a');
     verweis.href = url;
     verweis.download = name;
@@ -557,9 +561,9 @@
     return abrufLaeuft;
   }
 
-  /* Fuer die kleine Datei und fuer die Rueckfallebene (Datei kein 8-Bit-PNG
-     ohne Interlace): das Bild aus den bereits geholten Bytes aufbauen, damit
-     es ueber ein Canvas als JPEG ausgegeben werden kann. Ausdruecklich NICHT
+  /* Fuer die kleinen Dateien (JPG und PDF) und fuer die Rueckfallebene
+     (Datei kein 8-Bit-PNG ohne Interlace): das Bild aus den bereits geholten
+     Bytes aufbauen, damit es ueber ein Canvas als JPEG ausgegeben werden kann. Ausdruecklich NICHT
      das angezeigte Vorschaubild -- das ergaebe ein PDF aus einer
      1200-px-Vorlage. */
   function bildAusBytes(bytes) {
@@ -611,9 +615,28 @@
     });
   }
 
+  /* Die kleine Bilddatei: dasselbe Bild in voller Groesse als JPG. */
+  function bildKleinSpeichern() {
+    melde('Das Bild wird erzeugt — das Plakat ist 14,9 MB gross, das dauert einen Moment.');
+    bytesHolen().then(bildAusBytes).then(function (geladen) {
+      try {
+        var b = geladen.bild.naturalWidth, h = geladen.bild.naturalHeight;
+        speichere(jpegBytes(geladen.bild, b, h), 'plakat-skillsliste-klein.jpg',
+                  'image/jpeg');
+        status.classList.remove('sichtbar');
+      } finally {
+        URL.revokeObjectURL(geladen.url);
+      }
+    }).catch(function (fehler) {
+      melde('Das Bild konnte nicht erzeugt werden ('
+          + (fehler && (fehler.message || fehler.name) || 'unbekannter Fehler')
+          + '). Ohne Haken bei «Kleine Datei für Email» gibt es das PNG.');
+    });
+  }
+
   function erzeuge(format) {
     var mm = FORMATE[format];
-    var verkleinern = klein(format);
+    var verkleinern = klein();
     /* Eigener Name, damit beide Fassungen nebeneinander im Download-Ordner
        liegen koennen und man sieht, welche man anhaengt. */
     var name = 'plakat-skillsliste-' + format.toLowerCase()
@@ -640,10 +663,23 @@
   }
 
   knoepfe.forEach(function (knopf) {
-    var format = knopf.getAttribute('data-format');
-    knopf.addEventListener('click', function () { erzeuge(format); });
-    wahl(format).addEventListener('change', function () { knopfMetaZeigen(knopf); });
+    knopf.addEventListener('click', function () {
+      erzeuge(knopf.getAttribute('data-format'));
+    });
   });
+
+  /* Ohne Haken bleibt der Bild-Knopf ein gewoehnlicher Link aufs PNG. */
+  bildKnopf.addEventListener('click', function (ereignis) {
+    if (!klein()) return;
+    ereignis.preventDefault();
+    bildKleinSpeichern();
+  });
+
+  kleinBox.addEventListener('change', function () {
+    bildNameZeigen();
+    knoepfe.forEach(knopfMetaZeigen);
+  });
+  bildNameZeigen();
 
   plakat.addEventListener('error', function () {
     plakat.style.display = 'none';
@@ -654,6 +690,7 @@
      Das gleich sagen, statt den Benutzer in einen Fehlschlag laufen zu lassen. */
   if (location.protocol === 'file:') {
     sperre();
+    nurPng();
     melde('Diese Seite wurde als lokale Datei geöffnet. Browser erlauben hier '
         + 'nicht, die Bilddatei per Skript zu lesen — die PDF-Knöpfe ruhen '
         + 'deshalb. Auf stayingclean.github.io/toolbox/ funktionieren sie. '
@@ -668,6 +705,7 @@
            Knoepfe aktiv zu lassen und den Fehlschlag erst beim Klick zu
            zeigen. */
         sperre();
+        nurPng();
         melde('Die Bilddatei ist nicht erreichbar. Die PDF-Knöpfe sind deshalb '
             + 'gesperrt, der PNG-Link bleibt nutzbar.');
         return;
